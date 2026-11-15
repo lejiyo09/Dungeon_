@@ -48,238 +48,11 @@ function procGrid(w, h, draw) {
   return rows;
 }
 
-// 술사 3종 공용 몸통 (x = 지팡이 끝 수정)
-const CASTER_BODY = [
-  '..kaaaaaaak.....',
-  '..kakkkkkak..k..',
-  '..kakekekak.kxk.',
-  '..kakkkkkak..k..',
-  '.kaaaaaaaaak.n..',
-  '.kbaaayaaabk.n..',
-  'kbaaaayaaaabksn.',
-  'kbaaaayaaaabk.n.',
-  'kbaaaayaaaabk.n.',
-  'kbbbbbbbbbbbk.n.',
-  '.kkkkkkkkkkk..k.'];
 
 Object.assign(PIX, {
-  // ── 1월드
-  slime: { tint: '#6fd35f', pal: { w: '#ffffff' }, rows: [
-    '................', '................', '................',
-    '.......kk.......',
-    '......kcak......',
-    '....kkcaaakk....',
-    '...kcwaaaaaak...',
-    '..kcwwaaaaaaak..',
-    '..kcaaaaaaaaak..',
-    '.kaaakkaaakkaak.',
-    '.kaaakwaaakwaak.',
-    '.kaaaaakkaaaaak.',
-    '.kbaaaaaaaaaabk.',
-    '..kbbbbbbbbbbk..',
-    '...kkkkkkkkkk...'] },
-  goblin: { tint: '#8ab840', pal: { e: '#ff3020', h: '#6a4a2a', g: '#4a3220', q: '#8a5a2a', o: '#a07040', w: '#f0e8d0' }, rows: [
-    '................',
-    '.....kkkkkk.....',
-    '....khhhhhhk....',
-    '.kkkhhhhhhhhkkk.',
-    '.kaakaaaaaaakaak',
-    '..kkkaeaaeakkk..',
-    '....kaakkaak....',
-    '..kwkkaaaakkk.o.',
-    '..kqkhhhhhhkkow.',
-    '..kqkhhhhhhkaow.',
-    '..kqkhhhhhhk.ow.',
-    '..kkkhhhhhhk.o..',
-    '....kgggggk.....',
-    '....kgk.kgk.....',
-    '....kkk.kkk.....'] },
-  boar: { tint: '#8a4a3a', pal: { t: '#f0e8d0', e: '#ffd84a', p: '#e08a8a', n: '#5a2020' }, rows: [
-    '................', '................', '................',
-    '..kk.kk.........',
-    '.kbbkbbkkk......',
-    '.kbbbbbbbbkk....',
-    'kbaaaaaaaaaakk..',
-    'kaaaaaaaaaaaaak.',
-    'kaaaaaaaaaaeaaak',
-    'kcaaaaaaaaaaapnk',
-    'kcaaaaaaaaaaktpk',
-    '.kbbbbbbbbbbkkk.',
-    '.kbk..kbk.kbk...',
-    '.kkk..kkk.kkk...'] },
-  shroom: { tint: '#d04a4a', pal: { w: '#ffffff', s: '#e8d8b0', m: '#5a3a2a' }, rows: [
-    '................', '................',
-    '.....kkkkkk.....',
-    '...kkaawaaakk...',
-    '..kawwaaaaawak..',
-    '.kaaaaaawwaaaak.',
-    '.kawwaaaawwaaak.',
-    '.kbaaaaaaaaaabk.',
-    '..kbbbbbbbbbbk..',
-    '....kssssssk....',
-    '....kskssksk....',
-    '....kssmmssk....',
-    '...kssssssssk...',
-    '...kskk..kksk...',
-    '....kk....kk....'] },
-  // ── 2월드
-  iceslime: { tint: '#7ac8ff', pal: { w: '#ffffff', i: '#e8faff' }, rows: [
-    '................',
-    '......k....k....',
-    '.....kik..kik...',
-    '....kkiikkiikk..',
-    '...kciiaaaiiaak.',
-    '..kcwaaaaaaaaak.',
-    '..kcwaaaaaaaaak.',
-    '.kcaaaaaaaaaaak.',
-    '.kaaakkaaakkaak.',
-    '.kaaakwaaakwaak.',
-    '.kaaaaakkaaaaak.',
-    '.kbaaaaaaaaaabk.',
-    '..kbbbbbbbbbbk..',
-    '...kkkkkkkkkk...'] },
-  yeti: { tint: '#e8f0ff', pal: { f: '#7a9ac0', e: '#102040', w: '#ffffff', h: '#c0d0e0' }, rows: [
-    '................',
-    '..kk........kk..',
-    '..khk......khk..',
-    '...khkkkkkkhk...',
-    '..kaaaaaaaaaak..',
-    '.kaaaffffffaaak.',
-    '.kaaafeffefaaak.',
-    '.kaaafwwwwfaaak.',
-    'kaaaaaffffaaaaak',
-    'kaakaaaaaaaakaak',
-    'kaakaaaaaaaakaak',
-    'kbbkaaaaaaaakbbk',
-    '.kk.kbbbbbbk.kk.',
-    '....kbbkkbbk....',
-    '....kkk..kkk....'] },
-  frostarcher: { tint: '#5a8ac8', pal: { a: '#dfe8f8', h: '#5a8ac8', f: '#ffffff', e: '#2a5aff', i: '#bfefff', w: '#ffffff', g: '#3a4a6a', y: '#c0d8ff' }, rows: [
-    '................',
-    '.....kkkkkk.....',
-    '....khhhhhhk....',
-    '...kfhhhhhhfk...',
-    '...kfaaaaaafk...',
-    '...kfaeaaeafk...',
-    '...kffaaaaffk...',
-    '..kkhhffffhhk.i.',
-    '..khhhhhhhhhkkiw',
-    '..khhhhyhhhhkaiw',
-    '..khhhhhhhhhk.iw',
-    '..kfffffffffk.i.',
-    '...kgggggggk....',
-    '....kgk.kgk.....',
-    '....kkk.kkk.....'] },
-  icemage: { tint: '#2a4a8a', pal: { i: '#dff4ff', x: '#dff4ff', n: '#7a5a3a', s: '#c8d8f0', y: '#bfefff' }, rows: [
-    '....k.k.k.......',
-    '...kikikik......',
-    '...kiiiiik......'].concat(CASTER_BODY) },
-  // ── 3월드
-  imp: { tint: '#e04a2a', pal: { g: '#3a1a1a', e: '#ffd84a', w: '#ffffff' }, rows: [
-    '................',
-    '....k......k....',
-    '...khk....khk...',
-    'kk..kaaaaak..kk.',
-    'kgk.kaeaeak.kgk.',
-    'kggkkaaaaakkggk.',
-    'kgggkaawaakgggk.',
-    '.kggkbaaabkggk..',
-    '..kkkbaaabkkk...',
-    '....kbaaabk.....',
-    '.....kbabk......',
-    '......kbk.kk....',
-    '.......kbbkk....',
-    '..........kak...'] },
-  bomber: { tint: '#3a3a48', pal: { s: '#ffe36b', f: '#8a6a4a', m: '#8a8a9a', e: '#ff5a3a', d: '#5a3a2a' }, rows: [
-    '..........s.....',
-    '.........sfs....',
-    '..........f.....',
-    '.........kfk....',
-    '.......kkmmk....',
-    '.....kkaaaaakk..',
-    '....kaccaaaaaak.',
-    '...kaccaaaaaaaak',
-    '...kacaakaakaaak',
-    '...kaaaeaaeaaaak',
-    '...kaaaaaaaaaaak',
-    '....kaaakkkaaak.',
-    '.....kaaaaaaak..',
-    '......kdkkkdk...',
-    '.....kddk.kddk..'] },
-  golem: { tint: '#7a4a2a', pal: { l: '#ff7a2a', e: '#ffd84a' }, rows: [
-    '................',
-    '.....kkkkkk.....',
-    '....kccaaaak....',
-    '...kcaeaaeaak...',
-    '...kaaallaaak...',
-    '.kkkkbaaaabkkkk.',
-    'kccakaalaaakacck',
-    'kcaakaaalaakaaak',
-    'kaaakalaaaakaaak',
-    'kbbbkaaalaakbbbk',
-    '.kkkkaaaaaakkkk.',
-    '....kbaaaabk....',
-    '...kbbbkkbbbk...',
-    '..kbbbk..kbbbk..',
-    '..kkkkk..kkkkk..'] },
-  firemage: { tint: '#8a2a1a', pal: { h: '#e0d0b0', x: '#ffb040', n: '#5a3a2a', s: '#e8c0a0', y: '#ffb040' }, rows: [
-    '.kk.......kk....',
-    '.khk.....khk....',
-    '..khkkkkkhk.....'].concat(CASTER_BODY) },
-  // ── 4월드
-  wraith: { tint: '#8a6ad0', pal: { e: '#ffe0ff', w: '#e0d0ff' }, rows: [
-    '................',
-    '.....kkkkk......',
-    '....kaaaaak.....',
-    '...kaaaaaaak....',
-    '...kakkkkkak....',
-    '...kakekekak....',
-    '..kaakkkkkaak...',
-    '.kcaaaaaaaaak...',
-    'kwkaaaaaaaaakwk.',
-    '.kkkbaaaaabkkk..',
-    '...kbaaaaabk....',
-    '...kbabaabak....',
-    '...kbkbkbkbk....',
-    '....k.k.k.k.....'] },
-  hound: { tint: '#3a3050', pal: { e: '#ff3a5a', w: '#ffffff' }, rows: [
-    '................', '................', '................',
-    '...k.k.k...kk...',
-    '..kbkbkbk.kaak..',
-    '.kbbbbbbbkkaaek.',
-    'kbaaaaaaaaaaaaak',
-    'kaaaaaaaaaaakwk.',
-    '.kaaaaaaaaaak...',
-    '.kaakkkkkkaak...',
-    '.kak.....kak....',
-    '.kak.....kak....',
-    '.kk......kk.....'] },
-  crystal: { tint: '#b070ff', pal: { s: '#5a5a6a', e: '#ffffff' }, rows: [
-    '.......kk.......',
-    '......kcak......',
-    '.....kccaak.....',
-    '....kccaaaak....',
-    '....kcaaaaak....',
-    '...kcaaeaaaak...',
-    '....kaaaaabk....',
-    '....kbaaaabk....',
-    '.....kbaabk.....',
-    '......kbbk......',
-    '....kkkkkkkk....',
-    '...kssssssssk...',
-    '..kssssssssssk..',
-    '..kkkkkkkkkkkk..'] },
-  voidmage: { tint: '#1a1030', pal: { x: '#d070ff', n: '#3a2a4a', s: '#8a7aa0', y: '#b070ff' }, rows: [
-    '................',
-    '.....kkk........',
-    '....kaaak.......'].concat(CASTER_BODY) },
+  // (1~4필드 적과 일부 술사·5필드 이후 적은 js/art/foes.js에서 새로 그림)
 
   // ── 5월드
-  scarab: { tint: '#c8a030', w: 16, h: 16, pal: { e: '#ff5a3a', n: '#3a2a1a' }, proc: (P) => {
-    for (const y of [8, 10, 12]) { P.line(3, y, 1, y + 2, 'n'); P.line(12, y, 14, y + 2, 'n'); }   // 다리
-    P.ell(8, 10, 5, 4, 'a'); P.ell(8, 12, 5, 2, 'b'); P.line(8, 7, 8, 14, 'b'); P.ell(6, 8, 1, 1, 'c'); // 등딱지
-    P.ell(8, 5, 3, 2, 'b'); P.line(8, 3, 8, 1, 'b'); P.px(7, 5, 'e'); P.px(9, 5, 'e');               // 머리·뿔
-  } },
   skelarcher: { tint: '#e0d8c0', w: 16, h: 16, pal: { e: '#ff5a3a', d: '#7a5530', s: '#dddddd' }, proc: (P) => {
     P.line(13, 2, 15, 7, 'd'); P.line(15, 7, 13, 12, 'd'); P.line(13, 2, 13, 12, 's');               // 활
     P.ell(7, 4, 3, 3, 'a'); P.rect(5, 4, 2, 2, 'k'); P.rect(8, 4, 2, 2, 'k'); P.px(5, 4, 'e'); P.px(8, 4, 'e'); P.rect(6, 7, 3, 1, 'b'); // 해골
@@ -292,22 +65,12 @@ Object.assign(PIX, {
     P.ell(11, 6, 2, 2, 'm'); P.px(10, 4, 't'); P.px(12, 4, 't'); P.px(13, 6, 't'); P.px(10, 8, 't'); P.px(13, 8, 't'); // 둥근 입·이빨
     P.px(8, 4, 'e');
   } },
-  sandmage: { tint: '#a0702a', pal: { x: '#ffd06a', n: '#7a5a3a', s: '#e8c890', y: '#ffd06a' }, rows: [
-    '................',
-    '....kkkkk.......',
-    '...kyyyyyk......'].concat(CASTER_BODY) },
   // ── 6월드
   clockbomb: { tint: '#8a6a3a', w: 16, h: 16, pal: { m: '#a8b0bc', e: '#ff5a3a', s: '#ffe36b', w: '#ffffff' }, proc: (P) => {
     P.rect(7, 1, 2, 3, 'm'); P.rect(5, 1, 6, 1, 'm');                                     // 태엽 열쇠
     P.ell(8, 9, 6, 5, 'a'); P.ell(8, 12, 5, 2, 'b'); P.ell(6, 7, 2, 1, 'c');
     P.rect(5, 8, 2, 2, 'w'); P.rect(9, 8, 2, 2, 'w'); P.px(6, 9, 'e'); P.px(10, 9, 'e');     // 눈
     P.line(3, 14, 5, 13, 'm'); P.line(13, 14, 11, 13, 'm'); P.px(13, 4, 's');               // 다리·불꽃
-  } },
-  ironknight: { tint: '#8a94a4', w: 16, h: 16, pal: { e: '#ff5a3a', r: '#c04040', m: '#d8dde4' }, proc: (P) => {
-    P.rect(4, 13, 3, 3, 'b'); P.rect(9, 13, 3, 3, 'b');                                     // 다리
-    P.rect(3, 7, 10, 7, 'a'); P.rect(3, 12, 10, 2, 'b'); P.rect(1, 8, 2, 5, 'a'); P.rect(13, 8, 2, 5, 'a'); // 몸·팔
-    P.rect(5, 1, 6, 6, 'a'); P.rect(5, 3, 6, 1, 'k'); P.px(6, 3, 'e'); P.px(9, 3, 'e'); P.rect(7, 0, 2, 1, 'r'); // 투구
-    P.line(15, 3, 15, 13, 'm'); P.px(4, 8, 'c'); P.px(4, 9, 'c');                           // 검
   } },
   gunbot: { tint: '#c0803a', w: 16, h: 16, pal: { e: '#7affff', g: '#3a3a44', m: '#a8b0bc' }, proc: (P) => {
     P.line(8, 0, 8, 2, 'm'); P.px(8, 0, 'e');                                              // 안테나
@@ -339,10 +102,6 @@ Object.assign(PIX, {
     P.px(10, 7, 'e'); P.px(12, 10, 't'); P.px(14, 10, 't');                                // 눈·이빨
     P.rect(4, 12, 2, 2, 'b'); P.rect(9, 12, 2, 2, 'b');                                    // 다리
   } },
-  witch: { tint: '#4a2a5a', pal: { x: '#9aff5a', n: '#5a3a2a', s: '#a0c080', y: '#9aff5a' }, rows: [
-    '......k.........',
-    '.....kak........',
-    '..kkkaaakkk.....'].concat(CASTER_BODY) },
   // ── 8월드
   skelknight: { tint: '#d8d0c0', w: 16, h: 16, pal: { e: '#7affc0', m: '#8a94a4', r: '#8a2a2a' }, proc: (P) => {
     P.rect(4, 13, 2, 3, 'a'); P.rect(10, 13, 2, 3, 'a');                                   // 다리뼈
@@ -361,10 +120,6 @@ Object.assign(PIX, {
     P.rect(5, 8, 2, 2, 'k'); P.rect(9, 8, 2, 2, 'k'); P.px(5, 8, 'e'); P.px(9, 8, 'e'); P.px(8, 11, 'k');
     P.px(6, 13, 'k'); P.px(8, 13, 'k'); P.px(10, 13, 'k');
   } },
-  bonemage: { tint: '#2a3a3a', pal: { x: '#7affc0', n: '#d8d0c0', s: '#d8d0c0', y: '#7affc0' }, rows: [
-    '................',
-    '....k.k.k.......',
-    '...kakakak......'].concat(CASTER_BODY) },
 
   // ── 9월드
   bat: { tint: '#5a4a6a', w: 16, h: 16, pal: { e: '#ff5a5a', w: '#ffffff' }, proc: (P) => {
@@ -377,11 +132,6 @@ Object.assign(PIX, {
     P.rect(4, 3, 8, 3, 'y'); P.px(8, 4, 'w');                                              // 광부 모자
     P.px(6, 8, 'k'); P.px(10, 8, 'k'); P.ell(8, 10, 1, 1, 'p');                            // 눈·코
     P.line(13, 4, 13, 12, 'd'); P.rect(11, 3, 5, 1, 'm');                                  // 곡괭이
-  } },
-  cspider: { tint: '#c05aa0', w: 16, h: 16, pal: { n: '#3a2a3a', e: '#ffffff' }, proc: (P) => {
-    for (const [a, b] of [[4, 1], [6, 2], [8, 3], [10, 4]]) { P.line(5, a + 4, 1, a + 6, 'n'); P.line(10, a + 4, 14, a + 6, 'n'); } // 다리
-    P.ell(8, 10, 4, 3, 'a'); P.tri(6, 9, 10, 9, 8, 4, 'c');                                // 몸·수정 등
-    P.ell(8, 13, 2, 1, 'n'); P.px(7, 13, 'e'); P.px(9, 13, 'e');                           // 머리·눈
   } },
   cgolem: { tint: '#6a5a6a', w: 16, h: 16, pal: { x: '#ff7ad0', w: '#ffffff', e: '#ff7ad0' }, proc: (P) => {
     P.rect(4, 13, 3, 3, 'b'); P.rect(9, 13, 3, 3, 'b');
