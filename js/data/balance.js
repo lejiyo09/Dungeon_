@@ -29,5 +29,7 @@ const BALANCE = {
   lobbyCurrency: { name: '결정석', color: '#7ad0ff', perStage: 15, perBoss: 40, victory: 80 },
   bossHealRatio: 0.5,         // 월드 보스 처치 시 최대 체력 대비 회복
   // 정예 몬스터: 2월드부터 등장, 확률 = base + perWorld × (월드-1)
-  elite: { fromWorld: 1, base: 0.08, perWorld: 0.03, hp: 2.2, dmg: 1.2, gold: 3 }
+  elite: { fromWorld: 1, base: 0.08, perWorld: 0.03, hp: 2.2, dmg: 1.2, gold: 3 },
+  // 특수방: 일반 스테이지마다 하나씩 무작위 (가격은 상점처럼 스테이지마다 오름)
+  specialRooms: { pool: ['fountain', 'altar', 'gamble', 'challenge'], fountainHeal: 0.4, altarPrice: 60, gamblePrice: 25 }
 };

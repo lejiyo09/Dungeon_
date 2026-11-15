@@ -184,7 +184,7 @@ function generateDungeon(opts) {
   for (const c of order) if (!c.type) c.type = 'combat';
 
   const map = new DungeonMap(GRID_W * CELL_W, GRID_H * CELL_H, opts.palette);
-  const SIZES = { start: [11, 9], treasure: [11, 9], shop: [13, 9], exit: [11, 9], boss: [23, 17] };
+  const SIZES = { start: [11, 9], treasure: [11, 9], shop: [13, 9], exit: [11, 9], boss: [23, 17], fountain: [11, 9], altar: [11, 9], gamble: [11, 9], challenge: [17, 13] };
   for (const c of order) {
     const [w, h] = SIZES[c.type] || [15 + 2 * randInt(0, 2), 11 + 2 * randInt(0, 1)];
     const cx = c.gx * CELL_W + (CELL_W >> 1), cy = c.gy * CELL_H + (CELL_H >> 1);
@@ -194,7 +194,7 @@ function generateDungeon(opts) {
       visited: c.type === 'start', wavesLeft: c.type === 'combat' ? opts.waves : 0 };
     c.room = room;
     map.carveRoom(x0, y0, w, h);
-    if (c.type === 'combat') placeCover(map, room);
+    if (c.type === 'combat' || c.type === 'challenge') placeCover(map, room);
     map.rooms.push(room);
   }
   for (const [a, b] of edges) {

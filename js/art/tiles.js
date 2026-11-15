@@ -290,6 +290,17 @@ function drawRoomArt(g, r, pal) {
   } else if (r.type === 'treasure') { // 금테 카펫
     const x0 = (r.cx - 2) * TILE, y0 = (r.cy - 2) * TILE;
     pxs(g, '#2a3a6a', [[x0, y0, 5 * TILE, 5 * TILE]]); pxs(g, '#e0b040', [[x0 + 2, y0 + 2, 5 * TILE - 4, 1], [x0 + 2, y0 + 5 * TILE - 3, 5 * TILE - 4, 1], [x0 + 2, y0 + 2, 1, 5 * TILE - 4], [x0 + 5 * TILE - 3, y0 + 2, 1, 5 * TILE - 4]]);
+  } else if (r.type === 'fountain') { // 샘 둘레의 푸른 타일
+    pixelCircle(g, cx, cy, 22, '#5aa0d0'); pixelCircle(g, cx, cy, 18, '#3a7ab0', 2);
+  } else if (r.type === 'altar') { // 보랏빛 의식 원
+    pixelCircle(g, cx, cy, 24, '#9a6ae0'); pixelCircle(g, cx, cy, 20, '#6a4ab0', 3);
+    for (let i = 0; i < 6; i++) { const a = i / 6 * TAU, rx = Math.round(cx + Math.cos(a) * 22), ry = Math.round(cy + Math.sin(a) * 22); pxs(g, '#c8a0ff', [[rx - 1, ry, 3, 1], [rx, ry - 1, 1, 3]]); }
+  } else if (r.type === 'gamble') { // 체크무늬 카펫
+    const x0 = (r.cx - 3) * TILE, y0 = (r.cy - 1) * TILE;
+    for (let i = 0; i < 7; i++) for (let j = 0; j < 4; j++) pxs(g, (i + j) % 2 ? '#5a1a2a' : '#2a1a3a', [[x0 + i * TILE, y0 + j * TILE, TILE, TILE]]);
+    pxs(g, '#c89a40', [[x0, y0, 7 * TILE, 1], [x0, y0 + 4 * TILE - 1, 7 * TILE, 1]]);
+  } else if (r.type === 'challenge') { // 붉은 결투장
+    pixelCircle(g, cx, cy, 44, '#c04040'); pixelCircle(g, cx, cy, 40, '#802020', 3); pixelCircle(g, cx, cy, 14, '#c04040', 2);
   } else if (r.type === 'exit') { // 순간이동 발판
     pixelCircle(g, cx, cy, 20, '#5aa0ff'); pixelCircle(g, cx, cy, 16, '#3a6ab0', 2); pixelCircle(g, cx, cy, 24, '#2a4a80', 3);
   } else if (r.type === 'start') {

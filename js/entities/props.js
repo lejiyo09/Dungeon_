@@ -49,6 +49,93 @@ class Chest {
   }
 }
 
+// ── 특수방 소품
+// 회복의 샘: 한 번 마시면 체력 일부와 에너지·보호막 회복
+class Fountain {
+  constructor(x, y) { this.x = x; this.y = y; this.used = false; this.radius = 20; this.t = 0; }
+  label() { return this.used ? null : '[E] 회복의 샘 (체력 40% · 에너지 · 보호막)'; }
+  get labelColor() { return '#7ad0ff'; }
+  interact(game) {
+    if (this.used) return; this.used = true;
+    const p = game.player, heal = Math.round(p.maxHp * BALANCE.specialRooms.fountainHeal);
+    p.hp = Math.min(p.maxHp, p.hp + heal); p.energy = p.maxEnergy; p.shield = p.maxShield;
+    game.effects.heal(p.x, p.y); game.effects.text(p.x, p.y - 20, '+' + heal, '#7be36b', true); game.effects.ring(this.x, this.y, 24, '#7ad0ff'); SFX.play('heal');
+  }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 12, y + 6, 24, 3);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 12, y - 2, 24, 9); ctx.fillStyle = '#8a8aa0'; ctx.fillRect(x - 11, y - 1, 22, 7); ctx.fillStyle = '#a8a8be'; ctx.fillRect(x - 11, y - 1, 22, 1);
+    ctx.fillStyle = this.used ? '#3a3a4a' : '#4a9ad8'; ctx.fillRect(x - 9, y, 18, 4);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 2, y - 12, 4, 11); ctx.fillStyle = '#8a8aa0'; ctx.fillRect(x - 1, y - 11, 2, 10);
+    if (!this.used) { ctx.fillStyle = '#bfefff'; for (let i = 0; i < 3; i++) { const k = ((t * 1.5 + i / 3) % 1); ctx.fillRect(Math.round(x - 1 + (i - 1) * k * 6), Math.round(y - 12 + k * k * 12), 1, 2); } ctx.fillRect(x - 5 + Math.round(Math.sin(t * 3) * 3), y + 1, 2, 1); }
+  }
+}
+// 축복의 제단: 골드를 바쳐 정해진 축복 하나를 받음 (한 번)
+class BuffAltar {
+  constructor(x, y, buff, price) { this.x = x; this.y = y; this.buff = buff; this.price = price; this.used = false; this.radius = 20; }
+  label() { return this.used ? null : `[E] 축복: ${this.buff.name} — ${this.buff.desc} (${this.price}골드)`; }
+  get labelColor() { return '#c8a0ff'; }
+  interact(game) {
+    if (this.used) return;
+    const p = game.player;
+    if (game.gold < this.price) { game.effects.text(p.x, p.y - 18, '골드가 부족합니다', '#ff7070'); SFX.play('deny'); return; }
+    game.gold -= this.price; this.used = true; this.buff.apply(p); p.buffs.push(this.buff.id);
+    game.showBanner(this.buff.name, this.buff.desc, '#c8a0ff'); game.effects.ring(this.x, this.y, 26, '#c8a0ff'); game.effects.sparkle(p.x, p.y, '#c8a0ff'); SFX.play('skill');
+  }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 10, y + 6, 20, 3);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 10, y - 4, 20, 11); ctx.fillStyle = '#4a3a6a'; ctx.fillRect(x - 9, y - 3, 18, 9); ctx.fillStyle = '#6a5a8a'; ctx.fillRect(x - 9, y - 3, 18, 2);
+    ctx.fillStyle = '#c8a050'; ctx.fillRect(x - 9, y + 2, 18, 1);
+    if (!this.used) { ctx.fillStyle = `rgba(200,160,255,${0.5 + 0.4 * Math.sin(t * 4)})`; ctx.beginPath(); ctx.arc(x, y - 10 + Math.sin(t * 2) * 1.5, 4, 0, TAU); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 1, y - 11, 2, 2);
+      hudText(ctx, String(this.price), x, y + 9, '#ffd84a', 'center', 8); }
+  }
+}
+// 행운의 기계: 골드를 넣고 돌리면 무작위 결과 (여러 번 가능)
+class SlotMachine {
+  constructor(x, y, price) { this.x = x; this.y = y; this.price = price; this.radius = 18; this.spin = 0; this.face = [0, 1, 2]; }
+  label() { return `[E] 행운의 기계 돌리기 (${this.price}골드)`; }
+  get labelColor() { return '#ffd84a'; }
+  interact(game) {
+    const p = game.player;
+    if (this.spin > 0) return;
+    if (game.gold < this.price) { game.effects.text(p.x, p.y - 18, '골드가 부족합니다', '#ff7070'); SFX.play('deny'); return; }
+    game.gold -= this.price; this.spin = 0.6; SFX.play('coin');
+    const r = Math.random(), c = { x: this.x, y: this.y + 16 };
+    let msg, col;
+    if (r < 0.35) { msg = '꽝!'; col = '#888'; this.face = [0, 1, 2]; }
+    else if (r < 0.6) { msg = '골드 두 배!'; col = '#ffd84a'; this.face = [3, 3, 3]; for (let i = 0; i < Math.ceil(this.price * 2 / 5); i++) game.pickups.push(new Pickup('coin', c.x, c.y)); }
+    else if (r < 0.78) { msg = '체력 물약'; col = '#ff7a7a'; this.face = [1, 1, 1]; game.pickups.push(new Pickup('hp', c.x, c.y, { value: 30 })); }
+    else if (r < 0.92) { msg = '에너지'; col = '#7ab0ff'; this.face = [2, 2, 2]; for (let i = 0; i < 6; i++) game.pickups.push(new Pickup('energy', c.x, c.y, { value: 12 })); }
+    else { msg = '대박! 무기'; col = '#c070ff'; this.face = [4, 4, 4]; game.pickups.push(new Pickup('weapon', c.x, c.y, { def: game.randomWeaponDef(), still: true })); game.effects.burst(this.x, this.y, '#ffd84a', 16); }
+    this.result = { msg, col, t: 0.6 };
+  }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), dt = 1 / 60;
+    if (this.spin > 0) { this.spin -= dt; if (this.spin <= 0 && this.result) { game.effects.text(this.x, this.y - 22, this.result.msg, this.result.col, true); SFX.play(this.result.msg === '꽝!' ? 'deny' : 'buy'); } }
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 10, y + 6, 20, 3);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 10, y - 14, 20, 21); ctx.fillStyle = '#a03040'; ctx.fillRect(x - 9, y - 13, 18, 19); ctx.fillStyle = '#c84a5a'; ctx.fillRect(x - 9, y - 13, 18, 2);
+    ctx.fillStyle = '#1a1424'; ctx.fillRect(x - 7, y - 9, 14, 6);
+    const C = ['#7a7a8a', '#ff5a5a', '#5a9aff', '#ffd84a', '#c070ff'];
+    for (let i = 0; i < 3; i++) { ctx.fillStyle = this.spin > 0 ? C[Math.floor(Math.random() * 5)] : C[this.face[i]]; ctx.fillRect(x - 6 + i * 5, y - 8, 3, 4); }
+    ctx.fillStyle = '#c8a050'; ctx.fillRect(x + 10, y - 10, 2, 8); ctx.fillStyle = '#ff5a5a'; ctx.fillRect(x + 9, y - 12, 4, 3); // 레버
+    hudText(ctx, String(this.price), x, y + 9, '#ffd84a', 'center', 8);
+  }
+}
+// 도전의 석판: 건드리면 문이 닫히고 정예 몬스터 웨이브 → 이기면 희귀 이상 무기 상자
+class ChallengeStone {
+  constructor(x, y, room) { this.x = x; this.y = y; this.room = room; this.used = false; this.radius = 20; }
+  label() { return this.used ? null : '[E] 도전 시작 (정예 몬스터 웨이브 → 희귀 이상 무기)'; }
+  get labelColor() { return '#ff7a7a'; }
+  interact(game) { if (this.used) return; this.used = true; game.startChallenge(this.room); }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 8, y + 6, 16, 3);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 7, y - 14, 14, 21); ctx.fillStyle = '#5a5060'; ctx.fillRect(x - 6, y - 13, 12, 19); ctx.fillStyle = '#6e6474'; ctx.fillRect(x - 6, y - 13, 12, 2);
+    ctx.fillStyle = this.used ? '#3a2a2a' : `rgba(255,${80 + Math.round(40 * Math.sin(t * 5))},80,1)`; ctx.fillRect(x - 1, y - 10, 2, 8); ctx.fillRect(x - 4, y - 7, 8, 2); // 붉은 검 문양
+  }
+}
+
 class ShopItem {
   constructor(x, y, kind, price, def) { this.x = x; this.y = y; this.kind = kind; this.price = price; this.def = def || null; this.sold = false; this.radius = 16; this.seed = Math.random() * 3; this.t = 0; }
   get name() { return this.kind === 'weapon' ? this.def.name : this.kind === 'hp' ? '체력 물약 (+40)' : '에너지 물약 (+120)'; }
