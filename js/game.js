@@ -186,19 +186,25 @@ class Game {
       else if (r.type === 'altar') this.props.push(new BuffAltar(c.x, c.y, pick(DATA_BUFFS), Math.round(SR.altarPrice * inflate)));
       else if (r.type === 'gamble') this.props.push(new SlotMachine(c.x, c.y, Math.round(SR.gamblePrice * inflate)));
       else if (r.type === 'challenge') this.props.push(new ChallengeStone(c.x, c.y, r));
+      else if (r.type === 'forge') this.props.push(new Forge(c.x, c.y, Math.round(SR.forgePrice * inflate)));
+      else if (r.type === 'blood') this.props.push(new BloodAltar(c.x, c.y));
+      else if (r.type === 'rack') { // 무기 진열대: 셋 중 하나만 가져갈 수 있음
+        const a = this.randomWeaponDef(), b = this.randomWeaponDef(0, [a.id]), d = this.randomWeaponDef(0, [a.id, b.id]), grp = {};
+        [a, b, d].forEach((def, i) => this.pickups.push(new Pickup('weapon', c.x + (i - 1) * 32, c.y + 4, { def, still: true, group: grp })));
+      }
     }
   }
-  startChallenge(r) { // 도전방: 정예 웨이브 2번
-    r.challenge = true; r.wavesLeft = 2; r.state = 'idle';
-    this.showBanner('도전!', '정예 몬스터를 모두 쓰러뜨리세요', '#ff7a7a'); SFX.play('boss'); this.addShake(0.2, 3);
+  startChallenge(r) { // 도전방: 강화된 정예 웨이브
+    r.challenge = true; r.wavesLeft = BALANCE.specialRooms.challenge.waves; r.state = 'idle';
+    this.showBanner('도전!', `강화된 정예 몬스터 ${BALANCE.specialRooms.challenge.waves}번의 습격을 버티세요`, '#ff7a7a'); SFX.play('boss'); this.addShake(0.2, 3);
     this.activateRoom(r);
   }
   stockShop(room) {
     const m = this.map, inflate = 1 + BALANCE.shopInflate * this.stageIndex;
     const mc = m.tileCenter(room.cx, room.y0 + 1); this.props.push(new Merchant(mc.x, mc.y));
     const owned = new Set(this.player.weapons.map((w) => w.def.id));
-    const pool = shuffled(DATA_WEAPONS.filter((d) => d.rarity !== 'common' && !owned.has(d.id)));
-    const items = [['weapon', pool[0]], ['weapon', pool[1]], ['hp'], ['energy']].filter(([k, d]) => k !== 'weapon' || d);
+    const w1 = this.randomWeaponDef(), w2 = this.randomWeaponDef(0, [w1.id]); // 상점도 상자와 같은 등급 확률
+    const items = [['weapon', w1], ['weapon', w2 !== w1 ? w2 : null], ['hp'], ['energy']].filter(([k, d]) => k !== 'weapon' || d);
     items.forEach(([kind, def], i) => {
       const c = m.tileCenter(room.cx - 4 + i * 3 - (i >= 2 ? 0 : 0), room.cy + 1);
       const price = Math.round(BALANCE.shopPrice[kind === 'weapon' ? def.rarity : kind] * inflate);
@@ -542,12 +548,13 @@ class Game {
   spawnWave(r) {
     r.wavesLeft--;
     const pool = this.W.enemies;
-    const W = BALANCE.waveSize, count = Math.min(W.max, W.base + this.worldIdx + Math.floor(this.levelIdx * W.perLevel) + randInt(0, W.rand));
+    const W = BALANCE.waveSize, count = Math.min(W.max, W.base + this.worldIdx + Math.floor(this.levelIdx * W.perLevel) + randInt(0, W.rand)) + (r.challenge ? BALANCE.specialRooms.challenge.extra : 0);
     for (let i = 0; i < count; i++) {
       const [id] = weightedPick(pool, (x) => x[1]);
       const pt = this.findSpawnPoint(r, 72);
       const e = this.spawnEnemy(id, pt.x, pt.y, r), E = BALANCE.elite;
       if (r.challenge || (this.worldIdx >= E.fromWorld && Math.random() < Math.min(0.45, E.base + E.perWorld * (this.worldIdx - E.fromWorld)))) e.makeElite(E);
+      if (r.challenge) { const C = BALANCE.specialRooms.challenge; e.maxHp = Math.round(e.maxHp * C.hp); e.hp = e.maxHp; e.damage = Math.round(e.damage * C.dmg); }
     }
   }
   spawnEnemy(id, x, y, room) {
@@ -611,7 +618,7 @@ class Game {
       if (r.challenge) { // 도전 성공: 희귀 이상 무기 + 골드
         r.challenge = false; this.props.push(new Chest(c.x, c.y - 10, 'challenge'));
         for (let i = 0; i < 8; i++) this.pickups.push(new Pickup('coin', c.x, c.y));
-        this.showBanner('도전 성공!', '희귀 이상의 무기가 담긴 상자', '#ffd84a'); SFX.play('clear'); return;
+        this.showBanner('도전 성공!', '희귀 이상의 무기가 담긴 상자', '#ffd84a'); SFX.play('clear'); this.effects.ring(c.x, c.y, 40, '#ffd84a'); return;
       }
       const B = BALANCE, orbs = randInt(B.roomEnergyOrbs[0], B.roomEnergyOrbs[1]);
       for (let i = 0; i < orbs; i++) this.pickups.push(new Pickup('energy', c.x, c.y, { value: B.roomEnergyValue }));
@@ -645,8 +652,8 @@ class Game {
     }
     return best;
   }
-  randomWeaponDef(minRank = 0) { // minRank: 0 고급 이상(기본) / 2 희귀 이상
-    const owned = new Set(this.player.weapons.map((w) => w.def.id)), RANK = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+  randomWeaponDef(minRank = 0, exclude = []) { // minRank: 0 고급 이상(기본) / 2 희귀 이상 / 3 영웅 이상
+    const owned = new Set(this.player.weapons.map((w) => w.def.id).concat(exclude)), RANK = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
     const pool = DATA_WEAPONS.filter((d) => d.rarity !== 'common' && RANK.indexOf(d.rarity) >= minRank && !owned.has(d.id));
     return weightedPick(pool.length ? pool : DATA_WEAPONS, (d) => { const w = Math.min(this.worldIdx, 12); return RARITY_WEIGHT[d.rarity] + (d.rarity === 'epic' ? w * BALANCE.epicPerWorld : d.rarity === 'legendary' ? w * BALANCE.legendaryPerWorld : 0); });
   }
@@ -669,7 +676,10 @@ class Game {
     this.discover(def.id);
     this.effects.text(p.x, p.y - 18, def.name, RARITY_COLOR[def.rarity]); this.effects.text(p.x, p.y - 8, weaponTraits(def), '#e0d0a0');
   }
-  pickWeapon(pk) { pk.alive = false; this.giveWeapon(pk.def); }
+  pickWeapon(pk) {
+    pk.alive = false; this.giveWeapon(pk.def);
+    if (pk.group) for (const o of this.pickups) if (o !== pk && o.group === pk.group && o.alive) { o.alive = false; this.effects.burst(o.x, o.y, '#aaa', 8); } // 진열대: 나머지는 사라짐
+  }
   buy(item) {
     const p = this.player;
     if (this.gold < item.price) { this.effects.text(p.x, p.y - 18, '골드가 부족합니다', '#ff7070'); SFX.play('deny'); return; }

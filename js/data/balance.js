@@ -23,7 +23,7 @@ const BALANCE = {
   // 로비 무기고 해금 가격
   armoryPrice: { common: 30, uncommon: 60, rare: 120, epic: 220, legendary: 400 },
   // 무기 드롭 가중치 (영웅은 월드마다 +epicPerWorld, 전설은 +legendaryPerWorld)
-  rarityWeight: { common: 5, uncommon: 4, rare: 3, epic: 1.5, legendary: 0.25 }, epicPerWorld: 0.8, legendaryPerWorld: 0.2,
+  rarityWeight: { common: 5, uncommon: 4, rare: 3, epic: 1.5, legendary: 0.1 }, epicPerWorld: 0.8, legendaryPerWorld: 0.06,
   // 로비 재화: 던전 골드와 별도. 런이 끝날 때 결과에 따라 지급 (캐릭터 해금·무기고에 사용)
   //  기존 골드 적립 속도와 비슷하게 맞춘 값 (조정 가능)
   lobbyCurrency: { name: '결정석', color: '#7ad0ff', perStage: 15, perBoss: 40, victory: 80 },
@@ -31,5 +31,7 @@ const BALANCE = {
   // 정예 몬스터: 2월드부터 등장, 확률 = base + perWorld × (월드-1)
   elite: { fromWorld: 1, base: 0.08, perWorld: 0.03, hp: 2.2, dmg: 1.2, gold: 3 },
   // 특수방: 일반 스테이지마다 하나씩 무작위 (가격은 상점처럼 스테이지마다 오름)
-  specialRooms: { pool: ['fountain', 'altar', 'gamble', 'challenge'], fountainHeal: 0.4, altarPrice: 60, gamblePrice: 25 }
+  specialRooms: { pool: ['fountain', 'altar', 'gamble', 'challenge', 'forge', 'blood', 'rack'], fountainHeal: 0.4, altarPrice: 60, gamblePrice: 25,
+    forgePrice: 50, forgeUpChance: 0.3, bloodCost: 0.2,
+    challenge: { waves: 3, extra: 2, hp: 1.3, dmg: 1.15 } } // 도전방: 웨이브 수, 웨이브당 추가 몬스터, 정예 위에 더 곱하는 체력·공격력
 };

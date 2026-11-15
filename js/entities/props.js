@@ -5,6 +5,7 @@
 class Pickup {
   constructor(kind, x, y, o = {}) {
     this.kind = kind; this.x = x; this.y = y; this.half = 2; this.alive = true; this.t = Math.random() * 3;
+    this.group = o.group || null; // 같은 묶음 중 하나만 가져갈 수 있음 (무기 진열대)
     const a = Math.random() * TAU, s = o.still ? 0 : 40 + Math.random() * 60;
     this.vx = Math.cos(a) * s; this.vy = Math.sin(a) * s;
     this.value = o.value || 1; this.def = o.def || null; this.delay = o.still ? 0 : 0.35;
@@ -133,6 +134,53 @@ class ChallengeStone {
     ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 8, y + 6, 16, 3);
     ctx.fillStyle = OUTLINE; ctx.fillRect(x - 7, y - 14, 14, 21); ctx.fillStyle = '#5a5060'; ctx.fillRect(x - 6, y - 13, 12, 19); ctx.fillStyle = '#6e6474'; ctx.fillRect(x - 6, y - 13, 12, 2);
     ctx.fillStyle = this.used ? '#3a2a2a' : `rgba(255,${80 + Math.round(40 * Math.sin(t * 5))},80,1)`; ctx.fillRect(x - 1, y - 10, 2, 8); ctx.fillRect(x - 4, y - 7, 8, 2); // 붉은 검 문양
+  }
+}
+
+// 무기 제련소: 골드를 내면 들고 있는 무기를 같은 등급(일정 확률로 한 등급 위)의 다른 무기로 다시 벼림 (한 번)
+class Forge {
+  constructor(x, y, price) { this.x = x; this.y = y; this.price = price; this.used = false; this.radius = 20; }
+  label(game) { const w = game.player.weapon; return this.used || !w ? null : `[E] 제련: ${w.def.name} → 같은 등급 이상 무작위 (${this.price}골드)`; }
+  get labelColor() { return '#ff9a4a'; }
+  interact(game) {
+    const p = game.player, w = p.weapon; if (this.used || !w) return;
+    if (game.gold < this.price) { game.effects.text(p.x, p.y - 18, '골드가 부족합니다', '#ff7070'); SFX.play('deny'); return; }
+    const RANK = ['common', 'uncommon', 'rare', 'epic', 'legendary'], cur = RANK.indexOf(w.def.rarity);
+    const up = cur < 4 && Math.random() < BALANCE.specialRooms.forgeUpChance, want = RANK[up ? cur + 1 : cur];
+    const pool = DATA_WEAPONS.filter((d) => d.rarity === want && d.id !== w.def.id && !p.weapons.some((o) => o.def.id === d.id));
+    if (!pool.length) { game.effects.text(p.x, p.y - 18, '제련할 수 있는 무기가 없습니다', '#ff7070'); return; }
+    game.gold -= this.price; this.used = true;
+    const def = pick(pool); p.weapons[p.slot] = new WeaponInstance(def); game.discover(def.id);
+    game.effects.text(p.x, p.y - 24, (up ? '등급 상승! ' : '') + def.name, RARITY_COLOR[def.rarity], true); game.effects.burst(this.x, this.y - 6, '#ff9a4a', 16); SFX.play(up ? 'clear' : 'heavy');
+  }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 11, y + 6, 22, 3);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 11, y - 6, 22, 6); ctx.fillRect(x - 5, y, 10, 7);           // 모루
+    ctx.fillStyle = '#6a6e7a'; ctx.fillRect(x - 10, y - 5, 20, 4); ctx.fillRect(x - 4, y, 8, 6); ctx.fillStyle = '#8a8e9a'; ctx.fillRect(x - 10, y - 5, 20, 1);
+    if (!this.used) { ctx.fillStyle = `rgba(255,${120 + Math.round(60 * Math.sin(t * 8))},40,0.9)`; ctx.fillRect(x - 3 + Math.round(Math.sin(t * 5) * 2), y - 8, 2, 2); ctx.fillRect(x + 2, y - 9 + Math.round(Math.cos(t * 6)), 1, 1);
+      hudText(ctx, String(this.price), x, y + 9, '#ffd84a', 'center', 8); }
+  }
+}
+// 피의 제단: 최대 체력 20%를 바치면 영웅 이상 무기 (한 번)
+class BloodAltar {
+  constructor(x, y) { this.x = x; this.y = y; this.used = false; this.radius = 20; }
+  label(game) { return this.used ? null : `[E] 피의 제단: 최대 체력 -${Math.round(game.player.maxHp * BALANCE.specialRooms.bloodCost)} → 영웅 이상 무기`; }
+  get labelColor() { return '#ff5a5a'; }
+  interact(game) {
+    const p = game.player; if (this.used) return;
+    const cost = Math.round(p.maxHp * BALANCE.specialRooms.bloodCost);
+    if (p.maxHp - cost < 40) { game.effects.text(p.x, p.y - 18, '체력이 너무 적습니다', '#ff7070'); SFX.play('deny'); return; }
+    this.used = true; p.maxHp -= cost; p.hp = Math.min(p.hp, p.maxHp);
+    game.pickups.push(new Pickup('weapon', this.x, this.y + 16, { def: game.randomWeaponDef(3), still: true }));
+    game.effects.text(p.x, p.y - 20, `최대 체력 -${cost}`, '#ff5a5a', true); game.effects.burst(this.x, this.y - 8, '#ff3a3a', 18); game.addShake(0.15, 3); SFX.play('hurt');
+  }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 10, y + 6, 20, 3);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 10, y - 4, 20, 11); ctx.fillStyle = '#3a2a2a'; ctx.fillRect(x - 9, y - 3, 18, 9); ctx.fillStyle = '#5a3a3a'; ctx.fillRect(x - 9, y - 3, 18, 2);
+    ctx.fillStyle = this.used ? '#4a2a2a' : '#c02020'; ctx.fillRect(x - 6, y - 2, 12, 2); // 피가 고인 홈
+    if (!this.used) { ctx.fillStyle = `rgba(255,60,60,${0.5 + 0.4 * Math.sin(t * 3)})`; ctx.beginPath(); ctx.arc(x, y - 10 + Math.sin(t * 2), 3.5, 0, TAU); ctx.fill(); }
   }
 }
 

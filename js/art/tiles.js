@@ -299,6 +299,13 @@ function drawRoomArt(g, r, pal) {
     const x0 = (r.cx - 3) * TILE, y0 = (r.cy - 1) * TILE;
     for (let i = 0; i < 7; i++) for (let j = 0; j < 4; j++) pxs(g, (i + j) % 2 ? '#5a1a2a' : '#2a1a3a', [[x0 + i * TILE, y0 + j * TILE, TILE, TILE]]);
     pxs(g, '#c89a40', [[x0, y0, 7 * TILE, 1], [x0, y0 + 4 * TILE - 1, 7 * TILE, 1]]);
+  } else if (r.type === 'forge') { // 그을린 바닥
+    pixelCircle(g, cx, cy, 20, '#a05a2a'); pixelCircle(g, cx, cy, 16, '#5a3a2a', 2);
+  } else if (r.type === 'blood') { // 핏빛 원
+    pixelCircle(g, cx, cy, 22, '#a02020'); pixelCircle(g, cx, cy, 18, '#601010', 2); pixelCircle(g, cx, cy, 10, '#a02020', 3);
+  } else if (r.type === 'rack') { // 진열대 카펫
+    const x0 = (r.cx - 3) * TILE, y0 = (r.cy) * TILE;
+    pxs(g, '#2a3a5a', [[x0, y0, 7 * TILE, 2 * TILE]]); pxs(g, '#c8a050', [[x0 + 2, y0 + 2, 7 * TILE - 4, 1], [x0 + 2, y0 + 2 * TILE - 3, 7 * TILE - 4, 1]]);
   } else if (r.type === 'challenge') { // 붉은 결투장
     pixelCircle(g, cx, cy, 44, '#c04040'); pixelCircle(g, cx, cy, 40, '#802020', 3); pixelCircle(g, cx, cy, 14, '#c04040', 2);
   } else if (r.type === 'exit') { // 순간이동 발판
