@@ -115,136 +115,6 @@ const HERO_SPRITES = {
 };
 
 const PIX = {
-  slime: { tint: '#6fd35f', pal: { w: '#ffffff' }, rows: [
-    '................', '................', '................', '................',
-    '......kkkk......',
-    '....kkccaakk....',
-    '...kccwaaaaak...',
-    '..kcwaaaaaaaak..',
-    '..kcaaaaaaaaak..',
-    '.kaaaakaaakaaak.',
-    '.kaaaakaaakaaak.',
-    '.kaaaaaaaaaaaak.',
-    '.kbaaaaaaaaaabk.',
-    '..kbbbbbbbbbbk..',
-    '...kkkkkkkkkk...'] },
-  goblin: { tint: '#9cc050', pal: { e: '#e02020', h: '#6a4a2a', g: '#4a3220', o: '#a07040', w: '#e8e0d0' }, rows: [
-    '................', '................',
-    '.....kkkkk......',
-    '....khhhhhk.....',
-    '..kkhaaaaahk....',
-    '.kcaaaeaaeak....',
-    '..kaaaaaaak.o...',
-    '...kaaaaak..ow..',
-    '...kggggggk.ow..',
-    '..kaghhhhgak.ow.',
-    '..kkghhhhgk.ow..',
-    '...kghhhhgk.o...',
-    '...kgggggggk....',
-    '....kgk.kgk.....',
-    '....kkk.kkk.....'] },
-  boar: { tint: '#8a4a3a', pal: { t: '#f0e8d0', e: '#ffd84a' }, rows: [
-    '................', '................', '................',
-    '...kkkkkkk......',
-    '..kbbbbbbbkk....',
-    '.kbaaaaaaabbkk..',
-    '.kaaaaaaaaaaaek.',
-    'kaaaaaaaaaaaaaak',
-    'kcaaaaaaaaaaaatk',
-    'kcaaaaaaaaaaakt.',
-    '.kbbbbbbbbbbbk..',
-    '.kbk..kbk.kbk...',
-    '.kkk..kkk.kkk...'] },
-  yeti: { tint: '#e8f0ff', pal: { f: '#7a9ac0', e: '#102040', w: '#ffffff', h: '#c0d0e0' }, rows: [
-    '................',
-    '..kk........kk..',
-    '..khk......khk..',
-    '...khkkkkkkhk...',
-    '..kaaaaaaaaaak..',
-    '.kaaaffffffaaak.',
-    '.kaaafeffefaaak.',
-    '.kaaafwwwwfaaak.',
-    'kaaaaaffffaaaaak',
-    'kaakaaaaaaaakaak',
-    'kaakaaaaaaaakaak',
-    'kbbkaaaaaaaakbbk',
-    '.kk.kbbbbbbk.kk.',
-    '....kbbkkbbk....',
-    '....kkk..kkk....'] },
-  mage: { tint: '#4a2a6a', pal: { e: '#d070ff', y: '#e0c060' }, rows: [
-    '................', '................',
-    '......kkk.......',
-    '.....kaaak......',
-    '....kaaaaak.....',
-    '...kaaaaaaak....',
-    '...kakkkkkak....',
-    '...kakekekak....',
-    '...kakkkkkak....',
-    '..kaaaaaaaaak...',
-    '..kbaaayaaabk...',
-    '.kbaaaayaaaabk..',
-    '.kbaaaayaaaabk..',
-    '.kbbbbbbbbbbbk..',
-    '..kkkkkkkkkkk...'] },
-  shroom: { tint: '#d04a4a', pal: { w: '#ffffff', s: '#e8d8b0' }, rows: [
-    '................', '................',
-    '.....kkkkkk.....',
-    '...kkaaaaaakk...',
-    '..kaawwaaaaaak..',
-    '.kaaawwaaaawwak.',
-    '.kaaaaaaaaawwak.',
-    '.kbaaaaaaaaaabk.',
-    '..kbbbbbbbbbbk..',
-    '....kssssssk....',
-    '....kskssksk....',
-    '....kssssssk....',
-    '....kssssssk....',
-    '...kssssssssk...',
-    '....kkkkkkkk....'] },
-  imp: { tint: '#e04a2a', pal: { g: '#3a1a1a', e: '#ffd84a', h: '#2a0a0a' }, rows: [
-    '................', '................',
-    '.....kh..hk.....',
-    '.....khkkhk.....',
-    'gg..kaaaaaak..gg',
-    'ggg.kaeaaeak.ggg',
-    'gggkaaaaaaaakggg',
-    '.ggkbaakkaabkgg.',
-    '...kbaaaaaabk...',
-    '....kbaaaabk....',
-    '.....kbaabk.....',
-    '......kbbk......',
-    '.......kk.......'] },
-  bomber: { tint: '#3a3a44', pal: { e: '#ffd84a', f: '#8a6a4a', s: '#ffe36b' }, rows: [
-    '................',
-    '.........s......',
-    '........sfs.....',
-    '.........f......',
-    '........kfk.....',
-    '.....kkkkkkk....',
-    '....kaaaaaaak...',
-    '...kacaaaaaaak..',
-    '...kcaaaeaeaak..',
-    '...kaaaaaaaaak..',
-    '...kaaakkkaaak..',
-    '...kaaaaaaaaak..',
-    '....kaaaaaaak...',
-    '.....kkkkkkk....'] },
-  golem: { tint: '#7a4a2a', pal: { l: '#ff7a2a', e: '#ffd84a' }, rows: [
-    '................',
-    '....kkkkkkkk....',
-    '...kccaaaaaak...',
-    '...kcaeaaeaak...',
-    '...kaaaalaaabk..',
-    '.kkkbaaaaaabkkk.',
-    'kcaakbbbbbbkaack',
-    'kaaakaalaaakaaak',
-    'kaalkaaaalakalak',
-    'kbbbkaaaaaakbbbk',
-    '.kkkkaalaaakkkk.',
-    '....kaaaaaak....',
-    '....kbbkkbbk....',
-    '...kbbbkkbbbk...',
-    '...kkkkkkkkkk...'] },
   dummy: { pal: { y: '#d0b070', r: '#c04040', p: '#f0e0b0', w: '#7a5530' }, rows: [
     '................',
     '.....kkkkkk.....',
@@ -276,115 +146,6 @@ const PIX = {
     '.kbaaakyyyykabk.',
     '.kbbbbbkkkkbbbk.',
     '..kkkkkkkkkkkk..'] },
-  boss_gel: { tint: '#c060c0', pal: { y: '#ffd84a', e: '#ffffff', w: '#ffffff' }, rows: [
-    '................',
-    '...kyk.kyk.kyk..',
-    '...kykkkykkkyk..',
-    '...kyyyyyyyyyk..',
-    '..kkkkkkkkkkkkk.',
-    '.kccaaaaaaaaaak.',
-    'kcwaaaaaaaaaaaak',
-    'kcaaaaaaaaaaaaak',
-    'kaaakeaaaakeaaak',
-    'kaaakkaaaakkaaak',
-    'kaaaaaaaaaaaaaak',
-    'kaaaaakkkkaaaaak',
-    'kbaaaaaaaaaaaabk',
-    'kbbaaaaaaaaaabbk',
-    '.kbbbbbbbbbbbbk.',
-    '..kkkkkkkkkkkk..'] },
-  boss_frost: { tint: '#7a9ac8', pal: { c: '#cfefff', e: '#7affff' }, rows: [
-    '.......kk.......',
-    '......kcck......',
-    '.kk..kaaaak..kk.',
-    'kcck.kaeeak.kcck',
-    'kcck.kaaaak.kcck',
-    'kaaakkkkkkkkaaak',
-    'kaaacaaaaaacaaak',
-    'kbaacaaaaaacaabk',
-    'kbaakaaccaakaabk',
-    '.kbkkaaccaakkbk.',
-    '.kak.kaaaak.kak.',
-    '.kkk.kbbbbk.kkk.',
-    '.....kbkkbk.....',
-    '....kbbkkbbk....',
-    '....kkkk.kkkk...'] },
-  boss_flame: { tint: '#3a1a1a', pal: { f: '#ffb040', o: '#ff6a2a', h: '#e0d0b0', e: '#ffd84a', r: '#a02020' }, rows: [
-    '....f.f..f.f....',
-    '...fofo..ofof...',
-    '.hh.koooooook.hh',
-    '.khkaaaaaaaakhk.',
-    '..kkaeeaaeeakk..',
-    '...kaaaaaaaak...',
-    '..rkaakkkkaakr..',
-    '.rrkkaaaaaakkrr.',
-    'rrrkaaoaaoaakrrr',
-    'rrrkaaaooaaakrrr',
-    'rrkaaaaaaaaaakrr',
-    '.rkaaaaaaaaaakr.',
-    '.rrkaaaaaaaakrr.',
-    '..rrkaaaaaakrr..',
-    '...rrkkkkkkrr...',
-    '....rr....rr....'] },
-  wraith: { tint: '#8a6ad0', pal: { e: '#ffe0ff' }, rows: [
-    '................',
-    '.....kkkkk......',
-    '....kaaaaak.....',
-    '...kaaaaaaak....',
-    '...kakkkkkak....',
-    '...kakekekak....',
-    '...kakkkkkak....',
-    '..kaaaaaaaaak...',
-    '..kbaaaaaaabk...',
-    '..kbaaaaaaabk...',
-    '...kbaaaaabk....',
-    '...kbabkbabk....',
-    '....kbk.kbk.....',
-    '....kk...kk.....'] },
-  hound: { tint: '#3a3050', pal: { e: '#ff3a5a', t: '#e0e0e0' }, rows: [
-    '................', '................', '................',
-    '..........kk....',
-    '.........kaak...',
-    '..kkkkkkkaaeak..',
-    '.kbaaaaaaaaaatk.',
-    'kbaaaaaaaaaakkk.',
-    'kaaaaaaaaaaak...',
-    '.kaakkkkkaak....',
-    '.kak....kak.....',
-    '.kak....kak.....',
-    '.kk.....kk......'] },
-  crystal: { tint: '#b070ff', pal: { s: '#5a5a6a', e: '#ffffff' }, rows: [
-    '.......kk.......',
-    '......kcak......',
-    '.....kccaak.....',
-    '....kccaaaak....',
-    '....kcaaaaak....',
-    '...kcaaeaaaak...',
-    '....kaaaaabk....',
-    '....kbaaaabk....',
-    '.....kbaabk.....',
-    '......kbbk......',
-    '....kkkkkkkk....',
-    '...kssssssssk...',
-    '..kssssssssssk..',
-    '..kkkkkkkkkkkk..'] },
-  boss_void: { tint: '#4a2a7a', pal: { w: '#f0e8ff', e: '#ff3a6a' }, rows: [
-    '.....kkkkkk.....',
-    '...kkaaaaaakk...',
-    '..kaaaaaaaaaak..',
-    '.kaacwwwwwwcaak.',
-    '.kacwwwwwwwwcak.',
-    'kaawwwkkkkwwwaak',
-    'kaawwkeeeekwwaak',
-    'kaawwkeeeekwwaak',
-    'kaawwwkkkkwwwaak',
-    '.kacwwwwwwwwcak.',
-    '.kaacwwwwwwcaak.',
-    '..kaaaaaaaaaak..',
-    '.k.kkaaaaaakk.k.',
-    'kak.kakkkkak.kak',
-    '.kak.ka..ak.kak.',
-    '..k...k..k...k..'] },
   chest: { pal: { w: '#9a5a28', b: '#6a3a18', y: '#e0b040' }, rows: [
     '..kkkkkkkkkkkk..',
     '.kwwwwwwwwwwwwk.',
@@ -504,7 +265,7 @@ function getSprite(name, color, color2) {
   if (base) { pal.a = base; pal.b = shade(base, 0.68); pal.c = shade(base, 1.35); }
   Object.assign(pal, t.pal);
   if (color2) pal.e = color2;
-  s = bakeSprite(t.rows, pal); spriteCache.set(key, s); return s;
+  s = t.proc ? bakeProc(t.w, t.h, t.proc, pal) : bakeSprite(t.rows, pal); spriteCache.set(key, s); return s;
 }
 function heroSprite(hero, frame) {
   const key = 'hero|' + hero.id + '|' + frame;
@@ -550,11 +311,11 @@ function drawWeaponCentered(ctx, def, cx, cy) {
 function drawEnemy(ctx, e, x, y, flash) {
   const def = e.def, phase = e.phase || 1;
   const color = def.phaseColors ? def.phaseColors[phase - 1] : def.color;
-  const color2 = def.sprite === 'mage' ? def.bulletColor : (def.sprite === 'boss_frost' && phase >= 2 ? '#ff5a7a' : undefined);
-  const spr = getSprite(def.sprite, color, color2), sc = def.boss ? 2 : 1;
+  const color2 = def.aiType === 'caster' ? def.bulletColor : (def.sprite === 'boss_frost' && phase >= 2 ? '#ff5a7a' : undefined);
+  const spr = getSprite(def.sprite, color, color2), sc = def.boss && spr.w < 32 ? 2 : 1;
   let sq = 0, oy = 0;
-  if (e.state === 'TELEGRAPH' && ['slime', 'shroom', 'golem', 'boss_gel', 'boss_frost'].includes(def.sprite)) sq = def.boss ? 4 : 2;
-  else if (def.sprite === 'slime' || def.sprite === 'boss_gel') sq = Math.round((Math.sin(e.stateTime * (def.boss ? 4 : 9)) + 1) * (def.boss ? 1 : 0.6));
+  if (e.state === 'TELEGRAPH' && ['slime', 'iceslime', 'shroom', 'golem', 'boss_gel', 'boss_frost'].includes(def.sprite)) sq = def.boss ? 4 : 2;
+  else if (def.sprite === 'slime' || def.sprite === 'iceslime' || def.sprite === 'boss_gel') sq = Math.round((Math.sin(e.stateTime * (def.boss ? 4 : 9)) + 1) * (def.boss ? 1 : 0.6));
   if (def.sprite === 'imp' || def.sprite === 'wraith' || def.sprite === 'boss_flame' || def.sprite === 'boss_void') oy = Math.round(Math.sin(e.stateTime * (def.boss ? 3 : 9)) * 1.5) - (def.boss ? 4 : 3);
   const lift = Math.round(e.jumpH || 0), bottom = y + def.hitboxHalf + 1;
   const sw = Math.round(spr.w * sc * 0.65 - Math.min(10, lift / 4));
@@ -571,18 +332,13 @@ function drawEnemy(ctx, e, x, y, flash) {
   }
   if (def.boss && phase >= 2) { // 보스 페이즈 오라
     ctx.fillStyle = phase >= 3 ? `rgba(255,60,80,${0.16 + 0.1 * Math.sin(e.stateTime * 9)})` : `rgba(255,140,200,${0.1 + 0.06 * Math.sin(e.stateTime * 6)})`;
-    ctx.beginPath(); ctx.arc(x, bottom - spr.h, spr.w * 1.15, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, bottom - spr.h * sc / 2, spr.w * sc * 0.62, 0, TAU); ctx.fill();
   }
   ctx.globalAlpha = e.fade ?? 1;
   drawSprite(ctx, spr, x, by, { flip: e.face < 0, white: flash || blink || (e.state === 'PHASE' && Math.floor(e.stateTime * 14) % 2 === 0), scale: sc, squash: sq });
   ctx.globalAlpha = 1;
   if (e.elite) { ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 1, by - spr.h * sc - 6, 3, 3); ctx.fillRect(x - 3, by - spr.h * sc - 5, 7, 1); }
   const top = by - spr.h * sc;
-  if (def.sprite === 'mage') {
-    ctx.globalAlpha = 0.6 + 0.4 * Math.sin(e.stateTime * 5);
-    ctx.fillStyle = def.bulletColor || '#d070ff'; ctx.fillRect(x - 1, top - 2, 3, 3);
-    ctx.globalAlpha = 1;
-  }
   if (e.state === 'STUN') {
     ctx.fillStyle = '#ffe36b';
     for (let i = 0; i < 3; i++) {

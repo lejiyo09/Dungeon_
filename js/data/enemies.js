@@ -17,17 +17,17 @@ const DATA_ENEMIES = [
     health: 45, damage: 8, moveSpeed: 22, hitboxHalf: 6, attackRange: 240, telegraphTime: 0.8,
     attackCooldown: 3.0, recoveryTime: 0.4, bulletSpeed: 80, bulletCount: 6, bulletColor: '#c0ff70', rewardGold: 2 },
   // ── 2월드: 서리 동굴
-  { id: 'enemy_iceslime_001', name: '얼음 슬라임', sprite: 'slime', color: '#7ac8ff', aiType: 'melee_chase',
+  { id: 'enemy_iceslime_001', name: '얼음 슬라임', sprite: 'iceslime', color: '#7ac8ff', aiType: 'melee_chase',
     health: 55, damage: 12, moveSpeed: 70, hitboxHalf: 6, attackRange: 18, telegraphTime: 0.4,
     attackCooldown: 1.3, recoveryTime: 0.45, rewardGold: 2 },
-  { id: 'enemy_frostarcher_001', name: '서리 궁수', sprite: 'goblin', color: '#7ab0e0', aiType: 'ranged_kite',
+  { id: 'enemy_frostarcher_001', name: '서리 궁수', sprite: 'frostarcher', color: '#7ab0e0', aiType: 'ranged_kite',
     health: 40, damage: 10, moveSpeed: 58, hitboxHalf: 6, preferredRange: 130, attackRange: 240,
     telegraphTime: 0.55, attackCooldown: 2.0, recoveryTime: 0.3, bulletSpeed: 150, bulletCount: 3, bulletSpread: 0.22,
     bulletColor: '#9ad8ff', rewardGold: 3 },
   { id: 'enemy_yeti_001', name: '설인', sprite: 'yeti', color: '#e8f0ff', aiType: 'charger',
     health: 110, damage: 15, moveSpeed: 48, hitboxHalf: 8, attackRange: 160, telegraphTime: 0.6,
     dashSpeed: 310, dashDuration: 0.55, attackCooldown: 2.0, recoveryTime: 0.4, stunTime: 0.9, knockbackResist: 0.4, rewardGold: 4 },
-  { id: 'enemy_icemage_001', name: '빙결 술사', sprite: 'mage', color: '#2a4a8a', aiType: 'caster',
+  { id: 'enemy_icemage_001', name: '빙결 술사', sprite: 'icemage', color: '#2a4a8a', aiType: 'caster',
     health: 60, damage: 10, moveSpeed: 28, hitboxHalf: 6, attackRange: 260, telegraphTime: 0.7,
     attackCooldown: 2.5, recoveryTime: 0.4, bulletSpeed: 100, bulletCount: 12, bulletColor: '#9ad8ff', rewardGold: 3 },
   // ── 3월드: 용암 요새
@@ -40,7 +40,7 @@ const DATA_ENEMIES = [
   { id: 'enemy_golem_001', name: '용암 골렘', sprite: 'golem', color: '#7a4a2a', aiType: 'melee_chase',
     health: 150, damage: 13, moveSpeed: 38, hitboxHalf: 8, attackRange: 26, telegraphTime: 0.7,
     attackCooldown: 1.6, recoveryTime: 0.6, knockbackResist: 0.7, rewardGold: 5 },
-  { id: 'enemy_flamecaster_001', name: '화염 술사', sprite: 'mage', color: '#8a2a1a', aiType: 'caster',
+  { id: 'enemy_flamecaster_001', name: '화염 술사', sprite: 'firemage', color: '#8a2a1a', aiType: 'caster',
     health: 70, damage: 12, moveSpeed: 28, hitboxHalf: 6, attackRange: 260, telegraphTime: 0.7,
     attackCooldown: 2.8, recoveryTime: 0.4, bulletSpeed: 105, bulletCount: 12, bulletColor: '#ff7a3a', rewardGold: 4 },
   // ── 4월드: 공허 성채
@@ -54,7 +54,7 @@ const DATA_ENEMIES = [
   { id: 'enemy_crystal_001', name: '수정 포탑', sprite: 'crystal', color: '#b070ff', aiType: 'turret',
     health: 90, damage: 13, moveSpeed: 0, hitboxHalf: 7, attackRange: 300, telegraphTime: 1.0,
     attackCooldown: 2.8, recoveryTime: 0.3, bulletSpeed: 260, bulletCount: 5, knockbackResist: 1, rewardGold: 4 },
-  { id: 'enemy_voidcaster_001', name: '심연 술사', sprite: 'mage', color: '#1a1030', aiType: 'caster',
+  { id: 'enemy_voidcaster_001', name: '심연 술사', sprite: 'voidmage', color: '#1a1030', aiType: 'caster',
     health: 75, damage: 13, moveSpeed: 30, hitboxHalf: 6, attackRange: 260, telegraphTime: 0.7,
     attackCooldown: 2.5, recoveryTime: 0.4, bulletSpeed: 100, bulletCount: 10, bulletColor: '#b070ff', rewardGold: 4 },
   // ── 로비 허수아비
