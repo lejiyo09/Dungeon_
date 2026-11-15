@@ -12,6 +12,7 @@ const RUNS = +(process.argv[2] || 8);
   await pg.goto('file://' + (process.env.FILE || path.resolve(__dirname, '../index.html')) + '?guest=1');
   await pg.waitForTimeout(300);
   await pg.addScriptTag({ path: path.resolve(__dirname, 'bot.js') });
+  if (process.env.FROM_W) await pg.evaluate((w) => { window.__fromW = w; }, process.env.FROM_W);
   const out = await pg.evaluate(async (RUNS) => {
     const g = window.__game; g.render = () => {};
     // 피해 출처 추적
@@ -31,7 +32,7 @@ const RUNS = +(process.argv[2] || 8);
     const pickW = (rar) => pick(DATA_WEAPONS.filter((d) => rar.includes(d.rarity)));
     const LOAD = [[['uncommon'], ['uncommon', 'rare']], [['rare'], ['rare', 'epic']], [['rare', 'epic'], ['epic']], [['epic'], ['epic']]];
     const res = [];
-    for (let w = 0; w < DATA_WORLDS.length; w++) for (let run = 0; run < RUNS; run++) {
+    for (let w = +(window.__fromW || 0); w < DATA_WORLDS.length; w++) for (let run = 0; run < RUNS; run++) {
       g.save.unlocked = DATA_HEROES.map((h) => h.id); g.save.selected = DATA_HEROES[run % 4].id; g.save.loadout = null;
       g.startRun(); g.worldIdx = w; g.levelIdx = STAGES_PER_WORLD - 1; g.loadStage(); g.banner = null;
       const p = g.player;

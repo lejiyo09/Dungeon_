@@ -26,7 +26,15 @@ const DATA_WORLDS = [
   { id: 'world_clock', name: '태엽 공장', boss: 'boss_clock_titan', waves: 2,
     enemies: [['enemy_clockbomb_001', 3], ['enemy_ironknight_001', 3], ['enemy_gunbot_001', 3], ['enemy_teslatower_001', 2]],
     palette: { style: 'metal', accent: '#7affff', floor: ['#3a3e44', '#3d4148'], corridor: ['#2a2d32', '#2c3035'], wall: '#4a4e56', wallTop: '#5c616a',
-      wallFace: '#7a808a', faceLine: '#686e78', deco: 'rgba(120,240,255,0.35)' } }
+      wallFace: '#7a808a', faceLine: '#686e78', deco: 'rgba(120,240,255,0.35)' } },
+  { id: 'world_swamp', name: '독 늪지', boss: 'boss_toad_king', waves: 2,
+    enemies: [['enemy_toad_001', 4], ['enemy_wasp_001', 3], ['enemy_croc_001', 2], ['enemy_witch_001', 2]],
+    palette: { style: 'swamp', accent: '#9aff5a', floor: ['#2e3a2a', '#313e2c'], corridor: ['#1e2a1e', '#202c20'], wall: '#33402e', wallTop: '#3e4e36',
+      wallFace: '#55684a', faceLine: '#485a3e', deco: 'rgba(150,255,90,0.35)' } },
+  { id: 'world_bone', name: '망자의 성', boss: 'boss_lich_king', waves: 2,
+    enemies: [['enemy_skelknight_001', 3], ['enemy_ghost_001', 3], ['enemy_skullbomb_001', 2], ['enemy_bonemage_001', 2]],
+    palette: { style: 'bone', accent: '#7affc0', floor: ['#2a2830', '#2d2b34'], corridor: ['#1c1a22', '#1e1c24'], wall: '#3a3644', wallTop: '#4a4556',
+      wallFace: '#625c70', faceLine: '#544e62', deco: 'rgba(120,255,190,0.35)' } }
 ];
 const LOBBY_PALETTE = { style: 'wood', floor: ['#3a2e26', '#3d3129'], corridor: ['#3a2e26', '#3d3129'], wall: '#40354f', wallTop: '#4b3f5c',
   wallFace: '#6a5a82', faceLine: '#5a4c70', deco: null };
