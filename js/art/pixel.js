@@ -34,9 +34,11 @@ function drawSprite(ctx, spr, x, y, o = {}) {
   ctx.drawImage(img, Math.round(x - w / 2), Math.round(y - h), w, h);
 }
 
-// ── 캐릭터: 머리/몸통 13줄 + 다리 3줄(걷기 2프레임)
-const HERO_HEADS = {
-  helm: [
+// ── 캐릭터: 직업별 전신 템플릿 (몸통 rows + 걷기 2프레임 legs)
+//  공통 문자: a/b/c 몸 주색/어두운/밝은, h/g 모자 주색/어두운, s 피부, m 금속, y 금색, r 빨강, n 가죽, d 부츠, l 다리, e 렌즈, w 흰색
+const HERO_SPRITES = {
+  // 검사: 깃털 투구, 어깨 갑옷, 십자 문양 서코트, 철 장화
+  knight: { pal: { s: '#c9d6e0', l: '#8a9aa8' }, rows: [
     '......kkkk......',
     '.....krrrrk.....',
     '....kkmmmmkk....',
@@ -44,59 +46,73 @@ const HERO_HEADS = {
     '...kmwmmmmmmk...',
     '...kmkkkkkkmk...',
     '...kmmmmmmmmk...',
-    '....kmmmmmmk....',
-    '...kaaaaaaaak...',
-    '..kaaaayyaaaak..',
-    '..kbaaaaaaaabk..',
-    '..kskaaaaaaksk..',
-    '...kbbbbbbbbk...'],
-  cap: [
+    '..kkkmmmmmmkkk..',
+    '.kmmkaaaaaakmmk.',
+    '.kmkaaayyaaakmk.',
+    '.kbkayyyyyyakbk.',
+    '.kskaaayyaaaksk.',
+    '..kbbbbyybbbbk..'],
+    legs: [
+      ['....kllkkllk....', '....kllkkllk....', '...kkkk..kkkk...'],
+      ['....kllk.kllk...', '...kllk...kllk..', '..kkkk....kkkk..']] },
+  // 사수: 카우보이 모자, 붉은 두건, 롱코트, 대각선 탄띠, 부츠
+  gunslinger: { pal: { r: '#d04040', n: '#6a4628', y: '#f0d070', d: '#3a2a1a' }, rows: [
     '................',
-    '....kkkkkkk.....',
-    '...khhhhhhhk....',
-    '...khhhhhhhhhk..',
-    '...kgggggggggk..',
-    '...ksssssssk....',
-    '...ksskssksk....',
-    '....ksssssk.....',
-    '...kaaaaaaaak...',
-    '..kaayaaaayaak..',
-    '..kbaaaaaaaabk..',
-    '..kskaaaaaaksk..',
-    '...kbbbbbbbbk...'],
-  wizard: [
-    '.......kk.......',
-    '......khhk......',
-    '.....khhhhk.....',
+    '.....kkkkkk.....',
     '....khhhhhhk....',
-    '..kkyyyyyyyykk..',
+    '....khggggghk...',
+    '.kkkhhhhhhhhkkk.',
+    '.kggggggggggggk.',
+    '...kskssssksk...',
+    '...krrrrrrrrk...',
+    '..kaarrrrrraak..',
+    '..kaanaaaaaaak..',
+    '.kaaaynaaaaaaak.',
+    '.kskaaaynaaaksk.',
+    '.kbbbbbbbynbbbk.'],
+    legs: [
+      ['..kbkddkkddkbk..', '...kkddkkddkk...', '...kkkk..kkkk...'],
+      ['..kbkddk.kddkbk.', '...kddk...kddk..', '..kkkk....kkkk..']] },
+  // 마도사: 끝이 휜 고깔모자(별·금띠), 바닥까지 끌리는 로브, 별 문양 (다리 대신 로브 자락이 흔들림)
+  wizard: { pal: { y: '#f0d060' }, rows: [
+    '.........kk.....',
+    '........khhk....',
+    '.......khhk.....',
+    '......khhhk.....',
+    '.....khhhhhk....',
+    '.....khyhhhk....',
+    '....khhhhhhhk...',
+    '....kyyyyyyyk...',
+    '.kkhhhhhhhhhhhk.',
+    '...kskssssksk...',
     '...kssssssssk...',
+    '..kaaakkkkaaak..',
+    '.kaaaaayaaaaaak.',
+    '.ksaaaayaaaaask.',
+    '.kbaaayyyaaaabk.',
+    '.kbaaaayaaaaabk.'],
+    legs: [
+      ['.kbbbbbybbbbbbk.', '..kkkkkkkkkkkk..'],
+      ['..kbbbbybbbbbk..', '...kkkkkkkkkkk..']] },
+  // 기술자: 노란 안전모, 고글, 하늘색 셔츠 + 주황 멜빵 작업복, 렌치 꽂은 공구 벨트
+  engineer: { pal: { c: '#6a9ad0', n: '#8a5a20', d: '#4a3020', m: '#b8c0c8', w: '#fff8d0' }, rows: [
+    '................',
+    '.....kkkkkk.....',
+    '....khhhhhhk....',
+    '...khhhwhhhhk...',
+    '..kgggggggggggk.',
+    '...kmekkkkemk...',
     '...kskssssksk...',
     '....kssssssk....',
-    '...kaaaaaaaak...',
-    '..kaaaayyaaaak..',
-    '..kbaaaaaaaabk..',
+    '...kcnccccnck...',
+    '..kcanaaaanack..',
     '..kskaaaaaaksk..',
-    '..kbbbbbbbbbbk..'],
-  goggles: [
-    '................',
-    '....kkkkkkkk....',
-    '...khhhhhhhhk...',
-    '...khkkkkkkhk...',
-    '...kkeekkeekk...',
-    '...kssssssssk...',
-    '...kssssssssk...',
-    '....kssssssk....',
-    '...kaaaaaaaak...',
-    '..kayaaaaaayak..',
-    '..kbaaaaaaaabk..',
-    '..kskaaaaaaksk..',
-    '...kbbbbbbbbk...']
+    '..kddmmdddddk...',
+    '...kbbbbbbbbk...'],
+    legs: [
+      ['....kllkkllk....', '....kddkkddk....', '...kkkk..kkkk...'],
+      ['....kllk.kllk...', '...kddk...kddk..', '..kkkk....kkkk..']] }
 };
-const HERO_LEGS = [
-  ['....kllkkllk....', '....kllkkllk....', '....kkk..kkk....'],
-  ['....kllk.kllk...', '...kllk...kllk..', '...kkk....kkk...']
-];
 
 const PIX = {
   slime: { tint: '#6fd35f', pal: { w: '#ffffff' }, rows: [
@@ -494,10 +510,10 @@ function heroSprite(hero, frame) {
   const key = 'hero|' + hero.id + '|' + frame;
   let s = spriteCache.get(key);
   if (s) return s;
-  const L = hero.look;
-  const pal = { k: OUTLINE, s: '#f0c8a0', a: L.body, b: shade(L.body, 0.68), m: '#c9d6e0', w: '#ffffff', r: L.accent,
-    y: '#e0c060', l: '#3a3048', h: L.accent, g: shade(L.accent, 0.68), e: '#7ad0ff' };
-  s = bakeSprite(HERO_HEADS[L.hat].concat(HERO_LEGS[frame]), pal); spriteCache.set(key, s); return s;
+  const L = hero.look, T = HERO_SPRITES[L.sprite] || HERO_SPRITES.knight;
+  const pal = Object.assign({ k: OUTLINE, s: '#f0c8a0', a: L.body, b: shade(L.body, 0.68), c: shade(L.body, 1.35), m: '#c9d6e0', w: '#ffffff',
+    r: L.accent, y: '#e0c060', l: '#3a3048', h: L.accent, g: shade(L.accent, 0.68), e: '#7ad0ff', n: '#6a4628', d: '#3a2a1a' }, T.pal);
+  s = bakeSprite(T.rows.concat(T.legs[frame]), pal); spriteCache.set(key, s); return s;
 }
 function weaponSprite(def) {
   const key = 'wpn|' + def.id;
