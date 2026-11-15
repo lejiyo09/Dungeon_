@@ -101,7 +101,7 @@ class Game {
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); // 로비에서 고른 보구 (사망해도 영구 보유)
     if (tr) { this.player.treasure = tr; if (tr.apply) tr.apply(this.player); }
     this.loadStage();
-    if (!this.save.prologueSeen) this.showPrologue();
+    if (!this.save.prologueSeen) this.showPrologue(() => this.askVariant()); else this.askVariant();
   }
   // ── 이어하기: 스테이지 시작 시점의 런 상태 (맵은 그 스테이지를 새로 생성)
   snapshotRun() {
@@ -110,7 +110,7 @@ class Game {
       p: { maxHp: p.maxHp, hp: p.hp, maxShield: p.maxShield, maxEnergy: p.maxEnergy, energy: p.energy, moveSpeed: p.moveSpeed,
         dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction,
         stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
-        treasure: p.treasure ? p.treasure.id : null } };
+        treasure: p.treasure ? p.treasure.id : null, line: p.line ? p.line.id : null, rank: p.rank || 0 } };
   }
   resumeRun() {
     const r = this.save.run, hero = r && this.data.heroes.get(r.hero);
@@ -123,11 +123,12 @@ class Game {
     if (!p.weapons.length) p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
     p.slot = Math.min(s.slot || 0, p.weapons.length - 1);
     p.treasure = DATA_TREASURES.find((t) => t.id === s.treasure) || null; // 보구 효과는 위 능력치에 이미 반영돼 있음
+    const ln = jobLines(hero.id).find((l) => l.id === s.line) || jobLines(hero.id)[0]; if (ln) { this.setJob(p, ln, Math.min(2, s.rank || 0)); p.skillCdMax = p.skillBaseCd * ((s.skillCdMax || p.skillBaseCd) / p.skillBaseCd); } // 계열·진화 단계
     this.loadStage();
     this.showBanner(`이어하기 · ${stageLabel(this.worldIdx, this.levelIdx)} ${this.W.name}`, '스테이지 시작 지점부터 다시 시작합니다', '#7ad0ff');
   }
   // 프롤로그 (첫 던전 입장 시 1회, 로비 일시정지 메뉴에서 다시 보기)
-  showPrologue() { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => { this.save.prologueSeen = true; writeSave(this.save); } }; }
+  showPrologue(then) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => { this.save.prologueSeen = true; writeSave(this.save); if (then) then(); } }; }
   // 기원의 성역 깊은 곳: 전설의 존재와 마주함 → 소원이 드러남 → 보구 선택
   enterSanctum() {
     this.save.sanctumReached = true; writeSave(this.save);
@@ -156,7 +157,7 @@ class Game {
     if (W.deep) this.save.bestDeep = Math.max(this.save.bestDeep || 0, W.depth); // 가장 깊이 내려간 심층
     const map = this.isBossStage
       ? generateDungeon({ roomCount: 4, specials: ['boss'], waves: W.waves, palette: W.palette })
-      : generateDungeon({ roomCount: Math.min(15, 9 + this.worldIdx), specials: ['exit', 'treasure', 'shop', pick(BALANCE.specialRooms.pool)], waves: W.waves, palette: W.palette }); // 특수방 하나
+      : generateDungeon({ roomCount: Math.min(15, 9 + this.worldIdx), specials: ['exit', 'treasure', 'shop'].concat(this.rollSpecialRoom()), waves: W.waves, palette: W.palette }); // 특수방 하나
     this.resetWorldLists(map);
     const s = map.startRoom, sp = map.tileCenter(s.cx, s.cy), p = this.player;
     p.x = sp.x; p.y = sp.y; p.state = 'NORMAL'; p.shield = p.maxShield;
@@ -177,6 +178,12 @@ class Game {
     if (this.levelIdx >= STAGES_PER_WORLD) { this.levelIdx = 0; this.worldIdx++; }
     this.loadStage();
   }
+  rollSpecialRoom() { // 일반 스테이지마다 chance 확률로 특수방 하나 (전직의 방은 진화할 단계가 남았을 때 더 자주)
+    const SR = BALANCE.specialRooms; if (Math.random() >= SR.chance) return [];
+    const p = this.player, canEvolve = p && p.line && p.rank < 2;
+    const pool = SR.pool.filter((t) => t !== 'evolve' || canEvolve);
+    return [weightedPick(pool, (t) => (SR.weight && SR.weight[t]) || 1)];
+  }
   // 특수방 소품 배치
   stockSpecialRooms(map) {
     const inflate = 1 + BALANCE.shopInflate * this.stageIndex, SR = BALANCE.specialRooms;
@@ -188,6 +195,7 @@ class Game {
       else if (r.type === 'challenge') this.props.push(new ChallengeStone(c.x, c.y, r));
       else if (r.type === 'forge') this.props.push(new Forge(c.x, c.y, Math.round(SR.forgePrice * inflate)));
       else if (r.type === 'blood') this.props.push(new BloodAltar(c.x, c.y));
+      else if (r.type === 'evolve') this.props.push(new MasterNPC(c.x, c.y, r));
       else if (r.type === 'smithy') this.props.push(new UpgradeAnvil(c.x, c.y, BALANCE.upgrade.forgeRoomDiscount, BALANCE.upgrade.forgeRoomBonus, true)); // 강화소: 싸고 성공률 높음
       else if (r.type === 'rack') { // 무기 진열대: 셋 중 하나만 가져갈 수 있음
         const a = this.randomWeaponDef(), b = this.randomWeaponDef(0, [a.id]), d = this.randomWeaponDef(0, [a.id, b.id]), grp = {};
@@ -394,6 +402,18 @@ class Game {
       }
     } else if (o.type === 'result') {
       if (input.wasPressed('Enter')) this.finishResult();
+    } else if (o.type === 'variant') {
+      let ch = -1; o.lines.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) ch = i; });
+      if (input.wasPressed('Mouse0')) o.lines.forEach((_, i) => { const r = HUD.variantRect(i, o.lines.length), m = input.mouse; if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) ch = i; });
+      if (ch >= 0) { this.overlay = null; this.input.mouse.down = false; this.applyVariant(o.lines[ch]); const L = o.lines[ch]; this.showBanner(`${L.ranks[0]}`, `스킬: ${L.skills[0].name} — ${L.skills[0].desc}`, L.color); if (o.after) o.after(); }
+    } else if (o.type === 'evolve') {
+      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
+      if (input.wasPressed('Digit1')) { this.overlay = null; this.input.mouse.down = false; this.startTrial(o.npc); }
+      else if (input.wasPressed('Digit2')) {
+        const price = this.evolvePrice();
+        if (this.gold < price) { o.msg = `골드가 부족합니다 (${price}골드 필요)`; SFX.play('deny'); }
+        else { this.gold -= price; o.npc.gone = true; this.overlay = null; this.evolve(); }
+      }
     } else if (o.type === 'resume') {
       if (input.wasPressed('Enter')) { this.overlay = null; this.transition = { t: 0, swapped: false, action: () => this.resumeRun() }; }
       else if (input.wasPressed('KeyN')) { this.overlay = null; this.save.run = null; writeSave(this.save); this.transition = { t: 0, swapped: false, action: () => this.startRun() }; }
@@ -449,40 +469,176 @@ class Game {
       this.screenFlash = 0.12; this.flashColor = '210,180,255';
     }
   }
+  // ── 직업 계열·진화
+  skillDmg(base) { return base * (1 + (this.scale.hp - 1) * 0.5); } // 스킬 피해: 깊이 내려갈수록 조금씩 커짐
+  setJob(p, line, rank) {
+    const sk = line.skills[rank], ratio = p.skillCdMax / (p.skillBaseCd || p.skillCdMax); // '집중' 같은 쿨타임 감소 유지
+    p.line = line; p.rank = rank; p.skillId = sk.id; p.skillName = sk.name; p.skillDesc = sk.desc;
+    p.skillBaseCd = sk.cd; p.skillCdMax = sk.cd * ratio; p.skillCooldown = Math.min(p.skillCooldown, p.skillCdMax);
+  }
+  askVariant(after) { // 갈래가 여럿인 직업은 판을 시작할 때 고름
+    const lines = jobLines(this.player.hero.id);
+    if (lines.length === 1) { this.setJob(this.player, lines[0], 0); if (after) after(); return; }
+    if (window.__toolMode) { this.applyVariant(lines[0]); if (after) after(); return; } // 테스트 도구: 첫 갈래
+    this.overlay = { type: 'variant', lines, title: JOB_LINES[this.player.hero.id].title, after };
+  }
+  applyVariant(line) {
+    const p = this.player;
+    this.setJob(p, line, 0);
+    if (line.startWeapon && this.data.weapons.get(line.startWeapon)) { p.weapons[0] = new WeaponInstance(this.data.weapons.get(line.startWeapon)); this.discover(line.startWeapon); }
+    if (line.moveSpeed) p.moveSpeed += line.moveSpeed;
+  }
+  evolve() {
+    const p = this.player, next = p.rank + 1, line = p.line;
+    if (!line || next > 2) return;
+    p.maxHp += EVOLUTION.hp[next - 1]; p.hp = Math.min(p.maxHp, p.hp + EVOLUTION.hp[next - 1] + 20);
+    p.maxEnergy += EVOLUTION.energy[next - 1]; p.energy = p.maxEnergy;
+    this.setJob(p, line, next); p.skillCooldown = 0;
+    this.showBanner(`${line.ranks[next]} (으)로 진화!`, `새 스킬: ${p.skillName} — ${p.skillDesc}`, '#ffd84a');
+    this.effects.ring(p.x, p.y, 30, '#ffd84a'); this.effects.ring(p.x, p.y, 50, line.color || '#ffd84a'); this.effects.burst(p.x, p.y, '#ffd84a', 30);
+    this.screenFlash = 0.3; this.flashColor = '255,216,74'; this.addShake(0.2, 3); SFX.play('clear'); SFX.play('solomon', 0.5);
+  }
+  evolvePrice() { return Math.round(EVOLUTION.price[this.player.rank] * (1 + BALANCE.shopInflate * this.stageIndex)); }
+  startTrial(npc) { // 상위자와 1:1 대결 (미니 보스)
+    const p = this.player, r = npc.room, next = p.rank + 1, key = `master_${p.hero.id}_${p.line.id}_${next}`;
+    if (!this.data.enemies.get(key)) {
+      const look = p.hero.look.sprite, D = HERO_PROCS[look];
+      if (!PIX['master_' + look]) PIX['master_' + look] = { tint: '#c8a050', w: HERO_W, h: HERO_H, proc: (P) => D.proc(P, 0),
+        pal: Object.assign({ s: '#f0c8a0', m: '#fff0b0', w: '#ffffff', r: p.hero.look.accent, y: '#ffd84a', l: '#8a6a30', h: p.hero.look.accent, g: shade(p.hero.look.accent, 0.68), e: '#ffffff', n: '#6a4628', d: '#3a2a1a' }, D.pal, { m: '#fff0b0' }) };
+      const col = p.line.color || '#ffd84a';
+      this.data.enemies.set(key, { id: key, name: `${p.line.ranks[next]}의 시련`, title: '상위자', sprite: 'master_' + look, color: '#c8a050', phaseColors: ['#c8a050', '#d8b060', '#ffd84a'],
+        boss: true, aiType: 'boss', health: EVOLUTION.masterHp[next - 1], damage: 15 + next * 2, moveSpeed: 55, hitboxHalf: 9, knockbackResist: 0.9, attackCooldown: next === 1 ? 1.25 : 1.05, bulletSpeed: 135, rewardGold: 30,
+        patterns: [{ type: 'aimed', volleys: 3, count: 5, spread: 0.15, color: col }, { type: 'radial', rings: 2, count: 18, color: col }, { type: 'charge', dashes: 2, speed: 340, color: '#ffffff' }],
+        phase2Patterns: [{ type: 'spiral', duration: 2.2, arms: 3 + next, interval: 0.09, spin: 1.8, color: col }, { type: 'slam', radius: 46, chain: next, color: col }] });
+    }
+    npc.gone = true; r.trial = next; r.state = 'active'; this.activeRoom = r; r.wavesLeft = 0;
+    this.map.setDoors(r, true); this.enemyBullets.length = 0;
+    const c = this.map.tileCenter(r.cx, r.cy - 1), m = this.spawnEnemy(key, c.x, c.y, r); m.phase = 1;
+    this.showBanner(`${p.line.ranks[next]}의 시련`, '상위자를 쓰러뜨리면 진화합니다', '#ffd84a'); SFX.play('boss');
+  }
   // ── 스킬
   useSkill() {
     const p = this.player;
+    if (p.castLock > 0) return;
     if (p.skillCooldown > 0) return;
     p.skillCooldown = p.skillCdMax;
     SFX.play('skill');
-    switch (p.hero.skill) {
+    const D = (b) => this.skillDmg(b), mw = this.mouseWorld(), A = Math.atan2(p.aim.y, p.aim.x);
+    const at = (range) => { const dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, range / d); return { x: p.x + dx * k, y: p.y + dy * k }; }; // 조준 지점 (사거리 제한)
+    const nova = (r, dmg, o = {}) => { // 자기 주변 범위 피해
+      for (const e of this.enemies) { if (!e.targetable || Math.hypot(e.x - p.x, e.y - p.y) > r + e.radius) continue;
+        this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: o.kb ?? 6, status: o.status || null }, (e.x - p.x) / 50, (e.y - p.y) / 50);
+        if (o.root) e.chainT = Math.max(e.chainT || 0, o.root); }
+      if (o.clear) for (const b of this.enemyBullets) if (Math.hypot(b.x - p.x, b.y - p.y) < r) b.alive = false;
+      this.effects.ring(p.x, p.y, r, o.color || '#fff'); this.effects.ring(p.x, p.y, r * 0.6, '#ffffff'); this.effects.burst(p.x, p.y, o.color || '#fff', 16);
+    };
+    const shoot = (o) => { // 스킬 투사체
+      const n = o.n || 1;
+      for (let i = 0; i < n; i++) { const a = A + (n > 1 ? (i / (n - 1) - 0.5) * (o.fan || 0.3) : 0);
+        this.projectiles.push(new Projectile(Object.assign({ x: p.x + Math.cos(a) * 8, y: p.y + Math.sin(a) * 8, dx: Math.cos(a), dy: Math.sin(a), speed: 320, range: 360, pierce: 0, knockback: 4, mods: p.mods, size: 3 }, o.p, { damage: D(o.p.damage) }))); }
+      this.effects.muzzle(p.x + p.aim.x * 10, p.y + p.aim.y * 10, A, o.p.color);
+    };
+    const line = (ang, len, w, dmg) => { // 일직선 충격파
+      const ex = p.x + Math.cos(ang) * len, ey = p.y + Math.sin(ang) * len, wt = sweepWall(p.x, p.y, ex, ey, this.map, 3), L = wt < 0 ? len : wt * len;
+      const x1 = p.x + Math.cos(ang) * L, y1 = p.y + Math.sin(ang) * L;
+      for (const e of this.enemies) if (e.targetable && segmentCircleHit(p.x, p.y, x1, y1, e.x, e.y, e.radius + w) >= 0) this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: 10 }, Math.cos(ang), Math.sin(ang));
+      for (let d = 12; d < L; d += 14) this.effects.explosion(p.x + Math.cos(ang) * d, p.y + Math.sin(ang) * d, 8 + d / 20, '#c8a070');
+      this.effects.beamline(p.x, p.y, x1, y1, w * 0.6, '#e0b070');
+    };
+    const strikeSky = (e, dmg) => { this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: 3 }, 0, 1); this.effects.lightning(e.x + randInt(-8, 8), e.y - 100, e.x, e.y); };
+    switch (p.skillId) {
+      // 검사
       case 'whirlwind': p.whirl = 0.5; p.whirlTick = 0; break;
-      case 'overdrive': p.overdrive = 4; this.effects.text(p.x, p.y - 18, '과부하!', '#ffd84a'); break;
-      case 'frost_nova': {
-        const R = 100;
-        for (const e of this.enemies) {
-          if (!e.targetable || Math.hypot(e.x - p.x, e.y - p.y) > R + e.radius) continue;
-          this.damageEnemy(e, { damage: 25, mods: p.mods, knockback: 6 }, (e.x - p.x) / 50, (e.y - p.y) / 50);
-          e.applyStatus({ type: 'freeze', chance: 1, duration: 2.5, slow: 0.15 });
-        }
-        for (const b of this.enemyBullets) if (Math.hypot(b.x - p.x, b.y - p.y) < R) b.alive = false;
-        this.effects.ring(p.x, p.y, R, '#9ad8ff'); this.effects.ring(p.x, p.y, R * 0.6, '#ffffff');
-        this.effects.burst(p.x, p.y, '#cfefff', 16);
+      case 'whirlwind2': p.whirl = 0.5; p.whirlTick = 0;
+        for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.projectiles.push(new Projectile({ x: p.x, y: p.y, dx: Math.cos(a), dy: Math.sin(a), speed: 260, range: 160, damage: D(25), pierce: 99, knockback: 4, mods: p.mods, color: '#d8e0e8', size: 3, wave: true })); }
         break;
-      }
-      case 'turret': this.allies.push(new Turret(p.x, p.y, p)); break;
-      case 'blink': { // 그림자 습격: 벽 앞까지 순간이동, 지나간 길의 적을 벰
-        const sx = p.x, sy = p.y, D = 90;
-        moveAndCollide(p, p.aim.x * D, p.aim.y * D, this.map);
-        for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, p.x, p.y, e.x, e.y, e.radius + 8) >= 0)
-          this.damageEnemy(e, { damage: 45, mods: p.mods, knockback: 4 }, p.aim.x, p.aim.y);
+      case 'swordrain': { const c = at(170); for (let i = 0; i < 14; i++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * 52;
+        this.zones.push(new Strike(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r * 0.7, 0.35 + i * 0.05, 20, { damage: D(30), mods: p.mods, knockback: 3 }, '#fff4c0', true)); } break; }
+      case 'cleave': line(A, 130, 12, 45); this.addShake(0.2, 4); SFX.play('heavy'); break;
+      case 'cleave3': for (const da of [-0.38, 0, 0.38]) line(A + da, 140, 12, 50); this.addShake(0.25, 5); SFX.play('heavy'); break;
+      case 'quake': this.zones.push(new SkillCast(p, p.x, p.y, { r: 140, time: 1, color: '#e0b070' }, () => {
+        this.explodeAt(p.x, p.y, 140, { color: '#e0b070', hurtEnemies: true, src: { damage: D(150), mods: p.mods, knockback: 16 } });
+        for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.effects.explosion(p.x + Math.cos(a) * 80, p.y + Math.sin(a) * 50, 16, '#c8a070'); }
+        this.addShake(0.5, 9); this.hitStop(0.08); SFX.play('heavy'); })); break;
+      // 불
+      case 'fireball': shoot({ p: { damage: 40, explodeRadius: 30, color: '#ff8a3a', size: 5, speed: 280, status: { type: 'burn', chance: 1, duration: 3, dps: 10 } } }); SFX.play('fire_x' in SOUNDS ? 'fire_x' : 'flame'); break;
+      case 'flamestorm': this.zones.push(new SkillAura(p, { r: 54, life: 5, tick: 0.25, dmg: 12, color: '#ff7a3a', kind: 'flame', status: { type: 'burn', chance: 0.5, duration: 2, dps: 8 } })); this.effects.ring(p.x, p.y, 54, '#ff7a3a'); break;
+      case 'explosion': { const c = at(200); this.zones.push(new SkillCast(p, c.x, c.y, { r: 70, time: 2, color: '#ff7a3a' }, () => {
+        this.explodeAt(c.x, c.y, 70, { color: '#ff7a3a', hurtEnemies: true, src: { damage: D(280), mods: p.mods, knockback: 14, status: { type: 'burn', chance: 1, duration: 4, dps: 14 } } });
+        for (let i = 0; i < 10; i++) this.effects.explosion(c.x + randInt(-45, 45), c.y + randInt(-30, 30), randInt(14, 26), pick(['#ffffff', '#ffd84a', '#ff7a3a']));
+        this.screenFlash = 0.4; this.flashColor = '255,170,90'; this.addShake(0.6, 10); this.hitStop(0.1); SFX.play('excal'); })); break; }
+      // 얼음
+      case 'icelance': shoot({ n: 3, fan: 0.25, p: { damage: 28, pierce: 99, color: '#bfefff', size: 2, speed: 380, arrow: true, status: { type: 'freeze', chance: 0.7, duration: 1.6, slow: 0.4 } } }); break;
+      case 'frost_nova': nova(100, 25, { color: '#9ad8ff', clear: true, status: { type: 'freeze', chance: 1, duration: 2.5, slow: 0.15 } }); break;
+      case 'blizzard': { const c = at(180); this.zones.push(new Puddle(c.x, c.y, { r: 64, life: 5, tick: 0.3, dmg: D(10), status: { type: 'freeze', chance: 0.6, duration: 1.2, slow: 0.35 }, color: '#bfefff' }, p.mods)); this.effects.ring(c.x, c.y, 64, '#ffffff'); break; }
+      // 자연
+      case 'thorns': nova(95, 20, { color: '#7adf4a', root: 1.8, kb: 0, status: { type: 'poison', chance: 1, duration: 4, dps: 10 } }); break;
+      case 'bog': { const c = at(170); this.zones.push(new Puddle(c.x, c.y, { r: 56, life: 6, tick: 0.4, dmg: D(8), status: { type: 'poison', chance: 1, duration: 3, dps: 10 }, color: '#5aa03a' }, p.mods)); break; }
+      case 'worldtree': this.zones.push(new SkillCast(p, p.x, p.y, { r: 150, time: 1.5, color: '#7adf4a' }, () => {
+        nova(150, 60, { color: '#7adf4a', root: 4, kb: 0, status: { type: 'poison', chance: 1, duration: 6, dps: 20 } }); p.hp = Math.min(p.maxHp, p.hp + 30); this.effects.heal(p.x, p.y); this.addShake(0.3, 4); })); break;
+      // 번개
+      case 'shockorb': shoot({ p: { damage: 26, bounce: 3, color: '#bfe8ff', size: 4, speed: 260, range: 420, chain: { count: 3, range: 85, falloff: 0.8 } } }); break;
+      case 'thunder': { const list = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 180).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)).slice(0, 6);
+        for (const e of list) strikeSky(e, 40); SFX.play('react'); break; }
+      case 'thundergod': this.zones.push(new SkillAura(p, { r: 170, life: 6, tick: 0.35, dmg: 34, color: '#bfe8ff', kind: 'thunder' })); this.screenFlash = 0.1; this.flashColor = '200,230,255'; break;
+      // 빛
+      case 'lightarrow': shoot({ n: 5, fan: 0.6, p: { damage: 18, pierce: 2, homing: 4, color: '#fff4c0', size: 2, speed: 300 } }); break;
+      case 'radiance': p.hp = Math.min(p.maxHp, p.hp + 15); this.effects.heal(p.x, p.y); nova(90, 25, { color: '#fff4c0', clear: true }); break;
+      case 'judgment': { const c = at(190); this.zones.push(new SkillCast(p, c.x, c.y, { r: 60, time: 1.5, color: '#fff4c0' }, () => {
+        this.explodeAt(c.x, c.y, 60, { color: '#fff4c0', hurtEnemies: true, src: { damage: D(240), mods: p.mods, knockback: 8 } });
+        this.effects.beamline(c.x, c.y - 140, c.x, c.y, 16, '#fff4c0'); this.effects.beamline(c.x, c.y - 140, c.x, c.y, 6, '#ffffff');
+        p.hp = Math.min(p.maxHp, p.hp + 20); this.effects.heal(p.x, p.y); this.screenFlash = 0.3; this.flashColor = '255,244,192'; this.addShake(0.4, 6); SFX.play('excal'); })); break; }
+      // 어둠
+      case 'curseshot': shoot({ p: { damage: 30, explodeRadius: 26, color: '#a070e0', size: 4, speed: 260, mark: { mult: 1.4, dur: 6 } } }); break;
+      case 'abyss': { const c = at(170); this.zones.push(new DarkHole(c.x, c.y, p, { r: 62, life: 2.5, pull: 75, dmg: 8 })); break; }
+      case 'voidcollapse': { const c = at(180); this.zones.push(new DarkHole(c.x, c.y, p, { r: 90, life: 2, pull: 110, dmg: 6 }));
+        this.zones.push(new SkillCast(p, c.x, c.y, { r: 90, time: 2, color: '#a070e0' }, () => {
+          this.explodeAt(c.x, c.y, 80, { color: '#a070e0', hurtEnemies: true, src: { damage: D(260), mods: p.mods, knockback: 10 } });
+          this.effects.ring(c.x, c.y, 90, '#ffffff'); this.screenFlash = 0.3; this.flashColor = '160,110,230'; this.addShake(0.5, 8); this.hitStop(0.08); SFX.play('excal'); })); break; }
+      // 사수
+      case 'overdrive': p.overdrive = 4; p.odDmg = 0; this.effects.text(p.x, p.y - 18, '과부하!', '#ffd84a'); break;
+      case 'overdrive2': p.overdrive = 6; p.odDmg = 0.3; this.effects.text(p.x, p.y - 18, '탄막 폭주!', '#ffd84a'); this.effects.ring(p.x, p.y, 26, '#ffd84a'); break;
+      case 'deadeye': this.zones.push(new SkillCast(p, p.x, p.y, { r: 22, time: 1, color: '#ffd84a' }, () => {
+        for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 320 && hasLineOfSight(p, e, this.map)) {
+          this.damageEnemy(e, { damage: D(110), mods: Object.assign({}, p.mods, { critChance: 1 }), knockback: 8 }, (e.x - p.x) / 100, (e.y - p.y) / 100); this.effects.beamline(p.x, p.y, e.x, e.y, 2, '#ffd84a'); }
+        this.addShake(0.3, 5); SFX.play('heavy'); })); break;
+      // 기술자
+      case 'turret': this.allies.push(new Turret(p.x, p.y, p, { damage: D(8) })); break;
+      case 'turret2': for (const dx of [-14, 14]) this.allies.push(new Turret(p.x + dx, p.y, p, { damage: D(16), life: 15, rate: 0.18 })); break;
+      case 'barrage': { const c = at(200); this.zones.push(new SkillCast(p, p.x, p.y, { r: 20, time: 1, color: '#f0c030' }, () => {
+        for (let i = 0; i < 10; i++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * 60;
+          this.zones.push(new Strike(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r * 0.7, 0.3 + i * 0.1, 30, { damage: D(70), mods: p.mods, knockback: 8 }, '#ffb04a', false)); } })); break; }
+      // 암살자
+      case 'blink': case 'blink2': {
+        const sx = p.x, sy = p.y, D2 = 90, ev = p.skillId === 'blink2';
+        moveAndCollide(p, p.aim.x * D2, p.aim.y * D2, this.map);
+        for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, p.x, p.y, e.x, e.y, e.radius + 8) >= 0) this.damageEnemy(e, { damage: D(ev ? 65 : 45), mods: p.mods, knockback: 4 }, p.aim.x, p.aim.y);
         p.blinkInv = 0.4;
         this.effects.beamline(sx, sy, p.x, p.y, 3, '#b080ff'); this.effects.burst(sx, sy, '#3a3048', 10); this.effects.burst(p.x, p.y, '#b080ff', 10);
-        break;
-      }
+        if (ev) { p.blinkChain = p.blinkWindowT > 0 ? p.blinkChain + 1 : 1; p.blinkWindowT = 2.5; if (p.blinkChain < 3) p.skillCooldown = 0.3; else p.blinkChain = 0; } // 연달아 3번
+        break; }
+      case 'execution': { const list = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 220).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)).slice(0, 6);
+        let px = p.x, py = p.y; p.blinkInv = 1;
+        list.forEach((e, i) => { this.effects.beamline(px, py, e.x, e.y, 2, '#b080ff'); this.effects.slash(e.x, e.y, randInt(0, 6), 14, 2, '#d0b0ff'); px = e.x; py = e.y;
+          this.damageEnemy(e, { damage: D(90), mods: p.mods, knockback: 3 }, 0, 0); });
+        if (list.length) { const l = list[list.length - 1]; moveAndCollide(p, l.x - p.x - 10, l.y - p.y, this.map); }
+        this.hitStop(0.06); this.addShake(0.2, 4); break; }
+      // 사제
       case 'sanctuary': this.zones.push(new Sanctuary(p.x, p.y, p)); this.effects.ring(p.x, p.y, 54, '#ffe9a0'); break;
-      case 'rage': p.rage = 5; this.effects.text(p.x, p.y - 18, '분노!', '#ff5a3a'); this.effects.ring(p.x, p.y, 30, '#ff5a3a'); this.addShake(0.15, 3); break;
+      case 'sanctuary2': this.zones.push(new Sanctuary(p.x, p.y, p, { r: 80, life: 8, heal: 8, boost: true })); this.effects.ring(p.x, p.y, 80, '#ffe9a0'); break;
+      case 'descent': this.zones.push(new SkillCast(p, p.x, p.y, { r: 110, time: 1, color: '#ffe9a0' }, () => {
+        p.blinkInv = 2; p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.4)); this.effects.heal(p.x, p.y); nova(110, 120, { color: '#ffe9a0', clear: true });
+        this.effects.solomonSeal(p.x, p.y); this.screenFlash = 0.3; this.flashColor = '255,233,160'; SFX.play('solomon'); })); break;
+      // 광전사
+      case 'rage': p.rage = 5; p.rageAtk = 0.6; p.rageVamp = 0; this.effects.text(p.x, p.y - 18, '분노!', '#ff5a3a'); this.effects.ring(p.x, p.y, 30, '#ff5a3a'); this.addShake(0.15, 3); break;
+      case 'rage2': p.rage = 7; p.rageAtk = 0.8; p.rageVamp = 4; this.effects.text(p.x, p.y - 18, '광란!', '#ff5a3a'); this.effects.ring(p.x, p.y, 36, '#ff5a3a'); this.addShake(0.2, 4); break;
+      case 'bloodstorm': p.rage = 6; p.rageAtk = 0.8; p.rageVamp = 4;
+        this.zones.push(new SkillAura(p, { r: 50, life: 6, tick: 0.25, dmg: 14, color: '#ff3a3a', kind: 'blood', lifesteal: 0.5 })); this.effects.text(p.x, p.y - 18, '피의 폭풍!', '#ff3a3a'); this.addShake(0.25, 5); break;
+      // 드루이드
       case 'wolves': for (let i = 0; i < 2; i++) this.allies.push(new SpiritWolf(p.x + (i ? 12 : -12), p.y, p)); this.effects.sparkle(p.x, p.y, '#9ad8ff'); break;
+      case 'wolves2': for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 12, p.y, p, { dmg: 20, life: 14 })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); break;
+      case 'guardian': this.allies.push(new SpiritWolf(p.x, p.y - 10, p, { big: true, dmg: 45, life: 15 }));
+        for (let i = 0; i < 2; i++) this.allies.push(new SpiritWolf(p.x + (i ? 14 : -14), p.y, p, { dmg: 20, life: 15 })); this.effects.ring(p.x, p.y, 40, '#9ad8ff'); this.addShake(0.2, 3); break;
     }
   }
   updateSkillEffects(dt) {
@@ -494,7 +650,7 @@ class Game {
         for (const e of this.enemies) {
           if (!e.targetable) continue;
           const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
-          if (d - e.radius <= 36) this.damageEnemy(e, { damage: 15, mods: p.mods, knockback: 4 }, dx / (d || 1), dy / (d || 1));
+          if (d - e.radius <= 36) this.damageEnemy(e, { damage: this.skillDmg(15), mods: p.mods, knockback: 4 }, dx / (d || 1), dy / (d || 1));
         }
         for (const b of this.enemyBullets) if (Math.hypot(b.x - p.x, b.y - p.y) < 40) { b.alive = false; this.effects.spark(b.x, b.y, '#fff'); }
       }
@@ -617,6 +773,7 @@ class Game {
       const options = shuffled(DATA_BUFFS.filter((b) => !owned.has(b.id) || b.id === 'buff_atk' || b.id === 'buff_hp')).slice(0, 3);
       this.overlay = { type: 'buff', options, after };
     } else {
+      if (r.trial) { r.trial = 0; this.evolve(); return; } // 상위자를 쓰러뜨림 → 진화
       if (r.challenge) { // 도전 성공: 희귀 이상 무기 + 골드
         r.challenge = false; this.props.push(new Chest(c.x, c.y - 10, 'challenge'));
         for (let i = 0; i < 8; i++) this.pickups.push(new Pickup('coin', c.x, c.y));
@@ -669,7 +826,7 @@ class Game {
     }
   }
   // 무기 강화: 성공하면 +1 (실패해도 단계 유지, 비용만 듦)
-  upgradeCost(w, discount = 1) { const U = BALANCE.upgrade; return Math.round(U.base * (w.lv + 1) * U.rarityMult[w.def.rarity] * (1 + BALANCE.shopInflate * this.stageIndex) * discount); }
+  upgradeCost(w, discount = 1) { const U = BALANCE.upgrade; return Math.round(U.base * (w.lv + 1) * U.rarityMult[w.def.rarity] * (1 + BALANCE.shopInflate * this.stageIndex) * discount * (1 - (this.player.hero.upgradeDiscount || 0))); }
   upgradeChance(w, bonus = 0) { return Math.min(1, BALANCE.upgrade.chance[w.lv] + bonus); }
   tryUpgrade(discount = 1, bonus = 0, at) {
     const p = this.player, w = p.weapon, U = BALANCE.upgrade;
@@ -735,7 +892,7 @@ class Game {
       enemy.markT = src.mark.dur; enemy.markMult = src.mark.mult;
     }
     if (src.killEnergy && !enemy.alive && !enemy.def.dummy) { const p = this.player; p.energy = Math.min(p.maxEnergy, p.energy + src.killEnergy); this.effects.text(p.x, p.y - 20, '+' + src.killEnergy, '#7fb0ff'); }
-    if (src.status) { const react = enemy.applyStatus(src.status, src.mods); if (react) this.triggerReaction(enemy, react, src.mods); }
+    if (src.status) { const SB = this.player.hero.statusBoost, st = SB ? Object.assign({}, src.status, { duration: src.status.duration * (1 + SB), dps: (src.status.dps || 0) * (1 + SB), chance: Math.min(1, (src.status.chance ?? 1) * (1 + SB / 2)) }) : src.status; const react = enemy.applyStatus(st, src.mods); if (react) this.triggerReaction(enemy, react, src.mods); }
     if (!opts.quiet || crit || Math.random() < 0.3) this.effects.text(enemy.x, enemy.y - 12, crit ? amount + '!' : String(amount), crit ? '#ffd84a' : '#ffffff', crit);
     if (!enemy.def.dummy || Math.random() < 0.5) SFX.play(crit ? 'crit' : 'hit', crit ? 0.05 : 0.045);
     if (enemy.def.dummy) this.dpsLog.push({ t: this.time, a: amount });
@@ -903,6 +1060,7 @@ class Game {
     this.kills++;
     const p = this.player;
     if (p.vampire > 0 && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.vampire);
+    if (p.rage > 0 && p.rageVamp && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.rageVamp);
     this.effects.death(enemy.x, enemy.y, enemy.def.phaseColors ? enemy.def.phaseColors[(enemy.phase || 1) - 1] : (enemy.def.color || '#c0c0c0'), enemy.def.boss ? 30 : enemy.def.hitboxHalf * 2);
     SFX.play(enemy.def.boss ? 'explode' : 'kill', 0.04);
     if (enemy.def.boss) this.hitStop(0.3); else if (Math.random() < 0.35) this.hitStop(0.025);

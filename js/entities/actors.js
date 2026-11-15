@@ -21,6 +21,8 @@ class Player extends Entity {
     this.aim = { x: 1, y: 0 }; this.lastMoveDir = { x: 1, y: 0 }; this.dashDir = { x: 1, y: 0 };
     this.dashRemaining = 0; this.dashCooldown = 0; this.dashInvuln = 0; this.hurtInvuln = 0;
     this.skillCooldown = 0; this.whirl = 0; this.whirlTick = 0; this.overdrive = 0; this.vampire = 0; this.rage = 0; this.blinkInv = 0; this.treasure = null; this.treasureCd = 0; this.solomon = 0;
+    this.line = null; this.rank = 0; this.skillId = hero.skill; this.skillName = hero.skillName; this.skillDesc = hero.skillDesc; this.skillBaseCd = hero.skillCooldown; // 직업 계열·진화 단계
+    this.castLock = 0; this.blinkChain = 0; this.blinkWindowT = 0; this.odDmg = 0; this.rageAtk = 0.6; this.rageVamp = 0; this.sancBoost = 0;
     this.sinceHit = 99; this.deathTimer = 0; this.time = 0; this.moving = false;
     this.swing = null; this.aimVis = 0; this.faceVis = 1; this.recoil = 0;
     this.stats = { attackBonus: 0, fireRateBonus: 0, critChance: base.critChance + (hero.critBonus || 0), critMultiplier: base.critMultiplier };
@@ -28,7 +30,7 @@ class Player extends Entity {
   }
   get weapon() { return this.weapons[this.slot] || null; }
   get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0; }
-  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? 0.6 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
+  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.2 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
 
   update(dt, input, map, mouseWorld) {
     this.time += dt;
@@ -38,6 +40,7 @@ class Player extends Entity {
     this.dashInvuln = Math.max(0, this.dashInvuln - dt);
     this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
     this.overdrive = Math.max(0, this.overdrive - dt); this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt); this.treasureCd = Math.max(0, this.treasureCd - dt); this.solomon = Math.max(0, this.solomon - dt);
+    this.castLock = Math.max(0, this.castLock - dt); this.blinkWindowT = Math.max(0, this.blinkWindowT - dt); this.sancBoost = Math.max(0, this.sancBoost - dt);
     if (this.swing) { this.swing.t += dt; if (this.swing.t >= this.swing.dur) this.swing = null; }
     this.sinceHit += dt;
     if (this.sinceHit >= this.cfg.shieldRegenDelay)
@@ -62,6 +65,7 @@ class Player extends Entity {
     this.moving = ilen > 0;
     if (ilen > 0) { ix /= ilen; iy /= ilen; this.lastMoveDir.x = ix; this.lastMoveDir.y = iy; }
 
+    if (this.castLock > 0) { this.moving = false; return; } // 시전 중: 이동·대시 불가
     if (this.state === 'DASH') { this.updateDash(dt, map); return; }
     if (input.wasPressed('Space') && this.dashCooldown <= 0) {
       this.startDash(); this.updateDash(dt, map); return;

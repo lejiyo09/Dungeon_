@@ -82,7 +82,7 @@ class HUD {
     const by = VIEW_H - 33;
     hudText(ctx, '대시', 8, by, p.dashCooldown > 0 ? '#888' : '#7fe0ff', 'left', 9);
     hudBar(ctx, 34, by + 3, 86, 5, 1 - p.dashCooldown / p.dashCdMax, '#7fe0ff');
-    hudText(ctx, p.hero.skillName, 8, by + 14, p.skillCooldown > 0 ? '#888' : '#ffd84a', 'left', 9);
+    hudText(ctx, p.skillName, 8, by + 14, p.skillCooldown > 0 ? '#888' : '#ffd84a', 'left', 9);
     hudBar(ctx, 66, by + 17, 54, 5, 1 - p.skillCooldown / p.skillCdMax, '#ffd84a');
     if (p.skillCooldown <= 0) { // 스킬 준비 완료: 깜빡이는 테두리
       ctx.strokeStyle = `rgba(255,216,74,${0.4 + 0.4 * Math.sin(game.time * 6)})`; ctx.strokeRect(64.5, by + 15.5, 57, 8);
@@ -123,7 +123,7 @@ class HUD {
       const x0 = ox + a.gx * cw + cw / 2, y0 = oy + a.gy * ch + ch / 2, x1 = ox + b.gx * cw + cw / 2, y1 = oy + b.gy * ch + ch / 2;
       ctx.fillRect(Math.min(x0, x1) - 1, Math.min(y0, y1) - 1, Math.abs(x1 - x0) + 2, Math.abs(y1 - y0) + 2);
     }
-    const colors = { start: '#5aa0ff', combat: '#b0b0b0', treasure: '#ffd84a', boss: '#ff5a7a', shop: '#5ad08a', exit: '#7ae0ff', fountain: '#4a9ad8', altar: '#c8a0ff', gamble: '#ff9a4a', challenge: '#d04040', forge: '#d07a3a', blood: '#a02020', rack: '#7a9ad0', smithy: '#ffd84a' };
+    const colors = { start: '#5aa0ff', combat: '#b0b0b0', treasure: '#ffd84a', boss: '#ff5a7a', shop: '#5ad08a', exit: '#7ae0ff', fountain: '#4a9ad8', altar: '#c8a0ff', gamble: '#ff9a4a', challenge: '#d04040', forge: '#d07a3a', blood: '#a02020', rack: '#7a9ad0', smithy: '#ffd84a', evolve: '#fff4a0' };
     const cur = map.roomAtPoint(game.player.x, game.player.y);
     for (const r of map.rooms) {
       if (!known(r)) continue;
@@ -185,6 +185,26 @@ class HUD {
         hudText(ctx, b.desc, r.x + r.w / 2, r.y + 50, '#ccc', 'center', 9);
       });
       hudText(ctx, '클릭 또는 1 / 2 / 3', VIEW_W / 2, 200, '#888', 'center', 9);
+    } else if (o.type === 'variant') {
+      hudText(ctx, `${game.player.hero.name} — ${o.title}`, VIEW_W / 2, 28, '#ffd84a', 'center', 14);
+      hudText(ctx, '이번 탐험의 갈래를 고르세요. 전직의 방에서 두 번 진화하며 스킬이 바뀝니다.', VIEW_W / 2, 48, '#bbb', 'center', 8);
+      o.lines.forEach((L, i) => { const r = HUD.variantRect(i, o.lines.length), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        ctx.fillStyle = on ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = L.color || '#ffd84a'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        hudText(ctx, `${i + 1}  ${L.name}`, r.x + 6, r.y + 5, L.color || '#ffd84a', 'left', 11);
+        hudText(ctx, L.desc, r.x + 6, r.y + 21, '#ccc', 'left', 7);
+        hudText(ctx, L.skills.map((s) => s.name).join(' → '), r.x + 6, r.y + 34, '#ffe9a0', 'left', 7);
+        hudText(ctx, L.ranks.join(' → '), r.x + 6, r.y + 46, '#8a8a9a', 'left', 7); });
+      hudText(ctx, '숫자 키 / 클릭: 선택', VIEW_W / 2, VIEW_H - 16, '#888', 'center', 8);
+    } else if (o.type === 'evolve') {
+      const p = game.player, L = p.line, n = p.rank + 1, sk = L.skills[n];
+      hudText(ctx, `${L.ranks[p.rank]}  →  ${L.ranks[n]}`, VIEW_W / 2, 56, '#ffd84a', 'center', 15);
+      hudText(ctx, `새 스킬: ${sk.name}`, VIEW_W / 2, 84, '#ffe9a0', 'center', 11);
+      hudText(ctx, sk.desc, VIEW_W / 2, 100, '#ccc', 'center', 9);
+      hudText(ctx, `최대 체력 +${EVOLUTION.hp[n - 1]} · 최대 에너지 +${EVOLUTION.energy[n - 1]}`, VIEW_W / 2, 114, '#9fe89f', 'center', 8);
+      hudText(ctx, '1  시련 — 상위자와 대결 (이기면 무료로 진화)', VIEW_W / 2, 142, '#fff', 'center', 10);
+      hudText(ctx, `2  대가 — ${game.evolvePrice()}골드를 내고 바로 진화 (보유 ${game.gold})`, VIEW_W / 2, 160, game.gold >= game.evolvePrice() ? '#fff' : '#888', 'center', 10);
+      if (o.msg) hudText(ctx, o.msg, VIEW_W / 2, 180, '#ff9a9a', 'center', 9);
+      hudText(ctx, 'E / Esc: 닫기', VIEW_W / 2, VIEW_H - 16, '#888', 'center', 8);
     } else if (o.type === 'resume') {
       const r = game.save.run, hero = r && game.data.heroes.get(r.hero), W = r && worldDef(r.worldIdx);
       hudText(ctx, '진행 중인 탐험이 있습니다', VIEW_W / 2, 70, '#7ad0ff', 'center', 16);
@@ -239,6 +259,7 @@ class HUD {
     }
   }
   // 보구 획득 알림: 오른쪽 아래에서 아이콘과 함께 미끄러져 들어와 6초 동안 표시
+  static variantRect(i, n) { const cols = Math.min(3, n), w = 156, h = 58, gap = 8, rows = Math.ceil(n / cols), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % cols) * (w + gap), y: 66 + Math.floor(i / cols) * (h + gap) + (rows === 1 ? 30 : 0), w, h }; }
   static treasureToast(ctx, game) {
     const o = game.treasureToast, t = (performance.now() - o.start) / 1000, D = 6;
     if (t > D) { game.treasureToast = null; return; }

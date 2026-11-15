@@ -367,13 +367,13 @@ class Strike {
 
 // 사제 스킬 '성역': 안에 있으면 회복, 들어오는 적 탄 소멸
 class Sanctuary {
-  constructor(x, y, owner) { this.x = x; this.y = y; this.owner = owner; this.r = 54; this.life = 6; this.t = 0; this.heal = 0; this.alive = true; }
+  constructor(x, y, owner, o = {}) { this.x = x; this.y = y; this.owner = owner; this.r = o.r || 54; this.life = o.life || 6; this.rate = o.heal || 4; this.boost = !!o.boost; this.t = 0; this.heal = 0; this.alive = true; }
   update(dt, world) {
     this.t += dt;
     if (this.t >= this.life) { this.alive = false; return; }
     const p = this.owner;
     if (p.state !== 'DEAD' && Math.hypot(p.x - this.x, p.y - this.y) < this.r) {
-      this.heal += 4 * dt;
+      this.heal += this.rate * dt; if (this.boost) p.sancBoost = 0.2; // 대성역: 안에 있으면 공격력 +20%
       if (this.heal >= 1) { const n = Math.floor(this.heal); this.heal -= n; p.hp = Math.min(p.maxHp, p.hp + n); if (Math.random() < 0.5) world.effects.heal(p.x, p.y); }
     }
     for (const b of world.enemyBullets) if (b.alive && Math.hypot(b.x - this.x, b.y - this.y) < this.r) { b.alive = false; world.effects.spark(b.x, b.y, '#ffe9a0'); }
@@ -391,7 +391,7 @@ class Sanctuary {
 
 // 드루이드 스킬 '영혼 늑대': 가까운 적에게 달려가 물어뜯음
 class SpiritWolf {
-  constructor(x, y, owner) { this.x = x; this.y = y; this.owner = owner; this.half = 5; this.life = 10; this.cd = 0; this.face = 1; this.t = 0; this.alive = true; }
+  constructor(x, y, owner, o = {}) { this.x = x; this.y = y; this.owner = owner; this.big = !!o.big; this.half = this.big ? 9 : 5; this.life = o.life || 10; this.dmg = o.dmg || 14; this.cd = 0; this.face = 1; this.t = 0; this.alive = true; }
   update(dt, world) {
     this.t += dt; this.life -= dt; this.cd -= dt;
     if (this.life <= 0 || this.owner.state === 'DEAD') { this.alive = false; world.effects.burst(this.x, this.y, '#9ad8ff', 8); return; }
@@ -401,15 +401,15 @@ class SpiritWolf {
     const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy) || 1;
     if (d > (best ? best.radius + 6 : 10)) { const v = 150 * dt; moveAndCollide(this, dx / d * v, dy / d * v, world.map); if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1; }
     if (best && d < best.radius + 10 && this.cd <= 0) {
-      this.cd = 0.5;
-      world.damageEnemy(best, { damage: 14, mods: this.owner.mods, knockback: 3 }, dx / d, dy / d);
-      world.effects.slash(this.x, this.y, Math.atan2(dy, dx), 10, 1.2, '#9ad8ff');
+      this.cd = this.big ? 0.8 : 0.5;
+      world.damageEnemy(best, { damage: world.skillDmg(this.dmg), mods: this.owner.mods, knockback: this.big ? 10 : 3 }, dx / d, dy / d);
+      world.effects.slash(this.x, this.y, Math.atan2(dy, dx), this.big ? 20 : 10, 1.2, this.big ? '#c8a070' : '#9ad8ff'); if (this.big) world.addShake(0.08, 2);
     }
   }
   render(ctx) {
     if (this.life < 2 && Math.floor(this.life * 10) % 2 === 0) return;
     const spr = getSprite('spiritwolf');
-    ctx.globalAlpha = 0.85; drawSprite(ctx, spr, Math.round(this.x), Math.round(this.y) + 7, { flip: this.face < 0 }); ctx.globalAlpha = 1;
+    ctx.globalAlpha = 0.85; drawSprite(ctx, this.big ? getSprite('spiritbear') : spr, Math.round(this.x), Math.round(this.y) + (this.big ? 10 : 7), { flip: this.face < 0, scale: this.big ? 1.5 : 1 }); ctx.globalAlpha = 1;
   }
 }
 
@@ -461,5 +461,103 @@ class ChainCircle {
       }
     });
     ctx.restore();
+  }
+}
+
+// ── 직업 스킬 효과
+// 자기 주위를 따라다니는 지속 피해 장판 (화염 회오리·피의 폭풍·뇌신강림)
+class SkillAura {
+  constructor(owner, o) { Object.assign(this, { r: 50, life: 5, tick: 0.25, dmg: 10, status: null, color: '#ff7a3a', kind: 'flame', lifesteal: 0 }, o); this.owner = owner; this.x = owner.x; this.y = owner.y; this.t = 0; this.next = 0; this.alive = true; }
+  update(dt, world) {
+    const p = this.owner; this.t += dt; this.next -= dt; this.x = p.x; this.y = p.y;
+    if (this.t >= this.life || p.state === 'DEAD') { this.alive = false; return; }
+    if (this.next > 0) return;
+    this.next = this.tick;
+    if (this.kind === 'thunder') { // 범위 안 무작위 적 2명에게 하늘에서 번개
+      const list = world.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < this.r);
+      for (let i = 0; i < 2 && list.length; i++) { const e = list.splice(randInt(0, list.length - 1), 1)[0];
+        world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: p.mods, knockback: 2 }, 0, 1, { quiet: true }); world.effects.lightning(e.x + randInt(-6, 6), e.y - 90, e.x, e.y); }
+      if (list.length || Math.random() < 0.5) SFX.play('react', 0.12);
+      return;
+    }
+    let hit = 0;
+    for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < this.r + e.radius) {
+      world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: p.mods, knockback: 1, status: this.status }, 0, 0, { quiet: true }); hit++; }
+    if (this.lifesteal && hit) p.hp = Math.min(p.maxHp, p.hp + Math.min(3, hit * this.lifesteal));
+    for (let i = 0; i < 3; i++) { const a = Math.random() * TAU, d = this.r * (0.4 + Math.random() * 0.6);
+      world.effects.part(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d * 0.7, -Math.sin(a) * 60, Math.cos(a) * 40 - 20, { color: this.color, life: 0.45, size: 2.5, size2: 0, drag: 2, add: true }); }
+  }
+  render(ctx) {
+    const k = Math.min(1, this.t / 0.2, (this.life - this.t) / 0.4), rot = this.t * (this.kind === 'thunder' ? 1 : 5);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(this.x, this.y + 4); ctx.scale(1, 0.7);
+    ctx.globalAlpha = 0.14 * k; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.8 * k; ctx.strokeStyle = this.color; ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(0, 0, this.r * (0.55 + i * 0.2), rot + i * 2, rot + i * 2 + 1.6); ctx.stroke(); } // 휘도는 불길·피·번개 고리
+    ctx.restore(); ctx.lineWidth = 1;
+  }
+}
+// 시전형 스킬: 범위를 표시하고 time초 동안 모은 뒤 발동 (그동안 시전자는 이동·공격 불가)
+class SkillCast {
+  constructor(owner, x, y, o, done) { Object.assign(this, { r: 60, time: 2, color: '#ff7a3a' }, o); this.owner = owner; this.x = x; this.y = y; this.done = done; this.t = 0; this.alive = true; owner.castLock = this.time + 0.05; }
+  update(dt, world) {
+    this.t += dt;
+    if (this.owner.state === 'DEAD') { this.alive = false; this.owner.castLock = 0; return; }
+    if (Math.random() < 0.6) { const a = Math.random() * TAU; world.effects.part(this.x + Math.cos(a) * this.r, this.y + Math.sin(a) * this.r * 0.6, -Math.cos(a) * this.r * 1.2, -Math.sin(a) * this.r * 0.7, { color: this.color, life: 0.5, size: 2, size2: 0, drag: 0, add: true }); } // 모여드는 빛
+    if (this.t >= this.time) { this.alive = false; this.owner.castLock = 0; this.done(world, this); }
+  }
+  render(ctx) {
+    const k = Math.min(1, this.t / this.time), rot = this.t * 2;
+    ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.6);
+    ctx.globalAlpha = 0.15 + 0.2 * k; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(0, 0, this.r * k, 0, TAU); ctx.fill(); // 차오르는 범위
+    ctx.globalAlpha = 0.9; ctx.strokeStyle = this.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.stroke();
+    ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, this.r * 0.8, 0, TAU); ctx.stroke();
+    for (let i = 0; i < 6; i++) { const a = rot + i * TAU / 6; ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.cos(a) * this.r * 0.9 - 1.5, Math.sin(a) * this.r * 0.9 - 1.5, 3, 3); } // 도는 문양
+    ctx.restore();
+    const bar = Math.round(28 * k); ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(Math.round(this.owner.x) - 15, Math.round(this.owner.y) - 24, 30, 4);
+    ctx.fillStyle = this.color; ctx.fillRect(Math.round(this.owner.x) - 14, Math.round(this.owner.y) - 23, bar, 2); // 시전 막대
+  }
+}
+// 어둠 소용돌이: 범위 안 적을 중심으로 끌어당기며 지속 피해
+class DarkHole {
+  constructor(x, y, owner, o) { Object.assign(this, { r: 60, life: 2.5, pull: 70, tick: 0.25, dmg: 8 }, o); this.owner = owner; this.x = x; this.y = y; this.t = 0; this.next = 0; this.alive = true; }
+  update(dt, world) {
+    this.t += dt; this.next -= dt;
+    if (this.t >= this.life) { this.alive = false; return; }
+    for (const e of world.enemies) {
+      if (!e.targetable || (e.def.knockbackResist || 0) >= 1) continue;
+      const dx = this.x - e.x, dy = this.y - e.y, d = Math.hypot(dx, dy);
+      if (d < this.r + 30 && d > 4) moveAndCollide(e, dx / d * this.pull * dt * (e.def.boss ? 0.3 : 1), dy / d * this.pull * dt * (e.def.boss ? 0.3 : 1), world.map);
+    }
+    if (this.next <= 0) { this.next = this.tick;
+      for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < this.r) world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: this.owner.mods, knockback: 0 }, 0, 0, { quiet: true }); }
+    if (Math.random() < 0.8) { const a = Math.random() * TAU; world.effects.part(this.x + Math.cos(a) * this.r, this.y + Math.sin(a) * this.r * 0.6, -Math.cos(a) * this.r * 1.5 - Math.sin(a) * 30, -Math.sin(a) * this.r + Math.cos(a) * 20, { color: '#a070e0', life: 0.6, size: 2, size2: 0, drag: 0, add: true }); }
+  }
+  render(ctx) {
+    const k = Math.min(1, this.t / 0.3, (this.life - this.t) / 0.3), rot = -this.t * 4;
+    ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.6);
+    ctx.globalAlpha = 0.5 * k; ctx.fillStyle = '#100820'; ctx.beginPath(); ctx.arc(0, 0, this.r * 0.55, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.85 * k; ctx.strokeStyle = '#a070e0'; ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(0, 0, this.r * (0.4 + i * 0.17), rot + i, rot + i + 2.2); ctx.stroke(); }
+    ctx.restore(); ctx.lineWidth = 1;
+  }
+}
+// 전직의 방: 지금 직업의 상위자 (말을 걸면 진화 방법을 고름)
+class MasterNPC {
+  constructor(x, y, room) { this.x = x; this.y = y; this.room = room; this.radius = 22; this.gone = false; }
+  label(game) {
+    const p = game.player; if (this.gone) return null;
+    if (!p.line || p.rank >= 2) return '더 이상 진화할 수 없습니다';
+    return `[E] 상위자 — ${p.line.ranks[p.rank + 1]}(으)로 진화`;
+  }
+  get labelColor() { return '#ffd84a'; }
+  interact(game) { const p = game.player; if (this.gone || !p.line || p.rank >= 2) return; game.overlay = { type: 'evolve', npc: this }; }
+  render(ctx, game) {
+    if (this.gone) return;
+    const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0, p = game.player;
+    ctx.fillStyle = `rgba(255,216,74,${0.18 + 0.08 * Math.sin(t * 3)})`; ctx.beginPath(); ctx.ellipse(x, y + 6, 14, 5, 0, 0, TAU); ctx.fill();
+    drawHero(ctx, p.hero, x, y - 2, -1, 0, false);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 + 0.15 * Math.sin(t * 4); drawSprite(ctx, heroSprite(p.hero, 0), x, y + 5, { flip: true, white: true }); ctx.restore(); // 금빛으로 빛나는 상위자
+    ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 3, y - 22, 7, 2); ctx.fillRect(x - 3, y - 24, 1, 2); ctx.fillRect(x, y - 25, 1, 3); ctx.fillRect(x + 3, y - 24, 1, 2); // 왕관
+    hudText(ctx, '상위자', x, y + 10, '#ffd84a', 'center', 7);
   }
 }
