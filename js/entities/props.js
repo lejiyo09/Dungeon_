@@ -147,6 +147,32 @@ function weaponGrid(tab = 0, page = 0) { // 한 페이지 40칸 (5열 × 8줄), 
   return tabWeapons(tab).slice(page * GRID_PER_PAGE, (page + 1) * GRID_PER_PAGE)
     .map((d, i) => ({ d, x: ox + (i % cols) * (cw + 1), y: oy + Math.floor(i / cols) * rh, w: cw, h: rh - 2 }));
 }
+// 무기 특성: 가장 눈에 띄는 메커닉 2~3개를 짧게
+function weaponTraits(d, max = 3) {
+  if (d.trait) return d.trait;
+  const t = [], S = { burn: '화상', freeze: '빙결', poison: '중독' }, n = d.projectileCount || 1;
+  if (d.summon) t.push('드론 소환'); if (d.deploy) t.push('포탑 설치'); if (d.orbit) t.push('회전 구슬');
+  if (d.meteor) t.push(d.meteor.arrow ? '화살비' : '낙하 공격'); if (d.beamShot) t.push('일직선 관통 광선');
+  if (d.mine) t.push('지뢰 설치'); if (d.boomerang) t.push('돌아오는 부메랑'); if (d.puddle) t.push('불 웅덩이');
+  if (d.trail) t.push('잔류 장판'); if (d.grenade) t.push('시한 폭발'); if (d.firework) t.push('공중에서 터짐');
+  if (d.split) t.push('터지면 파편'); if (d.pull) t.push('적을 흡인'); if (d.reflect) t.push('적 탄 되받아침');
+  if (d.wave) t.push('검기 발사'); if (d.lunge) t.push('돌진 찌르기'); if (d.slam) t.push('충격파');
+  if (d.nth) t.push(`${d.nth.every}번째마다 ${d.nth.mult}배`); if (d.close) t.push('가까울수록 강함');
+  if (d.execute) t.push(`빈사 적 +${Math.round(d.execute * 100)}%`); if (d.mark) t.push(`약점 +${Math.round((d.mark.mult - 1) * 100)}%`);
+  if (d.killEnergy) t.push(`처치 에너지 +${d.killEnergy}`); if (d.critBonus) t.push(`치명타 +${Math.round(d.critBonus * 100)}%`);
+  if (d.lifesteal) t.push('흡혈'); if (d.chain) t.push('연쇄 번개'); if (d.ricochet) t.push('적 사이를 튕김');
+  if (d.focus) t.push('계속 비추면 강해짐'); if (d.spinUp) t.push('누를수록 빨라짐'); if (d.grow) t.push('멀리 갈수록 강함');
+  if (d.homing) t.push('유도'); if (d.bubble) t.push('느린 거품'); if (d.status) t.push(S[d.status.type]);
+  if (d.burst) t.push(`${d.burst.count}연사`);
+  if (d.parallel) t.push(`나란히 ${n}발`); else if (n >= 8 && d.fanDeg) t.push('원형 탄막'); else if (n > 1) t.push(d.fanDeg ? `부채꼴 ${n}발` : `산탄 ${n}발`);
+  if (d.explodeRadius && !d.mine) t.push('폭발'); if (d.bounce) t.push('벽 반사');
+  if (d.pierce >= 99 && !d.flame) t.push('전부 관통'); else if (d.pierce > 0 && d.pierce < 99) t.push(`${d.pierce}회 관통`);
+  if (d.flame) t.push('화염 분사'); if (d.knockback < 0) t.push('적을 끌어당김'); else if (d.knockback >= 12) t.push('강한 넉백');
+  if (d.arcDeg >= 300) t.push('360° 베기'); else if (d.arcDeg >= 180) t.push('넓은 베기'); else if (d.type === 'melee' && d.arcDeg <= 40 && !d.lunge) t.push('찌르기');
+  if (d.deflect && t.length < 2) t.push('탄 막기');
+  if (!t.length) t.push(d.type === 'charge' ? '모아 쏘기' : d.type === 'beam' ? '지속 광선' : '기본 사격');
+  return t.slice(0, max).join(' · ');
+}
 function weaponShortLine(d) {
   const dmg = d.projectileCount > 1 ? `${d.damage}×${d.projectileCount}` : d.burst ? `${d.damage}×${d.burst.count}` : d.damage;
   const en = d.type === 'beam' ? `${d.energyPerSec}/초` : (d.energyCost || 0);

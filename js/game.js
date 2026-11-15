@@ -517,7 +517,7 @@ class Game {
       p.weapons[p.slot] = inst;
     }
     this.discover(def.id);
-    this.effects.text(p.x, p.y - 18, def.name, RARITY_COLOR[def.rarity]);
+    this.effects.text(p.x, p.y - 18, def.name, RARITY_COLOR[def.rarity]); this.effects.text(p.x, p.y - 8, weaponTraits(def), '#e0d0a0');
   }
   pickWeapon(pk) { pk.alive = false; this.giveWeapon(pk.def); }
   buy(item) {
@@ -540,11 +540,20 @@ class Game {
     this.enemyBullets.push(new EnemyBullet(x, y, Math.cos(ang) * speed, Math.sin(ang) * speed, damage, color, r));
   }
   damageEnemy(enemy, src, kx, ky, opts = {}) {
-    const { amount, crit } = rollDamage(src.damage, src.mods);
+    let base = src.damage;
+    if (src.execute && enemy.hp < enemy.maxHp * 0.35) base *= 1 + src.execute; // 처형: 빈사 적 추가 피해
+    if (enemy.markT > 0) base *= enemy.markMult;                                 // 약점 표시된 적
+    const { amount, crit } = rollDamage(base, src.mods);
     if (!enemy.takeHit(amount)) return;
-    const kb = (src.knockback || 0) * (1 - (enemy.def.knockbackResist || 0));
-    if (enemy.alive && kb > 0 && !(enemy.state === 'ATTACK' && (enemy.def.aiType === 'charger' || enemy.def.boss)))
+    let kb = (src.knockback || 0) * (1 - (enemy.def.knockbackResist || 0));
+    if (kb < 0) kb = -Math.min(-kb, Math.max(0, Math.hypot(enemy.x - this.player.x, enemy.y - this.player.y) - 14)); // 끌어당김: 플레이어 앞에서 멈춤
+    if (enemy.alive && kb !== 0 && !(enemy.state === 'ATTACK' && (enemy.def.aiType === 'charger' || enemy.def.boss)))
       moveAndCollide(enemy, kx * kb, ky * kb, this.map);
+    if (src.mark && enemy.alive) {
+      if (!(enemy.markT > 0)) this.effects.text(enemy.x, enemy.y - 20, '약점', '#ff7a7a');
+      enemy.markT = src.mark.dur; enemy.markMult = src.mark.mult;
+    }
+    if (src.killEnergy && !enemy.alive && !enemy.def.dummy) { const p = this.player; p.energy = Math.min(p.maxEnergy, p.energy + src.killEnergy); this.effects.text(p.x, p.y - 20, '+' + src.killEnergy, '#7fb0ff'); }
     if (src.status) { const react = enemy.applyStatus(src.status, src.mods); if (react) this.triggerReaction(enemy, react, src.mods); }
     if (!opts.quiet || crit || Math.random() < 0.3) this.effects.text(enemy.x, enemy.y - 12, crit ? amount + '!' : String(amount), crit ? '#ffd84a' : '#ffffff', crit);
     if (!enemy.def.dummy || Math.random() < 0.5) SFX.play(crit ? 'crit' : 'hit', crit ? 0.05 : 0.045);
@@ -797,7 +806,7 @@ class Game {
     const w = this.player.weapon;
     if (w && w.beamActive && w.beamEnd) {
       const b = w.beamEnd;
-      ctx.strokeStyle = w.def.bulletColor; ctx.globalAlpha = 0.45 + 0.2 * Math.sin(this.time * 40); ctx.lineWidth = 5;
+      ctx.strokeStyle = w.def.bulletColor; ctx.globalAlpha = 0.45 + 0.2 * Math.sin(this.time * 40); ctx.lineWidth = 5 + (w.focusK || 0) * 4;
       ctx.beginPath(); ctx.moveTo(b.sx, b.sy); ctx.lineTo(b.x, b.y); ctx.stroke();
       ctx.globalAlpha = 1; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(b.sx, b.sy); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.lineWidth = 1;
@@ -825,6 +834,8 @@ class Game {
         ctx.fillStyle = 'rgba(0,0,0,0.65)'; ctx.fillRect(lx - tw / 2 - 4, ly - 2, tw + 8, 14);
         ctx.strokeStyle = color; ctx.globalAlpha = 0.5; ctx.strokeRect(lx - tw / 2 - 3.5, ly - 1.5, tw + 7, 13); ctx.globalAlpha = 1;
         hudText(ctx, label, lx, ly, color, 'center', 9);
+        if (t instanceof Pickup) { const tr = weaponTraits(t.def), w2 = Math.ceil(ctx.measureText(tr).width * 0.85);
+          ctx.fillStyle = 'rgba(0,0,0,0.65)'; ctx.fillRect(lx - w2 / 2 - 4, ly + 12, w2 + 8, 11); hudText(ctx, tr, lx, ly + 13, '#e0d0a0', 'center', 8); }
       }
     }
 

@@ -35,6 +35,7 @@ class Projectile {
     }
     if (this.firework && this.age >= this.firework.fuse) { this.alive = false; this.end(world); return; } // 폭죽: 날아가다 터짐
     if (this.trail) { this.trailT = (this.trailT || 0) - dt; if (this.trailT <= 0) { this.trailT = this.trail.every; world.zones.push(new Puddle(this.x, this.y, this.trail.puddle, this.mods)); } } // 지나간 자리에 장판
+    if (this.close) { this.baseDmg = this.baseDmg || this.damage; this.damage = this.baseDmg * (1 + this.close * (1 - Math.min(1, this.traveled / this.range))); } // 가까울수록 강함
     if (this.grow) { this.baseDmg = this.baseDmg || this.damage; const g = Math.min(1, this.traveled / this.range); this.damage = this.baseDmg * (1 + this.grow * g); this.size = 2 + Math.round(g * 3); this.radius = 2 + g * 3; } // 멀리 갈수록 커짐
     if (this.bubble) { const w = Math.sin(this.age * 7) * 18 * dt; this.x += -this.dy * w; this.y += this.dx * w; } // 거품: 일렁임
     if (this.homing) this.steer(dt, world);

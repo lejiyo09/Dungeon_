@@ -484,7 +484,7 @@ function updateEnemy(e, dt, world) {
   }
   if (e.state === 'SPAWN') { e.stateTime += dt; if (e.stateTime >= SPAWN_TIME) e.setState('CHASE'); return; }
   // 상태이상
-  e.burn = Math.max(0, e.burn - dt); e.poison = Math.max(0, e.poison - dt); e.slow = Math.max(0, e.slow - dt); e.reactCd = Math.max(0, e.reactCd - dt);
+  e.burn = Math.max(0, e.burn - dt); e.poison = Math.max(0, e.poison - dt); e.slow = Math.max(0, e.slow - dt); if (e.markT > 0) e.markT -= dt; e.reactCd = Math.max(0, e.reactCd - dt);
   if (e.burn > 0 || e.poison > 0) {
     e.dotTimer -= dt;
     if (e.dotTimer <= 0) {

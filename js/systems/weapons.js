@@ -84,6 +84,10 @@ class WeaponSystem {
   }
   shootGun(player, w, override = {}) {
     const def = w.def;
+    w.shots = (w.shots || 0) + 1;
+    const pow = def.nth && w.shots % def.nth.every === 0; // N번째 사격 강화
+    if (pow) { override = Object.assign({}, override, { damage: (override.damage ?? def.damage) * def.nth.mult, size: (override.size || def.bulletSize || 1) + 1 });
+      this.world.effects.ring(player.x + player.aim.x * 12, player.y + player.aim.y * 12, 10, '#ffffff'); SFX.play('crit', 0.05); }
     const base = Math.atan2(player.aim.y, player.aim.x);
     const spread = (def.spreadDeg || 0) * Math.PI / 180;
     const n = def.projectileCount || 1;
@@ -107,9 +111,10 @@ class WeaponSystem {
         spriteDef: def.boomerang || def.spinSprite ? def : null,
         bubble: !!def.bubble, grenade: def.grenade || null, firework: def.firework || null, ricochet: def.ricochet || 0,
         puddle: def.puddle || null, arrow: !!def.arrow, trail: def.trail || null, grow: def.grow || 0,
+        close: def.close || 0, execute: def.execute || 0, mark: def.mark || null, killEnergy: def.killEnergy || 0,
         speed: def.projectileSpeed, range: def.range, damage: def.damage,
         pierce: def.pierce, knockback: def.knockback || 0,
-        mods: def.critBonus ? Object.assign(player.mods, { critChance: player.stats.critChance + def.critBonus }) : player.mods,
+        mods: def.critBonus ? Object.assign({}, player.mods, { critChance: player.stats.critChance + def.critBonus }) : player.mods,
         explodeRadius: def.explodeRadius || 0, color: def.bulletColor, size: def.bulletSize || 1,
         homing: def.homing || 0, bounce: def.bounce || 0, chain: def.chain || null, status: def.status || null, flame: !!def.flame
       }, override)));
@@ -143,7 +148,12 @@ class WeaponSystem {
       }
       moveAndCollide(player, player.aim.x * L, player.aim.y * L, world.map);
     }
-    const src = { damage: def.damage, mods: player.mods, knockback: def.knockback, status: def.status || null };
+    w.shots = (w.shots || 0) + 1;
+    const pow = def.nth && w.shots % def.nth.every === 0; // N번째 휘두르기 강화
+    const src = { damage: def.damage * (pow ? def.nth.mult : 1), knockback: def.knockback * (pow ? 1.5 : 1), status: def.status || null,
+      mods: def.critBonus ? Object.assign({}, player.mods, { critChance: player.stats.critChance + def.critBonus }) : player.mods,
+      execute: def.execute || 0, mark: def.mark || null, killEnergy: def.killEnergy || 0 };
+    if (pow) { world.addShake(0.12, 3); SFX.play('crit', 0.05); }
     let hits = 0;
     for (const e of world.enemies) {
       if (!e.targetable) continue;
@@ -176,12 +186,12 @@ class WeaponSystem {
     const thrust = def.arcDeg < 40;
     player.swing = { t: 0, dur: thrust ? 0.15 : 0.16, ang, arc, thrust };
     SFX.play('melee');
-    world.effects.slash(player.x, player.y - 1, ang, def.range, arc, thrust ? '#e0f0ff' : 'rgba(230,240,255,0.9)');
+    world.effects.slash(player.x, player.y - 1, ang, def.range * (pow ? 1.15 : 1), arc, pow ? '#ffd84a' : thrust ? '#e0f0ff' : 'rgba(230,240,255,0.9)');
     if (def.shake) world.addShake(0.1, 3);
   }
   updateBeam(player, w, dt, down) {
     const def = w.def, world = this.world;
-    if (!down) { w.beamActive = false; w.beamTick = Math.max(w.beamTick, 0); return; }
+    if (!down) { w.beamActive = false; w.beamTick = Math.max(w.beamTick, 0); w.focusT = 0; w.focusK = 0; return; }
     if (player.overdrive <= 0) {
       if (player.energy <= 0) { w.beamActive = false; this.noEnergy(player); return; }
       player.energy = Math.max(0, player.energy - def.energyPerSec * dt);
@@ -198,12 +208,13 @@ class WeaponSystem {
       if (t >= 0 && t <= limit) { limit = t; target = e; }
     }
     w.beamEnd = { sx, sy, x: sx + (ex - sx) * limit, y: sy + (ey - sy) * limit };
+    if (def.focus) { w.focusT = target && target === w.focusTarget ? (w.focusT || 0) + dt : 0; w.focusTarget = target; w.focusK = Math.min(1, w.focusT / 1.5); } // 같은 적을 계속 비추면 강해짐
     // 누적식 틱: 간격을 이어서 더해야 공속 버프가 프레임 단위로 잘리지 않음
     w.beamTick -= dt;
     const interval = def.tickRate / (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 : 0));
     while (w.beamTick <= 0) {
       w.beamTick += interval;
-      if (target) world.damageEnemy(target, { damage: def.damage, mods: player.mods, knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
+      if (target) world.damageEnemy(target, { damage: def.damage * (1 + (def.focus || 0) * (w.focusK || 0)), mods: player.mods, knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
     }
   }
 }

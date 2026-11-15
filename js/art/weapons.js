@@ -91,6 +91,10 @@ Object.assign(WPIX, {
   worldtree: { auto: true, p: [3, 2], rows: ['..........oo.o', '.........ddoo.', 'ddddddddddd.oo', '.........ddoo.', '..........oo.o'] },
   frostscepter: { auto: true, p: [3, 2], rows: ['..........y.y.', '.........yoooy', 'cccccccccyowoy', '.........yoooy', '..........y.y.'] },
   judgment: { auto: true, p: [2, 3], rows: ['...yyyyyyy...', '.aaaaaaaaayoo', '.ayooooooayow', '.aaaaaaaaayoo', '.gg..........', '.gg..........'] },
+  harpoon: { auto: true, p: [2, 3], rows: ['..........m.', '.aaaaaaaammm', '.accccccam.m', '.aa.........', '.aa.........'] },
+  torch: { auto: true, p: [1, 1], rows: ['.......ooo', 'ddddddoowo', '.......ooo'] },
+  executioner: { auto: true, p: [1, 2], rows: ['........aaa.', '.......acccc', 'dddddddacccc', '.......acccc', '........aaa.'] },
+  phoenixspear: { auto: true, p: [3, 1], rows: ['.............o.o.', 'ddddyddddddddyyyw', '.............o.o.'] },
   headshot: { auto: true, p: [5, 3], rows: ['.....nnnnnnn........', '.....nooooon........', 'bbbbaaaaaaaaaaaaaaaan', 'bb...aanbb..........', '.....gg.............', '.....gg.............'] }
 });
 
@@ -113,6 +117,9 @@ Object.assign(WEAPON_SPRITE, {
   weapon_rainbow_001: 'rainbow', weapon_lavastaff_001: 'lavastaff', weapon_turretgun_001: 'turretgun',
   weapon_pan_001: 'pan', weapon_spinaxe_001: 'spinaxe',
   weapon_lance_001: 'lance',
+  weapon_harpoon_001: 'harpoon', weapon_cursestaff_001: 'voidstaff', weapon_magicgun_001: 'revolver', weapon_manastaff_001: 'froststaff',
+  weapon_dragonmaw_001: 'blunderbuss', weapon_torch_001: 'torch', weapon_vampdagger_001: 'kitchenknife', weapon_executioner_001: 'executioner',
+  weapon_phoenixspear_001: 'phoenixspear', weapon_hunterbow_001: 'shortbow',
   weapon_autopistol_001: 'pistol2', weapon_ironstaff_001: 'froststaff', weapon_scatterstaff_001: 'starstaff', weapon_fireshotgun_001: 'shotgun2',
   weapon_blizzardstaff_001: 'crystalstaff', weapon_homingdual_001: 'dual', weapon_splitplasma_001: 'plasma', weapon_woodspear_001: 'lance',
   weapon_frostdagger_001: 'kitchenknife', weapon_flail_001: 'flail', weapon_viperwhip_001: 'whip', weapon_twinxbow_001: 'repeatxbow',

@@ -18,7 +18,7 @@ const JSON_OUT = process.argv.includes('--json');
       if (multi) for (const [ox, oy] of [[0, -18], [0, 18]]) g.enemies.push(new Enemy(d0.x + ox, d0.y + oy, dummyDef, { hp: 1, dmg: 1 }, g.map.startRoom));
       const p = g.player = g.makePlayer(d0.x - (def.type === 'melee' ? 22 : def.orbit ? 26 : 60), d0.y);
       p.weapons = [new WeaponInstance(def)]; p.slot = 0; p.stats.critChance = 0;
-      g.projectiles = []; g.dpsLog = []; const t0 = g.time;
+      g.projectiles = []; g.allies = []; g.zones = []; d0.markT = 0; g.dpsLog = []; const t0 = g.time;
       for (let i = 0; i < 420; i++) {
         p.energy = 999; g.cam.x = 0; g.cam.y = 0; g.input.mouse.x = d0.x; g.input.mouse.y = d0.y;
         g.input.mouse.down = def.type === 'charge' ? !(p.weapon.charge >= def.chargeTime) : true;

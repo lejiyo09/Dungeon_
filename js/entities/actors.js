@@ -281,6 +281,7 @@ class Enemy extends Entity {
     if (this.slow > 0) { ctx.fillStyle = 'rgba(140,210,255,0.35)'; ctx.fillRect(x - h - 1, y - h - 2, h * 2 + 2, h * 2 + 4); }
     if (this.burn > 0 && Math.floor(this.stateTime * 10) % 2 === 0) { ctx.fillStyle = '#ff8a3a'; ctx.fillRect(x - 2 + randInt(-3, 3), y - h - 3, 2, 2); }
     if (this.poison > 0) { ctx.fillStyle = '#9aff5a'; ctx.fillRect(x + h - 1, y - h - 3, 2, 2); }
+    if (this.markT > 0) { ctx.fillStyle = '#ff5a5a'; ctx.fillRect(x - 1, y - h - 11, 3, 1); ctx.fillRect(x, y - h - 12, 1, 3); } // 약점 표시
     if (!def.boss && !def.dummy && this.hp < this.maxHp) {
       const w = h * 2 + 2;
       ctx.fillStyle = '#300'; ctx.fillRect(x - w / 2, y - h - 7, w, 2);
