@@ -249,9 +249,8 @@ class HUD {
     const glow = 0.15 + 0.1 * Math.sin(t * 5);
     ctx.fillStyle = `rgba(255,216,74,${glow})`; ctx.beginPath(); ctx.arc(x + 22, y + h / 2, 17, 0, TAU); ctx.fill();
     drawTreasureIcon(ctx, o.T, x + 22, y + h / 2, 2);
-    hudText(ctx, '보구 획득', x + 44, y + 6, '#c8b890', 'left', 8);
-    hudText(ctx, o.T.name, x + 44, y + 17, '#ffe9a0', 'left', 11);
-    hudText(ctx, `${o.T.origin} · R키로 사용`, x + 44, y + 31, '#a898c0', 'left', 7);
+    hudText(ctx, '보구 획득', x + 44, y + 9, '#c8b890', 'left', 8);
+    hudText(ctx, o.T.name, x + 44, y + 21, '#ffe9a0', 'left', 12);
     if (t < 0.6) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(255,240,180,${0.5 * (1 - t / 0.6)})`; ctx.fillRect(x, y, w, h); ctx.globalCompositeOperation = 'source-over'; }
     ctx.globalAlpha = 1;
   }
