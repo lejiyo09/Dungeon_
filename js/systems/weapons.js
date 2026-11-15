@@ -62,6 +62,23 @@ class WeaponSystem {
       this.world.effects.sparkle(player.x, player.y - 10, w.def.bulletColor); SFX.play('skill', 0.1);
       return;
     }
+    if (w.def.meteor) { // 유성·화살비: 조준 지점(사거리 안)에 경고 후 낙하
+      const M = w.def.meteor, mw = this.world.mouseWorld(), dx = mw.x - player.x, dy = mw.y - player.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, w.def.range / d);
+      for (let i = 0; i < M.count; i++) {
+        const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * M.spread;
+        this.world.zones.push(new Strike(player.x + dx * k + Math.cos(a) * r, player.y + dy * k + Math.sin(a) * r * 0.75, M.delay + i * (M.stagger || 0), M.r,
+          { damage: w.def.damage, mods: player.mods, knockback: w.def.knockback, status: w.def.status || null }, w.def.bulletColor, !!M.arrow));
+      }
+      SFX.play(M.arrow ? 'bow' : 'magic'); player.recoil = 0.6; return;
+    }
+    if (w.def.deploy) { // 포탑 설치: 최대 수를 넘으면 가장 오래된 포탑이 사라짐
+      const D = w.def.deploy, mine = this.world.allies.filter((a) => a instanceof Turret && a.def === w.def);
+      while (mine.length >= D.max) mine.shift().alive = false;
+      let tx = player.x + player.aim.x * 14, ty = player.y + player.aim.y * 14;
+      if (this.world.map.isSolidAt(tx, ty)) { tx = player.x; ty = player.y; }
+      const t = new Turret(tx, ty, player, { damage: w.def.damage, life: D.life, rate: D.rate, range: w.def.range }); t.def = w.def;
+      this.world.allies.push(t); this.world.effects.dust(tx, ty); SFX.play('crate'); return;
+    }
     this.shootGun(player, w);
     if (w.def.burst) { w.burstLeft = w.def.burst.count - 1; w.burstTimer = w.def.burst.interval; }
   }
@@ -89,7 +106,7 @@ class WeaponSystem {
         boomerang: !!def.boomerang, split: def.split || null, pull: def.pull || null, rehit: def.rehit || 0, mine: def.mine || null,
         spriteDef: def.boomerang || def.spinSprite ? def : null,
         bubble: !!def.bubble, grenade: def.grenade || null, firework: def.firework || null, ricochet: def.ricochet || 0,
-        puddle: def.puddle || null, arrow: !!def.arrow,
+        puddle: def.puddle || null, arrow: !!def.arrow, trail: def.trail || null, grow: def.grow || 0,
         speed: def.projectileSpeed, range: def.range, damage: def.damage,
         pierce: def.pierce, knockback: def.knockback || 0,
         mods: def.critBonus ? Object.assign(player.mods, { critChance: player.stats.critChance + def.critBonus }) : player.mods,
@@ -116,6 +133,16 @@ class WeaponSystem {
     if (!this.spend(player, def.energyCost)) return;
     w.cooldown += 1 / this.getFireRate(player, w);
     const ang = Math.atan2(player.aim.y, player.aim.x), arc = def.arcDeg * Math.PI / 180;
+    if (def.lunge) { // 돌격 찌르기: 조준 방향으로 돌진하며 찌름
+      world.effects.dust(player.x, player.y + 4);
+      let L = def.lunge; // 앞에 적이 있으면 그 바로 앞에서 멈춤
+      for (const e of world.enemies) {
+        if (!e.targetable) continue;
+        const dx = e.x - player.x, dy = e.y - player.y, d = Math.hypot(dx, dy);
+        if (d < def.lunge + def.range && angleDiff(Math.atan2(dy, dx), ang) < 0.5) L = Math.min(L, Math.max(0, d - e.radius - 10));
+      }
+      moveAndCollide(player, player.aim.x * L, player.aim.y * L, world.map);
+    }
     const src = { damage: def.damage, mods: player.mods, knockback: def.knockback, status: def.status || null };
     let hits = 0;
     for (const e of world.enemies) {
@@ -126,6 +153,9 @@ class WeaponSystem {
       world.damageEnemy(e, src, dx / (d || 1), dy / (d || 1)); hits++;
     }
     world.breakCratesInArc(player.x, player.y, ang, arc, def.range);
+    if (def.slam) // 지면 강타: 내리친 자리에 충격파
+      world.explodeAt(player.x + Math.cos(ang) * def.range * 0.8, player.y + Math.sin(ang) * def.range * 0.8, def.slam.r,
+        { color: '#d8b070', hurtEnemies: true, src: { damage: def.slam.damage, mods: player.mods, knockback: def.knockback, status: def.status || null } });
     if (def.wave) // 검기: 베면 관통하는 초승달 모양 기운이 날아감
       world.projectiles.push(new Projectile({ x: player.x + Math.cos(ang) * 10, y: player.y - 1 + Math.sin(ang) * 10, dx: Math.cos(ang), dy: Math.sin(ang),
         speed: def.wave.speed, range: def.wave.range, damage: def.wave.damage, pierce: 99, knockback: 3, mods: player.mods, color: def.color, size: 3, wave: true }));

@@ -34,6 +34,8 @@ class Projectile {
       if (this.age >= this.grenade.fuse) { this.detonate(world); return; }
     }
     if (this.firework && this.age >= this.firework.fuse) { this.alive = false; this.end(world); return; } // 폭죽: 날아가다 터짐
+    if (this.trail) { this.trailT = (this.trailT || 0) - dt; if (this.trailT <= 0) { this.trailT = this.trail.every; world.zones.push(new Puddle(this.x, this.y, this.trail.puddle, this.mods)); } } // 지나간 자리에 장판
+    if (this.grow) { this.baseDmg = this.baseDmg || this.damage; const g = Math.min(1, this.traveled / this.range); this.damage = this.baseDmg * (1 + this.grow * g); this.size = 2 + Math.round(g * 3); this.radius = 2 + g * 3; } // 멀리 갈수록 커짐
     if (this.bubble) { const w = Math.sin(this.age * 7) * 18 * dt; this.x += -this.dy * w; this.y += this.dx * w; } // 거품: 일렁임
     if (this.homing) this.steer(dt, world);
     if (this.rehit) { this.rehitT = (this.rehitT ?? this.rehit) - dt; if (this.rehitT <= 0) { this.rehitT = this.rehit; this.hitTargets.clear(); } }
@@ -251,11 +253,11 @@ class Hazard {
 
 // 기술자 포탑
 class Turret {
-  constructor(x, y, owner) { this.x = x; this.y = y; this.owner = owner; this.life = 12; this.cd = 0.3; this.ang = 0; this.alive = true; }
+  constructor(x, y, owner, o = {}) { this.x = x; this.y = y; this.owner = owner; this.life = o.life || 12; this.dmg = o.damage || 8; this.rate = o.rate || 0.2; this.range = o.range || 220; this.cd = 0.3; this.ang = 0; this.alive = true; }
   update(dt, world) {
     this.life -= dt; this.cd -= dt;
     if (this.life <= 0) { this.alive = false; world.effects.burst(this.x, this.y, '#aaa', 6); return; }
-    let best = null, bestD = 220;
+    let best = null, bestD = this.range;
     for (const e of world.enemies) {
       if (!e.targetable) continue;
       const d = Math.hypot(e.x - this.x, e.y - this.y);
@@ -264,9 +266,9 @@ class Turret {
     if (!best) return;
     this.ang = Math.atan2(best.y - this.y, best.x - this.x);
     if (this.cd <= 0) {
-      this.cd = 0.2;
+      this.cd = this.rate;
       world.projectiles.push(new Projectile({ x: this.x, y: this.y - 3, dx: Math.cos(this.ang), dy: Math.sin(this.ang),
-        speed: 380, range: 260, damage: 8, pierce: 0, knockback: 1, mods: this.owner.mods, color: '#ffe36b', size: 1 }));
+        speed: 380, range: this.range + 40, damage: this.dmg, pierce: 0, knockback: 1, mods: this.owner.mods, color: '#ffe36b', size: 1 }));
     }
   }
   render(ctx) {
@@ -329,5 +331,35 @@ class Drone {
     ctx.fillStyle = '#c8d0d8'; ctx.fillRect(x - 4, y - 2, 8, 1);
     ctx.fillStyle = Math.floor(this.t * 20) % 2 ? '#dfe8f0' : '#6a7a8a'; ctx.fillRect(x - 7, y - 4, 4, 1); ctx.fillRect(x + 3, y - 4, 4, 1);
     ctx.fillStyle = this.def.bulletColor; ctx.fillRect(x + Math.round(Math.cos(this.ang) * 2) - 1, y - 1, 2, 2);
+  }
+}
+
+// 낙하 공격 (유성·화살비): 바닥에 경고 표시 → 시간이 되면 떨어져 범위 피해
+class Strike {
+  constructor(x, y, delay, r, src, color, arrow) { this.x = x; this.y = y; this.delay = delay; this.r = r; this.src = src; this.color = color; this.arrow = arrow; this.t = 0; this.alive = true; }
+  update(dt, world) {
+    this.t += dt;
+    if (this.t < this.delay) return;
+    this.alive = false;
+    if (this.arrow) { // 작은 화살: 조용히 범위 안 적만 타격
+      for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < this.r + e.radius) world.damageEnemy(e, this.src, 0, 1, { quiet: true });
+      world.effects.impact(this.x, this.y, this.color, -Math.PI / 2); world.effects.dust(this.x, this.y);
+    } else world.explodeAt(this.x, this.y, this.r, { color: this.color, hurtEnemies: true, src: this.src });
+  }
+  render(ctx) {
+    const k = Math.min(1, this.t / this.delay);
+    ctx.globalAlpha = 0.25 + 0.35 * k; ctx.strokeStyle = this.color;
+    ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r, this.r * 0.6, 0, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.18 * k; ctx.fillStyle = this.color;
+    ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * k, this.r * 0.6 * k, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+    if (k > 0.55) { // 떨어지는 유성/화살
+      const h = (1 - k) / 0.45 * 90, x = this.x + h * 0.35, y = this.y - h;
+      if (this.arrow) { ctx.strokeStyle = this.color; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 3, y - 8); ctx.stroke(); }
+      else {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = this.color; ctx.lineWidth = 4; ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 12, y - 30); ctx.stroke();
+        ctx.globalAlpha = 1; ctx.fillStyle = '#fff0c0'; ctx.beginPath(); ctx.arc(x, y, 3 + this.r / 14, 0, TAU); ctx.fill(); ctx.restore(); ctx.lineWidth = 1;
+      }
+    }
   }
 }

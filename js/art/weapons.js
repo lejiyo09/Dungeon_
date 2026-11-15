@@ -67,6 +67,17 @@ Object.assign(WPIX, {
   shield: { auto: true, p: [1, 4], rows: ['....aa.', '...acca', '...acca', '...acya', 'gggaayy', '...acya', '...acca', '...acca', '....aa.'] },
   dronectl: { auto: true, p: [2, 5], rows: ['......o.', '......n.', '.aaaaaan', '.aroaraa', '.aaaaaaa', '.gg.....', '.gg.....'] },
   chargebeam: { auto: true, p: [4, 5], rows: ['....nnnnnnnnnnn.', '..aaaaaaaaaaaaoo', '.acccoocccccaaoo', '.aaaaaaaaaaaaaoo', '..bbbbbbbbbbbb..', '....gg..........', '....gg..........'] },
+  fanknives: { auto: true, p: [1, 2], rows: ['......mm', '...mmm..', 'ggmmmmmm', '...mmm..', '......mm'] },
+  repeatxbow: { auto: true, p: [1, 2], rows: ['....a......', '...a.......', 'dddddmmmmmo', '...a.......', '....a......'] },
+  growgun: { auto: true, p: [2, 3], rows: ['...nnn.....', '.aaaaaaaoo.', '.acccccaoow', '.aaaaaaaoo.', '.gg........', '.gg........'] },
+  poisonstaff: { auto: true, p: [3, 1], rows: ['.........ooo.', 'ddddddddd.owo', '.........ooo.'] },
+  rainbow: { auto: true, p: [3, 4], rows: ['.a....', '.sa.o.', '.s.ao.', '.s.a..', '.s.ao.', '.s.a..', '.s.ao.', '.sa.o.', '.a....'] },
+  lavastaff: { auto: true, p: [3, 1], rows: ['.........n.oo.', 'ddddddddddnoro', '.........n.oo.'] },
+  turretgun: { auto: true, p: [2, 3], rows: ['..nnnn....', '.aaaaaaa..', '.aoaaaaamm', '.aaaaaaa..', '..gg......', '..gg......'] },
+  pan: { auto: true, p: [1, 2], rows: ['.......aaa..', '......abbba.', 'ddddddabbbba', '......abbba.', '.......aaa..'] },
+  spinaxe: { auto: true, p: [1, 2], rows: ['.........aa.', '........acca', 'dddddddddcca', '........acca', '.........aa.'] },
+  lance: { auto: true, p: [3, 1], rows: ['.............mm..', 'ddddyddddddddmmmm', '.............mm..'] },
+  quakehammer: { auto: true, p: [1, 2], rows: ['........aaaa', '........acca', 'dddddddyacca', '........acca', '........aaaa'] },
   headshot: { auto: true, p: [5, 3], rows: ['.....nnnnnnn........', '.....nooooon........', 'bbbbaaaaaaaaaaaaaaaan', 'bb...aanbb..........', '.....gg.............', '.....gg.............'] }
 });
 
@@ -84,7 +95,11 @@ Object.assign(WEAPON_SPRITE, {
   weapon_thunderbow_001: 'thunderbow', weapon_bubble_001: 'bubblegun', weapon_javelin_001: 'javelin', weapon_molotov_001: 'molotov',
   weapon_grenade_001: 'grenade', weapon_chakram_001: 'chakram', weapon_orbstaff_001: 'orbstaff', weapon_ringgun_001: 'ringgun',
   weapon_firework_001: 'firework', weapon_freezeray_001: 'freezeray', weapon_wavesword_001: 'wavesword', weapon_shield_001: 'shield',
-  weapon_drone_001: 'dronectl', weapon_chargebeam_001: 'chargebeam', weapon_headshot_001: 'headshot'
+  weapon_drone_001: 'dronectl', weapon_chargebeam_001: 'chargebeam', weapon_headshot_001: 'headshot',
+  weapon_fanknives_001: 'fanknives', weapon_repeatxbow_001: 'repeatxbow', weapon_growgun_001: 'growgun', weapon_poisonstaff_001: 'poisonstaff',
+  weapon_rainbow_001: 'rainbow', weapon_lavastaff_001: 'lavastaff', weapon_turretgun_001: 'turretgun',
+  weapon_pan_001: 'pan', weapon_spinaxe_001: 'spinaxe',
+  weapon_lance_001: 'lance', weapon_quakehammer_001: 'quakehammer'
 });
 
 // auto 외곽선: 사방 1px 여백을 두고, 그림에 맞닿은 빈칸을 외곽선으로
