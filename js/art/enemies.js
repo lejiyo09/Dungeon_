@@ -6,7 +6,8 @@
 // ════════════════════════════════════════════
 
 // 도형 기반 픽셀 그리기 → 자동 외곽선 → 문자 격자로 변환
-function bakeProc(w, h, draw, pal) {
+function bakeProc(w, h, draw, pal) { return bakeSprite(procGrid(w, h, draw), pal); }
+function procGrid(w, h, draw) {
   const buf = new Array(w * h).fill('.');
   const put = (x, y, ch) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < w && y < h) buf[y * w + x] = ch; };
   const P = {
@@ -44,7 +45,7 @@ function bakeProc(w, h, draw, pal) {
   }
   const rows = [];
   for (let y = 0; y < h; y++) rows.push(out.slice(y * w, y * w + w).join(''));
-  return bakeSprite(rows, pal);
+  return rows;
 }
 
 // 술사 3종 공용 몸통 (x = 지팡이 끝 수정)

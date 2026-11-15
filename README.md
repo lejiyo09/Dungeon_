@@ -66,7 +66,8 @@ js/
     input.js     키보드·마우스 입력
     loop.js      고정 timestep(60Hz) 게임 루프
     collision.js 타일 충돌, 레이캐스트, 피해 계산
-  art/pixel.js 픽셀아트 스프라이트(PIX, WPIX), 타일 텍스처, 그리기 함수
+  art/pixel.js 픽셀아트 스프라이트(PIX, WPIX), 그리기 함수
+  art/heroes.js 캐릭터 외형 (16×20, 도형으로 그린 뒤 자동 외곽선)
   world/map.js 던전 맵, 절차적 생성, 로비 맵
   entities/    플레이어·적(actors), 투사체·장판·포탑(projectiles), 픽업·상자·상점·로비 오브젝트(props)
   systems/     무기 발사(weapons), 몬스터 AI·보스 패턴(ai), 이펙트(effects)

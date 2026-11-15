@@ -34,7 +34,8 @@ function drawSprite(ctx, spr, x, y, o = {}) {
   ctx.drawImage(img, Math.round(x - w / 2), Math.round(y - h), w, h);
 }
 
-// ── 캐릭터: 직업별 전신 템플릿 (몸통 rows + 걷기 2프레임 legs)
+// ── 캐릭터: 예전 16×16 문자 격자 외형 (js/art/heroes.js의 HERO_PROCS가 있으면 그쪽을 사용 — 지금은 예비용)
+// ── 직업별 전신 템플릿 (몸통 rows + 걷기 2프레임 legs)
 //  공통 문자: a/b/c 몸 주색/어두운/밝은, h/g 모자 주색/어두운, s 피부, m 금속, y 금색, r 빨강, n 가죽, d 부츠, l 다리, e 렌즈, w 흰색
 const HERO_SPRITES = {
   // 검사: 깃털 투구, 어깨 갑옷, 십자 문양 서코트, 철 장화
@@ -343,7 +344,10 @@ function heroSprite(hero, frame) {
   const L = hero.look, T = HERO_SPRITES[L.sprite] || HERO_SPRITES.knight;
   const pal = Object.assign({ k: OUTLINE, s: '#f0c8a0', a: L.body, b: shade(L.body, 0.68), c: shade(L.body, 1.35), m: '#c9d6e0', w: '#ffffff',
     r: L.accent, y: '#e0c060', l: '#3a3048', h: L.accent, g: shade(L.accent, 0.68), e: '#7ad0ff', n: '#6a4628', d: '#3a2a1a' }, T.pal);
-  s = bakeSprite(T.rows.concat(T.legs[frame]), pal); spriteCache.set(key, s); return s;
+  const P2 = HERO_PROCS[L.sprite]; // 도형으로 그린 새 외형이 있으면 그것을 사용
+  if (P2) Object.assign(pal, P2.pal);
+  s = P2 ? bakeSprite(procGrid(HERO_W, HERO_H, (P) => P2.proc(P, frame)), pal) : bakeSprite(T.rows.concat(T.legs[frame]), pal);
+  spriteCache.set(key, s); return s;
 }
 function weaponSprite(def) {
   const key = 'wpn|' + def.id;
