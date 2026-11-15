@@ -282,8 +282,9 @@ function weaponSprite(def) {
   if (s) return s;
   const t = WPIX[WEAPON_SPRITE[def.id]] || WPIX.pistol;
   const pal = { k: OUTLINE, a: def.color, b: shade(def.color, 0.65), c: shade(def.color, 1.4), o: def.bulletColor || '#ffffff',
-    w: '#ffffff', d: '#7a5530', y: '#d0a040', s: '#dddddd' };
-  s = bakeSprite(t.rows, pal); s.px = t.p[0]; s.py = t.p[1]; spriteCache.set(key, s); return s;
+    w: '#ffffff', d: '#7a5530', e: '#5a3a1e', y: '#d0a040', s: '#dddddd', m: '#a8b0bc', n: '#5a6070', g: '#2a2a34', r: '#d04040' };
+  const rows = t.auto ? outlineRows(t.rows) : t.rows, off = t.auto ? 1 : 0; // auto: 외곽선 1px 만큼 손잡이 위치 이동
+  s = bakeSprite(rows, pal); s.px = t.p[0] + off; s.py = t.p[1] + off; spriteCache.set(key, s); return s;
 }
 
 function drawHero(ctx, hero, x, y, face, frame, dash) {
@@ -293,14 +294,10 @@ function drawHero(ctx, hero, x, y, face, frame, dash) {
   if (dash) { ctx.globalAlpha = 0.55; drawSprite(ctx, spr, x, y + 7, { flip: face < 0, white: true }); ctx.globalAlpha = 1; }
 }
 
+// 무기 그리기: (x,y)=손 위치. 64방향으로 미리 구운 도트 회전 이미지를 사용
 function drawWeapon(ctx, def, x, y, angle) {
-  const spr = weaponSprite(def);
-  ctx.save();
-  ctx.translate(Math.round(x), Math.round(y));
-  ctx.rotate(angle);
-  if (Math.cos(angle) < 0) ctx.scale(1, -1);
-  ctx.drawImage(spr.n, -spr.px, -spr.py);
-  ctx.restore();
+  const r = rotatedWeapon(def, angle);
+  ctx.drawImage(r.c, Math.round(x - r.half), Math.round(y - r.half));
 }
 // 무기를 가운데 정렬로 그리기 (바닥/상점/HUD용)
 function drawWeaponCentered(ctx, def, cx, cy) {

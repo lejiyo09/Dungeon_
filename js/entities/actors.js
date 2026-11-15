@@ -22,7 +22,7 @@ class Player extends Entity {
     this.dashRemaining = 0; this.dashCooldown = 0; this.dashInvuln = 0; this.hurtInvuln = 0;
     this.skillCooldown = 0; this.whirl = 0; this.whirlTick = 0; this.overdrive = 0; this.vampire = 0;
     this.sinceHit = 99; this.deathTimer = 0; this.time = 0; this.moving = false;
-    this.swing = null;
+    this.swing = null; this.aimVis = 0; this.faceVis = 1; this.recoil = 0;
     this.stats = { attackBonus: 0, fireRateBonus: 0, critChance: base.critChance, critMultiplier: base.critMultiplier };
     this.weapons = []; this.slot = 0; this.buffs = [];
   }
@@ -45,6 +45,13 @@ class Player extends Entity {
 
     const ax = mouseWorld.x - this.x, ay = mouseWorld.y - this.y, alen = Math.hypot(ax, ay);
     if (alen > 0.5) { this.aim.x = ax / alen; this.aim.y = ay / alen; }
+    // 보이는 조준: 실제 조준을 빠르게 따라감 (총알은 실제 조준으로 바로 나감)
+    const want = Math.atan2(this.aim.y, this.aim.x);
+    let diff = want - this.aimVis; while (diff > Math.PI) diff -= TAU; while (diff < -Math.PI) diff += TAU;
+    this.aimVis += clamp(diff, -26 * dt, 26 * dt) + diff * Math.min(1, 12 * dt) * 0.5;
+    // 바라보는 방향: 수직 근처에서는 바꾸지 않음 (좌우 깜빡임 방지)
+    if (this.aim.x > 0.22) this.faceVis = 1; else if (this.aim.x < -0.22) this.faceVis = -1;
+    this.recoil = Math.max(0, this.recoil - dt * 9);
 
     let ix = 0, iy = 0;
     if (input.isDown('KeyA')) ix -= 1;
@@ -86,15 +93,16 @@ class Player extends Entity {
     return true;
   }
   weaponAngle() {
-    const aimAng = Math.atan2(this.aim.y, this.aim.x);
+    const dir = Math.cos(this.aimVis) < 0 ? -1 : 1;
+    const aimAng = this.aimVis - dir * this.recoil * 0.22; // 반동: 총구가 살짝 들림
     if (!this.swing) return aimAng;
-    const s = this.swing, k = s.t / s.dur, dir = this.aim.x < 0 ? -1 : 1;
+    const s = this.swing, k = s.t / s.dur;
     if (s.thrust) return aimAng;
     return s.ang + dir * (-s.arc / 2 + s.arc * k);
   }
   render(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y);
-    const face = this.aim.x < 0 ? -1 : 1;
+    const face = this.faceVis;
     if (this.state === 'DEAD') {
       const spr = heroSprite(this.hero, 0);
       ctx.save(); ctx.translate(x, y + 3); ctx.rotate(face * Math.PI / 2); ctx.globalAlpha = 0.85;
@@ -106,12 +114,15 @@ class Player extends Entity {
       ctx.fillStyle = `rgba(255,200,60,${0.25 + 0.15 * Math.sin(this.time * 20)})`;
       ctx.beginPath(); ctx.arc(x, y - 1, 12, 0, TAU); ctx.fill();
     }
-    const w = this.weapon, behind = this.aim.y < -0.35;
+    const w = this.weapon, behind = Math.sin(this.aimVis) < -0.4;
     const drawW = () => {
       if (!w) return;
       const ang = this.weaponAngle();
       const reach = this.swing && this.swing.thrust ? Math.sin(Math.PI * this.swing.t / this.swing.dur) * 10 : 0;
-      drawWeapon(ctx, w.def, x + Math.cos(ang) * (3 + reach), y + 2 + Math.sin(ang) * (3 + reach), ang);
+      // 손 위치: 어깨(몸 중앙 약간 아래)를 중심으로 도는 궤도, 반동 시 뒤로 밀림
+      const R = 4 + reach - this.recoil * 2.5;
+      const hx = x + Math.cos(ang) * R, hy = y + 2 + Math.sin(ang) * R * 0.75;
+      drawWeapon(ctx, w.def, hx, hy, ang);
     };
     if (behind) drawW();
     drawHero(ctx, this.hero, x, y, face, frame, this.state === 'DASH');

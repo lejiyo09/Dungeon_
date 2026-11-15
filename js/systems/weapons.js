@@ -79,7 +79,9 @@ class WeaponSystem {
         homing: def.homing || 0, bounce: def.bounce || 0, chain: def.chain || null, status: def.status || null, flame: !!def.flame
       }, override)));
     }
-    if (!def.flame) this.world.effects.spark(player.x + player.aim.x * (def.len + 4), player.y - 1 + player.aim.y * (def.len + 4), '#fff6c0');
+    const L = weaponLength(def) + 4; // 총구 위치에 섬광
+    if (!def.flame) this.world.effects.spark(player.x + player.aim.x * L, player.y + 2 + player.aim.y * L * 0.75, '#fff6c0');
+    player.recoil = Math.min(1, player.recoil + (def.damage * (def.projectileCount || 1) >= 40 ? 1 : def.fireRate > 8 ? 0.35 : 0.6));
     SFX.play(weaponSound(def), def.fireRate > 8 ? 0.06 : 0.03);
   }
   releaseCharge(player, w) {
