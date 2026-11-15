@@ -299,6 +299,8 @@ function drawRoomArt(g, r, pal) {
     const x0 = (r.cx - 3) * TILE, y0 = (r.cy - 1) * TILE;
     for (let i = 0; i < 7; i++) for (let j = 0; j < 4; j++) pxs(g, (i + j) % 2 ? '#5a1a2a' : '#2a1a3a', [[x0 + i * TILE, y0 + j * TILE, TILE, TILE]]);
     pxs(g, '#c89a40', [[x0, y0, 7 * TILE, 1], [x0, y0 + 4 * TILE - 1, 7 * TILE, 1]]);
+  } else if (r.type === 'smithy') { // 강화소: 금빛 테두리 원
+    pixelCircle(g, cx, cy, 22, '#ffd84a'); pixelCircle(g, cx, cy, 18, '#a07820', 2);
   } else if (r.type === 'forge') { // 그을린 바닥
     pixelCircle(g, cx, cy, 20, '#a05a2a'); pixelCircle(g, cx, cy, 16, '#5a3a2a', 2);
   } else if (r.type === 'blood') { // 핏빛 원

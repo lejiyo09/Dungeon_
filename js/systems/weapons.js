@@ -2,8 +2,16 @@
 // ════════════════════════════════════════════
 // 무기 시스템
 // ════════════════════════════════════════════
+// 강화 단계만큼 공격력 보너스를 더한 피해 계산용 수치 (치명타 보너스 무기 포함)
+function weaponMods(player, w) {
+  const def = w.def, m = Object.assign({}, player.mods);
+  m.attackBonus += (w.lv || 0) * BALANCE.upgrade.perLevel;
+  if (def.critBonus) m.critChance = player.stats.critChance + def.critBonus;
+  return m;
+}
+function weaponTitle(w) { return w.def.name + (w.lv ? ` +${w.lv}` : ''); }
 class WeaponInstance {
-  constructor(def) { this.def = def; this.cooldown = 0; this.charge = 0; this.burstLeft = 0; this.burstTimer = 0; this.beamTick = 0; this.beamActive = false; this.beamEnd = null; }
+  constructor(def, lv = 0) { this.lv = lv; this.def = def; this.cooldown = 0; this.charge = 0; this.burstLeft = 0; this.burstTimer = 0; this.beamTick = 0; this.beamActive = false; this.beamEnd = null; }
 }
 
 class WeaponSystem {
@@ -58,7 +66,7 @@ class WeaponSystem {
     if (w.def.summon) { // 드론 소환: 최대 수를 넘으면 가장 오래된 드론이 사라짐
       const mine = this.world.allies.filter((a) => a instanceof Drone && a.def === w.def);
       while (mine.length >= w.def.summon.max) mine.shift().alive = false;
-      this.world.allies.push(new Drone(player, w.def, mine.length));
+      const dr = new Drone(player, w.def, mine.length); dr.wmods = () => weaponMods(player, w); this.world.allies.push(dr);
       this.world.effects.sparkle(player.x, player.y - 10, w.def.bulletColor); SFX.play('skill', 0.1);
       return;
     }
@@ -67,7 +75,7 @@ class WeaponSystem {
       for (let i = 0; i < M.count; i++) {
         const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * M.spread;
         this.world.zones.push(new Strike(player.x + dx * k + Math.cos(a) * r, player.y + dy * k + Math.sin(a) * r * 0.75, M.delay + i * (M.stagger || 0), M.r,
-          { damage: w.def.damage, mods: player.mods, knockback: w.def.knockback, status: w.def.status || null }, w.def.bulletColor, !!M.arrow));
+          { damage: w.def.damage, mods: weaponMods(player, w), knockback: w.def.knockback, status: w.def.status || null }, w.def.bulletColor, !!M.arrow));
       }
       SFX.play(M.arrow ? 'bow' : 'magic'); player.recoil = 0.6; return;
     }
@@ -76,7 +84,7 @@ class WeaponSystem {
       while (mine.length >= D.max) mine.shift().alive = false;
       let tx = player.x + player.aim.x * 14, ty = player.y + player.aim.y * 14;
       if (this.world.map.isSolidAt(tx, ty)) { tx = player.x; ty = player.y; }
-      const t = new Turret(tx, ty, player, { damage: w.def.damage, life: D.life, rate: D.rate, range: w.def.range }); t.def = w.def;
+      const t = new Turret(tx, ty, player, { damage: w.def.damage, life: D.life, rate: D.rate, range: w.def.range }); t.def = w.def; t.wmods = () => weaponMods(player, w);
       this.world.allies.push(t); this.world.effects.dust(tx, ty); SFX.play('crate'); return;
     }
     this.shootGun(player, w);
@@ -95,7 +103,7 @@ class WeaponSystem {
       const mine = this.world.projectiles.filter((p) => p.orbit && p.srcId === def.id && p.alive);
       while (mine.length >= def.orbit.max) mine.shift().alive = false;
       this.world.projectiles.push(new Projectile({ x: player.x, y: player.y, dx: 1, dy: 0, speed: 0, range: 9999, damage: def.damage,
-        pierce: 99, knockback: def.knockback, mods: player.mods, color: def.bulletColor, size: def.bulletSize || 2, rehit: def.rehit, srcId: def.id,
+        pierce: 99, knockback: def.knockback, mods: weaponMods(player, w), color: def.bulletColor, size: def.bulletSize || 2, rehit: def.rehit, srcId: def.id,
         orbit: { owner: player, r: def.orbit.r, speed: def.orbit.speed, life: def.orbit.life, ang: base } }));
       this.world.effects.sparkle(player.x, player.y, def.bulletColor); SFX.play('magic');
       return;
@@ -114,7 +122,7 @@ class WeaponSystem {
         close: def.close || 0, execute: def.execute || 0, mark: def.mark || null, killEnergy: def.killEnergy || 0,
         speed: def.projectileSpeed, range: def.range, damage: def.damage,
         pierce: def.pierce, knockback: def.knockback || 0,
-        mods: def.critBonus ? Object.assign({}, player.mods, { critChance: player.stats.critChance + def.critBonus }) : player.mods,
+        mods: weaponMods(player, w),
         explodeRadius: def.explodeRadius || 0, color: def.bulletColor, size: def.bulletSize || 1,
         homing: def.homing || 0, bounce: def.bounce || 0, chain: def.chain || null, status: def.status || null, flame: !!def.flame
       }, override)));
@@ -151,7 +159,7 @@ class WeaponSystem {
     w.shots = (w.shots || 0) + 1;
     const pow = def.nth && w.shots % def.nth.every === 0; // N번째 휘두르기 강화
     const src = { damage: def.damage * (pow ? def.nth.mult : 1), knockback: def.knockback * (pow ? 1.5 : 1), status: def.status || null,
-      mods: def.critBonus ? Object.assign({}, player.mods, { critChance: player.stats.critChance + def.critBonus }) : player.mods,
+      mods: weaponMods(player, w),
       execute: def.execute || 0, mark: def.mark || null, killEnergy: def.killEnergy || 0 };
     if (pow) { world.addShake(0.12, 3); SFX.play('crit', 0.05); }
     let hits = 0;
@@ -165,10 +173,10 @@ class WeaponSystem {
     world.breakCratesInArc(player.x, player.y, ang, arc, def.range);
     if (def.slam) // 지면 강타: 내리친 자리에 충격파
       world.explodeAt(player.x + Math.cos(ang) * def.range * 0.8, player.y + Math.sin(ang) * def.range * 0.8, def.slam.r,
-        { color: '#d8b070', hurtEnemies: true, src: { damage: def.slam.damage, mods: player.mods, knockback: def.knockback, status: def.status || null } });
+        { color: '#d8b070', hurtEnemies: true, src: { damage: def.slam.damage, mods: weaponMods(player, w), knockback: def.knockback, status: def.status || null } });
     if (def.wave) // 검기: 베면 관통하는 초승달 모양 기운이 날아감
       world.projectiles.push(new Projectile({ x: player.x + Math.cos(ang) * 10, y: player.y - 1 + Math.sin(ang) * 10, dx: Math.cos(ang), dy: Math.sin(ang),
-        speed: def.wave.speed, range: def.wave.range, damage: def.wave.damage, pierce: 99, knockback: 3, mods: player.mods, color: def.color, size: 3, wave: true }));
+        speed: def.wave.speed, range: def.wave.range, damage: def.wave.damage, pierce: 99, knockback: 3, mods: weaponMods(player, w), color: def.color, size: 3, wave: true }));
     if (def.lifesteal && hits > 0) player.hp = Math.min(player.maxHp, player.hp + Math.min(3, hits * def.lifesteal));
     if (def.deflect) {
       for (const b of world.enemyBullets) {
@@ -177,7 +185,7 @@ class WeaponSystem {
           b.alive = false; world.effects.spark(b.x, b.y, '#ffffff');
           if (def.reflect) { // 반사 방패: 적 탄을 조준 방향으로 되돌려 보냄 (2.5배)
             world.projectiles.push(new Projectile({ x: b.x, y: b.y, dx: Math.cos(ang), dy: Math.sin(ang), speed: 380, range: 320,
-              damage: b.damage * 2.5, pierce: 0, knockback: 4, mods: player.mods, color: '#ffffff', size: 2 }));
+              damage: b.damage * 2.5, pierce: 0, knockback: 4, mods: weaponMods(player, w), color: '#ffffff', size: 2 }));
             world.effects.ring(b.x, b.y, 8, '#ffffff');
           }
         }
@@ -214,7 +222,7 @@ class WeaponSystem {
     const interval = def.tickRate / (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 : 0));
     while (w.beamTick <= 0) {
       w.beamTick += interval;
-      if (target) world.damageEnemy(target, { damage: def.damage * (1 + (def.focus || 0) * (w.focusK || 0)), mods: player.mods, knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
+      if (target) world.damageEnemy(target, { damage: def.damage * (1 + (def.focus || 0) * (w.focusK || 0)), mods: weaponMods(player, w), knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
     }
   }
 }

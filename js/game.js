@@ -109,7 +109,7 @@ class Game {
     return { v: 1, t: Date.now(), hero: p.hero.id, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills,
       p: { maxHp: p.maxHp, hp: p.hp, maxShield: p.maxShield, maxEnergy: p.maxEnergy, energy: p.energy, moveSpeed: p.moveSpeed,
         dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction,
-        stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), slot: p.slot,
+        stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
         treasure: p.treasure ? p.treasure.id : null } };
   }
   resumeRun() {
@@ -119,7 +119,7 @@ class Game {
     const p = this.player = new Player(0, 0, hero, this.data.base), s = r.p;
     for (const k of ['maxHp', 'hp', 'maxShield', 'maxEnergy', 'energy', 'moveSpeed', 'dashCdMax', 'skillCdMax', 'vampire', 'damageReduction']) if (typeof s[k] === 'number') p[k] = s[k];
     Object.assign(p.stats, s.stats); p.buffs = s.buffs || [];
-    p.weapons = (s.weapons || []).filter((id) => this.data.weapons.get(id)).map((id) => new WeaponInstance(this.data.weapons.get(id)));
+    p.weapons = (s.weapons || []).map((id, i) => [id, (s.weaponLv || [])[i] || 0]).filter(([id]) => this.data.weapons.get(id)).map(([id, lv]) => new WeaponInstance(this.data.weapons.get(id), lv));
     if (!p.weapons.length) p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
     p.slot = Math.min(s.slot || 0, p.weapons.length - 1);
     p.treasure = DATA_TREASURES.find((t) => t.id === s.treasure) || null; // 보구 효과는 위 능력치에 이미 반영돼 있음
@@ -188,6 +188,7 @@ class Game {
       else if (r.type === 'challenge') this.props.push(new ChallengeStone(c.x, c.y, r));
       else if (r.type === 'forge') this.props.push(new Forge(c.x, c.y, Math.round(SR.forgePrice * inflate)));
       else if (r.type === 'blood') this.props.push(new BloodAltar(c.x, c.y));
+      else if (r.type === 'smithy') this.props.push(new UpgradeAnvil(c.x, c.y, BALANCE.upgrade.forgeRoomDiscount, BALANCE.upgrade.forgeRoomBonus, true)); // 강화소: 싸고 성공률 높음
       else if (r.type === 'rack') { // 무기 진열대: 셋 중 하나만 가져갈 수 있음
         const a = this.randomWeaponDef(), b = this.randomWeaponDef(0, [a.id]), d = this.randomWeaponDef(0, [a.id, b.id]), grp = {};
         [a, b, d].forEach((def, i) => this.pickups.push(new Pickup('weapon', c.x + (i - 1) * 32, c.y + 4, { def, still: true, group: grp })));
@@ -202,6 +203,7 @@ class Game {
   stockShop(room) {
     const m = this.map, inflate = 1 + BALANCE.shopInflate * this.stageIndex;
     const mc = m.tileCenter(room.cx, room.y0 + 1); this.props.push(new Merchant(mc.x, mc.y));
+    this.props.push(new UpgradeAnvil(mc.x + 40, mc.y + 4, 1, 0)); // 상점 강화대
     const owned = new Set(this.player.weapons.map((w) => w.def.id));
     const w1 = this.randomWeaponDef(), w2 = this.randomWeaponDef(0, [w1.id]); // 상점도 상자와 같은 등급 확률
     const items = [['weapon', w1], ['weapon', w2 !== w1 ? w2 : null], ['hp'], ['energy']].filter(([k, d]) => k !== 'weapon' || d);
@@ -666,18 +668,37 @@ class Game {
       if (Math.random() < 0.4) this.pickups.push(new Pickup('hp', c.x, c.y, { value: 20 }));
     }
   }
-  giveWeapon(def) {
-    const p = this.player, inst = new WeaponInstance(def);
+  // 무기 강화: 성공하면 +1 (실패해도 단계 유지, 비용만 듦)
+  upgradeCost(w, discount = 1) { const U = BALANCE.upgrade; return Math.round(U.base * (w.lv + 1) * U.rarityMult[w.def.rarity] * (1 + BALANCE.shopInflate * this.stageIndex) * discount); }
+  upgradeChance(w, bonus = 0) { return Math.min(1, BALANCE.upgrade.chance[w.lv] + bonus); }
+  tryUpgrade(discount = 1, bonus = 0, at) {
+    const p = this.player, w = p.weapon, U = BALANCE.upgrade;
+    if (!w) return;
+    if (w.lv >= U.maxLevel) { this.effects.text(p.x, p.y - 18, '최대 강화입니다', '#aaa'); SFX.play('deny'); return; }
+    const cost = this.upgradeCost(w, discount);
+    if (this.gold < cost) { this.effects.text(p.x, p.y - 18, '골드가 부족합니다', '#ff7070'); SFX.play('deny'); return; }
+    this.gold -= cost;
+    const fx = at || p;
+    if (Math.random() < this.upgradeChance(w, bonus)) {
+      w.lv++;
+      this.effects.text(p.x, p.y - 24, `강화 성공! ${weaponTitle(w)}`, '#ffd84a', true); this.effects.burst(fx.x, fx.y - 6, '#ffd84a', 16); this.effects.ring(fx.x, fx.y, 18, '#ffd84a');
+      SFX.play(w.lv >= 4 ? 'clear' : 'buy'); if (w.lv >= 4) this.addShake(0.12, 2);
+    } else {
+      this.effects.text(p.x, p.y - 24, '강화 실패…', '#9a9aa8', true); this.effects.burst(fx.x, fx.y - 6, '#666', 10); SFX.play('deny');
+    }
+  }
+  giveWeapon(def, lv = 0) {
+    const p = this.player, inst = new WeaponInstance(def, lv);
     if (p.weapons.length < this.data.base.weaponSlots) { p.weapons.push(inst); p.slot = p.weapons.length - 1; }
     else {
-      this.pickups.push(new Pickup('weapon', p.x, p.y + 4, { def: p.weapon.def, still: true }));
+      this.pickups.push(new Pickup('weapon', p.x, p.y + 4, { def: p.weapon.def, still: true, lv: p.weapon.lv })); // 강화 단계는 바닥에 내려놔도 유지
       p.weapons[p.slot] = inst;
     }
     this.discover(def.id);
     this.effects.text(p.x, p.y - 18, def.name, RARITY_COLOR[def.rarity]); this.effects.text(p.x, p.y - 8, weaponTraits(def), '#e0d0a0');
   }
   pickWeapon(pk) {
-    pk.alive = false; this.giveWeapon(pk.def);
+    pk.alive = false; this.giveWeapon(pk.def, pk.lv || 0);
     if (pk.group) for (const o of this.pickups) if (o !== pk && o.group === pk.group && o.alive) { o.alive = false; this.effects.burst(o.x, o.y, '#aaa', 8); } // 진열대: 나머지는 사라짐
   }
   buy(item) {
@@ -987,7 +1008,7 @@ class Game {
 
     const t = this.interactTarget;
     if (t && this.player.state !== 'DEAD' && !this.overlay) {
-      const label = t instanceof Pickup ? `[E] ${t.def.name} (${RARITY_NAME[t.def.rarity]})` : t.label(this);
+      const label = t instanceof Pickup ? `[E] ${t.def.name}${t.lv ? ' +' + t.lv : ''} (${RARITY_NAME[t.def.rarity]})` : t.label(this);
       const color = t instanceof Pickup ? RARITY_COLOR[t.def.rarity] : t.labelColor;
       if (label) {
         ctx.font = "bold 9px 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif";

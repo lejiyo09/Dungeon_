@@ -269,7 +269,7 @@ class Turret {
     if (this.cd <= 0) {
       this.cd = this.rate;
       world.projectiles.push(new Projectile({ x: this.x, y: this.y - 3, dx: Math.cos(this.ang), dy: Math.sin(this.ang),
-        speed: 380, range: this.range + 40, damage: this.dmg, pierce: 0, knockback: 1, mods: this.owner.mods, color: '#ffe36b', size: 1 }));
+        speed: 380, range: this.range + 40, damage: this.dmg, pierce: 0, knockback: 1, mods: this.wmods ? this.wmods() : this.owner.mods, color: '#ffe36b', size: 1 }));
     }
   }
   render(ctx) {
@@ -320,7 +320,7 @@ class Drone {
     if (this.cd <= 0) {
       this.cd = this.def.summon.rate;
       world.projectiles.push(new Projectile({ x: this.x, y: this.y, dx: Math.cos(this.ang), dy: Math.sin(this.ang), speed: this.def.projectileSpeed, range: this.def.range,
-        damage: this.def.damage, pierce: 0, knockback: 1, mods: this.owner.mods, color: this.def.bulletColor, size: 1 }));
+        damage: this.def.damage, pierce: 0, knockback: 1, mods: this.wmods ? this.wmods() : this.owner.mods, color: this.def.bulletColor, size: 1 }));
       world.effects.muzzle(this.x + Math.cos(this.ang) * 5, this.y + Math.sin(this.ang) * 5, this.ang, this.def.bulletColor);
     }
   }

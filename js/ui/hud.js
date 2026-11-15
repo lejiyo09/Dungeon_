@@ -65,7 +65,7 @@ class HUD {
     if (w) {
       ctx.strokeStyle = RARITY_COLOR[w.def.rarity]; ctx.strokeRect(VIEW_W - 168.5, VIEW_H - 34.5, 34, 26);
       drawWeaponCentered(ctx, w.def, VIEW_W - 151, VIEW_H - 21);
-      hudText(ctx, w.def.name, VIEW_W - 128, VIEW_H - 35, RARITY_COLOR[w.def.rarity], 'left', 10);
+      hudText(ctx, weaponTitle(w), VIEW_W - 128, VIEW_H - 35, RARITY_COLOR[w.def.rarity], 'left', 10);
       const cost = w.def.type === 'beam' ? `${w.def.energyPerSec}/초` : (w.def.energyCost || 0);
       const free = p.overdrive > 0 || !w.def.energyCost && w.def.type !== 'beam';
       const warn = game.noEnergyFlash > 0 && Math.floor(game.time * 12) % 2 === 0;
@@ -123,7 +123,7 @@ class HUD {
       const x0 = ox + a.gx * cw + cw / 2, y0 = oy + a.gy * ch + ch / 2, x1 = ox + b.gx * cw + cw / 2, y1 = oy + b.gy * ch + ch / 2;
       ctx.fillRect(Math.min(x0, x1) - 1, Math.min(y0, y1) - 1, Math.abs(x1 - x0) + 2, Math.abs(y1 - y0) + 2);
     }
-    const colors = { start: '#5aa0ff', combat: '#b0b0b0', treasure: '#ffd84a', boss: '#ff5a7a', shop: '#5ad08a', exit: '#7ae0ff', fountain: '#4a9ad8', altar: '#c8a0ff', gamble: '#ff9a4a', challenge: '#d04040', forge: '#d07a3a', blood: '#a02020', rack: '#7a9ad0' };
+    const colors = { start: '#5aa0ff', combat: '#b0b0b0', treasure: '#ffd84a', boss: '#ff5a7a', shop: '#5ad08a', exit: '#7ae0ff', fountain: '#4a9ad8', altar: '#c8a0ff', gamble: '#ff9a4a', challenge: '#d04040', forge: '#d07a3a', blood: '#a02020', rack: '#7a9ad0', smithy: '#ffd84a' };
     const cur = map.roomAtPoint(game.player.x, game.player.y);
     for (const r of map.rooms) {
       if (!known(r)) continue;

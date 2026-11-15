@@ -6,6 +6,7 @@ class Pickup {
   constructor(kind, x, y, o = {}) {
     this.kind = kind; this.x = x; this.y = y; this.half = 2; this.alive = true; this.t = Math.random() * 3;
     this.group = o.group || null; // 같은 묶음 중 하나만 가져갈 수 있음 (무기 진열대)
+    this.lv = o.lv || 0;          // 무기 강화 단계
     const a = Math.random() * TAU, s = o.still ? 0 : 40 + Math.random() * 60;
     this.vx = Math.cos(a) * s; this.vy = Math.sin(a) * s;
     this.value = o.value || 1; this.def = o.def || null; this.delay = o.still ? 0 : 0.35;
@@ -150,7 +151,7 @@ class Forge {
     const pool = DATA_WEAPONS.filter((d) => d.rarity === want && d.id !== w.def.id && !p.weapons.some((o) => o.def.id === d.id));
     if (!pool.length) { game.effects.text(p.x, p.y - 18, '제련할 수 있는 무기가 없습니다', '#ff7070'); return; }
     game.gold -= this.price; this.used = true;
-    const def = pick(pool); p.weapons[p.slot] = new WeaponInstance(def); game.discover(def.id);
+    const def = pick(pool); p.weapons[p.slot] = new WeaponInstance(def, w.lv); game.discover(def.id); // 강화 단계는 유지
     game.effects.text(p.x, p.y - 24, (up ? '등급 상승! ' : '') + def.name, RARITY_COLOR[def.rarity], true); game.effects.burst(this.x, this.y - 6, '#ff9a4a', 16); SFX.play(up ? 'clear' : 'heavy');
   }
   render(ctx, game) {
@@ -181,6 +182,28 @@ class BloodAltar {
     ctx.fillStyle = OUTLINE; ctx.fillRect(x - 10, y - 4, 20, 11); ctx.fillStyle = '#3a2a2a'; ctx.fillRect(x - 9, y - 3, 18, 9); ctx.fillStyle = '#5a3a3a'; ctx.fillRect(x - 9, y - 3, 18, 2);
     ctx.fillStyle = this.used ? '#4a2a2a' : '#c02020'; ctx.fillRect(x - 6, y - 2, 12, 2); // 피가 고인 홈
     if (!this.used) { ctx.fillStyle = `rgba(255,60,60,${0.5 + 0.4 * Math.sin(t * 3)})`; ctx.beginPath(); ctx.arc(x, y - 10 + Math.sin(t * 2), 3.5, 0, TAU); ctx.fill(); }
+  }
+}
+
+// 강화대: 들고 있는 무기를 골드로 강화 (여러 번 가능, 실패해도 단계 유지). 강화소는 할인·성공률 보너스
+class UpgradeAnvil {
+  constructor(x, y, discount = 1, bonus = 0, room = false) { this.x = x; this.y = y; this.discount = discount; this.bonus = bonus; this.room = room; this.radius = 18; }
+  label(game) {
+    const w = game.player.weapon; if (!w) return null;
+    if (w.lv >= BALANCE.upgrade.maxLevel) return `${weaponTitle(w)} — 최대 강화`;
+    return `[E] 강화: ${weaponTitle(w)} → +${w.lv + 1}  (성공 ${Math.round(game.upgradeChance(w, this.bonus) * 100)}% · ${game.upgradeCost(w, this.discount)}골드)`;
+  }
+  get labelColor() { return '#ffd84a'; }
+  interact(game) { game.tryUpgrade(this.discount, this.bonus, this); }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 10, y + 6, 20, 3);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 10, y - 4, 20, 5); ctx.fillRect(x - 4, y + 1, 8, 6);
+    ctx.fillStyle = this.room ? '#c8a050' : '#6a6e7a'; ctx.fillRect(x - 9, y - 3, 18, 3); ctx.fillRect(x - 3, y + 1, 6, 5);
+    ctx.fillStyle = this.room ? '#ffe9a0' : '#8a8e9a'; ctx.fillRect(x - 9, y - 3, 18, 1);
+    ctx.fillStyle = '#7a5530'; ctx.fillRect(x + 4, y - 12, 2, 8); ctx.fillStyle = '#a8b0bc'; ctx.fillRect(x + 1, y - 13, 8, 3); // 망치
+    ctx.fillStyle = `rgba(255,216,74,${0.4 + 0.3 * Math.sin(t * 5)})`; ctx.fillRect(x - 6 + Math.round(Math.sin(t * 3) * 2), y - 6, 1, 1);
+    hudText(ctx, this.room ? '강화소' : '강화', x, y + 9, '#ffd84a', 'center', 7);
   }
 }
 
