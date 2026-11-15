@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROJECT: DUNGEON — Phase 1</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0b10; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  #game { display: block; cursor: none; image-rendering: crisp-edges; image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<canvas id="game" width="512" height="288"></canvas>
+<script>
+'use strict';
+
+// ════════════════════════════════════════════
+// 데이터 (분리 버전의 data/*.json과 동일)
+// ════════════════════════════════════════════
+const DATA_PLAYER = {
+  maxHp: 100, moveSpeed: 120, hitboxHalf: 5,
+  dashSpeed: 400, dashDuration: 0.18, dashInvuln: 0.18, dashCooldown: 2.5,
+  hurtInvuln: 0.6, critChance: 0.05, critMultiplier: 1.5,
+  startWeapon: 'weapon_pistol_001'
+};
+
+const DATA_WEAPONS = [
+  { id: 'weapon_pistol_001', name: 'Basic Pistol', type: 'ranged', rarity: 'common',
+    damage: 12, fireRate: 3.5, range: 450, magazineSize: 12, reloadTime: 1.0,
+    projectileSpeed: 300, projectileCount: 1, spreadDeg: 1, pierce: 0, knockback: 3,
+    specialEffect: null }
+];
+
+const DATA_ENEMIES = [
+  { id: 'enemy_slime_001', name: 'Slime', health: 40, damage: 10, moveSpeed: 65,
+    hitboxHalf: 6, detectRange: 200, attackRange: 20, telegraphTime: 0.45,
+    attackCooldown: 1.5, recoveryTime: 0.5, deathDuration: 0.35,
+    aiType: 'melee_chase', rewardGold: 3 }
+];
+
+const DATA_ROOMS = [
+  { id: 'room_test_001', type: 'combat', width: 32, height: 18,
+    obstacles: [
+      { x: 9, y: 4, w: 2, h: 3 }, { x: 9, y: 11, w: 2, h: 3 },
+      { x: 15, y: 8, w: 2, h: 2 }, { x: 22, y: 6, w: 1, h: 6 }
+    ],
+    playerSpawn: { x: 4, y: 9 },
+    enemySpawns: [
+      { enemyId: 'enemy_slime_001', x: 27, y: 3 },
+      { enemyId: 'enemy_slime_001', x: 27, y: 14 },
+      { enemyId: 'enemy_slime_001', x: 25, y: 9 },
+      { enemyId: 'enemy_slime_001', x: 19, y: 4 },
+      { enemyId: 'enemy_slime_001', x: 19, y: 13 }
+    ] }
+];
+
+const indexById = (list) => new Map(list.map((d) => [d.id, d]));
+const GAME_DATA = {
+  player: DATA_PLAYER,
+  weapons: indexById(DATA_WEAPONS),
+  enemies: indexById(DATA_ENEMIES),
+  rooms: indexById(DATA_ROOMS)
+};
+
+// ════════════════════════════════════════════
+// 상수
+// ════════════════════════════════════════════
+const VIEW_W = 512, VIEW_H = 288, TILE = 16, STEP = 1 / 60, TAU = Math.PI * 2;
+const EPS = 0.001;
+
+// ════════════════════════════════════════════
+// 입력
+// ════════════════════════════════════════════
+class InputManager {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.down = new Set();
+    this.pressed = new Set();
+    this.mouse = { x: 0, y: 0, down: false };
+    const blocked = new Set(['Space', 'Tab', 'KeyQ', 'KeyE', 'KeyR']);
+
+    window.addEventListener('keydown', (e) => {
+      if (blocked.has(e.code)) e.preventDefault();
+      if (!this.down.has(e.code)) this.pressed.add(e.code);
+      this.down.add(e.code);
+    });
+    window.addEventListener('keyup', (e) => this.down.delete(e.code));
+    window.addEventListener('blur', () => { this.down.clear(); this.mouse.down = false; });
+    window.addEventListener('mousemove', (e) => this.updatePointer(e));
+    canvas.addEventListener('mousedown', (e) => {
+      this.updatePointer(e);
+      if (e.button === 0) { this.mouse.down = true; this.pressed.add('Mouse0'); }
+    });
+    window.addEventListener('mouseup', (e) => { if (e.button === 0) this.mouse.down = false; });
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+  updatePointer(e) {
+    const r = this.canvas.getBoundingClientRect();
+    this.mouse.x = (e.clientX - r.left) * (this.canvas.width / r.width);
+    this.mouse.y = (e.clientY - r.top) * (this.canvas.height / r.height);
+  }
+  isDown(c) { return this.down.has(c); }
+  wasPressed(c) { return this.pressed.has(c); }
+  endStep() { this.pressed.clear(); }
+}
+
+// ════════════════════════════════════════════
+// 고정 timestep 루프
+// ════════════════════════════════════════════
+class GameLoop {
+  constructor(update, render) {
+    this.update = update; this.render = render; this.acc = 0; this.last = 0;
+    this.frame = this.frame.bind(this);
+  }
+  start() { this.last = performance.now(); requestAnimationFrame(this.frame); }
+  frame(now) {
+    let dt = (now - this.last) / 1000;
+    this.last = now;
+    if (dt > 0.25) dt = 0.25;
+    this.acc += dt;
+    let steps = 0;
+    while (this.acc >= STEP && steps < 8) { this.update(STEP); this.acc -= STEP; steps++; }
+    if (steps === 8) this.acc = 0;
+    this.render();
+    requestAnimationFrame(this.frame);
+  }
+}
+
+// ════════════════════════════════════════════
+// 충돌
+// ════════════════════════════════════════════
+function overlapsSolid(x, y, half, room) {
+  const x0 = Math.floor((x - half) / TILE), x1 = Math.floor((x + half - EPS) / TILE);
+  const y0 = Math.floor((y - half) / TILE), y1 = Math.floor((y + half - EPS) / TILE);
+  for (let ty = y0; ty <= y1; ty++)
+    for (let tx = x0; tx <= x1; tx++)
+      if (room.isSolidTile(tx, ty)) return true;
+  return false;
+}
+
+function moveAndCollide(ent, dx, dy, room) {
+  const hit = { x: false, y: false };
+  if (dx !== 0) {
+    ent.x += dx;
+    if (overlapsSolid(ent.x, ent.y, ent.half, room)) {
+      if (dx > 0) ent.x = Math.floor((ent.x + ent.half - EPS) / TILE) * TILE - ent.half;
+      else ent.x = (Math.floor((ent.x - ent.half) / TILE) + 1) * TILE + ent.half;
+      hit.x = true;
+    }
+  }
+  if (dy !== 0) {
+    ent.y += dy;
+    if (overlapsSolid(ent.x, ent.y, ent.half, room)) {
+      if (dy > 0) ent.y = Math.floor((ent.y + ent.half - EPS) / TILE) * TILE - ent.half;
+      else ent.y = (Math.floor((ent.y - ent.half) / TILE) + 1) * TILE + ent.half;
+      hit.y = true;
+    }
+  }
+  return hit;
+}
+
+function sweepWall(x0, y0, x1, y1, room, stepLen = 2) {
+  const dx = x1 - x0, dy = y1 - y0;
+  const n = Math.max(1, Math.ceil(Math.hypot(dx, dy) / stepLen));
+  for (let i = 1; i <= n; i++) {
+    const t = i / n;
+    if (room.isSolidAt(x0 + dx * t, y0 + dy * t)) return (i - 1) / n;
+  }
+  return -1;
+}
+
+function segmentCircleHit(x0, y0, x1, y1, cx, cy, r) {
+  const dx = x1 - x0, dy = y1 - y0, fx = x0 - cx, fy = y0 - cy;
+  const a = dx * dx + dy * dy;
+  let t = a === 0 ? 0 : -(fx * dx + fy * dy) / a;
+  t = Math.max(0, Math.min(1, t));
+  const px = fx + dx * t, py = fy + dy * t;
+  return px * px + py * py <= r * r ? t : -1;
+}
+
+function separateEnemies(enemies, room) {
+  for (let i = 0; i < enemies.length; i++) {
+    const a = enemies[i];
+    if (!a.alive) continue;
+    for (let j = i + 1; j < enemies.length; j++) {
+      const b = enemies[j];
+      if (!b.alive) continue;
+      let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+      const min = a.radius + b.radius;
+      if (d >= min) continue;
+      if (d < 0.0001) { dx = 1; dy = 0; d = 1; }
+      const push = (min - Math.min(d, min)) / 2, nx = dx / d, ny = dy / d;
+      moveAndCollide(a, -nx * push, -ny * push, room);
+      moveAndCollide(b, nx * push, ny * push, room);
+    }
+  }
+}
+
+// ════════════════════════════════════════════
+// 피해 계산: D = B × (1 + A) × C
+// ════════════════════════════════════════════
+function rollDamage(base, mods) {
+  const crit = Math.random() < mods.critChance;
+  const amount = base * (1 + mods.attackBonus) * (crit ? mods.critMultiplier : 1);
+  return { amount: Math.max(1, Math.round(amount)), crit };
+}
+
+// ════════════════════════════════════════════
+// 방
+// ════════════════════════════════════════════
+class Room {
+  constructor(def) {
+    Object.assign(this, { id: def.id, type: def.type, width: def.width, height: def.height,
+      playerSpawn: def.playerSpawn, enemySpawns: def.enemySpawns || [] });
+    this.tiles = new Uint8Array(this.width * this.height);
+    for (let ty = 0; ty < this.height; ty++)
+      for (let tx = 0; tx < this.width; tx++)
+        if (tx === 0 || ty === 0 || tx === this.width - 1 || ty === this.height - 1) this.setSolid(tx, ty);
+    for (const o of def.obstacles || [])
+      for (let ty = o.y; ty < o.y + o.h; ty++)
+        for (let tx = o.x; tx < o.x + o.w; tx++) this.setSolid(tx, ty);
+    this.cache = null;
+  }
+  setSolid(tx, ty) { this.tiles[ty * this.width + tx] = 1; }
+  isSolidTile(tx, ty) {
+    if (tx < 0 || ty < 0 || tx >= this.width || ty >= this.height) return true;
+    return this.tiles[ty * this.width + tx] === 1;
+  }
+  isSolidAt(px, py) { return this.isSolidTile(Math.floor(px / TILE), Math.floor(py / TILE)); }
+  tileCenter(tx, ty) { return { x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2 }; }
+  buildCache() {
+    const c = document.createElement('canvas');
+    c.width = this.width * TILE; c.height = this.height * TILE;
+    const g = c.getContext('2d');
+    for (let ty = 0; ty < this.height; ty++) {
+      for (let tx = 0; tx < this.width; tx++) {
+        const x = tx * TILE, y = ty * TILE;
+        if (this.isSolidTile(tx, ty)) {
+          g.fillStyle = '#3d3552'; g.fillRect(x, y, TILE, TILE);
+          if (!this.isSolidTile(tx, ty + 1)) { g.fillStyle = '#5d5280'; g.fillRect(x, y + TILE - 5, TILE, 5); }
+        } else {
+          g.fillStyle = (tx + ty) % 2 === 0 ? '#2a2433' : '#2e2838';
+          g.fillRect(x, y, TILE, TILE);
+        }
+      }
+    }
+    this.cache = c;
+  }
+  render(ctx) { if (!this.cache) this.buildCache(); ctx.drawImage(this.cache, 0, 0); }
+}
+
+// ════════════════════════════════════════════
+// 엔티티
+// ════════════════════════════════════════════
+let nextEntityId = 1;
+class Entity {
+  constructor(x, y, half) {
+    this.id = nextEntityId++;
+    this.x = x; this.y = y; this.half = half; this.radius = half;
+    this.alive = true; this.removed = false;
+  }
+}
+
+class Player extends Entity {
+  constructor(x, y, cfg) {
+    super(x, y, cfg.hitboxHalf);
+    this.cfg = cfg;
+    this.maxHp = cfg.maxHp; this.hp = cfg.maxHp; this.moveSpeed = cfg.moveSpeed;
+    this.state = 'NORMAL';
+    this.aim = { x: 1, y: 0 }; this.lastMoveDir = { x: 1, y: 0 }; this.dashDir = { x: 1, y: 0 };
+    this.dashRemaining = 0; this.dashCooldown = 0; this.dashInvuln = 0; this.hurtInvuln = 0;
+    this.deathTimer = 0; this.time = 0;
+    this.stats = { attackBonus: 0, fireRateBonus: 0, critChance: cfg.critChance, critMultiplier: cfg.critMultiplier };
+    this.weapon = null;
+  }
+  get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0; }
+
+  update(dt, input, room) {
+    this.time += dt;
+    if (this.state === 'DEAD') { this.deathTimer += dt; return; }
+    this.dashCooldown = Math.max(0, this.dashCooldown - dt);
+    this.dashInvuln = Math.max(0, this.dashInvuln - dt);
+    this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
+
+    const ax = input.mouse.x - this.x, ay = input.mouse.y - this.y, alen = Math.hypot(ax, ay);
+    if (alen > 0.5) { this.aim.x = ax / alen; this.aim.y = ay / alen; }
+
+    let ix = 0, iy = 0;
+    if (input.isDown('KeyA')) ix -= 1;
+    if (input.isDown('KeyD')) ix += 1;
+    if (input.isDown('KeyW')) iy -= 1;
+    if (input.isDown('KeyS')) iy += 1;
+    const ilen = Math.hypot(ix, iy);
+    if (ilen > 0) { ix /= ilen; iy /= ilen; this.lastMoveDir.x = ix; this.lastMoveDir.y = iy; }
+
+    if (this.state === 'DASH') { this.updateDash(dt, room); return; }
+    if (input.wasPressed('Space') && this.dashCooldown <= 0) {
+      this.startDash(); this.updateDash(dt, room); return;
+    }
+    moveAndCollide(this, ix * this.moveSpeed * dt, iy * this.moveSpeed * dt, room);
+  }
+  startDash() {
+    this.state = 'DASH';
+    this.dashDir.x = this.lastMoveDir.x; this.dashDir.y = this.lastMoveDir.y;
+    this.dashRemaining = this.cfg.dashSpeed * this.cfg.dashDuration;
+    this.dashCooldown = this.cfg.dashCooldown;
+    this.dashInvuln = this.cfg.dashInvuln;
+  }
+  updateDash(dt, room) {
+    const dist = Math.min(this.cfg.dashSpeed * dt, this.dashRemaining);
+    this.dashRemaining -= dist;
+    const hit = moveAndCollide(this, this.dashDir.x * dist, this.dashDir.y * dist, room);
+    if (hit.x || hit.y || this.dashRemaining <= 0) this.state = 'NORMAL';
+  }
+  takeDamage(amount) {
+    if (this.state === 'DEAD' || this.isInvulnerable) return false;
+    this.hp = Math.max(0, this.hp - amount);
+    this.hurtInvuln = this.cfg.hurtInvuln;
+    if (this.hp <= 0) { this.state = 'DEAD'; this.deathTimer = 0; }
+    return true;
+  }
+  render(ctx) {
+    const x = Math.round(this.x), y = Math.round(this.y);
+    if (this.state === 'DEAD') { ctx.fillStyle = '#3b5566'; ctx.fillRect(x - 7, y - 2, 14, 6); return; }
+    if (this.hurtInvuln > 0 && Math.floor(this.time * 20) % 2 === 0) return;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - 5, y + 5, 10, 2);
+    ctx.fillStyle = this.state === 'DASH' ? '#b8f0ff' : '#4cc3ff'; ctx.fillRect(x - 5, y - 9, 10, 14);
+    const eo = Math.round(this.aim.x * 2);
+    ctx.fillStyle = '#0b1a2a'; ctx.fillRect(x - 3 + eo, y - 6, 2, 2); ctx.fillRect(x + 1 + eo, y - 6, 2, 2);
+    const gx = Math.round(x + this.aim.x * 9), gy = Math.round(y - 1 + this.aim.y * 9);
+    ctx.fillStyle = '#d8d8d8'; ctx.fillRect(gx - 2, gy - 1, 4, 3);
+  }
+}
+
+class Enemy extends Entity {
+  constructor(x, y, def) {
+    super(x, y, def.hitboxHalf);
+    this.def = def; this.maxHp = def.health; this.hp = def.health;
+    this.state = 'IDLE'; this.stateTime = 0; this.attackCd = 0; this.hurtFlash = 0;
+    this.rewardGiven = false;
+  }
+  setState(s) { this.state = s; this.stateTime = 0; }
+  takeHit(amount) {
+    if (!this.alive) return false;
+    this.hp = Math.max(0, this.hp - amount);
+    this.hurtFlash = 0.08;
+    if (this.hp <= 0) { this.alive = false; this.setState('DEAD'); }
+    return true;
+  }
+  renderTelegraph(ctx) {
+    if (this.state !== 'TELEGRAPH') return;
+    const k = Math.min(1, this.stateTime / this.def.telegraphTime);
+    ctx.fillStyle = `rgba(255,60,60,${0.12 + 0.28 * k})`;
+    ctx.beginPath(); ctx.arc(Math.round(this.x), Math.round(this.y), this.def.attackRange, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,90,90,0.9)'; ctx.stroke();
+  }
+  render(ctx) {
+    const x = Math.round(this.x), y = Math.round(this.y);
+    if (this.state === 'DEAD') {
+      const k = 1 - Math.min(1, this.stateTime / this.def.deathDuration);
+      ctx.globalAlpha = k; ctx.fillStyle = '#4f9a45';
+      ctx.fillRect(x - 7, y + 1, 14, Math.max(1, Math.round(4 * k)));
+      ctx.globalAlpha = 1; return;
+    }
+    const sq = this.state === 'TELEGRAPH' ? 2 : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - 6, y + 5, 12, 2);
+    ctx.fillStyle = this.hurtFlash > 0 ? '#ffffff' : '#6fd35f';
+    ctx.fillRect(x - 6 - sq, y - 4 + sq, 12 + sq * 2, 9 - sq);
+    ctx.fillRect(x - 4, y - 6 + sq, 8, 2);
+    ctx.fillStyle = '#1d3a18'; ctx.fillRect(x - 3, y - 2 + sq, 2, 2); ctx.fillRect(x + 1, y - 2 + sq, 2, 2);
+    if (this.hp < this.maxHp) {
+      ctx.fillStyle = '#300'; ctx.fillRect(x - 7, y - 11, 14, 2);
+      ctx.fillStyle = '#e04848'; ctx.fillRect(x - 7, y - 11, Math.round(14 * this.hp / this.maxHp), 2);
+    }
+  }
+}
+
+class Projectile {
+  constructor(o) {
+    Object.assign(this, o);
+    this.pierceLeft = o.pierce; this.radius = 2; this.traveled = 0; this.alive = true;
+    this.hitTargets = new Set();
+  }
+  update(dt, world) {
+    if (!this.alive) return;
+    let dist = this.speed * dt, endByRange = false;
+    if (this.traveled + dist >= this.range) { dist = this.range - this.traveled; endByRange = true; }
+    const sx = this.x, sy = this.y, ex = sx + this.dx * dist, ey = sy + this.dy * dist;
+    const wallT = sweepWall(sx, sy, ex, ey, world.room);
+    const limitT = wallT >= 0 ? wallT : 1;
+
+    const hits = [];
+    for (const e of world.enemies) {
+      if (!e.alive || this.hitTargets.has(e.id)) continue;
+      const t = segmentCircleHit(sx, sy, ex, ey, e.x, e.y, e.radius + this.radius);
+      if (t >= 0 && t <= limitT) hits.push({ e, t });
+    }
+    hits.sort((a, b) => a.t - b.t);
+    for (const { e, t } of hits) {
+      this.hitTargets.add(e.id);
+      world.damageEnemy(e, this);
+      if (this.pierceLeft <= 0) {
+        this.x = sx + (ex - sx) * t; this.y = sy + (ey - sy) * t; this.alive = false;
+        world.effects.spark(this.x, this.y, '#ffffff'); return;
+      }
+      this.pierceLeft--;
+    }
+    if (wallT >= 0) {
+      this.x = sx + (ex - sx) * wallT; this.y = sy + (ey - sy) * wallT; this.alive = false;
+      world.effects.spark(this.x, this.y, '#ffe08a'); return;
+    }
+    this.x = ex; this.y = ey; this.traveled += dist;
+    if (endByRange) this.alive = false;
+  }
+  render(ctx) {
+    const x = Math.round(this.x), y = Math.round(this.y);
+    ctx.fillStyle = '#c9a43a'; ctx.fillRect(Math.round(x - this.dx * 3), Math.round(y - this.dy * 3), 1, 1);
+    ctx.fillStyle = '#ffe36b'; ctx.fillRect(x - 1, y - 1, 3, 3);
+  }
+}
+
+// ════════════════════════════════════════════
+// 무기
+// ════════════════════════════════════════════
+class WeaponInstance {
+  constructor(def) {
+    this.def = def; this.ammo = def.magazineSize; this.cooldown = 0;
+    this.reloading = false; this.reloadTimer = 0;
+  }
+}
+
+class WeaponSystem {
+  constructor(world) { this.world = world; this.nextAttackId = 1; }
+  update(player, dt, input) {
+    const w = player.weapon;
+    if (!w) return;
+    w.cooldown = Math.max(w.cooldown - dt, -STEP);
+    if (!input.mouse.down) w.cooldown = Math.max(w.cooldown, 0);
+    if (w.reloading) {
+      w.reloadTimer -= dt;
+      if (w.reloadTimer <= 0) { w.reloading = false; w.ammo = w.def.magazineSize; }
+    }
+    if (player.state === 'DEAD') return;
+    if (input.wasPressed('KeyR')) this.startReload(w);
+    if (input.mouse.down) this.tryFire(player, w);
+  }
+  startReload(w) {
+    if (w.reloading || w.def.type !== 'ranged' || w.ammo >= w.def.magazineSize) return;
+    w.reloading = true; w.reloadTimer = w.def.reloadTime;
+  }
+  getFireRate(player, w) { return w.def.fireRate * (1 + Math.min(player.stats.fireRateBonus, 1)); }
+  tryFire(player, w) {
+    if (w.cooldown > 0 || w.reloading) return;
+    if (w.ammo <= 0) { this.startReload(w); return; }
+    w.ammo--;
+    w.cooldown += 1 / this.getFireRate(player, w);
+    const attackId = this.nextAttackId++;
+    const base = Math.atan2(player.aim.y, player.aim.x);
+    const spread = w.def.spreadDeg * Math.PI / 180;
+    const mods = { attackBonus: player.stats.attackBonus, critChance: player.stats.critChance,
+      critMultiplier: player.stats.critMultiplier };
+    for (let i = 0; i < w.def.projectileCount; i++) {
+      const ang = base + (Math.random() * 2 - 1) * spread;
+      this.world.projectiles.push(new Projectile({
+        attackId, x: player.x, y: player.y, dx: Math.cos(ang), dy: Math.sin(ang),
+        speed: w.def.projectileSpeed, range: w.def.range, damage: w.def.damage,
+        pierce: w.def.pierce, knockback: w.def.knockback || 0, mods
+      }));
+    }
+    if (w.ammo <= 0) this.startReload(w);
+  }
+}
+
+// ════════════════════════════════════════════
+// 몬스터 AI
+// ════════════════════════════════════════════
+const AI_BEHAVIORS = {
+  melee_chase(e, dt, world) {
+    const def = e.def, p = world.player, playerAlive = p.state !== 'DEAD';
+    const dx = p.x - e.x, dy = p.y - e.y, dist = Math.hypot(dx, dy);
+    const inRange = dist <= def.attackRange + p.radius;
+    e.attackCd = Math.max(0, e.attackCd - dt);
+    switch (e.state) {
+      case 'IDLE':
+        if (playerAlive && dist <= def.detectRange) e.setState('CHASE');
+        break;
+      case 'CHASE':
+        if (!playerAlive) { e.setState('IDLE'); break; }
+        if (inRange && e.attackCd <= 0) { e.setState('TELEGRAPH'); break; }
+        if (dist > def.attackRange * 0.6)
+          moveAndCollide(e, dx / dist * def.moveSpeed * dt, dy / dist * def.moveSpeed * dt, world.room);
+        break;
+      case 'TELEGRAPH':
+        if (e.stateTime >= def.telegraphTime) e.setState('ATTACK');
+        break;
+      case 'ATTACK':
+        if (playerAlive && inRange) world.damagePlayer(def.damage);
+        world.effects.ring(e.x, e.y, def.attackRange, '#ff7070');
+        e.attackCd = def.attackCooldown;
+        e.setState('RECOVERY');
+        break;
+      case 'RECOVERY':
+        if (e.stateTime >= def.recoveryTime) e.setState(playerAlive ? 'CHASE' : 'IDLE');
+        break;
+    }
+  }
+};
+
+function updateEnemy(e, dt, world) {
+  e.hurtFlash = Math.max(0, e.hurtFlash - dt);
+  e.stateTime += dt;
+  if (e.state === 'DEAD') {
+    if (e.stateTime >= e.def.deathDuration) e.removed = true;
+    return;
+  }
+  const behavior = AI_BEHAVIORS[e.def.aiType];
+  if (!behavior) throw new Error('알 수 없는 aiType: ' + e.def.aiType);
+  behavior(e, dt, world);
+}
+
+// ════════════════════════════════════════════
+// 이펙트
+// ════════════════════════════════════════════
+class Effects {
+  constructor() { this.list = []; }
+  clear() { this.list.length = 0; }
+  text(x, y, str, color) { this.list.push({ kind: 'text', x, y, str, color, t: 0, life: 0.6 }); }
+  spark(x, y, color) { this.list.push({ kind: 'spark', x, y, color, t: 0, life: 0.1 }); }
+  ring(x, y, r, color) { this.list.push({ kind: 'ring', x, y, r, color, t: 0, life: 0.15 }); }
+  burst(x, y, color) {
+    for (let i = 0; i < 8; i++) {
+      const a = i / 8 * TAU + Math.random() * 0.4, s = 40 + Math.random() * 40;
+      this.list.push({ kind: 'particle', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, color, t: 0, life: 0.35 });
+    }
+  }
+  update(dt) {
+    for (const fx of this.list) {
+      fx.t += dt;
+      if (fx.kind === 'text') fx.y -= 20 * dt;
+      if (fx.kind === 'particle') { fx.x += fx.vx * dt; fx.y += fx.vy * dt; }
+    }
+    this.list = this.list.filter((fx) => fx.t < fx.life);
+  }
+  render(ctx) {
+    for (const fx of this.list) {
+      const k = 1 - fx.t / fx.life, x = Math.round(fx.x), y = Math.round(fx.y);
+      ctx.globalAlpha = k;
+      if (fx.kind === 'text') {
+        ctx.font = '10px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#000'; ctx.fillText(fx.str, x + 1, y + 1);
+        ctx.fillStyle = fx.color; ctx.fillText(fx.str, x, y);
+      } else if (fx.kind === 'spark') {
+        ctx.fillStyle = fx.color; ctx.fillRect(x - 2, y - 2, 4, 4);
+      } else if (fx.kind === 'particle') {
+        ctx.fillStyle = fx.color; ctx.fillRect(x, y, 2, 2);
+      } else if (fx.kind === 'ring') {
+        ctx.strokeStyle = fx.color; ctx.beginPath(); ctx.arc(x, y, fx.r, 0, TAU); ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ════════════════════════════════════════════
+// HUD
+// ════════════════════════════════════════════
+function hudText(ctx, str, x, y, color = '#fff', align = 'left', size = 10) {
+  ctx.font = size + 'px sans-serif'; ctx.textAlign = align; ctx.textBaseline = 'top';
+  ctx.fillStyle = '#000'; ctx.fillText(str, x + 1, y + 1);
+  ctx.fillStyle = color; ctx.fillText(str, x, y);
+}
+function hudBar(ctx, x, y, w, h, ratio, fg) {
+  ctx.fillStyle = '#1a1a1a'; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = fg; ctx.fillRect(x, y, Math.round(w * Math.max(0, Math.min(1, ratio))), h);
+}
+
+class HUD {
+  render(ctx, game) {
+    const p = game.player, w = p.weapon;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(4, 4, 112, 16);
+    hudBar(ctx, 8, 8, 70, 8, p.hp / p.maxHp, '#e04848');
+    hudText(ctx, p.hp + '/' + p.maxHp, 82, 6);
+
+    hudText(ctx, `웨이브 ${game.wave}  처치 ${game.kills}  골드 ${game.gold}`, VIEW_W - 6, 6, '#fff', 'right');
+
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(4, VIEW_H - 22, 190, 18);
+    if (w) {
+      hudText(ctx, w.def.name, 8, VIEW_H - 20);
+      if (w.reloading) hudBar(ctx, 86, VIEW_H - 16, 40, 5, 1 - w.reloadTimer / w.def.reloadTime, '#f0c040');
+      else hudText(ctx, w.ammo + '/' + w.def.magazineSize, 86, VIEW_H - 20, w.ammo === 0 ? '#ff7070' : '#fff');
+    }
+    hudText(ctx, '대시', 134, VIEW_H - 20, p.dashCooldown > 0 ? '#888' : '#7fe0ff');
+    hudBar(ctx, 160, VIEW_H - 16, 30, 5, 1 - p.dashCooldown / p.cfg.dashCooldown, '#7fe0ff');
+
+    if (p.state === 'DEAD') this.banner(ctx, '사망했습니다', `처치 ${game.kills}  ·  Enter: 다시 시작`);
+    else if (game.combatCleared) this.banner(ctx, '방 클리어!', 'Enter: 다음 웨이브');
+    else if (game.paused) this.banner(ctx, '일시정지', 'Esc: 이어하기');
+  }
+  banner(ctx, title, sub) {
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, VIEW_H / 2 - 24, VIEW_W, 46);
+    hudText(ctx, title, VIEW_W / 2, VIEW_H / 2 - 18, '#fff', 'center', 16);
+    hudText(ctx, sub, VIEW_W / 2, VIEW_H / 2 + 4, '#ccc', 'center', 10);
+  }
+}
+
+// ════════════════════════════════════════════
+// 게임
+// ════════════════════════════════════════════
+class Game {
+  constructor(canvas, data) {
+    this.canvas = canvas; this.ctx = canvas.getContext('2d'); this.data = data;
+    this.input = new InputManager(canvas);
+    this.effects = new Effects(); this.hud = new HUD();
+    this.weaponSystem = new WeaponSystem(this);
+    this.paused = false; this.shake = 0;
+  }
+  start() {
+    this.resetRun();
+    this.fitToScreen();
+    window.addEventListener('resize', () => this.fitToScreen());
+    new GameLoop((dt) => this.update(dt), () => this.render()).start();
+  }
+  fitToScreen() {
+    const s = Math.max(1, Math.floor(Math.min(innerWidth / VIEW_W, innerHeight / VIEW_H)));
+    this.canvas.style.width = VIEW_W * s + 'px';
+    this.canvas.style.height = VIEW_H * s + 'px';
+  }
+  resetRun() {
+    this.room = new Room(this.data.rooms.get('room_test_001'));
+    const sp = this.room.tileCenter(this.room.playerSpawn.x, this.room.playerSpawn.y);
+    this.player = new Player(sp.x, sp.y, this.data.player);
+    const wdef = this.data.weapons.get(this.data.player.startWeapon);
+    if (!wdef) throw new Error('알 수 없는 무기 ID: ' + this.data.player.startWeapon);
+    this.player.weapon = new WeaponInstance(wdef);
+    this.enemies = []; this.projectiles = []; this.effects.clear();
+    this.kills = 0; this.gold = 0; this.wave = 0;
+    this.spawnWave();
+  }
+  spawnWave() {
+    for (const s of this.room.enemySpawns) {
+      const def = this.data.enemies.get(s.enemyId);
+      if (!def) throw new Error('알 수 없는 적 ID: ' + s.enemyId);
+      const p = this.room.tileCenter(s.x, s.y);
+      this.enemies.push(new Enemy(p.x, p.y, def));
+    }
+    this.wave++;
+    this.combatCleared = false;
+  }
+  update(dt) {
+    const input = this.input;
+    if (input.wasPressed('Escape')) this.paused = !this.paused;
+    if (this.paused) { input.endStep(); return; }
+
+    const p = this.player;
+    p.update(dt, input, this.room);
+    this.weaponSystem.update(p, dt, input);
+    for (const e of this.enemies) updateEnemy(e, dt, this);
+    separateEnemies(this.enemies, this.room);
+    for (const pr of this.projectiles) pr.update(dt, this);
+    this.projectiles = this.projectiles.filter((pr) => pr.alive);
+    this.enemies = this.enemies.filter((e) => !e.removed);
+    this.effects.update(dt);
+    this.shake = Math.max(0, this.shake - dt);
+
+    // 전투 완료는 생존 여부로 판단 (사망 연출과 분리)
+    if (!this.combatCleared && this.enemies.every((e) => !e.alive)) this.combatCleared = true;
+
+    if (p.state === 'DEAD' && p.deathTimer > 0.8 && input.wasPressed('Enter')) this.resetRun();
+    else if (p.state !== 'DEAD' && this.combatCleared && input.wasPressed('Enter')) this.spawnWave();
+
+    input.endStep();
+  }
+  damageEnemy(enemy, proj) {
+    const { amount, crit } = rollDamage(proj.damage, proj.mods);
+    if (!enemy.takeHit(amount)) return;
+    if (enemy.alive && proj.knockback > 0)
+      moveAndCollide(enemy, proj.dx * proj.knockback, proj.dy * proj.knockback, this.room);
+    this.effects.text(enemy.x, enemy.y - 12, String(amount), crit ? '#ffd84a' : '#ffffff');
+    if (!enemy.alive) this.onEnemyKilled(enemy);
+  }
+  onEnemyKilled(enemy) {
+    if (enemy.rewardGiven) return;
+    enemy.rewardGiven = true;
+    this.kills++; this.gold += enemy.def.rewardGold;
+    this.effects.burst(enemy.x, enemy.y, '#7be36b');
+  }
+  damagePlayer(amount) {
+    if (this.player.takeDamage(amount)) {
+      this.shake = 0.15;
+      this.effects.text(this.player.x, this.player.y - 16, '-' + amount, '#ff6b6b');
+    }
+  }
+  render() {
+    const ctx = this.ctx;
+    ctx.imageSmoothingEnabled = false;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    if (this.shake > 0)
+      ctx.translate(Math.round((Math.random() - 0.5) * 4), Math.round((Math.random() - 0.5) * 4));
+
+    this.room.render(ctx);
+    for (const e of this.enemies) e.renderTelegraph(ctx);
+    for (const e of this.enemies) e.render(ctx);
+    this.player.render(ctx);
+    for (const pr of this.projectiles) pr.render(ctx);
+    this.effects.render(ctx);
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.hud.render(ctx, this);
+
+    const mx = Math.round(this.input.mouse.x), my = Math.round(this.input.mouse.y);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(mx - 4, my, 3, 1); ctx.fillRect(mx + 2, my, 3, 1);
+    ctx.fillRect(mx, my - 4, 1, 3); ctx.fillRect(mx, my + 2, 1, 3);
+  }
+}
+
+new Game(document.getElementById('game'), GAME_DATA).start();
+</script>
+</body>
+</html>
