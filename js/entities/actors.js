@@ -142,9 +142,10 @@ class Enemy extends Entity {
     this.strafe = Math.random() < 0.5 ? -1 : 1; this.strafeT = 1 + Math.random() * 2;
     this.aimAng = 0; this.dashX = 0; this.dashY = 0; this.dashHit = false;
     this.spin = Math.random() * TAU; this.pat = null; this.lastPat = null; this.pd = {}; this.jumpH = 0;
-    this.burn = 0; this.burnDps = 0; this.poison = 0; this.poisonDps = 0; this.slow = 0; this.slowK = 1; this.dotTimer = 0.5; this.reactCd = 0;
+    this.burn = 0; this.burnDps = 0; this.poison = 0; this.poisonDps = 0; this.slow = 0; this.slowK = 1; this.dotTimer = 0.5; this.reactCd = 0; this.fade = 1; this.phase = 1; this.elite = false;
   }
-  get targetable() { return this.alive && this.state !== 'SPAWN'; }
+  get targetable() { return this.alive && this.state !== 'SPAWN' && this.state !== 'INTRO' && this.state !== 'PHASE'; }
+  makeElite(E) { this.elite = true; this.maxHp = Math.round(this.maxHp * E.hp); this.hp = this.maxHp; this.damage = Math.round(this.damage * E.dmg); }
   get speedMul() { return this.slow > 0 ? this.slowK : 1; }
   setState(s) { this.state = s; this.stateTime = 0; }
   takeHit(amount) {
@@ -173,6 +174,34 @@ class Enemy extends Entity {
   }
   renderTelegraph(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y), def = this.def;
+    if (this.laser) { // 보스 광선: 예고선(가늘게) → 발사(굵게)
+      for (const a of this.laser.angs) {
+        const len = beamLength(this, a, GAME_MAP()), ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len;
+        if (this.laser.live) {
+          ctx.strokeStyle = this.laser.color; ctx.globalAlpha = 0.5; ctx.lineWidth = this.laser.width * 2;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke();
+          ctx.globalAlpha = 1; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(2, this.laser.width * 0.6);
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke();
+        } else {
+          ctx.strokeStyle = 'rgba(255,80,80,0.75)'; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]);
+        }
+        ctx.lineWidth = 1;
+      }
+    }
+    if (def.boss && this.state === 'ATTACK' && this.pat && this.pat.type === 'vortex') {
+      ctx.strokeStyle = this.pat.color; ctx.globalAlpha = 0.35;
+      for (let i = 0; i < 3; i++) { const a = this.stateTime * 3 + i * 2.1; ctx.beginPath(); ctx.arc(x, y, 50 + i * 30, a, a + 1.6); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    }
+    if (def.aiType === 'turret' && this.state === 'TELEGRAPH') {
+      const lock = this.stateTime >= def.telegraphTime - 0.25;
+      ctx.strokeStyle = lock ? 'rgba(255,60,60,0.95)' : 'rgba(255,90,90,0.45)'; ctx.lineWidth = lock ? 2 : 1;
+      ctx.beginPath(); ctx.moveTo(x, y - 4); ctx.lineTo(x + Math.cos(this.aimAng) * 320, y - 4 + Math.sin(this.aimAng) * 320); ctx.stroke(); ctx.lineWidth = 1;
+    }
+    if (def.aiType === 'teleporter' && this.state === 'TELEGRAPH') {
+      ctx.strokeStyle = def.bulletColor; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(x, y, 4 + 10 * (1 - this.stateTime / def.telegraphTime), 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+    }
     if (this.state === 'SPAWN') {
       const k = this.stateTime / SPAWN_TIME;
       ctx.strokeStyle = `rgba(255,80,80,${0.4 + 0.5 * k})`;
@@ -208,6 +237,12 @@ class Enemy extends Entity {
         ctx.beginPath(); ctx.arc(x, y, def.explodeRadius, 0, TAU); ctx.fill();
         ctx.strokeStyle = 'rgba(255,120,60,0.9)'; ctx.stroke(); break;
       case 'boss':
+        if (this.pat.type === 'laser' || this.pat.type === 'teleport') break;
+        if (this.pat.type === 'grid' || this.pat.type === 'ringIn' || this.pat.type === 'vortex') { // 궁극기 예고: 커지는 고리
+          ctx.strokeStyle = this.pat.color; ctx.globalAlpha = 0.5 + 0.4 * k; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(x, y, 20 + k * 40, 0, TAU); ctx.stroke(); ctx.lineWidth = 1; ctx.globalAlpha = 1;
+          break;
+        }
         if (this.pat.type === 'slam') {
           ctx.fillStyle = `rgba(255,50,50,${0.12 + 0.3 * k})`;
           ctx.beginPath(); ctx.arc(Math.round(this.pd.tx), Math.round(this.pd.ty), this.pat.radius, 0, TAU); ctx.fill();

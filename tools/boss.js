@@ -17,7 +17,7 @@ const RUNS = +(process.argv[2] || 8);
     // 피해 출처 추적
     let cur = null, src = null;
     const origUpdateEnemy = window.updateEnemy;
-    window.updateEnemy = (e, dt, w) => { cur = e.def.boss ? (e.pat ? e.pat.type : 'contact') + (e.enraged ? '*' : '') : '졸개'; origUpdateEnemy(e, dt, w); cur = null; };
+    window.updateEnemy = (e, dt, w) => { cur = e.def.boss ? (e.pat ? e.pat.type : 'contact') + '·' + (e.phase || 1) : '졸개'; origUpdateEnemy(e, dt, w); cur = null; };
     const origShoot = Game.prototype.enemyShoot;
     Game.prototype.enemyShoot = function (...a) { origShoot.apply(this, a); this.enemyBullets[this.enemyBullets.length - 1].tag = cur; };
     const origBullet = EnemyBullet.prototype.update;
@@ -29,14 +29,15 @@ const RUNS = +(process.argv[2] || 8);
     Game.prototype.damagePlayer = function (a) { const p = this.player, h0 = p.hp + p.shield; const r = origDP.call(this, a); if (r && ledger) { const k = src || cur || '기타'; ledger[k] = (ledger[k] || 0) + (h0 - p.hp - p.shield); } return r; };
 
     const pickW = (rar) => pick(DATA_WEAPONS.filter((d) => rar.includes(d.rarity)));
-    const LOAD = [[['uncommon'], ['uncommon', 'rare']], [['rare'], ['rare', 'epic']], [['rare', 'epic'], ['epic']]];
+    const LOAD = [[['uncommon'], ['uncommon', 'rare']], [['rare'], ['rare', 'epic']], [['rare', 'epic'], ['epic']], [['epic'], ['epic']]];
     const res = [];
-    for (let w = 0; w < 3; w++) for (let run = 0; run < RUNS; run++) {
+    for (let w = 0; w < DATA_WORLDS.length; w++) for (let run = 0; run < RUNS; run++) {
       g.save.unlocked = DATA_HEROES.map((h) => h.id); g.save.selected = DATA_HEROES[run % 4].id; g.save.loadout = null;
-      g.startRun(); g.worldIdx = w; g.levelIdx = 2; g.loadStage(); g.banner = null;
+      g.startRun(); g.worldIdx = w; g.levelIdx = STAGES_PER_WORLD - 1; g.loadStage(); g.banner = null;
       const p = g.player;
       p.weapons = LOAD[w].map((r) => new WeaponInstance(pickW(r))); p.slot = 0;
       for (const bf of shuffled(DATA_BUFFS).slice(0, w)) bf.apply(p);
+      p.maxHp += 15 * w; p.hp = p.maxHp; // 층이 늘어 더 많이 파밍한 상태를 근사
       const room = g.map.roomOf('boss'), c = g.map.tileCenter(room.cx, room.cy + 5);
       p.x = c.x; p.y = c.y;
       ledger = {};
@@ -45,23 +46,27 @@ const RUNS = +(process.argv[2] || 8);
         if (g.overlay) break;
         Bot.step(g, st); t++;
         boss = boss || g.enemies.find((e) => e.def.boss);
-        if (boss && boss.enraged && enrageAt === null) enrageAt = t / 60;
+        if (boss && boss.phase >= 2 && enrageAt === null) enrageAt = t / 60;
         if (p.state === 'DEAD' || (boss && !boss.alive)) break;
         if (t % 1200 === 0) await new Promise((r) => setTimeout(r, 0));
       }
+      if (boss && boss.alive && p.state !== 'DEAD') window.__timeouts = (window.__timeouts || []).concat([{ boss: boss.def.id, state: boss.state, pat: boss.pat && boss.pat.type, hp: Math.round(boss.hp / boss.maxHp * 100),
+        inWall: overlapsSolid(boss.x, boss.y, boss.half - 0.5, g.map), bossInRoom: g.map.roomAtPoint(boss.x, boss.y) === room, playerInRoom: g.map.roomAtPoint(p.x, p.y) === room,
+        dist: Math.round(Math.hypot(boss.x - p.x, boss.y - p.y)), weapons: p.weapons.map((x) => x.def.id), energy: Math.round(p.energy), los: hasLineOfSight(p, boss, g.map), fade: boss.fade, jumpH: boss.jumpH }]);
       res.push({ boss: boss ? boss.def.name : '?', world: w, hero: p.hero.name, won: !!(boss && !boss.alive), died: p.state === 'DEAD',
         time: t / 60, enrageAt, bossHpLeft: boss ? Math.max(0, boss.hp / boss.maxHp) : 1, ledger, weapons: p.weapons.map((x) => x.def.name).join('+') });
       g.overlay = null;
     }
     return res;
   }, RUNS);
-  for (let w = 0; w < 3; w++) {
+  const to = await pg.evaluate(() => window.__timeouts || []); if (to.length) console.log('TIMEOUTS', JSON.stringify(to));
+  for (let w = 0; w < 4; w++) {
     const r = out.filter((x) => x.world === w); if (!r.length) continue;
     const won = r.filter((x) => x.won), died = r.filter((x) => x.died);
     const led = {}; let tot = 0;
     for (const x of r) for (const [k, v] of Object.entries(x.ledger)) { led[k] = (led[k] || 0) + v; tot += v; }
     const avg = (a, f) => (a.length ? (a.reduce((s, x) => s + f(x), 0) / a.length).toFixed(1) : '-');
-    console.log(`\n[${r[0].boss}] 승리 ${won.length}/${r.length}  사망 ${died.length}  처치시간(승리) ${avg(won, (x) => x.time)}초  격노진입 ${avg(r.filter((x) => x.enrageAt), (x) => x.enrageAt)}초  패배 시 남은 보스체력 ${avg(died, (x) => x.bossHpLeft * 100)}%`);
+    console.log(`\n[${r[0].boss}] 승리 ${won.length}/${r.length}  사망 ${died.length}  처치시간(승리) ${avg(won, (x) => x.time)}초  2페이즈 진입 ${avg(r.filter((x) => x.enrageAt), (x) => x.enrageAt)}초  패배 시 남은 보스체력 ${avg(died, (x) => x.bossHpLeft * 100)}%`);
     console.log('  받은 피해 비중: ' + Object.entries(led).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${(v / tot * 100).toFixed(0)}%`).join(' · ') + `  (판당 ${(tot / r.length).toFixed(0)})`);
   }
   if (errs.length) console.log('ERR', errs.slice(0, 3));

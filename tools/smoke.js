@@ -25,7 +25,7 @@ const { chromium } = require('playwright');
     g.selectHero(DATA_HEROES[1]);
     g.startRun();
     const log = [];
-    for (let stage = 0; stage < 9; stage++) {
+    for (let stage = 0; stage < DATA_WORLDS.length * STAGES_PER_WORLD; stage++) {
       const p = g.player; p.takeDamage = () => false; p.energy = 9999;
       p.weapons = [new WeaponInstance(GAME_DATA.weapons.get('weapon_rifle_001'))]; p.slot = 0; p.stats.attackBonus = 2;
       const label = `${g.worldIdx+1}-${g.levelIdx+1}`;
@@ -37,6 +37,7 @@ const { chromium } = require('playwright');
         let t = 0;
         while (room.state !== 'cleared' && t < 60 * 120) {
           if (g.overlay && g.overlay.type === 'buff') { g.input.pressed.add('Digit1'); g.update(STEP); }
+          if (g.cinematic || g.slowMo) { g.update(STEP); continue; }
           const vis = g.enemies.filter(e => e.targetable && hasLineOfSight(p, e, g.map)); const tgt = vis.find(e => !e.def.boss) || vis[0] || g.enemies.find(e => e.targetable);
           g.cam.x = 0; g.cam.y = 0;
           if (tgt) { g.input.mouse.x = tgt.x; g.input.mouse.y = tgt.y; g.input.mouse.down = true; }

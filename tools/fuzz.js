@@ -99,8 +99,9 @@ const MINUTES = +(process.argv[2] || 20);
       if (g.enemyBullets.length > 1500) report('enemy bullet leak', where() + ' n=' + g.enemyBullets.length);
       if (g.effects.list.length > 4000) report('effect leak', where() + ' n=' + g.effects.list.length);
       // 방이 활성인데 살아있는 적이 없고 진행도 없음 → 잠김
-      if (g.activeRoom && !g.enemies.some((e) => e.alive) && !g.overlay && !g.transition) { stuckT++; if (stuckT > 120) report('room locked with no enemies', where()); }
+      if (g.activeRoom && !g.enemies.some((e) => e.alive) && !g.overlay && !g.transition && !g.slowMo && !g.cinematic && g.hitStopT <= 0) { stuckT++; if (stuckT > 120) report('room locked with no enemies', where()); }
       else stuckT = 0;
+      if (g.activeRoom && P.state !== 'DEAD' && g.map.roomAtPoint(P.x, P.y) !== g.activeRoom) report('player outside active room', where());
       if (g.activeRoom && g.enemies.some((e) => e.alive)) {
         const r = g.activeRoom;
         for (const e of g.enemies) if (e.alive && !e.def.dummy && g.map.roomAtPoint(e.x, e.y) !== r && !(e.def.boss && e.jumpH > 0)) report('enemy outside active room: ' + e.def.id, where());

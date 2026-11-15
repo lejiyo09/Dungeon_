@@ -310,6 +310,65 @@ const PIX = {
     '..rrkaaaaaakrr..',
     '...rrkkkkkkrr...',
     '....rr....rr....'] },
+  wraith: { tint: '#8a6ad0', pal: { e: '#ffe0ff' }, rows: [
+    '................',
+    '.....kkkkk......',
+    '....kaaaaak.....',
+    '...kaaaaaaak....',
+    '...kakkkkkak....',
+    '...kakekekak....',
+    '...kakkkkkak....',
+    '..kaaaaaaaaak...',
+    '..kbaaaaaaabk...',
+    '..kbaaaaaaabk...',
+    '...kbaaaaabk....',
+    '...kbabkbabk....',
+    '....kbk.kbk.....',
+    '....kk...kk.....'] },
+  hound: { tint: '#3a3050', pal: { e: '#ff3a5a', t: '#e0e0e0' }, rows: [
+    '................', '................', '................',
+    '..........kk....',
+    '.........kaak...',
+    '..kkkkkkkaaeak..',
+    '.kbaaaaaaaaaatk.',
+    'kbaaaaaaaaaakkk.',
+    'kaaaaaaaaaaak...',
+    '.kaakkkkkaak....',
+    '.kak....kak.....',
+    '.kak....kak.....',
+    '.kk.....kk......'] },
+  crystal: { tint: '#b070ff', pal: { s: '#5a5a6a', e: '#ffffff' }, rows: [
+    '.......kk.......',
+    '......kcak......',
+    '.....kccaak.....',
+    '....kccaaaak....',
+    '....kcaaaaak....',
+    '...kcaaeaaaak...',
+    '....kaaaaabk....',
+    '....kbaaaabk....',
+    '.....kbaabk.....',
+    '......kbbk......',
+    '....kkkkkkkk....',
+    '...kssssssssk...',
+    '..kssssssssssk..',
+    '..kkkkkkkkkkkk..'] },
+  boss_void: { tint: '#4a2a7a', pal: { w: '#f0e8ff', e: '#ff3a6a' }, rows: [
+    '.....kkkkkk.....',
+    '...kkaaaaaakk...',
+    '..kaaaaaaaaaak..',
+    '.kaacwwwwwwcaak.',
+    '.kacwwwwwwwwcak.',
+    'kaawwwkkkkwwwaak',
+    'kaawwkeeeekwwaak',
+    'kaawwkeeeekwwaak',
+    'kaawwwkkkkwwwaak',
+    '.kacwwwwwwwwcak.',
+    '.kaacwwwwwwcaak.',
+    '..kaaaaaaaaaak..',
+    '.k.kkaaaaaakk.k.',
+    'kak.kakkkkak.kak',
+    '.kak.ka..ak.kak.',
+    '..k...k..k...k..'] },
   chest: { pal: { w: '#9a5a28', b: '#6a3a18', y: '#e0b040' }, rows: [
     '..kkkkkkkkkkkk..',
     '.kwwwwwwwwwwwwk.',
@@ -473,14 +532,14 @@ function drawWeaponCentered(ctx, def, cx, cy) {
 }
 
 function drawEnemy(ctx, e, x, y, flash) {
-  const def = e.def, enr = def.boss && e.hp < e.maxHp * 0.5;
-  const color = enr && def.enrageColor ? def.enrageColor : def.color;
-  const color2 = def.sprite === 'mage' ? def.bulletColor : (def.sprite === 'boss_frost' && enr ? '#ff5a7a' : undefined);
+  const def = e.def, phase = e.phase || 1;
+  const color = def.phaseColors ? def.phaseColors[phase - 1] : def.color;
+  const color2 = def.sprite === 'mage' ? def.bulletColor : (def.sprite === 'boss_frost' && phase >= 2 ? '#ff5a7a' : undefined);
   const spr = getSprite(def.sprite, color, color2), sc = def.boss ? 2 : 1;
   let sq = 0, oy = 0;
   if (e.state === 'TELEGRAPH' && ['slime', 'shroom', 'golem', 'boss_gel', 'boss_frost'].includes(def.sprite)) sq = def.boss ? 4 : 2;
   else if (def.sprite === 'slime' || def.sprite === 'boss_gel') sq = Math.round((Math.sin(e.stateTime * (def.boss ? 4 : 9)) + 1) * (def.boss ? 1 : 0.6));
-  if (def.sprite === 'imp' || def.sprite === 'boss_flame') oy = Math.round(Math.sin(e.stateTime * (def.boss ? 3 : 9)) * 1.5) - (def.boss ? 4 : 3);
+  if (def.sprite === 'imp' || def.sprite === 'wraith' || def.sprite === 'boss_flame' || def.sprite === 'boss_void') oy = Math.round(Math.sin(e.stateTime * (def.boss ? 3 : 9)) * 1.5) - (def.boss ? 4 : 3);
   const lift = Math.round(e.jumpH || 0), bottom = y + def.hitboxHalf + 1;
   const sw = Math.round(spr.w * sc * 0.65 - Math.min(10, lift / 4));
   ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(Math.round(x - sw / 2), bottom - 2, sw, def.boss ? 3 : 2);
@@ -490,7 +549,18 @@ function drawEnemy(ctx, e, x, y, flash) {
   }
   const blink = def.sprite === 'bomber' && e.state === 'TELEGRAPH' && Math.floor(e.stateTime * 16) % 2 === 0;
   const by = bottom - lift + oy;
-  drawSprite(ctx, spr, x, by, { flip: e.face < 0, white: flash || blink, scale: sc, squash: sq });
+  if (e.elite) { // 정예: 금빛 오라
+    ctx.fillStyle = `rgba(255,210,80,${0.22 + 0.12 * Math.sin(e.stateTime * 6)})`;
+    ctx.beginPath(); ctx.ellipse(x, bottom - 3, spr.w * 0.6, 5, 0, 0, TAU); ctx.fill();
+  }
+  if (def.boss && phase >= 2) { // 보스 페이즈 오라
+    ctx.fillStyle = phase >= 3 ? `rgba(255,60,80,${0.16 + 0.1 * Math.sin(e.stateTime * 9)})` : `rgba(255,140,200,${0.1 + 0.06 * Math.sin(e.stateTime * 6)})`;
+    ctx.beginPath(); ctx.arc(x, bottom - spr.h, spr.w * 1.15, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = e.fade ?? 1;
+  drawSprite(ctx, spr, x, by, { flip: e.face < 0, white: flash || blink || (e.state === 'PHASE' && Math.floor(e.stateTime * 14) % 2 === 0), scale: sc, squash: sq });
+  ctx.globalAlpha = 1;
+  if (e.elite) { ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 1, by - spr.h * sc - 6, 3, 3); ctx.fillRect(x - 3, by - spr.h * sc - 5, 7, 1); }
   const top = by - spr.h * sc;
   if (def.sprite === 'mage') {
     ctx.globalAlpha = 0.6 + 0.4 * Math.sin(e.stateTime * 5);

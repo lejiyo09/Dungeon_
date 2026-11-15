@@ -179,37 +179,106 @@ const AI_BEHAVIORS = {
   },
 
   // 보스: 데이터에 정의된 패턴 목록을 돌아가며 사용, 체력 50% 이하 격노
+  // 보스: 3페이즈(66% / 33%) — 페이즈마다 패턴이 추가되고 빨라짐, 3페이즈에는 궁극기를 주기적으로 사용
   boss(e, dt, world, ctx) {
-    const def = e.def, p = world.player;
-    const enr = e.hp < e.maxHp * 0.5 ? 1.4 : 1;
-    // 격노 전환: 한 번만, 진행 중인 패턴을 끊고 포효
-    if (enr > 1 && !e.enraged) { e.enraged = true; e.jumpH = 0; world.onBossEnrage(e); e.setState('RECOVERY'); return; }
+    const def = e.def, phase = e.phase || 1;
+    const spd = [1, 1, 1.25, 1.5][phase];
+    const ratio = e.hp / e.maxHp, want = ratio <= 0.33 ? 3 : ratio <= 0.66 ? 2 : 1;
+    if (want > phase && e.state !== 'INTRO') {
+      e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = 1.5;
+      world.onBossPhase(e, want); e.setState('PHASE'); return;
+    }
+    e.finalCd = (e.finalCd ?? 0) - dt;
+    switch (e.state) {
+      case 'INTRO': break; // 등장 연출은 Game이 진행
+      case 'PHASE': if (e.stateTime >= 1.3) e.setState('CHASE'); break; // 페이즈 전환 중 무적
+      case 'IDLE': if (ctx.playerAlive) e.setState('CHASE'); break;
+      case 'CHASE': {
+        if (!ctx.playerAlive) break;
+        if (ctx.dist > 50) pathStep(e, def.moveSpeed * spd, dt, world);
+        if (e.stateTime < def.attackCooldown / spd) break;
+        let pat;
+        if (phase >= 3 && def.finalPatterns && e.finalCd <= 0) { pat = pick(def.finalPatterns); e.finalCd = 11; }
+        else {
+          const pool = def.patterns.concat(phase >= 2 ? def.phase2Patterns || [] : []);
+          pat = pick(pool.filter((x) => x !== e.lastPat));
+        }
+        e.pat = pat; e.lastPat = pat; e.pd = { shots: 0, timer: 0 };
+        const P = BOSS_PATTERNS[pat.type];
+        if (P.begin) P.begin(e, world, ctx);
+        if (pat.name) world.announceBossSkill(e, pat.name);
+        e.setState('TELEGRAPH');
+        break;
+      }
+      case 'TELEGRAPH':
+        if (BOSS_PATTERNS[e.pat.type].aim) BOSS_PATTERNS[e.pat.type].aim(e, world, ctx);
+        if (e.stateTime >= (e.pat.telegraph || (e.pat.type === 'slam' ? 0.8 : 0.5)) / spd) { e.pd.sx = e.x; e.pd.sy = e.y; e.setState('ATTACK'); }
+        break;
+      case 'ATTACK':
+        if (BOSS_PATTERNS[e.pat.type].update(e, dt, world, ctx, spd)) { e.laser = null; e.fade = 1; e.setState('RECOVERY'); }
+        break;
+      case 'RECOVERY': if (e.stateTime >= (e.pat && e.pat.name ? 1.1 : 0.6) / spd) e.setState('CHASE'); break;
+    }
+  },
+
+  // 순간이동 사격수: 사라졌다가 플레이어 근처에 나타나 부채꼴 사격
+  teleporter(e, dt, world, ctx) {
+    const def = e.def, p = world.player, map = world.map;
     switch (e.state) {
       case 'IDLE': if (ctx.playerAlive) e.setState('CHASE'); break;
       case 'CHASE':
-        if (!ctx.playerAlive) break;
-        if (ctx.dist > 50) pathStep(e, def.moveSpeed * enr, dt, world);
-        if (e.stateTime >= def.attackCooldown / enr) {
-          const pool = e.enraged ? def.patterns.concat(def.enragePatterns || []) : def.patterns;
-          const opts = pool.filter((x) => x !== e.lastPat);
-          e.pat = pick(opts); e.lastPat = e.pat; e.pd = { shots: 0, timer: 0 };
-          const P = BOSS_PATTERNS[e.pat.type];
-          if (P.begin) P.begin(e, world, ctx);
-          e.setState('TELEGRAPH');
-        }
+        if (!ctx.playerAlive) { e.setState('IDLE'); break; }
+        if (ctx.dist > def.preferredRange + 30 || !hasLineOfSight(e, p, map)) pathStep(e, def.moveSpeed, dt, world);
+        else if (ctx.dist < def.preferredRange - 40) moveAndCollide(e, -ctx.dx / ctx.dist * def.moveSpeed * dt, -ctx.dy / ctx.dist * def.moveSpeed * dt, map);
+        if (e.attackCd <= 0) e.setState('TELEGRAPH');
         break;
       case 'TELEGRAPH':
-        if (e.stateTime >= (e.pat.telegraph || (e.pat.type === 'slam' ? 0.8 : 0.5)) / enr) { e.pd.sx = e.x; e.pd.sy = e.y; e.setState('ATTACK'); }
+        e.fade = Math.max(0.15, 1 - e.stateTime / def.telegraphTime);
+        if (e.stateTime >= def.telegraphTime) {
+          for (let i = 0; i < 24; i++) { // 플레이어 주변 빈 자리로 순간이동
+            const a = Math.random() * TAU, r = 105 + Math.random() * 50, x = p.x + Math.cos(a) * r, y = p.y + Math.sin(a) * r;
+            if (e.room && map.roomAtPoint(x, y) !== e.room) continue;
+            if (overlapsSolid(x, y, e.half, map)) continue;
+            world.effects.ring(e.x, e.y, 10, def.bulletColor); e.x = x; e.y = y; world.effects.ring(x, y, 14, def.bulletColor);
+            break;
+          }
+          e.fade = 1;
+          const base = Math.atan2(p.y - e.y, p.x - e.x), n = def.bulletCount;
+          for (let i = 0; i < n; i++) world.enemyShoot(e.x, e.y, base + (i - (n - 1) / 2) * def.bulletSpread, def.bulletSpeed, e.damage, def.bulletColor, 3);
+          e.attackCd = def.attackCooldown + Math.random() * 0.5; e.setState('RECOVERY');
+        }
         break;
-      case 'ATTACK':
-        if (BOSS_PATTERNS[e.pat.type].update(e, dt, world, ctx, enr)) e.setState('RECOVERY');
+      case 'RECOVERY': if (e.stateTime >= def.recoveryTime) e.setState(ctx.playerAlive ? 'CHASE' : 'IDLE'); break;
+    }
+  },
+
+  // 고정 포탑: 레이저로 조준(마지막 0.25초는 고정) → 일직선 탄 연사
+  turret(e, dt, world, ctx) {
+    const def = e.def, p = world.player;
+    switch (e.state) {
+      case 'IDLE': if (ctx.playerAlive) e.setState('CHASE'); break;
+      case 'CHASE':
+        if (!ctx.playerAlive) { e.setState('IDLE'); break; }
+        if (e.attackCd <= 0 && ctx.dist < def.attackRange && hasLineOfSight(e, p, world.map)) { e.aimAng = Math.atan2(ctx.dy, ctx.dx); e.setState('TELEGRAPH'); }
         break;
-      case 'RECOVERY': if (e.stateTime >= (e.roarT || 0.6) / enr) { e.roarT = 0; e.setState('CHASE'); } break;
+      case 'TELEGRAPH':
+        if (e.stateTime < def.telegraphTime - 0.25) e.aimAng = Math.atan2(ctx.dy, ctx.dx);
+        if (e.stateTime >= def.telegraphTime) {
+          for (let i = 0; i < def.bulletCount; i++) world.enemyShoot(e.x, e.y - 4, e.aimAng, def.bulletSpeed * (1 + i * 0.09), e.damage, '#d8a0ff', 3);
+          e.attackCd = def.attackCooldown; e.setState('RECOVERY');
+        }
+        break;
+      case 'RECOVERY': if (e.stateTime >= def.recoveryTime) e.setState('CHASE'); break;
     }
   }
 };
 
 // update()가 true를 돌려주면 패턴 종료
+// 보스 광선 길이: 벽에서 멈춤
+function beamLength(e, a, map) {
+  const L = 420, t = sweepWall(e.x, e.y, e.x + Math.cos(a) * L, e.y + Math.sin(a) * L, map, 4);
+  return t < 0 ? L : t * L;
+}
 const BOSS_PATTERNS = {
   radial: {
     update(e, dt, world, ctx, enr) {
@@ -251,7 +320,10 @@ const BOSS_PATTERNS = {
       e.pd.ty = clamp(p.y, r.y0 * TILE + m, (r.y0 + r.h) * TILE - m);
     },
     update(e, dt, world, ctx) {
-      const d = e.pd, P = e.pat, t = Math.min(1, e.stateTime / 0.5);
+      const d = e.pd, P = e.pat;
+      d.jt = (d.jt || 0) + dt;
+      if (d.jt < 0) { e.jumpH = 0; return false; } // 연속 점프 사이 대기 (보간이 0~1을 벗어나지 않게)
+      const t = Math.min(1, d.jt / 0.5);
       e.x = d.sx + (d.tx - d.sx) * t; e.y = d.sy + (d.ty - d.sy) * t;
       e.jumpH = Math.sin(t * Math.PI) * 40;
       if (t < 1) return false;
@@ -260,7 +332,11 @@ const BOSS_PATTERNS = {
       if (ctx.playerAlive && Math.hypot(p.x - e.x, p.y - e.y) < P.radius + p.half) world.damagePlayer(Math.round(e.damage * 1.5));
       for (let i = 0; i < 14; i++) world.enemyShoot(e.x, e.y, i * TAU / 14, e.def.bulletSpeed * 0.9, e.damage, P.color, 4);
       world.effects.ring(e.x, e.y, P.radius, P.color); world.effects.ring(e.x, e.y, P.radius * 0.7, '#ffffff');
-      world.addShake(0.25, 5);
+      world.addShake(0.25, 5); SFX.play('explode', 0.05);
+      if (d.chainLeft === undefined) d.chainLeft = P.chain || 0;
+      if (d.chainLeft > 0) { // 연속 내려찍기: 다음 착지 지점 재조준
+        d.chainLeft--; d.jt = -0.35; d.sx = e.x; d.sy = e.y; BOSS_PATTERNS.slam.begin(e, world); return false;
+      }
       return true;
     }
   },
@@ -299,6 +375,91 @@ const BOSS_PATTERNS = {
         if (P.stagger) world.hazards[world.hazards.length - 1].t = -i * P.stagger;
       }
       return true;
+    }
+  },
+  // 레이저: 조준선(예고) → 회전하며 휩쓰는 광선
+  laser: {
+    begin(e, world, ctx) {
+      const P = e.pat, base = Math.atan2(ctx.dy, ctx.dx);
+      e.pd.angs = []; for (let i = 0; i < P.beams; i++) e.pd.angs.push(base + (i - (P.beams - 1) / 2) * P.spreadAng);
+      e.pd.dir = Math.random() < 0.5 ? -1 : 1; e.pd.t = 0;
+      e.laser = { angs: e.pd.angs, width: P.width, color: P.color, live: false };
+    },
+    update(e, dt, world, ctx) {
+      const P = e.pat, d = e.pd, p = world.player;
+      d.t += dt;
+      for (let i = 0; i < d.angs.length; i++) d.angs[i] += d.dir * P.sweep / P.duration * dt;
+      e.laser.live = true;
+      if (ctx.playerAlive) for (const a of d.angs) {
+        const len = beamLength(e, a, world.map), ex = e.x + Math.cos(a) * len, ey = e.y + Math.sin(a) * len;
+        if (segmentCircleHit(e.x, e.y, ex, ey, p.x, p.y, P.width + p.half) >= 0) { world.damagePlayer(e.damage); break; }
+      }
+      if (Math.floor(d.t * 10) !== Math.floor((d.t - dt) * 10)) SFX.play('beam', 0.08);
+      return d.t >= P.duration;
+    }
+  },
+  // 격자 폭격: 방 전체에 장판, 가로·세로 한 줄씩만 안전
+  grid: {
+    update(e, dt, world) {
+      const P = e.pat, r = e.room, map = world.map;
+      const safeX = randInt(r.x0 + 1, r.x0 + r.w - 2), safeY = randInt(r.y0 + 1, r.y0 + r.h - 2);
+      for (let ty = r.y0 + 1; ty < r.y0 + r.h - 1; ty += P.spacing === 3 ? 2 : P.spacing)
+        for (let tx = r.x0 + 1; tx < r.x0 + r.w - 1; tx += P.spacing === 3 ? 2 : P.spacing) {
+          if (Math.abs(tx - safeX) <= 1 || Math.abs(ty - safeY) <= 1 || map.isSolidTile(tx, ty)) continue;
+          const c = map.tileCenter(tx, ty);
+          world.hazards.push(new Hazard(c.x, c.y, { r: P.radius, delay: P.delay, damage: Math.round(e.damage * 1.2), bullets: P.bullets, color: P.color }));
+        }
+      return true;
+    }
+  },
+  // 조여 오는 고리: 방 가장자리에서 중심으로 모이는 탄막, 틈으로 빠져나가야 함
+  ringIn: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, r = e.room; d.timer -= dt;
+      if (d.timer <= 0 && d.shots < P.rings) {
+        const c = world.map.tileCenter(r.cx, r.cy), R = Math.min(r.w, r.h) * TILE / 2 - 14;
+        const gapAt = randInt(0, P.count - 1);
+        for (let i = 0; i < P.count; i++) {
+          if (((i - gapAt + P.count) % P.count) < P.gap) continue;
+          const a = i * TAU / P.count, b = new EnemyBullet(c.x + Math.cos(a) * R, c.y + Math.sin(a) * R, -Math.cos(a) * P.speed, -Math.sin(a) * P.speed, e.damage, P.color, 4);
+          b.life = R / P.speed + 0.2; world.enemyBullets.push(b);
+        }
+        d.shots++; d.timer = P.interval / spd;
+      }
+      return d.shots >= P.rings && d.timer <= 0;
+    }
+  },
+  // 순간이동: 사라졌다가 플레이어에게서 먼 곳에 나타나며 원형 탄막
+  teleport: {
+    update(e, dt, world) {
+      const P = e.pat, d = e.pd;
+      d.t = (d.t || 0) + dt;
+      if (d.t < 0.35) e.fade = 1 - d.t / 0.35;
+      else if (!d.moved) {
+        d.moved = true;
+        const sp = world.findSpawnPoint(e.room, 110, undefined, undefined, e.def.hitboxHalf);
+        world.effects.ring(e.x, e.y, 20, P.color); e.x = sp.x; e.y = sp.y;
+      } else if (d.t < 0.6) e.fade = (d.t - 0.35) / 0.25;
+      else {
+        e.fade = 1;
+        for (let i = 0; i < P.bullets; i++) world.enemyShoot(e.x, e.y, i * TAU / P.bullets, e.def.bulletSpeed, e.damage, P.color, 4);
+        world.effects.ring(e.x, e.y, 26, P.color);
+        return true;
+      }
+      return false;
+    }
+  },
+  // 소용돌이: 플레이어를 끌어당기며 회전 탄막
+  vortex: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player;
+      if (ctx.playerAlive && p.state !== 'DASH') moveAndCollide(p, -ctx.dx / ctx.dist * P.pull * dt, -ctx.dy / ctx.dist * P.pull * dt, world.map);
+      d.timer -= dt; d.a = (d.a || 0) + P.spin * dt * spd;
+      while (d.timer <= 0) {
+        for (let i = 0; i < P.arms; i++) world.enemyShoot(e.x, e.y, d.a + i * TAU / P.arms, e.def.bulletSpeed * 0.8, e.damage, P.color, 3);
+        d.timer += P.interval;
+      }
+      return e.stateTime >= P.duration;
     }
   },
   spiral: {

@@ -12,6 +12,16 @@ function overlapsSolid(x, y, half, map) {
 }
 
 function moveAndCollide(ent, dx, dy, map) {
+  // 큰 이동(넉백·밀어내기)은 잘게 나눠 처리: 한 번에 벽 두께보다 많이 움직이면 벽을 뚫고 지나가기 때문
+  const MAXSTEP = 4;
+  if (Math.abs(dx) > MAXSTEP || Math.abs(dy) > MAXSTEP) {
+    const n = Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / MAXSTEP), hit = { x: false, y: false };
+    for (let i = 0; i < n; i++) {
+      const h = moveAndCollide(ent, hit.x ? 0 : dx / n, hit.y ? 0 : dy / n, map);
+      hit.x = hit.x || h.x; hit.y = hit.y || h.y;
+    }
+    return hit;
+  }
   const hit = { x: false, y: false };
   if (dx !== 0) {
     ent.x += dx;

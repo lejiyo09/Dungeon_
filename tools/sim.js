@@ -14,7 +14,7 @@ const [,, mode, arg, runsArg] = process.argv;
       g.save.unlocked = DATA_HEROES.map(h => h.id); g.save.selected = mode === 'real' ? arg : 'hero_gunner'; g.save.loadout = null;
       g.startRun();
       let dmgTaken = 0, time = 0, rooms = 0, dead = false, death = null, strafe = 1, strafeT = 0, bought = [], weaponsSeen = [];
-      const maxStage = mode === 'weapon' ? 6 : 9;
+      const maxStage = mode === 'weapon' ? 2 * STAGES_PER_WORLD : DATA_WORLDS.length * STAGES_PER_WORLD;
       const origTake = Player.prototype.takeDamage;
       const setupPlayer = () => {
         const p = g.player;
@@ -55,6 +55,7 @@ const [,, mode, arg, runsArg] = process.argv;
           if (g.map.isSolidAt(p.x, p.y)) p.y = (room.y0 + 1) * 16 + 8;
           let t = 0;
           while (room.state !== 'cleared' && t < 60 * 120) {
+            if (g.cinematic) { g.update(STEP); t++; continue; }
             if (g.overlay) { if (g.overlay.type === 'buff') g.input.pressed.add('Digit' + (1 + Math.floor(Math.random() * 3))); else break; }
             const I = g.input; I.down.clear();
             if (mode === 'real' && t % 30 === 0) chooseWeapon(p);
@@ -100,7 +101,7 @@ const [,, mode, arg, runsArg] = process.argv;
         }
         if (dead) break;
         loot();
-        if (stage < maxStage - 1 && stage < 8) { const po = g.portals[g.portals.length - 1]; if (!po) break; g.overlay = null; g.transition = null; po.onEnter(); }
+        if (stage < maxStage - 1) { const po = g.portals[g.portals.length - 1]; if (!po) break; g.overlay = null; g.transition = null; po.onEnter(); }
       }
       res.push({ reached: dead ? g.stageIndex + 1 : maxStage + (mode === 'weapon' ? 0 : 1), dead, rooms, dmg: Math.round(dmgTaken), time: Math.round(time), gold: g.gold, death, bought, final: g.player.weapons.map(w => w.def.name) });
       g.overlay = null;

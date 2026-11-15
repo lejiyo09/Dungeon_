@@ -31,13 +31,16 @@ class HUD {
     }
 
     const boss = game.enemies.find((e) => e.def.boss && e.alive && e.state !== 'SPAWN');
-    if (boss) {
-      const enr = boss.hp < boss.maxHp * 0.5;
-      hudText(ctx, boss.def.name + (enr ? '  ·  격노' : ''), VIEW_W / 2, 20, enr ? '#ff6a6a' : '#ff9ae0', 'center', 9);
+    if (boss && !game.cinematic) {
+      const ph = boss.phase || 1, cols = ['#d050b0', '#e07040', '#ff3a4a'];
+      hudText(ctx, `${boss.def.name}  ·  ${boss.def.title || ''}`, VIEW_W / 2, 20, '#ffb0e0', 'center', 9);
+      hudText(ctx, ['', 'Ⅰ', 'Ⅱ', 'Ⅲ'][ph], VIEW_W / 2 + 108, 30, cols[ph - 1], 'left', 9);
       ctx.fillStyle = OUTLINE; ctx.fillRect(VIEW_W / 2 - 101, 31, 202, 8);
-      hudBar(ctx, VIEW_W / 2 - 100, 32, 200, 6, boss.hp / boss.maxHp, enr ? '#e04060' : '#d050b0');
-      ctx.fillStyle = '#fff'; ctx.fillRect(VIEW_W / 2, 31, 1, 8); // 50% 격노 지점
+      hudBar(ctx, VIEW_W / 2 - 100, 32, 200, 6, boss.hp / boss.maxHp, cols[ph - 1]);
+      ctx.fillStyle = '#fff'; ctx.fillRect(VIEW_W / 2 - 100 + 66, 31, 1, 8); ctx.fillRect(VIEW_W / 2 - 100 + 132, 31, 1, 8); // 페이즈 경계
+      if (boss.state === 'PHASE') { ctx.fillStyle = `rgba(255,255,255,${0.4 + 0.4 * Math.sin(game.time * 20)})`; ctx.fillRect(VIEW_W / 2 - 100, 32, 200, 6); }
     }
+    if (game.cinematic) this.cinematic(ctx, game);
 
     // 무기: 현재 무기(크게) + 보조 칸(작게)
     const w = p.weapon;
@@ -76,6 +79,21 @@ class HUD {
       ctx.globalAlpha = 1;
     }
     if (game.overlay) this.overlay(ctx, game);
+  }
+  // 보스 등장 연출: 위아래 검은 띠 + 이름/칭호 타이틀 카드
+  cinematic(ctx, game) {
+    const c = game.cinematic, b = c.boss, k = Math.min(1, c.t / 0.4, (2.8 - c.t) / 0.3);
+    const bar = Math.round(34 * Math.max(0, k));
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VIEW_W, bar); ctx.fillRect(0, VIEW_H - bar, VIEW_W, bar);
+    if (c.t > 1.0) {
+      const a = Math.min(1, (c.t - 1.0) / 0.3, (2.8 - c.t) / 0.3), slide = Math.max(0, 1 - (c.t - 1.0) / 0.3) * 40;
+      ctx.globalAlpha = Math.max(0, a);
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0, VIEW_H - 92, VIEW_W, 46);
+      ctx.fillStyle = b.def.phaseColors ? b.def.phaseColors[1] : '#ff6a6a'; ctx.fillRect(VIEW_W / 2 - 120 + slide, VIEW_H - 64, 240, 1);
+      hudText(ctx, b.def.name, VIEW_W / 2 - slide, VIEW_H - 88, '#ffffff', 'center', 20);
+      hudText(ctx, b.def.title || '', VIEW_W / 2 + slide, VIEW_H - 60, '#ffb0c0', 'center', 10);
+      ctx.globalAlpha = 1;
+    }
   }
   minimap(ctx, game) {
     const map = game.map, cw = 11, ch = 9;

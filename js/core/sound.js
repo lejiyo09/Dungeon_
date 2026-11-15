@@ -26,6 +26,27 @@ class SoundSystem {
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
   }
+  // 보스전 배경음악: 16스텝 베이스 + 킥/스네어/하이햇 루프를 조금씩 앞서 예약
+  startMusic() {
+    if (!this.ctx || this.musicTimer) return;
+    this.beat = 0; this.nextT = this.ctx.currentTime + 0.05;
+    this.musicTimer = setInterval(() => this.scheduleMusic(), 90);
+  }
+  stopMusic() { if (this.musicTimer) { clearInterval(this.musicTimer); this.musicTimer = null; } }
+  scheduleMusic() {
+    if (!this.ctx) return;
+    const BASS = [55, 55, 82.4, 55, 49, 49, 73.4, 49, 58.3, 58.3, 87.3, 58.3, 41.2, 49, 55, 61.7];
+    while (this.nextT < this.ctx.currentTime + 0.25) {
+      const b = this.beat % 16, d = Math.max(0, this.nextT - this.ctx.currentTime);
+      if (!this.muted) {
+        this.tone('sawtooth', BASS[b], BASS[b] * 0.98, 0.18, 0.045, d);
+        if (b % 4 === 0) this.tone('sine', 140, 40, 0.16, 0.12, d);
+        if (b % 8 === 4) this.noise(0.1, 0.05, 'bandpass', 1800, d);
+        if (b % 2 === 1) this.noise(0.03, 0.015, 'highpass', 7000, d);
+      }
+      this.nextT += 0.15; this.beat++;
+    }
+  }
   setMuted(m) { this.muted = m; if (this.master) this.master.gain.value = m ? 0 : this.volume; }
   // 기본 음: 주파수 f → f2로 미끄러지는 짧은 소리
   tone(type, f, f2, dur, vol, delay = 0) {

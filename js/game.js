@@ -2,6 +2,9 @@
 // ════════════════════════════════════════════
 // 게임
 // ════════════════════════════════════════════
+// 현재 맵 (렌더링 보조용)
+function GAME_MAP() { return window.__game ? window.__game.map : null; }
+
 class Game {
   constructor(canvas, data) {
     this.canvas = canvas; this.ctx = canvas.getContext('2d'); this.data = data;
@@ -13,6 +16,7 @@ class Game {
     this.flow = null; this.flowTile = -1; this.flowTimer = 0;
     this.save = loadSave();
     this.hitStopT = 0; this.hurtFlash = 0; this.heartT = 0; this.noEnergyFlash = 0;
+    this.cinematic = null; this.slowMo = null; this.screenFlash = 0;
     SFX.setMuted(!!this.save.muted);
     this.dpsLog = [];
   }
@@ -58,6 +62,7 @@ class Game {
 
   // ── 로비
   enterLobby() {
+    SFX.stopMusic(); this.cinematic = null; this.slowMo = null;
     this.mode = 'lobby'; this.overlay = null;
     this.worldIdx = 0; this.levelIdx = 0;
     this.resetWorldLists(buildLobby());
@@ -133,6 +138,7 @@ class Game {
     });
   }
   endRun(victory) {
+    SFX.stopMusic();
     SFX.play(victory ? 'victory' : 'hurt');
     this.overlay = { type: 'result', victory, gold: this.gold + (victory ? BALANCE.victoryBonusGold : 0) };
     if (victory) { this.save.clears++; writeSave(this.save); }
@@ -153,9 +159,12 @@ class Game {
   mouseWorld() { return { x: this.input.mouse.x + Math.round(this.cam.x), y: this.input.mouse.y + Math.round(this.cam.y) }; }
   cameraTarget() {
     const p = this.player, mx = this.input.mouse.x - VIEW_W / 2, my = this.input.mouse.y - VIEW_H / 2;
+    let fx = p.x + mx * 0.2, fy = p.y + my * 0.2;
+    const focus = this.cinematic ? this.cinematic.boss : this.slowMo ? this.slowMo : null; // 보스 등장·처치 연출 중에는 보스를 비춤
+    if (focus) { fx = focus.x; fy = focus.y; }
     return {
-      x: clamp(p.x + mx * 0.2 - VIEW_W / 2, 0, this.map.width * TILE - VIEW_W),
-      y: clamp(p.y + my * 0.2 - VIEW_H / 2, 0, this.map.height * TILE - VIEW_H)
+      x: clamp(fx - VIEW_W / 2, 0, this.map.width * TILE - VIEW_W),
+      y: clamp(fy - VIEW_H / 2, 0, this.map.height * TILE - VIEW_H)
     };
   }
   snapCamera() { const t = this.cameraTarget(); this.cam.x = t.x; this.cam.y = t.y; }
@@ -182,6 +191,9 @@ class Game {
     if (this.overlay) { this.updateOverlay(input); input.endStep(); return; }
     if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; input.endStep(); return; }
     if (this.hitStopT > 0) { this.hitStopT -= dt; return; }
+    this.screenFlash = Math.max(0, this.screenFlash - dt);
+    if (this.cinematic) { this.updateCinematic(dt); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; }
+    if (this.slowMo) dt = this.updateSlowMo(dt); // 보스 처치 슬로우모션: 시뮬레이션 시간이 느려짐
 
     const p = this.player;
     const wasDash = p.state === 'DASH';
@@ -216,6 +228,7 @@ class Game {
       for (const po of this.portals)
         if (Math.hypot(p.x - po.x, p.y - po.y) < 12) { this.transition = { t: 0, swapped: false, action: po.onEnter }; break; }
     } else if (p.deathTimer > 1 && !this.overlay) {
+      SFX.stopMusic();
       this.endRun(false);
     }
     this.updateCamera(dt);
@@ -339,7 +352,7 @@ class Game {
     if (here && !here.visited) here.visited = true;
     if (!this.activeRoom && here && here.state === 'idle' && map.isFullyInside(p, here)) this.activateRoom(here);
     const r = this.activeRoom;
-    if (r && !this.enemies.some((e) => e.alive)) {
+    if (r && !this.slowMo && !this.enemies.some((e) => e.alive)) {
       if (r.wavesLeft > 0) this.spawnWave(r);
       else this.clearRoom(r);
     }
@@ -350,19 +363,22 @@ class Game {
     this.enemyBullets.length = 0;
     if (r.type === 'boss') {
       const id = DATA_WORLDS[this.worldIdx].boss, c = this.map.tileCenter(r.cx, r.cy - 3);
-      this.spawnEnemy(id, c.x, c.y, r);
-      this.showBanner(this.data.enemies.get(id).name, '보스 등장!', '#ff9ae0');
-      SFX.play('boss');
+      const boss = this.spawnEnemy(id, c.x, c.y, r);
+      boss.setState('INTRO'); boss.jumpH = 160; boss.phase = 1;
+      this.cinematic = { t: 0, boss, landed: false, roared: false };
+      this.banner = null; this.input.mouse.down = false;
+      SFX.play('door');
     } else this.spawnWave(r);
   }
   spawnWave(r) {
     r.wavesLeft--;
     const pool = DATA_WORLDS[this.worldIdx].enemies;
-    const W = BALANCE.waveSize, count = Math.min(W.max, W.base + this.worldIdx + this.levelIdx + randInt(0, W.rand));
+    const W = BALANCE.waveSize, count = Math.min(W.max, W.base + this.worldIdx + Math.floor(this.levelIdx * W.perLevel) + randInt(0, W.rand));
     for (let i = 0; i < count; i++) {
       const [id] = weightedPick(pool, (x) => x[1]);
       const pt = this.findSpawnPoint(r, 72);
-      this.spawnEnemy(id, pt.x, pt.y, r);
+      const e = this.spawnEnemy(id, pt.x, pt.y, r), E = BALANCE.elite;
+      if (this.worldIdx >= E.fromWorld && Math.random() < E.base + E.perWorld * (this.worldIdx - E.fromWorld)) e.makeElite(E);
     }
   }
   spawnEnemy(id, x, y, room) {
@@ -405,6 +421,8 @@ class Game {
       for (let i = 0; i < 12; i++) this.pickups.push(new Pickup('coin', c.x, c.y));
       for (let i = 0; i < 8; i++) this.pickups.push(new Pickup('energy', c.x, c.y, { value: 10 }));
       this.pickups.push(new Pickup('hp', c.x, c.y, { value: 30 }));
+      const p = this.player; // 월드 보스 처치: 체력 회복
+      if (p.state !== 'DEAD') { const heal = Math.round(p.maxHp * BALANCE.bossHealRatio); p.hp = Math.min(p.maxHp, p.hp + heal); this.effects.text(p.x, p.y - 20, '+' + heal, '#7be36b', true); }
       const last = this.worldIdx === DATA_WORLDS.length - 1;
       const after = () => {
         if (last) this.portals.push(new Portal(c.x, c.y + 24, () => this.endRun(true), '귀환', [255, 210, 90]));
@@ -507,14 +525,55 @@ class Game {
     if (!enemy.alive) this.onEnemyKilled(enemy);
   }
   // 보스 격노 전환 연출: 탄 정리 + 충격파 + 잠깐의 숨 돌릴 틈
-  onBossEnrage(e) {
-    this.enemyBullets.length = 0;
-    e.roarT = 1.4;
-    this.addShake(0.5, 5); this.hitStop(0.12); SFX.play('boss');
-    this.effects.ring(e.x, e.y, 30, '#ffffff'); this.effects.ring(e.x, e.y, 60, '#ff6a6a'); this.effects.burst(e.x, e.y, '#ff6a6a', 20);
-    this.showBanner(e.def.name + ' 격노!', '패턴이 빨라지고 새로운 공격이 추가됩니다', '#ff6a6a');
+  // 보스 페이즈 전환: 탄·장판 정리, 충격파, 근접한 플레이어 밀어냄 (보스는 1.3초 무적)
+  onBossPhase(e, phase) {
+    this.enemyBullets.length = 0; this.hazards.length = 0;
+    this.addShake(0.6, 6); this.hitStop(0.15); this.screenFlash = 0.25; SFX.play('boss');
+    const col = e.def.phaseColors ? e.def.phaseColors[phase - 1] : '#ff6a6a';
+    this.effects.ring(e.x, e.y, 30, '#ffffff'); this.effects.ring(e.x, e.y, 60, col); this.effects.ring(e.x, e.y, 90, col); this.effects.burst(e.x, e.y, col, 24);
+    this.showBanner(`${e.def.name} — ${phase}페이즈`, phase >= 3 ? '궁극기가 해금되었습니다!' : '분노하여 패턴이 빨라지고 새로운 공격이 추가됩니다', phase >= 3 ? '#ff4a5a' : '#ff9a6a');
     const p = this.player, dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy) || 1;
-    if (d < 70) moveAndCollide(p, dx / d * (70 - d), dy / d * (70 - d), this.map); // 근접해 있던 플레이어를 밀어냄
+    if (d < 80) moveAndCollide(p, dx / d * (80 - d), dy / d * (80 - d), this.map);
+    // 버틴 보상: 에너지 오브와 회복 물약 (에너지 무기만 든 경우 공격 수단이 끊기지 않게)
+    const c0 = this.map.tileCenter(e.room.cx, e.room.cy + 3), c = this.freeSpot(e.room, c0.x, c0.y, 4);
+    for (let i = 0; i < 6; i++) this.pickups.push(new Pickup('energy', c.x, c.y, { value: 12 }));
+    this.pickups.push(new Pickup('hp', c.x, c.y, { value: 15 }));
+  }
+  // 궁극기 이름 외치기
+  announceBossSkill(e, name) {
+    this.showBanner(name, null, '#ff4a5a'); this.banner.life = 1.4;
+    this.effects.text(e.x, e.y - 34, name + '!', '#ff8a8a', true); SFX.play('react');
+  }
+  // 보스 등장 연출: 낙하 → 착지 충격파 → 포효 → 전투 시작
+  updateCinematic(dt) {
+    const c = this.cinematic, b = c.boss;
+    c.t += dt;
+    b.stateTime += dt;
+    if (c.t < 0.8) b.jumpH = 160 * Math.pow(1 - c.t / 0.8, 2);
+    else if (!c.landed) {
+      c.landed = true; b.jumpH = 0;
+      this.addShake(0.5, 7); SFX.play('explode'); this.screenFlash = 0.2;
+      this.effects.ring(b.x, b.y, 40, '#ffffff'); this.effects.ring(b.x, b.y, 70, b.def.color); this.effects.burst(b.x, b.y, b.def.color, 26);
+    }
+    if (c.t >= 1.3 && !c.roared) { c.roared = true; SFX.play('boss'); this.addShake(0.6, 3); this.effects.ring(b.x, b.y, 100, '#ffffff'); }
+    if (c.t >= 2.8) { b.setState('CHASE'); this.cinematic = null; SFX.startMusic(); }
+  }
+  // 보스 처치 슬로우모션: 연쇄 폭발 → 섬광 → 보상
+  updateSlowMo(dt) {
+    const s = this.slowMo;
+    s.t += dt; s.next -= dt;
+    if (s.next <= 0 && s.t < 1.7) {
+      s.next = 0.13;
+      const x = s.x + randInt(-18, 18), y = s.y + randInt(-18, 10);
+      this.effects.explosion(x, y, randInt(10, 20), pick(['#ffffff', '#ffd84a', s.color]));
+      SFX.play('explode', 0.08); this.addShake(0.1, 3);
+    }
+    if (s.t >= 1.9) {
+      this.slowMo = null; this.screenFlash = 0.7; this.addShake(0.5, 8); SFX.play('victory');
+      this.effects.explosion(s.x, s.y, 60, '#ffffff'); this.effects.burst(s.x, s.y, s.color, 40);
+      return dt;
+    }
+    return dt * 0.25;
   }
   // 원소 반응
   triggerReaction(e, type, mods) {
@@ -593,10 +652,12 @@ class Game {
     if (enemy.def.aiType === 'exploder') this.enemyExplode(enemy);
     if (enemy.def.boss) {
       this.addShake(0.4, 6); this.enemyBullets.length = 0; this.hazards.length = 0;
+      enemy.laser = null; SFX.stopMusic();
+      this.slowMo = { t: 0, next: 0, x: enemy.x, y: enemy.y, color: enemy.def.phaseColors ? enemy.def.phaseColors[2] : enemy.def.color };
       for (const e of this.enemies) if (e.alive && e !== enemy) { e.alive = false; e.rewardGiven = true; e.setState('DEAD'); }
       return;
     }
-    const B = BALANCE, coins = Math.max(1, Math.round(enemy.def.rewardGold * B.killGoldMult + (Math.random() < 0.5 ? 0.4 : -0.4)));
+    const B = BALANCE, coins = Math.max(1, Math.round(enemy.def.rewardGold * B.killGoldMult * (enemy.elite ? B.elite.gold : 1) + (Math.random() < 0.5 ? 0.4 : -0.4)));
     for (let i = 0; i < coins; i++) this.pickups.push(new Pickup('coin', enemy.x, enemy.y));
     if (Math.random() < B.killEnergyChance) this.pickups.push(new Pickup('energy', enemy.x, enemy.y, { value: B.killEnergyValue }));
     if (Math.random() < B.killHpChance) this.pickups.push(new Pickup('hp', enemy.x, enemy.y, { value: B.killHpValue }));
@@ -629,6 +690,7 @@ class Game {
         ctx.restore();
       }
     }
+    if (this.screenFlash > 0) { ctx.fillStyle = `rgba(255,255,255,${Math.min(0.8, this.screenFlash * 1.2)})`; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
     const low = p.state !== 'DEAD' && p.hp < p.maxHp * 0.3 ? 0.18 + 0.12 * Math.sin(this.time * 7) : 0;
     const a = Math.max(low, this.hurtFlash * 1.4);
     if (a > 0.01) {
