@@ -1,0 +1,19 @@
+{
+  "name": "PROJECT: DUNGEON",
+  "short_name": "Dungeon",
+  "description": "끝없이 아래로 이어지는 던전을 탐험하는 픽셀 아트 액션 로그라이크",
+  "lang": "ko",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#0b0b10",
+  "theme_color": "#0b0b10",
+  "categories": ["games"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

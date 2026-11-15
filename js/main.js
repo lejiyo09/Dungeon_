@@ -2,6 +2,9 @@
 const game = new Game(document.getElementById('game'), GAME_DATA);
 game.start();
 window.__game = game; // 디버그용
+// PWA: http(s)로 열렸을 때만 서비스 워커 등록 (파일로 직접 열면 건너뜀)
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol))
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { /* 등록 실패해도 게임은 그대로 실행 */ }));
 Auth.migrateLegacy();
 // ?guest=1 이면 로그인 화면 없이 게스트로 시작 (테스트 도구용)
 if (new URLSearchParams(location.search).has('guest')) { game.login(null); game.save.prologueSeen = true; }
