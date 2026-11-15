@@ -9,7 +9,9 @@ class InputManager {
     this.pressed = new Set();
     this.mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, rdown: false };
     const blocked = new Set(['Space', 'Tab', 'KeyQ', 'KeyE', 'KeyR', 'KeyF']);
+    const typing = (e) => e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'); // 로그인 입력칸에서는 게임 키 무시
     window.addEventListener('keydown', (e) => {
+      if (typing(e)) return;
       if (blocked.has(e.code)) e.preventDefault();
       if (!this.down.has(e.code)) this.pressed.add(e.code);
       this.down.add(e.code);

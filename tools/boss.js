@@ -9,7 +9,7 @@ const RUNS = +(process.argv[2] || 8);
   const b = await chromium.launch();
   const pg = await b.newPage({ viewport: { width: 512, height: 288 } });
   const errs = []; pg.on('pageerror', (e) => errs.push(e.message));
-  await pg.goto('file://' + (process.env.FILE || path.resolve(__dirname, '../index.html')));
+  await pg.goto('file://' + (process.env.FILE || path.resolve(__dirname, '../index.html')) + '?guest=1');
   await pg.waitForTimeout(300);
   await pg.addScriptTag({ path: path.resolve(__dirname, 'bot.js') });
   const out = await pg.evaluate(async (RUNS) => {

@@ -6,6 +6,12 @@
 
 `index.html`을 브라우저(Chrome, Edge, Firefox 등)로 열면 바로 플레이할 수 있습니다. 파일을 더블클릭해서 열어도 되고, GitHub Pages로 배포해도 됩니다. 키보드와 마우스가 필요합니다.
 
+## 계정
+
+첫 화면에서 닉네임과 4자리 PIN(선택)으로 계정을 만들 수 있습니다. 계정마다 로비 골드, 해금 캐릭터, 도감, 무기고가 따로 저장되고, 로그인 없이 게스트로 바로 할 수도 있습니다(게스트는 저장되지 않음). 로비에서 Esc → L로 로그아웃합니다.
+
+계정은 **이 브라우저의 localStorage에만** 저장됩니다. 서버가 없는 정적 사이트라서 다른 기기와 공유되지 않고, PIN은 해시로만 저장하지만 보안 장치는 아닙니다. 주소 끝에 `?guest=1`을 붙이면 로그인 화면 없이 게스트로 시작합니다(테스트 도구용).
+
 ## 조작법
 
 | 키 | 동작 |
@@ -47,7 +53,8 @@ js/
     index.js     id → 정의 조회용 GAME_DATA
   core/        공용 기반
     util.js      상수, 수학/랜덤 유틸
-    save.js      localStorage 저장
+    save.js      localStorage 저장 (계정별 칸)
+    auth.js      기기 안의 계정(닉네임 + PIN 해시)
     sound.js     WebAudio 효과음 (SFX.play('이름'))
     input.js     키보드·마우스 입력
     loop.js      고정 timestep(60Hz) 게임 루프
@@ -57,6 +64,7 @@ js/
   entities/    플레이어·적(actors), 투사체·장판·포탑(projectiles), 픽업·상자·상점·로비 오브젝트(props)
   systems/     무기 발사(weapons), 몬스터 AI·보스 패턴(ai), 이펙트(effects)
   ui/hud.js    HUD, 미니맵, 도감·무기고·버프·결과 화면
+  ui/login.js  로그인 화면 (HTML 오버레이)
   game.js      게임 상태, 방 진행, 전투 처리, 렌더링
   main.js      시작점
 ```
@@ -80,7 +88,9 @@ Node.js와 Playwright(Chromium)가 필요합니다. 모든 도구는 화면 없�
 | `node tools/synergy.js` | 무기 × 공격력/공속 버프 × 과부하 사격 시너지 검증 |
 | `node tools/boss.js [횟수]` | 보스별 승률, 처치 시간, 패턴별 받은 피해 |
 | `node tools/sim.js real <heroId> <횟수>` | 실전형 봇(파밍·상점 이용)으로 클리어율·사망 위치 측정 |
-| `node tools/sim.js weapon <weaponId> <횟수>` | 무기 하나만 들고 1-1~2-3 진행 |
+| `node tools/sim.js weapon <weaponId> <횟수>` | 무기 하나만 들고 앞쪽 2개 월드 진행 |
+| `node tools/power.js` | 무기별 화력(단일·범위 DPS)과 등급별 평균 |
+| `node tools/login.js` | 계정 생성·PIN·로그아웃·삭제·계정 분리·기존 진행도 이전 검증 |
 
 `tools/bot.js`는 측정 도구들이 페이지에 주입해서 쓰는 전투 봇입니다.
 

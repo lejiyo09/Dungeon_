@@ -59,7 +59,7 @@ class Projectile {
       world.damageEnemy(e, this, this.dx, this.dy);
       if (this.pierceLeft <= 0) {
         this.x = sx + (ex - sx) * t; this.y = sy + (ey - sy) * t; this.alive = false; this.end(world);
-        if (!this.flame) world.effects.spark(this.x, this.y, '#ffffff'); return;
+        if (!this.flame) world.effects.impact(this.x, this.y, this.color, Math.atan2(this.dy, this.dx)); return;
       }
       this.pierceLeft--;
     }
@@ -77,11 +77,11 @@ class Projectile {
         if (!hx && !hy) { this.dx = -this.dx; this.dy = -this.dy; }
         this.x = px; this.y = py; this.traveled += dist * wallT;
         this.hitTargets.clear();
-        world.effects.spark(px, py, this.color);
+        world.effects.impact(px, py, this.color, Math.atan2(this.dy, this.dx));
         return;
       }
       this.x = px - this.dx * 3; this.y = py - this.dy * 3; this.alive = false; this.end(world);
-      if (!this.flame) world.effects.spark(this.x, this.y, this.color); return;
+      if (!this.flame) world.effects.impact(this.x, this.y, this.color, Math.atan2(this.dy, this.dx)); return;
     }
     this.x = ex; this.y = ey; this.traveled += dist;
     if (endByRange) {
@@ -149,11 +149,16 @@ class Projectile {
       const r = 2 + k * 6; ctx.fillRect(Math.round(x - r), Math.round(y - r), Math.round(r * 2), Math.round(r * 2));
       ctx.globalAlpha = 1; return;
     }
-    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(Math.round(x - this.dx * 4), Math.round(y - this.dy * 4), 2, 2);
-    if (this.arrow) {
-      ctx.strokeStyle = this.color; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - this.dx * 8, y - this.dy * 8); ctx.stroke();
-    }
+    // 궤적(속도에 비례하는 꼬리) + 가산 혼합 빛
+    const tl = Math.min(14, 3 + this.speed / 45);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = this.color; ctx.globalAlpha = 0.55; ctx.lineWidth = s + 0.5;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - this.dx * tl, y - this.dy * tl); ctx.stroke();
+    ctx.globalAlpha = 0.3; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, s * 2 + 2.5, 0, TAU); ctx.fill();
+    ctx.restore(); ctx.lineWidth = 1;
+    if (this.arrow) { ctx.strokeStyle = this.color; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - this.dx * 8, y - this.dy * 8); ctx.stroke(); }
     ctx.fillStyle = this.color; ctx.fillRect(x - s, y - s, s * 2 + 1, s * 2 + 1);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y, 1, 1);
   }
 }
 
@@ -166,7 +171,7 @@ class EnemyBullet {
     this.life -= dt;
     this.x += this.vx * dt; this.y += this.vy * dt;
     if (this.life <= 0) { this.alive = false; return; }
-    if (world.map.isSolidAt(this.x, this.y)) { world.hitTile(this.x, this.y); this.alive = false; world.effects.spark(this.x, this.y, this.color); return; }
+    if (world.map.isSolidAt(this.x, this.y)) { world.hitTile(this.x, this.y); this.alive = false; world.effects.impact(this.x, this.y, this.color); return; }
     const p = world.player;
     if (p.state !== 'DEAD' && Math.abs(p.x - this.x) < p.half + this.r - 1 && Math.abs(p.y - this.y) < p.half + this.r - 1) {
       if (world.damagePlayer(this.damage)) { this.alive = false; world.effects.spark(this.x, this.y, '#fff'); }
@@ -174,6 +179,9 @@ class EnemyBullet {
   }
   render(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35; ctx.fillStyle = this.color; // 적 탄 빛 (위험 가시성)
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.r + 3, 0, TAU); ctx.fill(); ctx.restore();
+    ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.arc(x, y, this.r + 1, 0, TAU); ctx.fill();
     ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(x, y, this.r, 0, TAU); ctx.fill();
     ctx.fillStyle = '#fff'; ctx.fillRect(x - 1, y - 1, 2, 2);
   }

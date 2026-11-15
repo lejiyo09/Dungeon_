@@ -10,7 +10,7 @@ const MINUTES = +(process.argv[2] || 20);
   const pg = await b.newPage({ viewport: { width: 512, height: 288 } });
   const errs = [];
   pg.on('pageerror', (e) => errs.push(e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 3).join(' | ')));
-  await pg.goto('file://' + path.resolve(__dirname, '../index.html'));
+  await pg.goto('file://' + path.resolve(__dirname, '../index.html') + '?guest=1');
   await pg.waitForTimeout(300);
   const out = await pg.evaluate(async (MINUTES) => {
     const g = window.__game; g.render = () => {};

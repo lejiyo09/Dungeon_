@@ -8,7 +8,7 @@ const path = require('path');
   const b = await chromium.launch();
   const pg = await b.newPage({ viewport: { width: 512, height: 288 } });
   const errs = []; pg.on('pageerror', (e) => errs.push(e.message));
-  await pg.goto('file://' + path.resolve(__dirname, '../index.html'));
+  await pg.goto('file://' + path.resolve(__dirname, '../index.html') + '?guest=1');
   await pg.waitForTimeout(300);
   const rows = await pg.evaluate(() => {
     const g = window.__game; g.render = () => {};

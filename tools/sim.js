@@ -5,7 +5,7 @@ const [,, mode, arg, runsArg] = process.argv;
 (async () => {
   const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 512, height: 288 } });
   const errs = []; pg.on('pageerror', e => errs.push(e.message));
-  await pg.goto('file://' + (process.env.FILE || require('path').resolve(__dirname, '../index.html'))); await pg.waitForTimeout(300);
+  await pg.goto('file://' + (process.env.FILE || require('path').resolve(__dirname, '../index.html')) + '?guest=1'); await pg.waitForTimeout(300);
   const out = await pg.evaluate(async ({ mode, arg, runs }) => {
     const g = window.__game; g.render = () => {};
     const RANK = { common: 0, uncommon: 1, rare: 2, epic: 3 };

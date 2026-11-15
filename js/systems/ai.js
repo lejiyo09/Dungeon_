@@ -489,11 +489,14 @@ function updateEnemy(e, dt, world) {
     e.dotTimer -= dt;
     if (e.dotTimer <= 0) {
       e.dotTimer = 0.5;
-      if (e.burn > 0) world.dotDamage(e, e.burnDps * 0.5, '#ff9a4a');
-      if (e.poison > 0 && e.alive) world.dotDamage(e, e.poisonDps * 0.5, '#9aff5a');
+      if (e.burn > 0) { world.dotDamage(e, e.burnDps * 0.5, '#ff9a4a'); world.effects.status(e.x, e.y, 'burn'); }
+      if (e.poison > 0 && e.alive) { world.dotDamage(e, e.poisonDps * 0.5, '#9aff5a'); world.effects.status(e.x, e.y, 'poison'); }
       if (!e.alive) return;
     }
   }
+  if (e.burn > 0 && Math.random() < 0.25) world.effects.status(e.x, e.y, 'burn');
+  if (e.slow > 0 && Math.random() < 0.12) world.effects.status(e.x, e.y, 'freeze');
+  if (e.poison > 0 && Math.random() < 0.08) world.effects.status(e.x, e.y, 'poison');
   const sdt = dt * e.speedMul; // 빙결 시 이동/행동 모두 느려짐
   e.stateTime += sdt;
   const p = world.player;

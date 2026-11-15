@@ -152,6 +152,18 @@ class Game {
   // 타격감: 아주 짧게 시뮬레이션을 멈춤 (입력은 다음 프레임으로 이월)
   hitStop(t) { this.hitStopT = Math.max(this.hitStopT, t); }
   toggleMute() { this.save.muted = !this.save.muted; SFX.setMuted(this.save.muted); writeSave(this.save); this.showBanner(this.save.muted ? '소리 끔' : '소리 켬', 'M: 전환'); }
+  // ── 계정
+  login(profile) {
+    Auth.current = profile; this.profile = profile;
+    this.save = loadSave(); SFX.setMuted(!!this.save.muted);
+    this.locked = false; this.enterLobby();
+    this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다', '#ffd84a');
+  }
+  logout() {
+    writeSave(this.save); Auth.current = null; this.profile = null;
+    this.overlay = null; this.locked = true; this.enterLobby();
+    if (typeof LoginUI !== 'undefined') LoginUI.show(this); // const 전역은 window 속성이 아니므로 typeof로 확인
+  }
   showBanner(title, sub, color) { this.banner = { title, sub, color, t: 0, life: 2.4 }; }
   addShake(t, mag) { this.shake = Math.max(this.shake, t); this.shakeMag = Math.max(this.shakeMag, mag); }
 
@@ -177,6 +189,7 @@ class Game {
   update(dt) {
     const input = this.input;
     this.time += dt;
+    if (this.locked) { input.endStep(); return; } // 로그인 화면
     if (this.banner) this.banner.t += dt;
     if (input.wasPressed('KeyM')) this.toggleMute();
     this.hurtFlash = Math.max(0, this.hurtFlash - dt);
@@ -199,6 +212,13 @@ class Game {
     const wasDash = p.state === 'DASH';
     p.update(dt, input, this.map, this.mouseWorld());
     if (!wasDash && p.state === 'DASH') SFX.play('dash');
+    this.fxT = (this.fxT || 0) - dt;
+    if (this.fxT <= 0 && p.state !== 'DEAD') {
+      if (p.state === 'DASH') { // 잔상
+        const spr = heroSprite(p.hero, 0), img = p.faceVis < 0 ? spr.f : spr.n;
+        this.effects.afterimage(img, p.x - spr.w / 2, p.y + 7 - spr.h, spr.w, spr.h); this.fxT = 0.025;
+      } else if (p.moving) { this.effects.dust(p.x, p.y + 6); this.fxT = 0.22; }
+    }
     if (p.state !== 'DEAD' && p.hp < p.maxHp * 0.3) { this.heartT -= dt; if (this.heartT <= 0) { SFX.play('heart'); this.heartT = 0.9; } }
     this.weaponSystem.update(p, dt, input);
     if (p.state !== 'DEAD' && (input.wasPressed('KeyF') || input.wasPressed('Mouse2'))) this.useSkill();
@@ -238,6 +258,7 @@ class Game {
     const o = this.overlay;
     if (o.type === 'pause') {
       if (input.wasPressed('Escape')) this.overlay = null;
+      else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
       else if (this.mode === 'dungeon' && input.wasPressed('KeyL')) { this.player.state = 'DEAD'; this.endRun(false); }
     } else if (o.type === 'codex' || o.type === 'armory') {
       ['Digit1', 'Digit2', 'Digit3', 'Digit4'].forEach((k, i) => { if (input.wasPressed(k)) o.tab = i; });
@@ -502,9 +523,9 @@ class Game {
   }
   collect(pk) {
     const p = this.player;
-    if (pk.kind === 'coin') { this.gold += pk.value; SFX.play('coin', 0.05); }
-    else if (pk.kind === 'energy') { p.energy = Math.min(p.maxEnergy, p.energy + pk.value); SFX.play('energy', 0.05); }
-    else if (pk.kind === 'hp') { p.hp = Math.min(p.maxHp, p.hp + pk.value); this.effects.text(p.x, p.y - 16, '+' + pk.value, '#7be36b'); SFX.play('heal'); }
+    if (pk.kind === 'coin') { this.gold += pk.value; SFX.play('coin', 0.05); this.effects.sparkle(p.x, p.y - 4, '#ffd84a'); }
+    else if (pk.kind === 'energy') { p.energy = Math.min(p.maxEnergy, p.energy + pk.value); SFX.play('energy', 0.05); this.effects.sparkle(p.x, p.y - 4, '#8ab8ff'); }
+    else if (pk.kind === 'hp') { p.hp = Math.min(p.maxHp, p.hp + pk.value); this.effects.text(p.x, p.y - 16, '+' + pk.value, '#7be36b'); this.effects.heal(p.x, p.y); SFX.play('heal'); }
   }
 
   // ── 전투 처리
@@ -674,7 +695,7 @@ class Game {
     this.kills++;
     const p = this.player;
     if (p.vampire > 0 && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.vampire);
-    this.effects.burst(enemy.x, enemy.y, enemy.def.color || '#c0c0c0', enemy.def.boss ? 24 : 8);
+    this.effects.death(enemy.x, enemy.y, enemy.def.phaseColors ? enemy.def.phaseColors[(enemy.phase || 1) - 1] : (enemy.def.color || '#c0c0c0'), enemy.def.boss ? 30 : enemy.def.hitboxHalf * 2);
     SFX.play(enemy.def.boss ? 'explode' : 'kill', 0.04);
     if (enemy.def.boss) this.hitStop(0.3); else if (Math.random() < 0.35) this.hitStop(0.025);
     if (enemy.def.aiType === 'exploder') this.enemyExplode(enemy);

@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 (async () => {
   const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 1024, height: 576 } });
   const errs = []; pg.on('pageerror', e => errs.push(e.message + '\n' + e.stack)); pg.on('console', m => m.type()==='error' && errs.push(m.text()));
-  await pg.goto('file://' + require('path').resolve(__dirname, '../index.html')); await pg.waitForTimeout(400);
+  await pg.goto('file://' + require('path').resolve(__dirname, '../index.html') + '?guest=1'); await pg.waitForTimeout(400);
   // weapons on dummy
   const wres = await pg.evaluate(() => {
     const g = window.__game, p = g.player, d = g.enemies[0];

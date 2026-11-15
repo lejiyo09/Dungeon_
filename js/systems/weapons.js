@@ -80,7 +80,7 @@ class WeaponSystem {
       }, override)));
     }
     const L = weaponLength(def) + 4; // 총구 위치에 섬광
-    if (!def.flame) this.world.effects.spark(player.x + player.aim.x * L, player.y + 2 + player.aim.y * L * 0.75, '#fff6c0');
+    if (!def.flame) this.world.effects.muzzle(player.x + player.aim.x * L, player.y + 2 + player.aim.y * L * 0.75, base, def.bulletColor);
     player.recoil = Math.min(1, player.recoil + (def.damage * (def.projectileCount || 1) >= 40 ? 1 : def.fireRate > 8 ? 0.35 : 0.6));
     SFX.play(weaponSound(def), def.fireRate > 8 ? 0.06 : 0.03);
   }

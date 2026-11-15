@@ -8,6 +8,33 @@
   html, body { margin: 0; height: 100%; background: #0b0b10; overflow: hidden; }
   body { display: flex; align-items: center; justify-content: center; }
   #game { display: block; cursor: none; }
+  /* 로그인 화면 */
+  #login { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(8,6,14,0.78);
+    font-family: 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif; z-index: 10; }
+  .lg-panel { width: min(360px, calc(100vw - 32px)); background: #1c1828; border: 2px solid #4b3f5c; box-shadow: 0 0 0 4px #14101c, 0 12px 40px rgba(0,0,0,0.6);
+    padding: 24px 20px 16px; color: #e8e0f0; display: flex; flex-direction: column; gap: 8px; }
+  .lg-title { font-size: 26px; font-weight: 900; letter-spacing: 1px; text-align: center; color: #ffd84a; text-shadow: 3px 3px 0 #7a3a10; }
+  .lg-sub { text-align: center; color: #a898c0; font-size: 13px; margin-bottom: 8px; }
+  .lg-h { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+  .lg-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; margin-bottom: 4px; }
+  .lg-row { display: flex; gap: 6px; }
+  .lg-prof { flex: 1; display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #2a2440; color: #fff;
+    border: 2px solid #3e345a; cursor: pointer; font: inherit; font-size: 15px; }
+  .lg-prof span { color: #a898c0; font-size: 12px; }
+  .lg-prof:hover, .lg-prof:focus-visible { border-color: #ffd84a; outline: none; }
+  .lg-del { width: 40px; background: #2a2440; color: #c88; border: 2px solid #3e345a; cursor: pointer; font-size: 14px; }
+  .lg-del:hover { border-color: #e05050; color: #ff7070; }
+  .lg-btn { padding: 10px; background: #2a2440; color: #e8e0f0; border: 2px solid #3e345a; cursor: pointer; font: inherit; font-size: 14px; }
+  .lg-btn:hover, .lg-btn:focus-visible { border-color: #a898c0; outline: none; }
+  .lg-main { background: #6a4a1a; border-color: #c89a40; color: #fff; font-weight: 700; }
+  .lg-main:hover { border-color: #ffd84a; }
+  .lg-danger { background: #6a1a2a; border-color: #c04050; color: #fff; }
+  .lg-in { padding: 10px; background: #120e1c; color: #fff; border: 2px solid #3e345a; font: inherit; font-size: 15px; }
+  .lg-in:focus { border-color: #ffd84a; outline: none; }
+  .lg-err { color: #ff8080; font-size: 13px; min-height: 16px; }
+  .lg-msg { color: #ffd0a0; font-size: 13px; }
+  .lg-empty { color: #8878a0; text-align: center; padding: 12px; font-size: 13px; }
+  .lg-note { color: #6a5a80; font-size: 11px; text-align: center; margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -20,6 +47,7 @@
 <script src="js/data/index.js"></script>
 <script src="js/core/util.js"></script>
 <script src="js/core/save.js"></script>
+<script src="js/core/auth.js"></script>
 <script src="js/core/sound.js"></script>
 <script src="js/core/input.js"></script>
 <script src="js/core/loop.js"></script>
@@ -37,6 +65,7 @@
 <script src="js/systems/effects.js"></script>
 <script src="js/ui/hud.js"></script>
 <script src="js/game.js"></script>
+<script src="js/ui/login.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
