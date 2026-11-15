@@ -1,0 +1,244 @@
+'use strict';
+let nextEntityId = 1;
+class Entity {
+  constructor(x, y, half) {
+    this.id = nextEntityId++;
+    this.x = x; this.y = y; this.half = half; this.radius = half;
+    this.alive = true; this.removed = false;
+  }
+}
+
+class Player extends Entity {
+  constructor(x, y, hero, base) {
+    super(x, y, base.hitboxHalf);
+    this.hero = hero; this.cfg = base;
+    this.maxHp = hero.maxHp; this.hp = hero.maxHp;
+    this.maxShield = hero.maxShield; this.shield = hero.maxShield;
+    this.maxEnergy = hero.maxEnergy; this.energy = hero.maxEnergy;
+    this.moveSpeed = hero.moveSpeed;
+    this.dashCdMax = base.dashCooldown; this.skillCdMax = hero.skillCooldown; this.damageReduction = hero.damageReduction || 0;
+    this.state = 'NORMAL';
+    this.aim = { x: 1, y: 0 }; this.lastMoveDir = { x: 1, y: 0 }; this.dashDir = { x: 1, y: 0 };
+    this.dashRemaining = 0; this.dashCooldown = 0; this.dashInvuln = 0; this.hurtInvuln = 0;
+    this.skillCooldown = 0; this.whirl = 0; this.whirlTick = 0; this.overdrive = 0; this.vampire = 0;
+    this.sinceHit = 99; this.deathTimer = 0; this.time = 0; this.moving = false;
+    this.swing = null;
+    this.stats = { attackBonus: 0, fireRateBonus: 0, critChance: base.critChance, critMultiplier: base.critMultiplier };
+    this.weapons = []; this.slot = 0; this.buffs = [];
+  }
+  get weapon() { return this.weapons[this.slot] || null; }
+  get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0; }
+  get mods() { return { attackBonus: this.stats.attackBonus, critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
+
+  update(dt, input, map, mouseWorld) {
+    this.time += dt;
+    if (this.state === 'DEAD') { this.deathTimer += dt; return; }
+    this.dashCooldown = Math.max(0, this.dashCooldown - dt);
+    this.skillCooldown = Math.max(0, this.skillCooldown - dt);
+    this.dashInvuln = Math.max(0, this.dashInvuln - dt);
+    this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
+    this.overdrive = Math.max(0, this.overdrive - dt);
+    if (this.swing) { this.swing.t += dt; if (this.swing.t >= this.swing.dur) this.swing = null; }
+    this.sinceHit += dt;
+    if (this.sinceHit >= this.cfg.shieldRegenDelay)
+      this.shield = Math.min(this.maxShield, this.shield + this.cfg.shieldRegenRate * dt);
+
+    const ax = mouseWorld.x - this.x, ay = mouseWorld.y - this.y, alen = Math.hypot(ax, ay);
+    if (alen > 0.5) { this.aim.x = ax / alen; this.aim.y = ay / alen; }
+
+    let ix = 0, iy = 0;
+    if (input.isDown('KeyA')) ix -= 1;
+    if (input.isDown('KeyD')) ix += 1;
+    if (input.isDown('KeyW')) iy -= 1;
+    if (input.isDown('KeyS')) iy += 1;
+    const ilen = Math.hypot(ix, iy);
+    this.moving = ilen > 0;
+    if (ilen > 0) { ix /= ilen; iy /= ilen; this.lastMoveDir.x = ix; this.lastMoveDir.y = iy; }
+
+    if (this.state === 'DASH') { this.updateDash(dt, map); return; }
+    if (input.wasPressed('Space') && this.dashCooldown <= 0) {
+      this.startDash(); this.updateDash(dt, map); return;
+    }
+    moveAndCollide(this, ix * this.moveSpeed * dt, iy * this.moveSpeed * dt, map);
+  }
+  startDash() {
+    this.state = 'DASH';
+    this.dashDir.x = this.lastMoveDir.x; this.dashDir.y = this.lastMoveDir.y;
+    this.dashRemaining = this.cfg.dashSpeed * this.cfg.dashDuration;
+    this.dashCooldown = this.dashCdMax;
+    this.dashInvuln = this.cfg.dashInvuln;
+  }
+  updateDash(dt, map) {
+    const dist = Math.min(this.cfg.dashSpeed * dt, this.dashRemaining);
+    this.dashRemaining -= dist;
+    const hit = moveAndCollide(this, this.dashDir.x * dist, this.dashDir.y * dist, map);
+    if (hit.x || hit.y || this.dashRemaining <= 0) this.state = 'NORMAL';
+  }
+  takeDamage(amount) {
+    if (this.state === 'DEAD' || this.isInvulnerable) return false;
+    amount = Math.max(1, Math.round(amount * (1 - this.damageReduction)));
+    this.sinceHit = 0;
+    const absorbed = Math.min(this.shield, amount);
+    this.shield -= absorbed;
+    this.hp = Math.max(0, this.hp - (amount - absorbed));
+    this.hurtInvuln = this.cfg.hurtInvuln;
+    if (this.hp <= 0) { this.state = 'DEAD'; this.deathTimer = 0; }
+    return true;
+  }
+  weaponAngle() {
+    const aimAng = Math.atan2(this.aim.y, this.aim.x);
+    if (!this.swing) return aimAng;
+    const s = this.swing, k = s.t / s.dur, dir = this.aim.x < 0 ? -1 : 1;
+    if (s.thrust) return aimAng;
+    return s.ang + dir * (-s.arc / 2 + s.arc * k);
+  }
+  render(ctx) {
+    const x = Math.round(this.x), y = Math.round(this.y);
+    const face = this.aim.x < 0 ? -1 : 1;
+    if (this.state === 'DEAD') {
+      const spr = heroSprite(this.hero, 0);
+      ctx.save(); ctx.translate(x, y + 3); ctx.rotate(face * Math.PI / 2); ctx.globalAlpha = 0.85;
+      ctx.drawImage(spr.n, -spr.w / 2, -spr.h / 2); ctx.restore(); ctx.globalAlpha = 1; return;
+    }
+    if (this.hurtInvuln > 0 && Math.floor(this.time * 20) % 2 === 0) return;
+    const frame = this.moving && this.state !== 'DASH' ? Math.floor(this.time * 8) % 2 : 0;
+    if (this.overdrive > 0) {
+      ctx.fillStyle = `rgba(255,200,60,${0.25 + 0.15 * Math.sin(this.time * 20)})`;
+      ctx.beginPath(); ctx.arc(x, y - 1, 12, 0, TAU); ctx.fill();
+    }
+    const w = this.weapon, behind = this.aim.y < -0.35;
+    const drawW = () => {
+      if (!w) return;
+      const ang = this.weaponAngle();
+      const reach = this.swing && this.swing.thrust ? Math.sin(Math.PI * this.swing.t / this.swing.dur) * 10 : 0;
+      drawWeapon(ctx, w.def, x + Math.cos(ang) * (3 + reach), y + 2 + Math.sin(ang) * (3 + reach), ang);
+    };
+    if (behind) drawW();
+    drawHero(ctx, this.hero, x, y, face, frame, this.state === 'DASH');
+    if (!behind) drawW();
+    if (this.whirl > 0) {
+      ctx.strokeStyle = 'rgba(220,240,255,0.8)'; ctx.lineWidth = 2;
+      const a = this.time * 30;
+      ctx.beginPath(); ctx.arc(x, y - 1, 30, a, a + 2.2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y - 1, 30, a + Math.PI, a + Math.PI + 2.2); ctx.stroke();
+      ctx.lineWidth = 1;
+    }
+    if (w && w.charge > 0) {
+      const k = Math.min(1, w.charge / w.def.chargeTime);
+      ctx.fillStyle = '#111'; ctx.fillRect(x - 8, y + 10, 16, 3);
+      ctx.fillStyle = k >= 1 ? '#fff' : '#f0c040'; ctx.fillRect(x - 8, y + 10, Math.round(16 * k), 3);
+    }
+  }
+}
+
+class Enemy extends Entity {
+  constructor(x, y, def, scale, room) {
+    super(x, y, def.hitboxHalf);
+    this.def = def; this.room = room;
+    this.maxHp = Math.round(def.health * (def.dummy ? 1 : scale.hp)); this.hp = this.maxHp;
+    this.damage = Math.round(def.damage * scale.dmg);
+    this.state = def.dummy ? 'IDLE' : 'SPAWN'; this.stateTime = 0; this.attackCd = 0.5 + Math.random() * 0.8;
+    this.hurtFlash = 0; this.rewardGiven = false; this.face = 1; this.exploded = false;
+    this.strafe = Math.random() < 0.5 ? -1 : 1; this.strafeT = 1 + Math.random() * 2;
+    this.aimAng = 0; this.dashX = 0; this.dashY = 0; this.dashHit = false;
+    this.spin = Math.random() * TAU; this.pat = null; this.lastPat = null; this.pd = {}; this.jumpH = 0;
+    this.burn = 0; this.burnDps = 0; this.poison = 0; this.poisonDps = 0; this.slow = 0; this.slowK = 1; this.dotTimer = 0.5; this.reactCd = 0;
+  }
+  get targetable() { return this.alive && this.state !== 'SPAWN'; }
+  get speedMul() { return this.slow > 0 ? this.slowK : 1; }
+  setState(s) { this.state = s; this.stateTime = 0; }
+  takeHit(amount) {
+    if (!this.targetable) return false;
+    this.hp = Math.max(0, this.hp - amount);
+    this.hurtFlash = 0.08;
+    if (this.def.dummy) { this.hp = this.maxHp; return true; }
+    if (this.hp <= 0) { this.alive = false; this.setState('DEAD'); }
+    return true;
+  }
+  // mods: 공격자의 능력치 (공격력 버프가 지속 피해에도 반영됨)
+  applyStatus(st, mods) {
+    if (!st || Math.random() > st.chance) return null;
+    // 원소 반응 판정 (적마다 0.8초 쿨타임): 빙결+화상=열충격, 중독+화상=독 연소
+    let reaction = null;
+    if (this.reactCd <= 0) {
+      if ((st.type === 'burn' && this.slow > 0) || (st.type === 'freeze' && this.burn > 0)) reaction = 'thermal';
+      else if ((st.type === 'burn' && this.poison > 0) || (st.type === 'poison' && this.burn > 0)) reaction = 'toxic';
+      if (reaction) { this.reactCd = 0.8; return reaction; }
+    }
+    const dps = (st.dps || 0) * (1 + (mods ? mods.attackBonus : 0));
+    if (st.type === 'burn') { this.burnDps = this.burn > 0 ? Math.max(this.burnDps, dps) : dps; this.burn = Math.max(this.burn, st.duration); }
+    else if (st.type === 'poison') { this.poisonDps = this.poison > 0 ? Math.max(this.poisonDps, dps) : dps; this.poison = Math.max(this.poison, st.duration); }
+    else if (st.type === 'freeze') { this.slow = Math.max(this.slow, st.duration); this.slowK = this.def.boss ? Math.max(0.7, st.slow) : st.slow; }
+    return null;
+  }
+  renderTelegraph(ctx) {
+    const x = Math.round(this.x), y = Math.round(this.y), def = this.def;
+    if (this.state === 'SPAWN') {
+      const k = this.stateTime / SPAWN_TIME;
+      ctx.strokeStyle = `rgba(255,80,80,${0.4 + 0.5 * k})`;
+      ctx.beginPath(); ctx.arc(x, y, 3 + (1 - k) * 10, 0, TAU); ctx.stroke();
+      ctx.fillStyle = `rgba(255,80,80,${0.25 * k})`; ctx.beginPath(); ctx.arc(x, y, def.hitboxHalf + 2, 0, TAU); ctx.fill();
+      return;
+    }
+    if (this.state === 'ATTACK' && def.boss && this.pat && this.pat.type === 'charge' && this.pd.phase === 'aim') {
+      ctx.strokeStyle = 'rgba(200,240,255,0.7)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + this.dashX * 200, y + this.dashY * 200); ctx.stroke(); ctx.lineWidth = 1;
+    }
+    if (this.state !== 'TELEGRAPH') return;
+    const k = Math.min(1, this.stateTime / (def.telegraphTime || (this.pat && this.pat.telegraph) || 0.6));
+    switch (def.aiType) {
+      case 'melee_chase':
+        ctx.fillStyle = `rgba(255,60,60,${0.12 + 0.28 * k})`;
+        ctx.beginPath(); ctx.arc(x, y, def.attackRange, 0, TAU); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,90,90,0.9)'; ctx.stroke(); break;
+      case 'ranged_kite':
+        ctx.strokeStyle = `rgba(255,90,90,${0.2 + 0.6 * k})`;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(this.aimAng) * 140, y + Math.sin(this.aimAng) * 140); ctx.stroke(); break;
+      case 'charger': {
+        const len = def.dashSpeed * def.dashDuration;
+        ctx.fillStyle = `rgba(255,60,60,${0.12 + 0.25 * k})`;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(this.dashY, this.dashX));
+        ctx.fillRect(0, -def.hitboxHalf, len, def.hitboxHalf * 2); ctx.restore(); break;
+      }
+      case 'caster':
+        ctx.fillStyle = (def.bulletColor || '#c070ff') + '99';
+        ctx.beginPath(); ctx.arc(x, y - 12, 2 + k * 5, 0, TAU); ctx.fill(); break;
+      case 'exploder':
+        ctx.fillStyle = `rgba(255,60,30,${0.1 + 0.3 * k})`;
+        ctx.beginPath(); ctx.arc(x, y, def.explodeRadius, 0, TAU); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,120,60,0.9)'; ctx.stroke(); break;
+      case 'boss':
+        if (this.pat.type === 'slam') {
+          ctx.fillStyle = `rgba(255,50,50,${0.12 + 0.3 * k})`;
+          ctx.beginPath(); ctx.arc(Math.round(this.pd.tx), Math.round(this.pd.ty), this.pat.radius, 0, TAU); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,90,90,0.9)'; ctx.stroke();
+        } else {
+          ctx.strokeStyle = this.pat.color || '#fff'; ctx.globalAlpha = 0.3 + 0.6 * k;
+          ctx.beginPath(); ctx.arc(x, y, 18 + k * 8, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+        }
+        break;
+    }
+  }
+  render(ctx) {
+    if (this.state === 'SPAWN') return;
+    const x = Math.round(this.x), y = Math.round(this.y), def = this.def;
+    if (this.state === 'DEAD') {
+      const dur = def.boss ? 1 : 0.35;
+      const k = 1 - Math.min(1, this.stateTime / dur);
+      ctx.globalAlpha = k; ctx.fillStyle = def.color || '#555';
+      const w = def.hitboxHalf * 2 + 2;
+      ctx.fillRect(x - w / 2, y + 1, w, Math.max(1, Math.round(4 * k)));
+      ctx.globalAlpha = 1; return;
+    }
+    drawEnemy(ctx, this, x, y, this.hurtFlash > 0);
+    const h = def.hitboxHalf;
+    if (this.slow > 0) { ctx.fillStyle = 'rgba(140,210,255,0.35)'; ctx.fillRect(x - h - 1, y - h - 2, h * 2 + 2, h * 2 + 4); }
+    if (this.burn > 0 && Math.floor(this.stateTime * 10) % 2 === 0) { ctx.fillStyle = '#ff8a3a'; ctx.fillRect(x - 2 + randInt(-3, 3), y - h - 3, 2, 2); }
+    if (this.poison > 0) { ctx.fillStyle = '#9aff5a'; ctx.fillRect(x + h - 1, y - h - 3, 2, 2); }
+    if (!def.boss && !def.dummy && this.hp < this.maxHp) {
+      const w = h * 2 + 2;
+      ctx.fillStyle = '#300'; ctx.fillRect(x - w / 2, y - h - 7, w, 2);
+      ctx.fillStyle = '#e04848'; ctx.fillRect(x - w / 2, y - h - 7, Math.round(w * this.hp / this.maxHp), 2);
+    }
+  }
+}

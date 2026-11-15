@@ -1,0 +1,37 @@
+'use strict';
+// ════════════════════════════════════════════
+// 입력
+// ════════════════════════════════════════════
+class InputManager {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.down = new Set();
+    this.pressed = new Set();
+    this.mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, rdown: false };
+    const blocked = new Set(['Space', 'Tab', 'KeyQ', 'KeyE', 'KeyR', 'KeyF']);
+    window.addEventListener('keydown', (e) => {
+      if (blocked.has(e.code)) e.preventDefault();
+      if (!this.down.has(e.code)) this.pressed.add(e.code);
+      this.down.add(e.code);
+    });
+    window.addEventListener('keyup', (e) => this.down.delete(e.code));
+    window.addEventListener('blur', () => { this.down.clear(); this.mouse.down = false; });
+    window.addEventListener('mousemove', (e) => this.updatePointer(e));
+    canvas.addEventListener('mousedown', (e) => {
+      this.updatePointer(e);
+      if (e.button === 0) { this.mouse.down = true; this.pressed.add('Mouse0'); }
+      if (e.button === 2) this.pressed.add('Mouse2');
+    });
+    window.addEventListener('mouseup', (e) => { if (e.button === 0) this.mouse.down = false; });
+    canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.pressed.add('Wheel'); }, { passive: false });
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+  updatePointer(e) {
+    const r = this.canvas.getBoundingClientRect();
+    this.mouse.x = (e.clientX - r.left) * (VIEW_W / r.width);
+    this.mouse.y = (e.clientY - r.top) * (VIEW_H / r.height);
+  }
+  isDown(c) { return this.down.has(c); }
+  wasPressed(c) { return this.pressed.has(c); }
+  endStep() { this.pressed.clear(); }
+}
