@@ -78,6 +78,11 @@ Object.assign(WPIX, {
   spinaxe: { auto: true, p: [1, 2], rows: ['.........aa.', '........acca', 'dddddddddcca', '........acca', '.........aa.'] },
   lance: { auto: true, p: [3, 1], rows: ['.............mm..', 'ddddyddddddddmmmm', '.............mm..'] },
   quakehammer: { auto: true, p: [1, 2], rows: ['........aaaa', '........acca', 'dddddddyacca', '........acca', '........aaaa'] },
+  dartgun: { auto: true, p: [2, 2], rows: ['..nnn....', '.aaaaaaao', '.acccccaa', '.aa......', '.aa......'] },
+  beehive: { auto: true, p: [2, 4], rows: ['..yyyy....', '.yaaaay...', '.aayaaaaoo', '.ayaaaaaoo', '.aaaaaa...', '..gg......', '..gg......'] },
+  crystalstaff: { auto: true, p: [3, 2], rows: ['..........o.', '.........ooo', 'dddddddddowo', '.........ooo', '..........o.'] },
+  kitchenknife: { auto: true, p: [1, 1], rows: ['...cccccc.', 'gggaaaaaaa', '...aaaaa..'] },
+  pickaxe: { auto: true, p: [1, 2], rows: ['.......aa...', '.........aa.', 'ddddddddddaa', '.........aa.', '.......aa...'] },
   headshot: { auto: true, p: [5, 3], rows: ['.....nnnnnnn........', '.....nooooon........', 'bbbbaaaaaaaaaaaaaaaan', 'bb...aanbb..........', '.....gg.............', '.....gg.............'] }
 });
 
@@ -99,7 +104,10 @@ Object.assign(WEAPON_SPRITE, {
   weapon_fanknives_001: 'fanknives', weapon_repeatxbow_001: 'repeatxbow', weapon_growgun_001: 'growgun', weapon_poisonstaff_001: 'poisonstaff',
   weapon_rainbow_001: 'rainbow', weapon_lavastaff_001: 'lavastaff', weapon_turretgun_001: 'turretgun',
   weapon_pan_001: 'pan', weapon_spinaxe_001: 'spinaxe',
-  weapon_lance_001: 'lance', weapon_quakehammer_001: 'quakehammer'
+  weapon_lance_001: 'lance',
+  weapon_dartgun_001: 'dartgun', weapon_waterballoon_001: 'sling', weapon_iceshuriken_001: 'shuriken', weapon_beehive_001: 'beehive',
+  weapon_crystalstaff_001: 'crystalstaff', weapon_thunderjavelin_001: 'javelin', weapon_goldrevolver_001: 'revolver',
+  weapon_kitchenknife_001: 'kitchenknife', weapon_pickaxe_001: 'pickaxe', weapon_icegreatsword_001: 'greatsword', weapon_steelxbow_001: 'repeatxbow', weapon_quakehammer_001: 'quakehammer'
 });
 
 // auto 외곽선: 사방 1px 여백을 두고, 그림에 맞닿은 빈칸을 외곽선으로
