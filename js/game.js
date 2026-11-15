@@ -619,12 +619,9 @@ class Game {
         this.effects.beamline(sx, sy, p.x, p.y, 3, '#b080ff'); this.effects.burst(sx, sy, '#3a3048', 10); this.effects.burst(p.x, p.y, '#b080ff', 10);
         if (ev) { p.blinkChain = p.blinkWindowT > 0 ? p.blinkChain + 1 : 1; p.blinkWindowT = 2.5; if (p.blinkChain < 3) p.skillCooldown = 0.3; else p.blinkChain = 0; } // 연달아 3번
         break; }
-      case 'execution': { const list = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 220).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)).slice(0, 6);
-        let px = p.x, py = p.y; p.blinkInv = 1;
-        list.forEach((e, i) => { this.effects.beamline(px, py, e.x, e.y, 2, '#b080ff'); this.effects.slash(e.x, e.y, randInt(0, 6), 14, 2, '#d0b0ff'); px = e.x; py = e.y;
-          this.damageEnemy(e, { damage: D(90), mods: p.mods, knockback: 3 }, 0, 0); });
-        if (list.length) { const l = list[list.length - 1]; moveAndCollide(p, l.x - p.x - 10, l.y - p.y, this.map); }
-        this.hitStop(0.06); this.addShake(0.2, 4); break; }
+      case 'execution': { // 그림자 분신 둘과 셋이서 연달아 습격 + 처형
+        const list = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 240).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)).slice(0, 9);
+        this.zones.push(new ShadowStrike(p, list, D(90))); p.blinkInv = 1.2; this.effects.burst(p.x, p.y, '#3a3048', 14); SFX.play('react'); break; }
       // 사제
       case 'sanctuary': this.zones.push(new Sanctuary(p.x, p.y, p)); this.effects.ring(p.x, p.y, 54, '#ffe9a0'); break;
       case 'sanctuary2': this.zones.push(new Sanctuary(p.x, p.y, p, { r: 80, life: 8, heal: 8, boost: true })); this.effects.ring(p.x, p.y, 80, '#ffe9a0'); break;
@@ -637,10 +634,10 @@ class Game {
       case 'bloodstorm': p.rage = 6; p.rageAtk = 0.8; p.rageVamp = 4;
         this.zones.push(new SkillAura(p, { r: 50, life: 6, tick: 0.25, dmg: 14, color: '#ff3a3a', kind: 'blood', lifesteal: 0.5 })); this.effects.text(p.x, p.y - 18, '피의 폭풍!', '#ff3a3a'); this.addShake(0.25, 5); break;
       // 드루이드
-      case 'wolves': for (let i = 0; i < 2; i++) this.allies.push(new SpiritWolf(p.x + (i ? 12 : -12), p.y, p)); this.effects.sparkle(p.x, p.y, '#9ad8ff'); break;
-      case 'wolves2': for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 12, p.y, p, { dmg: 20, life: 14 })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); break;
-      case 'guardian': this.allies.push(new SpiritWolf(p.x, p.y - 10, p, { big: true, dmg: 45, life: 15 }));
-        for (let i = 0; i < 2; i++) this.allies.push(new SpiritWolf(p.x + (i ? 14 : -14), p.y, p, { dmg: 20, life: 15 })); this.effects.ring(p.x, p.y, 40, '#9ad8ff'); this.addShake(0.2, 3); break;
+      case 'wolves': for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 12, p.y, p, { dmg: 22, life: 12 })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); break;
+      case 'wolves2': for (let i = 0; i < 4; i++) this.allies.push(new SpiritWolf(p.x + (i - 1.5) * 12, p.y, p, { dmg: 32, life: 16, slow: true })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); this.effects.ring(p.x, p.y, 30, '#9ad8ff'); break;
+      case 'guardian': this.allies.push(new SpiritWolf(p.x, p.y - 10, p, { big: true, dmg: 80, life: 18 }));
+        for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 14, p.y, p, { dmg: 32, life: 18, slow: true })); this.effects.ring(p.x, p.y, 40, '#9ad8ff'); this.addShake(0.2, 3); break;
     }
   }
   updateSkillEffects(dt) {

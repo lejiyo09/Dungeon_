@@ -391,7 +391,7 @@ class Sanctuary {
 
 // 드루이드 스킬 '영혼 늑대': 가까운 적에게 달려가 물어뜯음
 class SpiritWolf {
-  constructor(x, y, owner, o = {}) { this.x = x; this.y = y; this.owner = owner; this.big = !!o.big; this.half = this.big ? 9 : 5; this.life = o.life || 10; this.dmg = o.dmg || 14; this.cd = 0; this.face = 1; this.t = 0; this.alive = true; }
+  constructor(x, y, owner, o = {}) { this.x = x; this.y = y; this.owner = owner; this.big = !!o.big; this.slow = !!o.slow; this.half = this.big ? 9 : 5; this.life = o.life || 10; this.dmg = o.dmg || 14; this.cd = 0; this.face = 1; this.t = 0; this.alive = true; }
   update(dt, world) {
     this.t += dt; this.life -= dt; this.cd -= dt;
     if (this.life <= 0 || this.owner.state === 'DEAD') { this.alive = false; world.effects.burst(this.x, this.y, '#9ad8ff', 8); return; }
@@ -402,7 +402,9 @@ class SpiritWolf {
     if (d > (best ? best.radius + 6 : 10)) { const v = 150 * dt; moveAndCollide(this, dx / d * v, dy / d * v, world.map); if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1; }
     if (best && d < best.radius + 10 && this.cd <= 0) {
       this.cd = this.big ? 0.8 : 0.5;
-      world.damageEnemy(best, { damage: world.skillDmg(this.dmg), mods: this.owner.mods, knockback: this.big ? 10 : 3 }, dx / d, dy / d);
+      const src = { damage: world.skillDmg(this.dmg), mods: this.owner.mods, knockback: this.big ? 10 : 3, status: this.slow ? { type: 'freeze', chance: 0.5, duration: 1, slow: 0.6 } : null };
+      if (this.big) world.explodeAt(best.x, best.y, 30, { color: '#c8a070', hurtEnemies: true, src }); // 곰: 내려치기 범위 피해
+      else world.damageEnemy(best, src, dx / d, dy / d);
       world.effects.slash(this.x, this.y, Math.atan2(dy, dx), this.big ? 20 : 10, 1.2, this.big ? '#c8a070' : '#9ad8ff'); if (this.big) world.addShake(0.08, 2);
     }
   }
@@ -560,4 +562,51 @@ class MasterNPC {
     ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 3, y - 22, 7, 2); ctx.fillRect(x - 3, y - 24, 1, 2); ctx.fillRect(x, y - 25, 1, 3); ctx.fillRect(x + 3, y - 24, 1, 2); // 왕관
     hudText(ctx, '상위자', x, y + 10, '#ffd84a', 'center', 7);
   }
+}
+
+// 암살자 '그림자 처형': 그림자 분신 둘과 함께 셋이서 대상들을 차례로 습격. 체력이 일정 이하로 남은 적은 즉시 처형
+class ShadowStrike {
+  constructor(owner, targets, dmg) {
+    this.owner = owner; this.targets = targets.slice(); this.dmg = dmg; this.t = 0; this.i = 0; this.alive = true; this.ghosts = [];
+    this.pos = [{ x: owner.x, y: owner.y }, { x: owner.x - 14, y: owner.y + 6 }, { x: owner.x + 14, y: owner.y + 6 }]; // [본체, 분신1, 분신2]
+    for (let k = 1; k <= 2; k++) this.ghosts.push({ x: this.pos[k].x, y: this.pos[k].y, life: 0.9, face: 1 });
+  }
+  update(dt, world) {
+    this.t += dt;
+    for (const gh of this.ghosts) gh.life -= dt;
+    this.ghosts = this.ghosts.filter((g) => g.life > 0);
+    if (this.i < this.targets.length && this.t >= this.i * 0.09) { // 0.09초마다 셋이 번갈아 한 명씩 습격
+      const e = this.targets[this.i], who = this.i % 3, from = this.pos[who];
+      if (e.alive && e.targetable) {
+        const side = (who - 1) * 10, tx = e.x - 10 + side, ty = e.y + (who ? 6 : 0);
+        world.effects.beamline(from.x, from.y, tx, ty, 2, who ? '#6a4aa0' : '#b080ff');
+        world.effects.slash(e.x, e.y, Math.atan2(ty - from.y, tx - from.x), 16, 2.2, who ? '#8a6ac0' : '#e0c8ff');
+        this.pos[who] = { x: tx, y: ty }; this.ghosts.push({ x: tx, y: ty, life: 0.45, face: tx < e.x ? 1 : -1, real: who === 0 });
+        world.damageEnemy(e, { damage: this.dmg, mods: this.owner.mods, knockback: 2 }, 0, 0);
+        const th = e.def.boss ? 0.1 : 0.25; // 처형: 남은 체력이 기준 이하면 즉시 쓰러뜨림
+        if (e.alive && e.hp <= e.maxHp * th) {
+          const left = e.hp; if (e.takeHit(left)) { world.effects.text(e.x, e.y - 22, '처형!', '#ff4a6a', true); world.effects.burst(e.x, e.y, '#ff4a6a', 18); if (!e.alive) world.onEnemyKilled(e); }
+        }
+        SFX.play('melee', 0.03); world.hitStop(0.02);
+      }
+      this.i++;
+    }
+    if (this.i >= this.targets.length && this.t >= this.i * 0.09 + 0.25) { // 끝나면 본체는 마지막으로 습격한 자리로
+      const p = this.owner, d = this.pos[0]; moveAndCollide(p, d.x - p.x, d.y - p.y, world.map);
+      world.effects.burst(this.pos[1].x, this.pos[1].y, '#3a3048', 8); world.effects.burst(this.pos[2].x, this.pos[2].y, '#3a3048', 8); this.alive = false;
+    }
+  }
+  render(ctx) { // 반투명한 보랏빛 분신
+    const p = this.owner, img = shadowSprite(p.hero);
+    for (const g of this.ghosts) { ctx.globalAlpha = Math.min(0.85, g.life * 2) * (g.real ? 1 : 0.8);
+      ctx.drawImage(g.face < 0 ? img.f : img.n, Math.round(g.x - img.w / 2), Math.round(g.y + 7 - img.h)); }
+    ctx.globalAlpha = 1;
+  }
+}
+// 영웅 스프라이트를 보랏빛 그림자 색으로 칠한 사본 (분신용)
+function shadowSprite(hero) {
+  const key = 'shadow|' + hero.id; let s = spriteCache.get(key); if (s) return s;
+  const base = heroSprite(hero, 0), make = (img) => { const c = document.createElement('canvas'); c.width = base.w; c.height = base.h; const g = c.getContext('2d');
+    g.drawImage(img, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(70,40,120,0.75)'; g.fillRect(0, 0, c.width, c.height); return c; };
+  s = { n: make(base.n), f: make(base.f), w: base.w, h: base.h }; spriteCache.set(key, s); return s;
 }

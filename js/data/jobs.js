@@ -57,7 +57,7 @@ const JOB_LINES = {
       skills: [
         { id: 'curseshot', name: '저주탄', desc: '맞은 적이 오래 약해지는(받는 피해 +40%) 저주 구체', cd: 4 },
         { id: 'abyss', name: '심연 소용돌이', desc: '조준 지점에 적을 빨아들이는 어둠', cd: 8 },
-        { id: 'voidcollapse', name: '공허 붕괴', desc: '2초 시전(이동 불가)하며 빨아들인 뒤 터뜨려 엄청난 피해', cd: 13 }] }
+        { id: 'voidcollapse', name: '블랙홀', desc: '2초 시전(이동 불가)하며 블랙홀로 주변 적을 모두 빨아들인 뒤 터뜨려 엄청난 피해', cd: 13 }] }
   },
   hero_gunner: { base: { ranks: ['사수', '건마스터', '데드아이'], color: '#ffd84a',
     skills: [
@@ -73,7 +73,7 @@ const JOB_LINES = {
     skills: [
       { id: 'blink', name: '그림자 습격', desc: '조준 방향으로 순간이동하며 지나간 적을 벰 (잠깐 무적)', cd: 5 },
       { id: 'blink2', name: '그림자 연무', desc: '습격을 연달아 3번 (피해 증가)', cd: 5 },
-      { id: 'execution', name: '그림자 처형', desc: '가까운 적 6명에게 차례로 순간이동하며 큰 피해 (무적)', cd: 11 }] } },
+      { id: 'execution', name: '그림자 처형', desc: '그림자 분신 둘과 함께 셋이서 주변 적을 연달아 습격 (무적), 체력 25% 이하(보스 10%)인 적은 즉시 처형', cd: 11 }] } },
   hero_priest: { base: { ranks: ['사제', '대사제', '성자'], color: '#ffe9a0',
     skills: [
       { id: 'sanctuary', name: '성역', desc: '6초간 빛의 원: 안에 있으면 회복, 들어오는 적 탄 소멸', cd: 16 },
@@ -86,9 +86,9 @@ const JOB_LINES = {
       { id: 'bloodstorm', name: '피의 폭풍', desc: '6초간 광란 + 자기 주위에 피의 소용돌이 (지속 피해·흡혈)', cd: 16 }] } },
   hero_druid: { base: { ranks: ['드루이드', '대드루이드', '숲의 군주'], color: '#9ad8ff',
     skills: [
-      { id: 'wolves', name: '영혼 늑대', desc: '10초간 적을 물어뜯는 늑대 2마리 소환', cd: 15 },
-      { id: 'wolves2', name: '야수의 무리', desc: '14초간 더 강한 늑대 3마리', cd: 15 },
-      { id: 'guardian', name: '대지의 수호수', desc: '15초간 거대한 곰 + 늑대 2마리 소환', cd: 17 }] } }
+      { id: 'wolves', name: '영혼 늑대', desc: '12초간 적을 물어뜯는 늑대 3마리 소환', cd: 13 },
+      { id: 'wolves2', name: '야수의 무리', desc: '16초간 강한 늑대 4마리 (물면 둔화)', cd: 13 },
+      { id: 'guardian', name: '대지의 수호수', desc: '18초간 거대한 곰(내려치기 범위 피해) + 강한 늑대 3마리 소환', cd: 15 }] } }
 };
 // 직업의 갈래 목록 (title 제외)
 function jobLines(heroId) { const J = JOB_LINES[heroId] || {}; return Object.keys(J).filter((k) => k !== 'title').map((k) => Object.assign({ id: k }, J[k])); }

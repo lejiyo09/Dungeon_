@@ -40,7 +40,7 @@ const BALANCE = {
   upgrade: { maxLevel: 5, perLevel: 0.12, base: 30, chance: [1, 0.9, 0.75, 0.6, 0.45],
     rarityMult: { common: 1, uncommon: 1.2, rare: 1.5, epic: 1.8, legendary: 2.2 }, forgeRoomDiscount: 0.7, forgeRoomBonus: 0.1 },
   // 보스 강화 배율 (필드·심층 보스, 전직의 방 상위자는 제외): 체력·공격력·공격 간격
-  boss: { hp: 1.7, dmg: 1.25, cooldown: 0.85 },
+  boss: { hp: 2.1, dmg: 1.35, cooldown: 0.8 },
   // 에너지가 모자랄 때 나가는 아주 약한 공격 (피해는 깊이에 따라 조금씩 커짐)
   weakAttack: { damage: 5, interval: 0.4 }
 };

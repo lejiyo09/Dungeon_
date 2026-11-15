@@ -45,8 +45,8 @@ const DATA_HEROES = [
     passiveName: '피의 갈증', passiveDesc: '체력 50% 이하일 때 공격력 +30%', lowHpBonus: 0.3,
     look: { sprite: 'berserker', body: '#8a5a3a', accent: '#a02a2a' } },
   { id: 'hero_druid', name: '드루이드 이반', title: '숲의 부름', price: 600,
-    maxHp: 105, maxShield: 50, maxEnergy: 240, moveSpeed: 116, startWeapon: 'weapon_sling_001',
-    skill: 'wolves', skillName: '영혼 늑대', skillDesc: '10초간 적을 물어뜯는 늑대 2마리 소환', skillCooldown: 15,
+    maxHp: 120, maxShield: 60, maxEnergy: 240, moveSpeed: 118, startWeapon: 'weapon_sling_001',
+    skill: 'wolves', skillName: '영혼 늑대', skillDesc: '12초간 적을 물어뜯는 늑대 3마리 소환', skillCooldown: 13,
     passiveName: '자연의 가호', passiveDesc: '보호막 회복 속도 +60%', shieldRegenMul: 1.6,
     look: { sprite: 'druid', body: '#4a7a3a', accent: '#6a4628' } }
 ];
