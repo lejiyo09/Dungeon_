@@ -52,7 +52,7 @@ class WeaponSystem {
       case 'charge':
         if (down) {
           if (w.cooldown <= 0) {
-            if (w.charge === 0 && player.overdrive <= 0 && player.energy < w.def.energyCost) this.noEnergy(player);
+            if (w.charge === 0 && !this.canPay(player, w.def.energyCost)) this.weakAttack(player, w); // 에너지 부족: 약한 공격
             else w.charge = Math.min(w.def.chargeTime, w.charge + dt * (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 : 0)));
           }
         } else if (w.charge > 0) this.releaseCharge(player, w);
@@ -61,7 +61,23 @@ class WeaponSystem {
     }
     if (!down) w.cooldown = Math.max(w.cooldown, 0);
   }
+  canPay(player, cost) { return player.overdrive > 0 || !cost || player.energy >= cost * (1 - (player.hero.energySave || 0)); }
+  // 에너지가 모자랄 때: 아주 약한 공격 (총·지팡이·활·광선은 작은 탄, 근접은 짧은 베기)
+  weakAttack(player, w) {
+    const world = this.world, A = BALANCE.weakAttack, a = Math.atan2(player.aim.y, player.aim.x), dmg = world.skillDmg(A.damage);
+    w.cooldown = A.interval; this.noEnergy(player);
+    if (w.def.type === 'melee') {
+      for (const e of world.enemies) { if (!e.targetable) continue; const dx = e.x - player.x, dy = e.y - player.y, d = Math.hypot(dx, dy);
+        if (d - e.radius <= 22 && (d < 4 || angleDiff(Math.atan2(dy, dx), a) < 0.9)) world.damageEnemy(e, { damage: dmg, mods: player.mods, knockback: 2 }, dx / (d || 1), dy / (d || 1)); }
+      player.swing = { t: 0, dur: 0.14, ang: a, arc: 1.6, thrust: false }; world.effects.slash(player.x, player.y - 1, a, 20, 1.6, 'rgba(200,200,210,0.7)'); SFX.play('melee', 0.08);
+    } else {
+      world.projectiles.push(new Projectile({ x: player.x + player.aim.x * 8, y: player.y + player.aim.y * 8, dx: player.aim.x, dy: player.aim.y, speed: 300, range: 200,
+        damage: dmg, pierce: 0, knockback: 1, mods: player.mods, color: '#c8c8d0', size: 1 }));
+      SFX.play('magic', 0.08);
+    }
+  }
   fireGun(player, w) {
+    if (!this.canPay(player, w.def.energyCost)) { this.weakAttack(player, w); return; }
     if (!this.spend(player, w.def.energyCost)) return;
     w.cooldown += 1 / this.getFireRate(player, w);
     if (w.def.summon) { // 드론 소환: 최대 수를 넘으면 가장 오래된 드론이 사라짐
@@ -144,6 +160,7 @@ class WeaponSystem {
   }
   fireMelee(player, w) {
     const def = w.def, world = this.world;
+    if (!this.canPay(player, def.energyCost)) { this.weakAttack(player, w); return; }
     if (!this.spend(player, def.energyCost)) return;
     w.cooldown += 1 / this.getFireRate(player, w);
     const ang = Math.atan2(player.aim.y, player.aim.x), arc = def.arcDeg * Math.PI / 180;
@@ -202,7 +219,7 @@ class WeaponSystem {
     const def = w.def, world = this.world;
     if (!down) { w.beamActive = false; w.beamTick = Math.max(w.beamTick, 0); w.focusT = 0; w.focusK = 0; return; }
     if (player.overdrive <= 0) {
-      if (player.energy <= 0) { w.beamActive = false; this.noEnergy(player); return; }
+      if (player.energy <= 0) { w.beamActive = false; if (w.cooldown <= 0) this.weakAttack(player, w); return; } // 에너지 부족: 약한 공격
       player.energy = Math.max(0, player.energy - def.energyPerSec * dt);
     }
     w.beamActive = true;

@@ -196,7 +196,7 @@ const AI_BEHAVIORS = {
       case 'CHASE': {
         if (!ctx.playerAlive) break;
         if (ctx.dist > 50) pathStep(e, def.moveSpeed * spd, dt, world);
-        if (e.stateTime < def.attackCooldown / spd) break;
+        if (e.stateTime < def.attackCooldown * (e.cdMul || 1) / spd) break;
         let pat;
         if (phase >= 3 && def.finalPatterns && e.finalCd <= 0) { pat = pick(def.finalPatterns); e.finalCd = 11; }
         else {

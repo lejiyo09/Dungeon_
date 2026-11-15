@@ -161,8 +161,9 @@ class Enemy extends Entity {
   constructor(x, y, def, scale, room) {
     super(x, y, def.hitboxHalf);
     this.def = def; this.room = room;
-    this.maxHp = Math.round(def.health * (def.dummy ? 1 : scale.hp)); this.hp = this.maxHp;
-    this.damage = Math.round(def.damage * scale.dmg);
+    const B = def.boss && !def.master ? BALANCE.boss : null; // 보스 강화 배율
+    this.maxHp = Math.round(def.health * (def.dummy ? 1 : scale.hp) * (B ? B.hp : 1)); this.hp = this.maxHp;
+    this.damage = Math.round(def.damage * scale.dmg * (B ? B.dmg : 1)); this.cdMul = B ? B.cooldown : 1;
     this.state = def.dummy ? 'IDLE' : 'SPAWN'; this.stateTime = 0; this.attackCd = 0.5 + Math.random() * 0.8;
     this.hurtFlash = 0; this.rewardGiven = false; this.face = 1; this.exploded = false;
     this.strafe = Math.random() < 0.5 ? -1 : 1; this.strafeT = 1 + Math.random() * 2;

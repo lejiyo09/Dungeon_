@@ -447,7 +447,9 @@ class Game {
       const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
       const cx = p.x + dx * k, cy = p.y + dy * k;
       const caught = [];
-      for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - cx, e.y - cy) < T.radius + e.radius) { e.chainT = T.duration; e.chainMax = T.duration; caught.push(e); }
+      for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - cx, e.y - cy) < T.radius + e.radius) {
+        e.chainT = T.duration; e.chainMax = T.duration; caught.push(e);
+        this.damageEnemy(e, { damage: T.damage * this.scale.hp, mods: p.mods, knockback: 0, mark: { mult: T.weak, dur: T.duration } }, 0, 0); } // 묶으며 큰 피해 + 받는 피해 증가
       this.zones.push(new ChainCircle(cx, cy, T, caught));
       for (const e of caught) this.effects.goldBurst(e.x, e.y, 10);
       this.effects.ring(cx, cy, T.radius, '#ffd84a'); this.effects.ring(cx, cy, T.radius * 0.6, '#fff4c0');
@@ -464,8 +466,8 @@ class Game {
       this.effects.impact(ex, ey, T.color, Math.atan2(p.aim.y, p.aim.x)); this.effects.goldBurst(sx, sy, 12);
       this.addShake(0.4, 7); this.screenFlash = 0.3; this.flashColor = '255,236,170'; this.hitStop(0.08);
     } else if (T.use === 'blessing') { // 솔로몬의 반지: 각종 버프
-      p.solomon = T.duration; p.shield = p.maxShield;
-      this.effects.solomonSeal(p.x, p.y); this.effects.ring(p.x, p.y, 40, '#ffd84a');
+      p.solomon = T.duration; p.shield = p.maxShield; p.energy = p.maxEnergy; p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * T.heal)); p.skillCooldown = 0; this.effects.heal(p.x, p.y);
+      this.effects.solomonSeal(p.x, p.y); this.effects.ring(p.x, p.y, 40, '#ffd84a'); this.effects.ring(p.x, p.y, 70, '#c8a0ff'); this.effects.solomonSeal(p.x, p.y, 1.8); this.addShake(0.2, 3);
       this.screenFlash = 0.12; this.flashColor = '210,180,255';
     }
   }
@@ -507,7 +509,7 @@ class Game {
         pal: Object.assign({ s: '#f0c8a0', m: '#fff0b0', w: '#ffffff', r: p.hero.look.accent, y: '#ffd84a', l: '#8a6a30', h: p.hero.look.accent, g: shade(p.hero.look.accent, 0.68), e: '#ffffff', n: '#6a4628', d: '#3a2a1a' }, D.pal, { m: '#fff0b0' }) };
       const col = p.line.color || '#ffd84a';
       this.data.enemies.set(key, { id: key, name: `${p.line.ranks[next]}의 시련`, title: '상위자', sprite: 'master_' + look, color: '#c8a050', phaseColors: ['#c8a050', '#d8b060', '#ffd84a'],
-        boss: true, aiType: 'boss', health: EVOLUTION.masterHp[next - 1], damage: 15 + next * 2, moveSpeed: 55, hitboxHalf: 9, knockbackResist: 0.9, attackCooldown: next === 1 ? 1.25 : 1.05, bulletSpeed: 135, rewardGold: 30,
+        boss: true, master: true, aiType: 'boss', health: EVOLUTION.masterHp[next - 1], damage: 15 + next * 2, moveSpeed: 55, hitboxHalf: 9, knockbackResist: 0.9, attackCooldown: next === 1 ? 1.25 : 1.05, bulletSpeed: 135, rewardGold: 30,
         patterns: [{ type: 'aimed', volleys: 3, count: 5, spread: 0.15, color: col }, { type: 'radial', rings: 2, count: 18, color: col }, { type: 'charge', dashes: 2, speed: 340, color: '#ffffff' }],
         phase2Patterns: [{ type: 'spiral', duration: 2.2, arms: 3 + next, interval: 0.09, spin: 1.8, color: col }, { type: 'slam', radius: 46, chain: next, color: col }] });
     }

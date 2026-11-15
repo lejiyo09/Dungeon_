@@ -417,7 +417,7 @@ class SpiritWolf {
 class ChainCircle {
   constructor(x, y, T, caught) {
     this.x = x; this.y = y; this.r = T.radius; this.life = T.duration; this.t = 0; this.alive = true; this.caught = caught || [];
-    this.gates = Array.from({ length: 6 }, (_, i) => { const a = i / 6 * TAU + 0.3; return { x: x + Math.cos(a) * (this.r + 8), y: y - 22 + Math.sin(a) * (this.r * 0.5), ph: Math.random() * TAU }; });
+    this.gates = Array.from({ length: 10 }, (_, i) => { const a = i / 10 * TAU + 0.3; return { x: x + Math.cos(a) * (this.r + 8), y: y - 22 + Math.sin(a) * (this.r * 0.5), ph: Math.random() * TAU }; });
   }
   update(dt, world) {
     this.t += dt;

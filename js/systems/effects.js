@@ -86,9 +86,9 @@ class Effects {
         size: 2, size2: 0, color: Math.random() < 0.5 ? '#fff4c0' : '#ffd84a', color2: '#c8a050', drag: 2, grav: 0, add: true, shape: Math.random() < 0.35 ? 'plus' : undefined }));
     }
   }
-  solomonSeal(x, y) { // 솔로몬의 인장: 육각별 마법진이 펼쳐지고 빛기둥이 솟음
-    this.push({ kind: 'seal', x, y, t: 0, life: 1.1, add: true });
-    for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; this.push({ kind: 'pillar', x: x + Math.cos(a) * 30, y: y + 6 + Math.sin(a) * 18, t: -i * 0.04, life: 0.6, add: true }); }
+  solomonSeal(x, y, sc = 1) { // 솔로몬의 인장: 육각별 마법진이 펼쳐지고 빛기둥이 솟음
+    this.push({ kind: 'seal', x, y, sc, t: 0, life: 1.1, add: true });
+    for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; this.push({ kind: 'pillar', x: x + Math.cos(a) * 30 * sc, y: y + 6 + Math.sin(a) * 18 * sc, t: -i * 0.04, life: 0.6, add: true }); }
     for (let i = 0; i < 24; i++) { const a = Math.random() * TAU, s = 30 + Math.random() * 60;
       this.part(x, y, Math.cos(a) * s, Math.sin(a) * s * 0.6 - 30, { color: i % 2 ? '#e0c0ff' : '#ffd84a', life: 0.7, size: 2, size2: 0, drag: 2.5, add: true, shape: 'plus' }); }
   }
@@ -200,7 +200,7 @@ class Effects {
         ctx.restore(); break;
       }
       case 'seal': { // 육각별 + 이중 원 + 회전하는 눈금
-        const p = fx.t / fx.life, R = 14 + 26 * Math.min(1, p / 0.3), rot = p * 2.5, a = 1 - Math.max(0, (p - 0.6) / 0.4);
+        const p = fx.t / fx.life, R = (14 + 26 * Math.min(1, p / 0.3)) * (fx.sc || 1), rot = p * 2.5, a = 1 - Math.max(0, (p - 0.6) / 0.4);
         ctx.globalAlpha = a; ctx.save(); ctx.translate(fx.x, fx.y + 6); ctx.scale(1, 0.6);
         ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.stroke();
         ctx.strokeStyle = '#e0c0ff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, R * 0.82, 0, TAU); ctx.stroke();
