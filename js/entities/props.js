@@ -74,7 +74,7 @@ class Pedestal {
     const s = game.save;
     if (s.selected === this.hero.id) return null;
     if (s.unlocked.includes(this.hero.id)) return `[E] ${this.hero.name} 선택`;
-    return `[E] 해금: ${this.hero.name} (${this.hero.price}골드)`;
+    return `[E] 해금: ${this.hero.name} (${this.hero.price} ${CUR.name})`;
   }
   get labelColor() { return '#ffffff'; }
   interact(game) { game.selectHero(this.hero); }
@@ -93,7 +93,7 @@ class Pedestal {
     }
     const up = this.row ? 10 : 0; // 이웃 단상과 글자가 겹치지 않게 한 칸씩 위아래로 엇갈림
     hudText(ctx, this.hero.name, x, y - 28 - up, selected ? '#ffd84a' : unlocked ? '#fff' : '#888', 'center', 8);
-    if (!unlocked) hudText(ctx, `${this.hero.price}골드`, x, y + 11 + up, '#ffd84a', 'center', 8);
+    if (!unlocked) hudText(ctx, `${this.hero.price} ${CUR.name}`, x, y + 11 + up, CUR.color, 'center', 8);
     else if (selected) hudText(ctx, '선택됨', x, y + 11 + up, '#ffd84a', 'center', 8);
   }
 }

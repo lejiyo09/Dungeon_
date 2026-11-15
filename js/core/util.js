@@ -11,6 +11,7 @@ const RARITY_COLOR = { common: '#d0d0d0', uncommon: '#6fd36f', rare: '#5aa0ff', 
 const RARITY_NAME = { common: '일반', uncommon: '고급', rare: '희귀', epic: '영웅', legendary: '전설' };
 const RARITY_WEIGHT = BALANCE.rarityWeight;
 const RARITY_PRICE = BALANCE.shopPrice;
+const CUR = BALANCE.lobbyCurrency; // 로비 재화 (이름·색은 balance.js 한 곳에서 바꿈)
 const TYPE_NAME = { gun: '사격', melee: '근접', charge: '차지', beam: '광선' };
 
 const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));

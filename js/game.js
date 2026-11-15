@@ -82,7 +82,7 @@ class Game {
   selectHero(hero) {
     const s = this.save;
     if (!s.unlocked.includes(hero.id)) {
-      if (s.bank < hero.price) { this.effects.text(this.player.x, this.player.y - 18, '골드가 부족합니다', '#ff7070'); return; }
+      if (s.bank < hero.price) { this.effects.text(this.player.x, this.player.y - 18, `${CUR.name}이 부족합니다`, '#ff7070'); return; }
       s.bank -= hero.price; s.unlocked.push(hero.id);
       this.effects.burst(this.player.x, this.player.y, '#ffd84a', 14);
     }
@@ -158,11 +158,14 @@ class Game {
   endRun(victory) {
     SFX.stopMusic();
     SFX.play(victory ? 'victory' : 'hurt');
-    this.overlay = { type: 'result', victory, gold: this.gold + (victory ? BALANCE.victoryBonusGold : 0) };
+    // 로비 재화: 클리어한 스테이지 수 · 쓰러뜨린 필드 보스 수 · 승리 보너스 (던전 골드는 런과 함께 사라짐)
+    const stages = this.stageIndex + (victory ? 1 : 0), bosses = this.worldIdx + (victory ? 1 : 0);
+    const reward = stages * CUR.perStage + bosses * CUR.perBoss + (victory ? CUR.victory : 0);
+    this.overlay = { type: 'result', victory, stages, bosses, reward };
     if (victory) { this.save.clears++; writeSave(this.save); }
   }
   finishResult() {
-    this.save.bank += this.overlay.gold; writeSave(this.save);
+    this.save.bank += this.overlay.reward; writeSave(this.save);
     this.overlay = null;
     this.transition = { t: 0, swapped: false, action: () => this.enterLobby() };
   }
@@ -302,7 +305,7 @@ class Game {
       if (!sv.discovered.includes(d.id)) say('아직 발견하지 못한 무기입니다. 던전에서 먼저 찾아보세요.', '#ff9a9a');
       else if (!sv.armory.includes(d.id)) {
         const price = ARMORY_PRICE[d.rarity];
-        if (sv.bank < price) say(`골드가 부족합니다 (${price}골드 필요)`, '#ff9a9a');
+        if (sv.bank < price) say(`${CUR.name}이 부족합니다 (${price} 필요)`, '#ff9a9a');
         else { sv.bank -= price; sv.armory.push(d.id); sv.loadout = d.id; say(`${d.name} 해금 및 장착!`, '#ffd84a'); }
       } else if (sv.loadout === d.id) { sv.loadout = null; say('시작 보조 무기 장착 해제', '#ccc'); }
       else { sv.loadout = d.id; say(`${d.name} 장착`, '#9fe89f'); }

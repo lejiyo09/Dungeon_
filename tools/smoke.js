@@ -59,7 +59,7 @@ const { chromium } = require('playwright');
           if (!log.includes('SANCTUM')) log.push('SANCTUM');
           for (let k = 0; k < 400 && g.overlay && g.overlay.type !== 'result'; k++) { if (k % 30 === 0) g.input.pressed.add('Enter'); g.update(STEP); }
           break; } }
-      if (g.overlay && g.overlay.type === 'result') { log.push('RESULT victory=' + g.overlay.victory + ' gold=' + g.overlay.gold); break; }
+      if (g.overlay && g.overlay.type === 'result') { log.push('RESULT victory=' + g.overlay.victory + ' reward=' + g.overlay.reward + ' stages=' + g.overlay.stages + ' bosses=' + g.overlay.bosses); break; }
     }
     for (let i = 0; i < 300 && !(g.overlay && g.overlay.type === 'result' && !g.transition); i++) g.update(STEP);
     g.input.pressed.add('Enter'); g.update(STEP); for (let i = 0; i < 300 && (g.transition || g.mode !== 'lobby'); i++) g.update(STEP);

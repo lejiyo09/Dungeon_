@@ -22,7 +22,7 @@ class HUD {
     });
 
     if (game.mode === 'lobby') {
-      hudText(ctx, `${game.profile ? game.profile.name : '게스트'}   ·   보유 골드 ${game.save.bank}`, VIEW_W / 2, 6, '#ffd84a', 'center');
+      hudText(ctx, `${game.profile ? game.profile.name : '게스트'}   ·   보유 ${CUR.name} ${game.save.bank}`, VIEW_W / 2, 6, '#ffd84a', 'center');
       hudText(ctx, 'F/우클릭 스킬 · E 상호작용 · Esc 조작법', VIEW_W / 2, VIEW_H - 14, '#aaa', 'center', 8);
     } else {
       const W = DATA_WORLDS[game.worldIdx];
@@ -129,7 +129,7 @@ class HUD {
     } else if (o.type === 'codex' || o.type === 'armory') {
       const sv = game.save, disc = new Set(sv.discovered), armory = o.type === 'armory';
       const m = game.input.mouse;
-      const title = armory ? `무기고  ·  보유 골드 ${sv.bank}  ·  시작 보조 무기: ${sv.loadout ? game.data.weapons.get(sv.loadout).name : '없음'}`
+      const title = armory ? `무기고  ·  보유 ${CUR.name} ${sv.bank}  ·  시작 보조 무기: ${sv.loadout ? game.data.weapons.get(sv.loadout).name : '없음'}`
         : `무기 도감  (${DATA_WEAPONS.filter((d) => disc.has(d.id)).length}/${DATA_WEAPONS.length})`;
       hudText(ctx, title, VIEW_W / 2, 7, '#ffd84a', 'center', 11);
       let hover = null;
@@ -150,7 +150,7 @@ class HUD {
         drawWeaponCentered(ctx, c.d, c.x + 13, c.y + c.h / 2);
         hudText(ctx, c.d.name, c.x + 27, c.y + 2, RARITY_COLOR[c.d.rarity], 'left', 8);
         if (armory) {
-          const st = eq ? ['장착됨', '#ffd84a'] : owned ? ['보유', '#9fe89f'] : [`해금 ${ARMORY_PRICE[c.d.rarity]}골드`, sv.bank >= ARMORY_PRICE[c.d.rarity] ? '#fff' : '#888'];
+          const st = eq ? ['장착됨', '#ffd84a'] : owned ? ['보유', '#9fe89f'] : [`해금 ${ARMORY_PRICE[c.d.rarity]} ${CUR.name}`, sv.bank >= ARMORY_PRICE[c.d.rarity] ? '#fff' : '#888'];
           hudText(ctx, st[0], c.x + 27, c.y + 13, st[1], 'left', 7);
         } else hudText(ctx, weaponTraits(c.d, 2), c.x + 27, c.y + 13, '#c8b890', 'left', 7);
       }
@@ -200,8 +200,9 @@ class HUD {
     } else if (o.type === 'result') {
       hudText(ctx, o.victory ? '던전 정복!' : '사망했습니다', VIEW_W / 2, 70, o.victory ? '#ffd84a' : '#ff7070', 'center', 18);
       if (o.after) hudText(ctx, o.after, VIEW_W / 2, 92, '#ffe9a0', 'center', 10);
-      hudText(ctx, `도달: ${game.worldIdx + 1}-${game.levelIdx + 1}   ·   처치 ${game.kills}   ·   획득 골드 ${o.gold}`, VIEW_W / 2, 110, '#ddd', 'center', 10);
-      hudText(ctx, `획득한 골드가 로비 보유 골드에 추가됩니다 (보유 ${game.save.bank} → ${game.save.bank + o.gold})`, VIEW_W / 2, 128, '#aaa', 'center', 9);
+      hudText(ctx, `도달: ${game.worldIdx + 1}-${game.levelIdx + 1}   ·   처치 ${game.kills}   ·   스테이지 ${o.stages}개 · 보스 ${o.bosses}마리`, VIEW_W / 2, 110, '#ddd', 'center', 10);
+      hudText(ctx, `${CUR.name} +${o.reward}   (보유 ${game.save.bank} → ${game.save.bank + o.reward})`, VIEW_W / 2, 128, CUR.color, 'center', 10);
+      hudText(ctx, '던전 골드는 로비로 가져가지 않습니다', VIEW_W / 2, 142, '#888', 'center', 8);
       hudText(ctx, 'Enter: 로비로', VIEW_W / 2, 160, '#fff', 'center', 10);
     }
   }
