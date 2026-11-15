@@ -71,6 +71,7 @@ class Game {
     DATA_HEROES.forEach((h, i) => { const c = this.map.tileCenter(6 + i * 3, 8); this.props.push(new Pedestal(c.x, c.y, h, i % 2)); });
     const cb = this.map.tileCenter(5, 12); this.props.push(new CodexBoard(cb.x, cb.y));
     const ar = this.map.tileCenter(9, 16); this.props.push(new Armory(ar.x, ar.y));
+    if (this.save.sanctumReached) { const tv = this.map.tileCenter(25, 16); this.props.push(new TreasureVault(tv.x, tv.y)); }
     const dm = this.map.tileCenter(28, 12);
     this.enemies.push(new Enemy(dm.x, dm.y, this.data.enemies.get('dummy_001'), { hp: 1, dmg: 1 }, this.map.startRoom));
     const pc = this.map.tileCenter(17, 18);
@@ -97,7 +98,24 @@ class Game {
     this.mode = 'dungeon';
     this.worldIdx = 0; this.levelIdx = 0; this.gold = 0; this.kills = 0;
     this.player = this.makePlayer(0, 0);
+    const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); // 로비에서 고른 보구 (사망해도 영구 보유)
+    if (tr) { this.player.treasure = tr; if (tr.apply) tr.apply(this.player); }
     this.loadStage();
+    if (!this.save.prologueSeen) this.showPrologue();
+  }
+  // 프롤로그 (첫 던전 입장 시 1회, 로비 일시정지 메뉴에서 다시 보기)
+  showPrologue() { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => { this.save.prologueSeen = true; writeSave(this.save); } }; }
+  // 기원의 성역 깊은 곳: 전설의 존재와 마주함 → 소원이 드러남 → 보구 선택
+  enterSanctum() {
+    this.save.sanctumReached = true; writeSave(this.save);
+    SFX.stopMusic();
+    this.overlay = { type: 'story', sanctum: true, lines: SANCTUM_LINES, i: 0, t: 0, done: () => { this.overlay = { type: 'treasure_pick', msg: null }; } };
+  }
+  pickTreasure(tr) {
+    const s = this.save;
+    if (tr && !s.treasures.includes(tr.id)) { s.treasures.push(tr.id); if (!s.treasureEquipped) s.treasureEquipped = tr.id; }
+    writeSave(s);
+    this.endRun(true); this.overlay.after = SANCTUM_AFTER;
   }
   get stageIndex() { return this.worldIdx * STAGES_PER_WORLD + this.levelIdx; }
   get isBossStage() { return this.levelIdx === STAGES_PER_WORLD - 1; }
@@ -261,6 +279,7 @@ class Game {
     if (o.type === 'pause') {
       if (input.wasPressed('Escape')) this.overlay = null;
       else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
+      else if (this.mode === 'lobby' && input.wasPressed('KeyP')) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => {} }; return; }
       else if (this.mode === 'dungeon' && input.wasPressed('KeyL')) { this.player.state = 'DEAD'; this.endRun(false); }
     } else if (o.type === 'codex' || o.type === 'armory') {
       const t0 = o.tab;
@@ -309,6 +328,21 @@ class Game {
       }
     } else if (o.type === 'result') {
       if (input.wasPressed('Enter')) this.finishResult();
+    } else if (o.type === 'story') { // 한 줄씩: 클릭/Enter/Space 다음, Esc 건너뛰기
+      o.t += STEP;
+      const next = input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('Mouse0');
+      if (input.wasPressed('Escape')) o.i = o.lines.length;
+      else if (next && o.t > 0.35) { o.i++; o.t = 0; }
+      if (o.i >= o.lines.length) { this.overlay = null; this.input.mouse.down = false; o.done(); }
+    } else if (o.type === 'treasure_pick') {
+      const list = DATA_TREASURES;
+      if (!list.length) { if (input.wasPressed('Enter') || input.wasPressed('Mouse0')) this.pickTreasure(null); return; }
+      if (input.wasPressed('Mouse0')) { const m = input.mouse, i = list.findIndex((_, i) => { const r = HUD.treasureRect(i, list.length); return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; }); if (i >= 0) this.pickTreasure(list[i]); }
+    } else if (o.type === 'treasures') { // 로비 보구 보관대: 1개 장착
+      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
+      const own = DATA_TREASURES.filter((t) => this.save.treasures.includes(t.id));
+      if (input.wasPressed('Mouse0')) { const m = input.mouse, i = own.findIndex((_, i) => { const r = HUD.treasureRect(i, own.length); return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; });
+        if (i >= 0) { const id = own[i].id; this.save.treasureEquipped = this.save.treasureEquipped === id ? null : id; writeSave(this.save); } }
     }
   }
 
@@ -467,7 +501,8 @@ class Game {
       if (p.state !== 'DEAD') { const heal = Math.round(p.maxHp * BALANCE.bossHealRatio); p.hp = Math.min(p.maxHp, p.hp + heal); this.effects.text(p.x, p.y - 20, '+' + heal, '#7be36b', true); }
       const last = this.worldIdx === DATA_WORLDS.length - 1;
       const after = () => {
-        if (last) this.portals.push(new Portal(c.x, c.y + 24, () => this.endRun(true), '귀환', [255, 210, 90]));
+        if (last && DATA_WORLDS[this.worldIdx].sanctum) this.portals.push(new Portal(c.x, c.y + 24, () => this.enterSanctum(), '성역 깊은 곳으로', [255, 233, 160]));
+        else if (last) this.portals.push(new Portal(c.x, c.y + 24, () => this.endRun(true), '귀환', [255, 210, 90]));
         else {
           this.props.push(new Chest(c.x, c.y - 24, 'weapon'));
           this.portals.push(new Portal(c.x, c.y + 24, () => this.advanceStage(), `${this.worldIdx + 2}-1 ${DATA_WORLDS[this.worldIdx + 1].name}`));

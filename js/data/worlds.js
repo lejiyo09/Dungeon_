@@ -38,7 +38,13 @@ const DATA_WORLDS = [
   { id: 'world_mine', name: '수정 광산', boss: 'boss_crystal_queen', waves: 2,
     enemies: [['enemy_bat_001', 4], ['enemy_mole_001', 2], ['enemy_cspider_001', 3], ['enemy_cgolem_001', 2]],
     palette: { style: 'mine', accent: '#ff7ad0', floor: ['#3a3230', '#3d3533'], corridor: ['#2a2422', '#2c2624'], wall: '#4a3e3a', wallTop: '#5a4c46',
-      wallFace: '#7a6860', faceLine: '#6a5a52', deco: 'rgba(255,120,210,0.35)' } }
+      wallFace: '#7a6860', faceLine: '#6a5a52', deco: 'rgba(255,120,210,0.35)' } },
+  // 제10 필드 '기원의 성역' (기획서 6장). 필드의 실제 층수·고유 몬스터는 미정
+  //  → 층 구성은 기존 시스템(4스테이지)을 따르고, 몬스터는 임시로 앞선 필드의 몬스터를 섞어 씀
+  { id: 'world_origin', name: '기원의 성역', boss: 'boss_nameless_gatekeeper', waves: 2, sanctum: true,
+    enemies: [['enemy_ghost_001', 3], ['enemy_skelknight_001', 2], ['enemy_cgolem_001', 2], ['enemy_crystal_001', 2]],
+    palette: { style: 'sanctum', accent: '#ffe9a0', floor: ['#4a4652', '#4d4955'], corridor: ['#34313c', '#36333e'], wall: '#5a5666', wallTop: '#6c6878',
+      wallFace: '#8e8a9c', faceLine: '#7c788a', deco: 'rgba(255,233,160,0.35)' } }
 ];
 const LOBBY_PALETTE = { style: 'wood', floor: ['#3a2e26', '#3d3129'], corridor: ['#3a2e26', '#3d3129'], wall: '#40354f', wallTop: '#4b3f5c',
   wallFace: '#6a5a82', faceLine: '#5a4c70', deco: null };

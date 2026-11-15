@@ -113,6 +113,22 @@ class CodexBoard {
   }
 }
 
+// 보구 보관대: 보유한 보구 중 1개를 골라 런에 들고 감 (기원의 성역에 도달한 뒤 로비에 나타남)
+class TreasureVault {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 22; this.t = 0; }
+  label() { return '[E] 보구 보관대'; }
+  get labelColor() { return '#ffe9a0'; }
+  interact(game) { game.overlay = { type: 'treasures' }; }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), k = 0.5 + 0.5 * Math.sin((game ? game.time : 0) * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 11, y + 6, 22, 3);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 11, y - 8, 22, 15);
+    ctx.fillStyle = '#6a6474'; ctx.fillRect(x - 10, y - 7, 20, 13); ctx.fillStyle = '#8a8496'; ctx.fillRect(x - 10, y - 7, 20, 2);
+    ctx.fillStyle = '#c8a050'; ctx.fillRect(x - 10, y - 1, 20, 1);
+    ctx.globalAlpha = 0.4 + 0.4 * k; ctx.fillStyle = '#ffe9a0'; ctx.fillRect(x - 2, y - 5, 4, 3); ctx.globalAlpha = 1;
+  }
+}
+
 const ARMORY_PRICE = BALANCE.armoryPrice;
 class Armory {
   constructor(x, y) { this.x = x; this.y = y; this.radius = 24; }

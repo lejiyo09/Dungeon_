@@ -220,5 +220,16 @@ const DATA_ENEMIES = [
       { type: 'summon', enemyId: 'enemy_cspider_001', count: 2 }],
     phase2Patterns: [{ type: 'charge', dashes: 4, speed: 380, color: '#ffb0e8' },
       { type: 'spiral', duration: 2.4, arms: 5, interval: 0.09, spin: 1.8, color: '#ff7ad0' }],
-    finalPatterns: [{ type: 'laser', name: '수정 굴절', beams: 6, spreadAng: Math.PI / 3, sweep: 0.9, duration: 2.4, width: 6, telegraph: 1.0, color: '#ff7ad0' }] }
+    finalPatterns: [{ type: 'laser', name: '수정 굴절', beams: 6, spreadAng: Math.PI / 3, sweep: 0.9, duration: 2.4, width: 6, telegraph: 1.0, color: '#ff7ad0' }] },
+  // 제10 필드 보스. 정체·관계·대사는 미정(기획서 6.3) — 외형과 패턴은 호칭의 인상으로 만든 임시 디자인
+  { id: 'boss_nameless_gatekeeper', name: '무명의 문지기', title: 'The Nameless Gatekeeper', sprite: 'boss_gatekeeper', color: '#2a2834', phaseColors: ['#2a2834', '#24222e', '#1a1824'],
+    boss: true, aiType: 'boss', health: 1200, damage: 19, moveSpeed: 30, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.15, bulletSpeed: 130,
+    rewardGold: 260, patterns: [
+      { type: 'laser', beams: 2, spreadAng: Math.PI, sweep: 0.8, duration: 1.8, width: 7, telegraph: 1.0, color: '#ffe9a0' },
+      { type: 'slam', radius: 50, color: '#ffe9a0' },
+      { type: 'aimed', volleys: 4, count: 5, spread: 0.14, color: '#fff4d0' },
+      { type: 'zones', count: 6, radius: 26, delay: 1.0, bullets: 4, spreadAround: 100, stagger: 0.1, color: '#ffe9a0' }],
+    phase2Patterns: [{ type: 'laser', beams: 4, spreadAng: Math.PI / 2, sweep: 0.7, duration: 2.2, width: 7, telegraph: 1.0, color: '#ffe9a0' },
+      { type: 'slam', radius: 56, chain: 3, color: '#fff4d0' }],
+    finalPatterns: [{ type: 'ringIn', name: '닫힌 문', rings: 2, count: 40, gap: 6, speed: 70, interval: 1.05, color: '#ffe9a0' }] }
 ];

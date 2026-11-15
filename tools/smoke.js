@@ -54,7 +54,11 @@ const { chromium } = require('playwright');
       p.x = portal.x; p.y = portal.y;
       // 포탈 진입: 화면 전환이 시작됐다가 끝날 때까지 (보스 처치 히트스톱 동안은 포탈 판정이 멈춤)
       let seen = false;
-      for (let i = 0; i < 600; i++) { g.update(STEP); if (g.transition) seen = true; if ((seen && !g.transition) || (g.overlay && g.overlay.type === 'result' && !g.transition)) break; }
+      for (let i = 0; i < 600; i++) { g.update(STEP); if (g.transition) seen = true; if ((seen && !g.transition) || (g.overlay && g.overlay.type === 'result' && !g.transition)) break;
+        if (g.overlay && (g.overlay.type === 'story' || g.overlay.type === 'treasure_pick')) { // 기원의 성역 장면 → 보구 선택
+          if (!log.includes('SANCTUM')) log.push('SANCTUM');
+          for (let k = 0; k < 400 && g.overlay && g.overlay.type !== 'result'; k++) { if (k % 30 === 0) g.input.pressed.add('Enter'); g.update(STEP); }
+          break; } }
       if (g.overlay && g.overlay.type === 'result') { log.push('RESULT victory=' + g.overlay.victory + ' gold=' + g.overlay.gold); break; }
     }
     for (let i = 0; i < 300 && !(g.overlay && g.overlay.type === 'result' && !g.transition); i++) g.update(STEP);
