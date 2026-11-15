@@ -58,7 +58,8 @@ class HUD {
       const T = p.treasure, ready = p.treasureCd <= 0, bx = VIEW_W - 172, by = VIEW_H - 54;
       ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(bx, by, 168, 14);
       ctx.fillStyle = ready ? T.color : '#555'; ctx.fillRect(bx, by + 12, Math.round(168 * (ready ? 1 : 1 - p.treasureCd / T.cooldown)), 2);
-      hudText(ctx, `[R] ${T.name}`, bx + 4, by + 2, ready ? T.color : '#888', 'left', 8);
+      ctx.globalAlpha = ready ? 1 : 0.45; drawTreasureIcon(ctx, T, bx + 8, by + 6, 0.75); ctx.globalAlpha = 1;
+      hudText(ctx, `[R] ${T.name}`, bx + 17, by + 2, ready ? T.color : '#888', 'left', 8);
       hudText(ctx, ready ? '준비' : `${Math.ceil(p.treasureCd)}초`, bx + 164, by + 2, ready ? '#fff' : '#888', 'right', 8);
     }
     if (w) {
@@ -218,9 +219,11 @@ class HUD {
         const r = HUD.treasureRect(i, list.length), eq = !pick && sv.treasureEquipped === t.id;
         ctx.fillStyle = eq ? 'rgba(255,233,160,0.2)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h);
         ctx.strokeStyle = '#c8a050'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
-        hudText(ctx, t.name, r.x + r.w / 2, r.y + 10, '#ffe9a0', 'center', 11);
-        if (t.origin) hudText(ctx, t.origin, r.x + r.w / 2, r.y + 28, '#a898c0', 'center', 8);
-        if (t.desc) hudWrap(ctx, t.desc, r.x + r.w / 2, r.y + 44, r.w - 12, '#ddd', 8, 11);
+        ctx.fillStyle = 'rgba(255,216,74,0.08)'; ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + 24, 18 + Math.sin(game.time * 3 + i) * 1.5, 0, TAU); ctx.fill(); // 아이콘 뒤 빛
+        drawTreasureIcon(ctx, t, r.x + r.w / 2, r.y + 24, 2);
+        hudText(ctx, t.name, r.x + r.w / 2, r.y + 44, '#ffe9a0', 'center', 11);
+        if (t.origin) hudText(ctx, t.origin, r.x + r.w / 2, r.y + 59, '#a898c0', 'center', 8);
+        if (t.desc) hudWrap(ctx, t.desc, r.x + r.w / 2, r.y + 73, r.w - 12, '#ddd', 8, 11);
         if (t.cooldown) hudText(ctx, `R키 · 쿨타임 ${t.cooldown}초`, r.x + r.w / 2, r.y + r.h - 28, '#c8b890', 'center', 8);
         if (eq) hudText(ctx, '장착됨', r.x + r.w / 2, r.y + r.h - 14, '#ffd84a', 'center', 8);
       });
@@ -234,6 +237,6 @@ class HUD {
       hudText(ctx, 'Enter: 로비로', VIEW_W / 2, 160, '#fff', 'center', 10);
     }
   }
-  static treasureRect(i, n) { const w = 140, h = 120, gap = 10, cols = Math.min(n, 3), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % 3) * (w + gap), y: 74 + Math.floor(i / 3) * (h + gap), w, h }; }
+  static treasureRect(i, n) { const w = 140, h = 150, gap = 10, cols = Math.min(n, 3), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % 3) * (w + gap), y: 74 + Math.floor(i / 3) * (h + gap), w, h }; }
   static buffRect(i) { const w = 140, h = 80, gap = 12, total = w * 3 + gap * 2; return { x: (VIEW_W - total) / 2 + i * (w + gap), y: 90, w, h }; }
 }

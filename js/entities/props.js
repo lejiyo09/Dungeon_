@@ -125,6 +125,8 @@ class TreasureVault {
     ctx.fillStyle = OUTLINE; ctx.fillRect(x - 11, y - 8, 22, 15);
     ctx.fillStyle = '#6a6474'; ctx.fillRect(x - 10, y - 7, 20, 13); ctx.fillStyle = '#8a8496'; ctx.fillRect(x - 10, y - 7, 20, 2);
     ctx.fillStyle = '#c8a050'; ctx.fillRect(x - 10, y - 1, 20, 1);
+    const eq = game && DATA_TREASURES.find((t) => t.id === game.save.treasureEquipped); // 장착한 보구를 보관대 위에 띄움
+    if (eq) drawTreasureIcon(ctx, eq, x, y - 16 + Math.sin((game ? game.time : 0) * 2) * 1.5, 1);
     ctx.globalAlpha = 0.4 + 0.4 * k; ctx.fillStyle = '#ffe9a0'; ctx.fillRect(x - 2, y - 5, 4, 3); ctx.globalAlpha = 1;
   }
 }

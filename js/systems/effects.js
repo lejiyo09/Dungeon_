@@ -75,15 +75,16 @@ class Effects {
     this.part(x, y, 0, 0, { color: '#ffffff', life: 0.1, size: size * 0.9, size2: 0, add: true, shape: 'circle' });
   }
   // ── 보구 연출
-  excalibur(x, y, x1, y1, w) { // 금빛 검기: 빛기둥 + 흐르는 초승달 + 경로의 빛 알갱이 + 하늘의 검
-    this.push({ kind: 'excal', x, y, x1, y1, w, t: 0, life: 0.75, add: true });
+  excalibur(x, y, x1, y1, w, px, py) { // 금빛 검기: 휘두르는 빛의 검 → 앞으로 뻗는 빛줄기 → 남는 잔광
     const L = Math.hypot(x1 - x, y1 - y) || 1, dx = (x1 - x) / L, dy = (y1 - y) / L;
-    for (let d = 0; d < L; d += 6) {
-      const px = x + dx * d, py = y + dy * d, s = (Math.random() - 0.5) * w * 2.2;
-      this.part(px - dy * s, py + dx * s, dx * 60 + (Math.random() - 0.5) * 40, dy * 60 - 30 - Math.random() * 40,
-        { color: Math.random() < 0.5 ? '#fff4c0' : '#ffd84a', color2: '#c8a050', life: 0.5 + Math.random() * 0.5, size: 2.5, size2: 0, drag: 2, add: true, shape: Math.random() < 0.3 ? 'plus' : 'circle' });
+    this.push({ kind: 'excal', x, y, x1, y1, w, t: 0, life: 0.8, add: true, seed: Math.random() * 100 });
+    this.push({ kind: 'excalSword', x: px, y: py - 3, ang: Math.atan2(dy, dx), t: 0, life: 0.5, add: false });
+    this.push({ kind: 'shock', x, y, r: 26, color: '#ffe9a0', t: 0, life: 0.35, add: true });
+    for (let d = 0; d < L; d += 5) { // 빛줄기가 지나간 자리에 늦게 피어나는 빛 알갱이
+      const s = (Math.random() - 0.5) * w * 2, px2 = x + dx * d - dy * s, py2 = y + dy * d + dx * s, lag = d / L * 0.1;
+      this.push(Object.assign({ kind: 'p', x: px2, y: py2, vx: dx * 30 + (Math.random() - 0.5) * 30, vy: dy * 30 - 20 - Math.random() * 30, t: -lag, life: 0.45 + Math.random() * 0.4,
+        size: 2, size2: 0, color: Math.random() < 0.5 ? '#fff4c0' : '#ffd84a', color2: '#c8a050', drag: 2, grav: 0, add: true, shape: Math.random() < 0.35 ? 'plus' : undefined }));
     }
-    this.push({ kind: 'excalSword', x, y, t: 0, life: 0.6, add: true });
   }
   solomonSeal(x, y) { // 솔로몬의 인장: 육각별 마법진이 펼쳐지고 빛기둥이 솟음
     this.push({ kind: 'seal', x, y, t: 0, life: 1.1, add: true });
@@ -128,6 +129,7 @@ class Effects {
     ctx.globalAlpha = 1;
   }
   draw(ctx, fx) {
+    if (fx.t < 0) return; // 늦게 시작하는 효과
     const k = 1 - fx.t / fx.life, x = Math.round(fx.x), y = Math.round(fx.y);
     ctx.globalAlpha = Math.max(0, k);
     switch (fx.kind) {
@@ -168,25 +170,34 @@ class Effects {
         ctx.restore(); break;
       }
       case 'excal': {
-        const p = fx.t / fx.life, grow = Math.min(1, p / 0.12), fade = 1 - Math.max(0, (p - 0.35) / 0.65);
-        const W = fx.w * (0.6 + 0.9 * grow) * (0.4 + 0.6 * fade), ang = Math.atan2(fx.y1 - fx.y, fx.x1 - fx.x), L = Math.hypot(fx.x1 - fx.x, fx.y1 - fx.y);
-        ctx.globalAlpha = 1; ctx.save(); ctx.translate(fx.x, fx.y); ctx.rotate(ang);
-        const g = ctx.createLinearGradient(0, -W * 1.6, 0, W * 1.6);
-        g.addColorStop(0, 'rgba(255,200,60,0)'); g.addColorStop(0.3, `rgba(255,200,60,${0.5 * fade})`); g.addColorStop(0.5, `rgba(255,255,230,${fade})`);
-        g.addColorStop(0.7, `rgba(255,200,60,${0.5 * fade})`); g.addColorStop(1, 'rgba(255,200,60,0)');
-        ctx.fillStyle = g; ctx.fillRect(0, -W * 1.6, L, W * 3.2);                            // 빛기둥
-        ctx.fillStyle = `rgba(255,255,255,${fade})`; ctx.fillRect(0, -W * 0.25, L, W * 0.5);   // 흰 심
-        ctx.strokeStyle = `rgba(255,240,180,${fade})`; ctx.lineWidth = 2;
-        for (let i = 0; i < 3; i++) { const cx = ((p * 2.2 + i / 3) % 1) * L; ctx.beginPath(); ctx.arc(cx - W * 2, 0, W * 2.4, -0.9, 0.9); ctx.stroke(); } // 흐르는 초승달
-        ctx.fillStyle = `rgba(255,230,140,${0.7 * fade})`; ctx.beginPath(); ctx.arc(L, 0, W * 0.9, 0, TAU); ctx.fill(); // 끝점 섬광
+        if (fx.t < 0) break;
+        const p = fx.t / fx.life, reach = Math.min(1, p / 0.09), fade = p < 0.3 ? 1 : 1 - (p - 0.3) / 0.7;
+        const ang = Math.atan2(fx.y1 - fx.y, fx.x1 - fx.x), L = Math.hypot(fx.x1 - fx.x, fx.y1 - fx.y) * reach;
+        const W = fx.w * (p < 0.12 ? 0.5 + 4 * p : 1) * (0.25 + 0.75 * fade);
+        ctx.globalAlpha = 1; ctx.save(); ctx.translate(Math.round(fx.x), Math.round(fx.y)); ctx.rotate(ang);
+        const band = (hw, col) => { const h = Math.max(1, Math.round(hw)); ctx.fillStyle = col; ctx.fillRect(0, -h, L, h * 2); }; // 또렷한 픽셀 띠
+        band(W * 1.5, `rgba(200,140,40,${0.35 * fade})`); band(W, `rgba(255,200,70,${0.75 * fade})`); band(W * 0.55, `rgba(255,236,170,${fade})`); band(W * 0.22, `rgba(255,255,255,${fade})`);
+        for (let i = 0; i < 18; i++) { // 가장자리에서 튀는 빛 조각
+          const r = (Math.sin(fx.seed + i * 12.9898) * 43758.5453) % 1, rx = Math.abs(r) * L, side = i % 2 ? 1 : -1;
+          ctx.fillStyle = `rgba(255,244,192,${fade})`; ctx.fillRect(Math.round(rx), side * Math.round(W * (1.1 + Math.abs(r) * 0.8)), 2, 1);
+        }
+        ctx.strokeStyle = `rgba(255,244,192,${0.9 * fade})`; ctx.lineWidth = 2;
+        for (let i = 0; i < 3; i++) { const cx = ((p * 1.8 + i / 3) % 1) * L; ctx.beginPath(); ctx.arc(cx - W * 2.2, 0, W * 2.5, -0.85, 0.85); ctx.stroke(); } // 흐르는 초승달 검기
+        if (reach < 1 || p < 0.2) { ctx.fillStyle = `rgba(255,255,255,${fade})`; ctx.beginPath(); ctx.arc(L, 0, W * 0.9, 0, TAU); ctx.fill(); } // 뻗어 나가는 머리
+        else { ctx.fillStyle = `rgba(255,230,140,${0.6 * fade})`; ctx.beginPath(); ctx.arc(L, 0, W * 0.8, 0, TAU); ctx.fill(); }
         ctx.restore(); ctx.lineWidth = 1; break;
       }
-      case 'excalSword': { // 하늘에서 내려와 휘둘러지는 거대한 빛의 검
-        const p = fx.t / fx.life, a = Math.min(1, p * 4) * (1 - Math.max(0, (p - 0.5) * 2)), sy = fx.y - 30 + Math.min(1, p * 3) * 10;
-        ctx.globalAlpha = a; ctx.fillStyle = '#fff4c0';
-        ctx.beginPath(); ctx.moveTo(fx.x, sy - 26); ctx.lineTo(fx.x + 3, sy - 20); ctx.lineTo(fx.x + 3, sy); ctx.lineTo(fx.x - 3, sy); ctx.lineTo(fx.x - 3, sy - 20); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = '#ffd84a'; ctx.fillRect(fx.x - 8, sy, 16, 2); ctx.fillRect(fx.x - 1, sy + 2, 2, 6); ctx.fillRect(fx.x - 2, sy + 8, 4, 2);
-        ctx.fillStyle = `rgba(255,220,120,${0.35 * a})`; ctx.beginPath(); ctx.arc(fx.x, sy - 10, 18, 0, TAU); ctx.fill(); break;
+      case 'excalSword': { // 손에서 조준 방향으로 크게 휘둘러지는 빛의 검 (푸른 손잡이·금빛 날밑)
+        const p = fx.t / fx.life, swing = Math.min(1, p / 0.3), a = p < 0.5 ? 1 : 1 - (p - 0.5) / 0.5;
+        const ang = fx.ang - 1.3 * (1 - swing) * (1 - swing);
+        ctx.globalAlpha = a; ctx.save(); ctx.translate(Math.round(fx.x), Math.round(fx.y)); ctx.rotate(ang);
+        ctx.fillStyle = 'rgba(255,220,120,0.3)'; ctx.beginPath(); ctx.moveTo(4, 0); ctx.arc(4, 0, 38, -1.3 * (1 - swing) - 0.15, 0.15); ctx.closePath(); ctx.fill(); // 휘두른 궤적
+        const blade = () => { ctx.beginPath(); ctx.moveTo(9, -3); ctx.lineTo(36, -3); ctx.lineTo(42, 0); ctx.lineTo(36, 3); ctx.lineTo(9, 3); ctx.closePath(); };
+        ctx.strokeStyle = OUTLINE; ctx.lineWidth = 2; blade(); ctx.stroke(); ctx.fillStyle = '#ffe9a0'; blade(); ctx.fill(); // 외곽선 있는 날
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(10, -1, 28, 1); ctx.fillStyle = '#c8a050'; ctx.fillRect(10, 2, 26, 1);
+        ctx.fillStyle = OUTLINE; ctx.fillRect(5, -8, 4, 16); ctx.fillRect(-1, -2, 7, 4);
+        ctx.fillStyle = '#ffd84a'; ctx.fillRect(6, -7, 2, 14); ctx.fillStyle = '#3a5aa0'; ctx.fillRect(1, -1, 5, 2); ctx.fillStyle = '#ffd84a'; ctx.fillRect(0, -1, 1, 2); ctx.lineWidth = 1;
+        ctx.restore(); break;
       }
       case 'seal': { // 육각별 + 이중 원 + 회전하는 눈금
         const p = fx.t / fx.life, R = 14 + 26 * Math.min(1, p / 0.3), rot = p * 2.5, a = 1 - Math.max(0, (p - 0.6) / 0.4);

@@ -22,6 +22,11 @@ class SoundSystem {
         this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
         const d = this.noiseBuf.getChannelData(0);
         for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        // 잔향(홀 울림): 서서히 줄어드는 노이즈로 만든 임펄스 → 보구처럼 웅장한 소리에 사용
+        const rl = Math.floor(this.ctx.sampleRate * 2.4), ir = this.ctx.createBuffer(2, rl, this.ctx.sampleRate);
+        for (let ch = 0; ch < 2; ch++) { const b = ir.getChannelData(ch); for (let i = 0; i < rl; i++) b[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / rl, 2.6); }
+        this.verb = this.ctx.createConvolver(); this.verb.buffer = ir;
+        const vg = this.ctx.createGain(); vg.gain.value = 0.55; this.verb.connect(vg); vg.connect(this.master);
       } catch (e) { this.ctx = null; return; }
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
@@ -58,6 +63,23 @@ class SoundSystem {
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.02);
   }
+  // 웅장한 음: 천천히 부풀었다 사라지는 음 (저역 필터 + 잔향으로 보냄)
+  pad(type, f, dur, vol, delay = 0, attack = 0.08, f2 = 0, cutoff = 2400) {
+    const c = this.ctx, t = c.currentTime + delay;
+    const o = c.createOscillator(), fl = c.createBiquadFilter(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    fl.type = 'lowpass'; fl.frequency.value = cutoff;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + attack); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(fl); fl.connect(g); g.connect(this.master); if (this.verb) g.connect(this.verb);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  rumble(dur, vol, freq, delay = 0) { // 잔향이 있는 낮은 굉음
+    const c = this.ctx, t = c.currentTime + delay;
+    const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = this.noiseBuf; s.loop = true; f.type = 'lowpass'; f.frequency.setValueAtTime(freq, t); f.frequency.exponentialRampToValueAtTime(60, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(this.master); if (this.verb) g.connect(this.verb); s.start(t); s.stop(t + dur + 0.05);
+  }
   noise(dur, vol, filterType, freq, delay = 0) {
     const c = this.ctx, t = c.currentTime + delay;
     const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
@@ -77,6 +99,25 @@ class SoundSystem {
 }
 
 const SOUNDS = {
+  // ── 보구 (잔향 있는 웅장한 소리)
+  gate: (s) => { // 게이트 오브 바빌론: 낮은 울림 + 금빛 문이 열리는 반짝임 + 사슬 소리
+    s.pad('sine', 73, 1.4, 0.22, 0, 0.02, 36); s.rumble(1.1, 0.25, 700);
+    for (const [f, d] of [[147, 0], [220, 0.02], [294, 0.04], [349, 0.06]]) s.pad('sawtooth', f, 1.6, 0.035, d, 0.25, 0, 1400); // 단조 화음
+    [1319, 1568, 1976, 2637, 3136].forEach((f, i) => s.pad('sine', f, 0.7, 0.05, 0.05 + i * 0.05, 0.005));           // 문이 열리는 반짝임
+    for (let i = 0; i < 6; i++) { const d = 0.18 + i * 0.07 + Math.random() * 0.03;                                 // 사슬이 철컥이며 감김
+      s.noise(0.05, 0.09, 'bandpass', 3200 + Math.random() * 1500, d); s.tone('square', 1500 + Math.random() * 600, 900, 0.06, 0.03, d); }
+  },
+  excal: (s) => { // 엑스칼리버: 빛이 모이는 상승음 → 성가 같은 장조 화음 + 폭발적인 굉음 + 맑은 종소리
+    s.pad('sawtooth', 220, 0.22, 0.06, 0, 0.18, 880, 3000);                                                         // 모이는 빛
+    for (const [f, dt] of [[220, 0], [277, 0], [330, 0], [440, 0], [554, 0], [660, 0]]) { s.pad('sawtooth', f, 1.9, 0.04, 0.12 + dt, 0.05, 0, 2200); s.pad('sawtooth', f * 1.006, 1.9, 0.03, 0.12, 0.05, 0, 2200); } // 성가 화음(살짝 어긋난 두 겹)
+    s.pad('sine', 110, 1.5, 0.3, 0.12, 0.01, 30); s.rumble(1.3, 0.4, 1400, 0.12); s.noise(0.45, 0.18, 'bandpass', 1400, 0.1); // 굉음·검기 바람
+    s.pad('sine', 1760, 1.8, 0.08, 0.14, 0.005); s.pad('sine', 2637, 1.4, 0.04, 0.18, 0.005);                       // 종소리
+  },
+  solomon: (s) => { // 솔로몬의 반지: 하프처럼 올라가는 아르페지오 + 따뜻한 화음 + 맑은 차임
+    [523, 659, 784, 1047, 1319, 1568, 2093].forEach((f, i) => s.pad('triangle', f, 0.9, 0.07, i * 0.055, 0.005));
+    for (const f of [262, 330, 392, 523]) s.pad('sine', f, 2.0, 0.07, 0.05, 0.3);
+    s.pad('sine', 2637, 1.5, 0.05, 0.42, 0.005); s.pad('sine', 3136, 1.2, 0.035, 0.5, 0.005); s.pad('sine', 98, 1.2, 0.15, 0, 0.05);
+  },
   gun: (s) => s.tone('square', 560, 240, 0.05, 0.07),
   heavy: (s) => { s.tone('sawtooth', 220, 60, 0.14, 0.12); s.noise(0.08, 0.08, 'lowpass', 1200); },
   magic: (s) => s.tone('triangle', 940, 460, 0.09, 0.08),

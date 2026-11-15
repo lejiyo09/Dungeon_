@@ -388,7 +388,7 @@ class Game {
     if (!T || this.mode !== 'dungeon') return;
     if (p.treasureCd > 0) { this.effects.text(p.x, p.y - 18, `${T.name} ${Math.ceil(p.treasureCd)}초`, '#999'); return; }
     p.treasureCd = T.cooldown;
-    this.effects.text(p.x, p.y - 24, T.name + '!', T.color, true); SFX.play('react');
+    this.effects.text(p.x, p.y - 24, T.name + '!', T.color, true); SFX.play(T.sfx || 'react', 0.3);
     if (T.use === 'chains') { // 게이트 오브 바빌론: 조준 지점(최대 사거리)에 원형 범위 → 황금 사슬로 묶음
       const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
       const cx = p.x + dx * k, cy = p.y + dy * k;
@@ -406,13 +406,13 @@ class Game {
         this.damageEnemy(e, { damage: dmg, mods: p.mods, knockback: 10 }, p.aim.x, p.aim.y);
       for (const b of this.enemyBullets) if (segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸
       this.hitTile(ex + p.aim.x * 3, ey + p.aim.y * 3);
-      this.effects.excalibur(sx, sy, ex, ey, T.width); this.effects.goldBurst(ex, ey, 24); this.effects.ring(ex, ey, 30, '#ffe9a0');
+      this.effects.excalibur(sx, sy, ex, ey, T.width, p.x, p.y); this.effects.goldBurst(ex, ey, 24); this.effects.ring(ex, ey, 30, '#ffe9a0');
       this.effects.impact(ex, ey, T.color, Math.atan2(p.aim.y, p.aim.x)); this.effects.goldBurst(sx, sy, 12);
-      this.addShake(0.4, 7); this.screenFlash = 0.3; this.flashColor = '255,236,170'; this.hitStop(0.08); SFX.play('heavy'); SFX.play('explode', 0.05);
+      this.addShake(0.4, 7); this.screenFlash = 0.3; this.flashColor = '255,236,170'; this.hitStop(0.08);
     } else if (T.use === 'blessing') { // 솔로몬의 반지: 각종 버프
       p.solomon = T.duration; p.shield = p.maxShield;
       this.effects.solomonSeal(p.x, p.y); this.effects.ring(p.x, p.y, 40, '#ffd84a');
-      this.screenFlash = 0.12; this.flashColor = '210,180,255'; SFX.play('heal');
+      this.screenFlash = 0.12; this.flashColor = '210,180,255';
     }
   }
   // ── 스킬
