@@ -268,6 +268,7 @@ class Game {
     if (p.state !== 'DEAD' && p.hp < p.maxHp * 0.3) { this.heartT -= dt; if (this.heartT <= 0) { SFX.play('heart'); this.heartT = 0.9; } }
     this.weaponSystem.update(p, dt, input);
     if (p.state !== 'DEAD' && (input.wasPressed('KeyF') || input.wasPressed('Mouse2'))) this.useSkill();
+    if (p.state !== 'DEAD' && input.wasPressed('KeyR')) this.useTreasure();
     this.updateSkillEffects(dt);
     this.updateFlow(dt);
     for (const e of this.enemies) updateEnemy(e, dt, this);
@@ -371,7 +372,7 @@ class Game {
       if (o.i >= o.lines.length) { this.overlay = null; this.input.mouse.down = false; o.done(); }
     } else if (o.type === 'treasure_pick') {
       const list = DATA_TREASURES;
-      if (!list.length) { if (input.wasPressed('Enter') || input.wasPressed('Mouse0')) this.pickTreasure(null); return; }
+      if (!list.length || this.save.treasures.length) { if (input.wasPressed('Enter') || input.wasPressed('Mouse0')) this.pickTreasure(null); return; } // 첫 보구는 한 번만 (추가 획득 방법은 미정)
       if (input.wasPressed('Mouse0')) { const m = input.mouse, i = list.findIndex((_, i) => { const r = HUD.treasureRect(i, list.length); return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; }); if (i >= 0) this.pickTreasure(list[i]); }
     } else if (o.type === 'treasures') { // 로비 보구 보관대: 1개 장착
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
@@ -381,6 +382,35 @@ class Game {
     }
   }
 
+  // ── 보구 (R): 무기·스킬과 별개인 제3의 도구
+  useTreasure() {
+    const p = this.player, T = p.treasure;
+    if (!T || this.mode !== 'dungeon') return;
+    if (p.treasureCd > 0) { this.effects.text(p.x, p.y - 18, `${T.name} ${Math.ceil(p.treasureCd)}초`, '#999'); return; }
+    p.treasureCd = T.cooldown;
+    this.effects.text(p.x, p.y - 24, T.name + '!', T.color, true); SFX.play('react');
+    if (T.use === 'chains') { // 게이트 오브 바빌론: 조준 지점(최대 사거리)에 원형 범위 → 황금 사슬로 묶음
+      const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
+      const cx = p.x + dx * k, cy = p.y + dy * k;
+      this.zones.push(new ChainCircle(cx, cy, T));
+      for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - cx, e.y - cy) < T.radius + e.radius) { e.chainT = T.duration; e.chainMax = T.duration; }
+      this.addShake(0.15, 3);
+    } else if (T.use === 'beam') { // 엑스칼리버: 벽까지 일직선, 스테이지가 깊을수록 피해도 커짐
+      const sx = p.x + p.aim.x * 8, sy = p.y + p.aim.y * 8, L = T.range;
+      const wt = sweepWall(sx, sy, sx + p.aim.x * L, sy + p.aim.y * L, this.map, 3), len = wt < 0 ? L : wt * L;
+      const ex = sx + p.aim.x * len, ey = sy + p.aim.y * len, dmg = T.damage * this.scale.hp;
+      for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, ex, ey, e.x, e.y, e.radius + T.width) >= 0)
+        this.damageEnemy(e, { damage: dmg, mods: p.mods, knockback: 10 }, p.aim.x, p.aim.y);
+      for (const b of this.enemyBullets) if (segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸
+      this.hitTile(ex + p.aim.x * 3, ey + p.aim.y * 3);
+      this.effects.beamline(sx, sy, ex, ey, T.width, T.color); this.effects.beamline(sx, sy, ex, ey, T.width * 0.5, '#ffffff');
+      this.effects.impact(ex, ey, T.color, Math.atan2(p.aim.y, p.aim.x)); this.effects.burst(sx, sy, T.color, 12);
+      this.addShake(0.3, 6); this.screenFlash = 0.25; this.hitStop(0.06); SFX.play('heavy');
+    } else if (T.use === 'blessing') { // 솔로몬의 반지: 각종 버프
+      p.solomon = T.duration; p.shield = p.maxShield;
+      this.effects.ring(p.x, p.y, 26, T.color); this.effects.ring(p.x, p.y, 40, '#ffd84a'); this.effects.sparkle(p.x, p.y, T.color);
+    }
+  }
   // ── 스킬
   useSkill() {
     const p = this.player;

@@ -32,7 +32,17 @@ const SANCTUM_LINES = [
 const SANCTUM_AFTER = '던전은 더 깊은 곳으로 이어진다.';  // [확정] 10.1
 
 // 보구(寶具): 일반 무기 등급과 별개인 독립 분류, 획득하면 사망해도 영구 보유 [확정]
-//  목록·능력·첫 선택지 수는 미정 → 비워 둠. 항목 형식(예정):
-//  { id: 'treasure_xxx', name: '이름', origin: '연결되는 전승', desc: '능력 설명', apply: (player) => { ... } }
-//  장착: 로비 '보구 보관대'에서 보유한 보구 중 1개를 골라 런에 들고 감 [사용자 결정, 임시 규칙]
-const DATA_TREASURES = [];
+//  [사용자 결정] 무기·스킬과 별개인 제3의 도구, R키로 사용. 로비 '보구 보관대'에서 보유한 보구 중 1개를 골라 런에 들고 감
+//  [사용자 결정] 목록·능력은 아래 3종. 쿨타임·수치는 Claude가 정한 값(조정 가능)
+//  기원의 성역에서 처음 받는 보구는 이 3종 중 하나를 직접 고름. 추가 보구 획득 방법은 미정
+const DATA_TREASURES = [
+  { id: 'treasure_gate_of_babylon', name: '게이트 오브 바빌론', origin: '길가메시', use: 'chains', cooldown: 18,
+    radius: 48, range: 150, duration: 3, color: '#ffd84a',
+    desc: '전방의 원형 범위에 황금 사슬을 소환해 적을 3초간 묶음' },
+  { id: 'treasure_excalibur', name: '엑스칼리버', origin: '아서왕', use: 'beam', cooldown: 20,
+    damage: 220, width: 12, range: 420, color: '#ffe9a0',
+    desc: '전방 일직선으로 금빛 검기를 발사해 아주 강력한 피해' },
+  { id: 'treasure_ring_of_solomon', name: '솔로몬의 반지', origin: '솔로몬', use: 'blessing', cooldown: 28,
+    duration: 8, atk: 0.3, rate: 0.3, speed: 0.2, guard: 0.3, color: '#c8a0ff',
+    desc: '8초간 공격력·공격 속도 +30%, 이동 속도 +20%, 받는 피해 -30%, 보호막 회복' }
+];

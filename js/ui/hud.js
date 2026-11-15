@@ -7,6 +7,15 @@ function hudText(ctx, str, x, y, color = '#fff', align = 'left', size = 10) {
   ctx.fillStyle = '#000'; ctx.fillText(str, x + 1, y + 1);
   ctx.fillStyle = color; ctx.fillText(str, x, y);
 }
+// 너비에 맞춰 줄바꿈 (공백 단위), 그린 줄 수를 돌려줌
+function hudWrap(ctx, str, x, y, maxW, color, size, lh) {
+  ctx.font = `bold ${size}px 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif`;
+  const lines = []; let cur = '';
+  for (const w of str.split(' ')) { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }
+  if (cur) lines.push(cur);
+  lines.forEach((l, i) => hudText(ctx, l, x, y + i * lh, color, 'center', size));
+  return lines.length;
+}
 function hudBar(ctx, x, y, w, h, ratio, fg) {
   ctx.fillStyle = '#1a1a1a'; ctx.fillRect(x, y, w, h);
   ctx.fillStyle = fg; ctx.fillRect(x, y, Math.round(w * Math.max(0, Math.min(1, ratio))), h);
@@ -45,7 +54,13 @@ class HUD {
     // 무기: 현재 무기(크게) + 보조 칸(작게)
     const w = p.weapon;
     ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(VIEW_W - 172, VIEW_H - 38, 168, 34);
-    if (p.treasure) hudText(ctx, `보구: ${p.treasure.name}`, VIEW_W - 170, VIEW_H - 50, '#ffe9a0', 'left', 8); // 장착한 보구 (무기 칸과 별도)
+    if (p.treasure) { // 장착한 보구 (R) — 무기 칸과 별도
+      const T = p.treasure, ready = p.treasureCd <= 0, bx = VIEW_W - 172, by = VIEW_H - 54;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(bx, by, 168, 14);
+      ctx.fillStyle = ready ? T.color : '#555'; ctx.fillRect(bx, by + 12, Math.round(168 * (ready ? 1 : 1 - p.treasureCd / T.cooldown)), 2);
+      hudText(ctx, `[R] ${T.name}`, bx + 4, by + 2, ready ? T.color : '#888', 'left', 8);
+      hudText(ctx, ready ? '준비' : `${Math.ceil(p.treasureCd)}초`, bx + 164, by + 2, ready ? '#fff' : '#888', 'right', 8);
+    }
     if (w) {
       ctx.strokeStyle = RARITY_COLOR[w.def.rarity]; ctx.strokeRect(VIEW_W - 168.5, VIEW_H - 34.5, 34, 26);
       drawWeaponCentered(ctx, w.def, VIEW_W - 151, VIEW_H - 21);
@@ -123,7 +138,7 @@ class HUD {
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
-      hudText(ctx, 'E 상호작용 · Q/휠 무기 교체 · M 소리 켜기/끄기', VIEW_W / 2, 134, '#ccc', 'center', 9);
+      hudText(ctx, 'E 상호작용 · Q/휠 무기 교체 · R 보구 · M 소리 켜기/끄기', VIEW_W / 2, 134, '#ccc', 'center', 9);
       hudText(ctx, '원소 반응: 빙결+화상=열충격 · 중독+화상=독 연소 · 빙결+번개=감전', VIEW_W / 2, 148, '#9ad8ff', 'center', 8);
       hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기   ·   L 포기하고 로비로' : 'Esc 이어하기   ·   P 프롤로그 다시 보기   ·   L 로그아웃', VIEW_W / 2, 164, '#999', 'center', 9);
     } else if (o.type === 'codex' || o.type === 'armory') {
@@ -196,17 +211,20 @@ class HUD {
       const list = pick ? DATA_TREASURES : DATA_TREASURES.filter((t) => sv.treasures.includes(t.id));
       hudText(ctx, pick ? '보구 선택' : '보구 보관대', VIEW_W / 2, 30, '#ffe9a0', 'center', 16);
       hudText(ctx, pick ? '하나를 골라 영원히 간직합니다. 사망해도 사라지지 않습니다.' : '보유한 보구 중 하나를 골라 탐험에 들고 갑니다 (다시 누르면 해제)', VIEW_W / 2, 54, '#bbb', 'center', 9);
-      if (!list.length) hudText(ctx, pick ? '제시될 보구가 아직 정해지지 않았습니다 (기획 미정)' : '아직 보유한 보구가 없습니다', VIEW_W / 2, 130, '#888', 'center', 10);
-      list.forEach((t, i) => {
+      const had = pick && sv.treasures.length > 0 && !o.picked;
+      if (had) hudText(ctx, '이미 첫 보구를 받았습니다. 추가 보구를 얻는 방법은 아직 정해지지 않았습니다.', VIEW_W / 2, 130, '#aaa', 'center', 9);
+      else if (!list.length) hudText(ctx, pick ? '제시될 보구가 아직 정해지지 않았습니다 (기획 미정)' : '아직 보유한 보구가 없습니다', VIEW_W / 2, 130, '#888', 'center', 10);
+      if (!had) list.forEach((t, i) => {
         const r = HUD.treasureRect(i, list.length), eq = !pick && sv.treasureEquipped === t.id;
         ctx.fillStyle = eq ? 'rgba(255,233,160,0.2)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h);
         ctx.strokeStyle = '#c8a050'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
         hudText(ctx, t.name, r.x + r.w / 2, r.y + 10, '#ffe9a0', 'center', 11);
         if (t.origin) hudText(ctx, t.origin, r.x + r.w / 2, r.y + 28, '#a898c0', 'center', 8);
-        if (t.desc) hudText(ctx, t.desc, r.x + r.w / 2, r.y + 46, '#ddd', 'center', 8);
+        if (t.desc) hudWrap(ctx, t.desc, r.x + r.w / 2, r.y + 44, r.w - 12, '#ddd', 8, 11);
+        if (t.cooldown) hudText(ctx, `R키 · 쿨타임 ${t.cooldown}초`, r.x + r.w / 2, r.y + r.h - 28, '#c8b890', 'center', 8);
         if (eq) hudText(ctx, '장착됨', r.x + r.w / 2, r.y + r.h - 14, '#ffd84a', 'center', 8);
       });
-      hudText(ctx, pick ? (list.length ? '클릭: 선택' : 'Enter: 계속') : 'E / Esc: 닫기', VIEW_W / 2, VIEW_H - 20, '#999', 'center', 9);
+      hudText(ctx, pick ? (list.length && !had ? '클릭: 선택' : 'Enter: 계속') : '클릭: 장착/해제   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 20, '#999', 'center', 9);
     } else if (o.type === 'result') {
       hudText(ctx, o.victory ? '던전 정복!' : '사망했습니다', VIEW_W / 2, 70, o.victory ? '#ffd84a' : '#ff7070', 'center', 18);
       if (o.after) hudText(ctx, o.after, VIEW_W / 2, 92, '#ffe9a0', 'center', 10);
@@ -216,6 +234,6 @@ class HUD {
       hudText(ctx, 'Enter: 로비로', VIEW_W / 2, 160, '#fff', 'center', 10);
     }
   }
-  static treasureRect(i, n) { const w = 130, h = 90, gap = 10, cols = Math.min(n, 3), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % 3) * (w + gap), y: 74 + Math.floor(i / 3) * (h + gap), w, h }; }
+  static treasureRect(i, n) { const w = 140, h = 120, gap = 10, cols = Math.min(n, 3), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % 3) * (w + gap), y: 74 + Math.floor(i / 3) * (h + gap), w, h }; }
   static buffRect(i) { const w = 140, h = 80, gap = 12, total = w * 3 + gap * 2; return { x: (VIEW_W - total) / 2 + i * (w + gap), y: 90, w, h }; }
 }

@@ -57,7 +57,7 @@ const { chromium } = require('playwright');
       for (let i = 0; i < 600; i++) { g.update(STEP); if (g.transition) seen = true; if ((seen && !g.transition) || (g.overlay && g.overlay.type === 'result' && !g.transition)) break;
         if (g.overlay && (g.overlay.type === 'story' || g.overlay.type === 'treasure_pick')) { // 기원의 성역 장면 → 보구 선택
           if (!log.includes('SANCTUM')) log.push('SANCTUM');
-          for (let k = 0; k < 400 && g.overlay && g.overlay.type !== 'result'; k++) { if (k % 30 === 0) g.input.pressed.add('Enter'); g.update(STEP); }
+          for (let k = 0; k < 400 && g.overlay && g.overlay.type !== 'result'; k++) { if (g.overlay.type === 'treasure_pick' && DATA_TREASURES.length && !g.save.treasures.length) { g.pickTreasure(DATA_TREASURES[1]); log.push('PICK ' + g.save.treasures.join(',')); break; } if (k % 30 === 0) g.input.pressed.add('Enter'); g.update(STEP); }
           break; } }
       if (g.overlay && g.overlay.type === 'result') { log.push('RESULT victory=' + g.overlay.victory + ' reward=' + g.overlay.reward + ' stages=' + g.overlay.stages + ' bosses=' + g.overlay.bosses); break; }
     }

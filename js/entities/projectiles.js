@@ -412,3 +412,23 @@ class SpiritWolf {
     ctx.globalAlpha = 0.85; drawSprite(ctx, spr, Math.round(this.x), Math.round(this.y) + 7, { flip: this.face < 0 }); ctx.globalAlpha = 1;
   }
 }
+
+// 게이트 오브 바빌론: 원형 범위에 황금 물결이 일고 사슬이 솟아오름 (묶는 처리는 game.useTreasure)
+class ChainCircle {
+  constructor(x, y, T) { this.x = x; this.y = y; this.r = T.radius; this.life = T.duration; this.t = 0; this.alive = true;
+    this.chains = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * TAU + Math.random() * 0.3; return { a, d: this.r * (0.5 + Math.random() * 0.5) }; }); }
+  update(dt) { this.t += dt; if (this.t >= this.life) this.alive = false; }
+  render(ctx) {
+    const k = Math.min(1, this.t / 0.2, (this.life - this.t) / 0.4), grow = Math.min(1, this.t / 0.35);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.25 * k; ctx.fillStyle = '#ffd84a'; ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r, this.r * 0.6, 0, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.8 * k; ctx.strokeStyle = '#ffe9a0'; ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r, this.r * 0.6, 0, 0, TAU); ctx.stroke();
+    for (const c of this.chains) { // 바닥의 금빛 구멍에서 중심으로 뻗는 사슬
+      const sx = this.x + Math.cos(c.a) * c.d, sy = this.y + Math.sin(c.a) * c.d * 0.6;
+      ctx.fillStyle = '#fff4c0'; ctx.fillRect(Math.round(sx) - 2, Math.round(sy) - 1, 4, 2);
+      const n = 6; for (let i = 0; i < n * grow; i++) { const t = i / n; ctx.fillStyle = i % 2 ? '#c8a050' : '#ffd84a';
+        ctx.fillRect(Math.round(sx + (this.x - sx) * t) - 1, Math.round(sy + (this.y - sy) * t - Math.sin(t * Math.PI) * 10) - 1, 2, 2); }
+    }
+    ctx.restore();
+  }
+}

@@ -20,7 +20,7 @@ class Player extends Entity {
     this.state = 'NORMAL';
     this.aim = { x: 1, y: 0 }; this.lastMoveDir = { x: 1, y: 0 }; this.dashDir = { x: 1, y: 0 };
     this.dashRemaining = 0; this.dashCooldown = 0; this.dashInvuln = 0; this.hurtInvuln = 0;
-    this.skillCooldown = 0; this.whirl = 0; this.whirlTick = 0; this.overdrive = 0; this.vampire = 0; this.rage = 0; this.blinkInv = 0;
+    this.skillCooldown = 0; this.whirl = 0; this.whirlTick = 0; this.overdrive = 0; this.vampire = 0; this.rage = 0; this.blinkInv = 0; this.treasure = null; this.treasureCd = 0; this.solomon = 0;
     this.sinceHit = 99; this.deathTimer = 0; this.time = 0; this.moving = false;
     this.swing = null; this.aimVis = 0; this.faceVis = 1; this.recoil = 0;
     this.stats = { attackBonus: 0, fireRateBonus: 0, critChance: base.critChance + (hero.critBonus || 0), critMultiplier: base.critMultiplier };
@@ -28,7 +28,7 @@ class Player extends Entity {
   }
   get weapon() { return this.weapons[this.slot] || null; }
   get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0; }
-  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? 0.6 : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
+  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? 0.6 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
 
   update(dt, input, map, mouseWorld) {
     this.time += dt;
@@ -37,7 +37,7 @@ class Player extends Entity {
     this.skillCooldown = Math.max(0, this.skillCooldown - dt);
     this.dashInvuln = Math.max(0, this.dashInvuln - dt);
     this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
-    this.overdrive = Math.max(0, this.overdrive - dt); this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt);
+    this.overdrive = Math.max(0, this.overdrive - dt); this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt); this.treasureCd = Math.max(0, this.treasureCd - dt); this.solomon = Math.max(0, this.solomon - dt);
     if (this.swing) { this.swing.t += dt; if (this.swing.t >= this.swing.dur) this.swing = null; }
     this.sinceHit += dt;
     if (this.sinceHit >= this.cfg.shieldRegenDelay)
@@ -66,7 +66,7 @@ class Player extends Entity {
     if (input.wasPressed('Space') && this.dashCooldown <= 0) {
       this.startDash(); this.updateDash(dt, map); return;
     }
-    const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1);
+    const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1) * (this.solomon > 0 ? 1 + this.treasure.speed : 1);
     moveAndCollide(this, ix * spd * dt, iy * spd * dt, map);
   }
   startDash() {
@@ -84,7 +84,7 @@ class Player extends Entity {
   }
   takeDamage(amount) {
     if (this.state === 'DEAD' || this.isInvulnerable) return false;
-    amount = Math.max(1, Math.round(amount * (1 - this.damageReduction)));
+    amount = Math.max(1, Math.round(amount * (1 - this.damageReduction) * (this.solomon > 0 ? 1 - this.treasure.guard : 1)));
     this.sinceHit = 0;
     const absorbed = Math.min(this.shield, amount);
     this.shield -= absorbed;
@@ -111,6 +111,10 @@ class Player extends Entity {
     }
     if (this.hurtInvuln > 0 && Math.floor(this.time * 20) % 2 === 0) return;
     const frame = this.moving && this.state !== 'DASH' ? Math.floor(this.time * 8) % 2 : 0;
+    if (this.solomon > 0) { // 솔로몬의 반지: 보랏빛·금빛 고리
+      ctx.strokeStyle = `rgba(200,160,255,${0.5 + 0.3 * Math.sin(this.time * 8)})`; ctx.beginPath(); ctx.ellipse(x, y + 6, 11, 4, 0, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,216,74,0.6)'; ctx.beginPath(); ctx.ellipse(x, y + 6, 8, 3, 0, this.time * 3, this.time * 3 + 2.5); ctx.stroke();
+    }
     if (this.rage > 0) { // 분노: 붉은 기운
       ctx.fillStyle = `rgba(255,60,40,${0.22 + 0.12 * Math.sin(this.time * 18)})`;
       ctx.beginPath(); ctx.arc(x, y - 1, 13, 0, TAU); ctx.fill();
@@ -286,6 +290,11 @@ class Enemy extends Entity {
     if (this.slow > 0) { ctx.fillStyle = 'rgba(140,210,255,0.35)'; ctx.fillRect(x - h - 1, y - h - 2, h * 2 + 2, h * 2 + 4); }
     if (this.burn > 0 && Math.floor(this.stateTime * 10) % 2 === 0) { ctx.fillStyle = '#ff8a3a'; ctx.fillRect(x - 2 + randInt(-3, 3), y - h - 3, 2, 2); }
     if (this.poison > 0) { ctx.fillStyle = '#9aff5a'; ctx.fillRect(x + h - 1, y - h - 3, 2, 2); }
+    if (this.chainT > 0) { // 황금 사슬에 묶임
+      ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x - h - 2, y - h); ctx.lineTo(x + h + 2, y + h); ctx.moveTo(x + h + 2, y - h); ctx.lineTo(x - h - 2, y + h); ctx.stroke();
+      ctx.fillStyle = '#fff4c0'; for (let i = -1; i <= 1; i++) { ctx.fillRect(x + i * 4 - 1, y + i * 4 - 1, 2, 2); ctx.fillRect(x - i * 4 - 1, y + i * 4 - 1, 2, 2); }
+    }
     if (this.markT > 0) { ctx.fillStyle = '#ff5a5a'; ctx.fillRect(x - 1, y - h - 11, 3, 1); ctx.fillRect(x, y - h - 12, 1, 3); } // 약점 표시
     if (!def.boss && !def.dummy && this.hp < this.maxHp) {
       const w = h * 2 + 2;
