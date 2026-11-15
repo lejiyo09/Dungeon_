@@ -38,36 +38,100 @@ class DungeonMap {
       for (let tx = x0; tx < x0 + w; tx++) this.set(tx, ty, T_FLOOR);
   }
 
+  // 맵 전체를 한 장의 캔버스에 미리 그림 (테마 타일 + 장식). 횃불·용암 빛은 renderAnim에서 매 프레임
   buildCache() {
-    const pal = this.palette;
+    const pal = this.palette, style = pal.style || 'stone';
     const c = document.createElement('canvas');
     c.width = this.width * TILE; c.height = this.height * TILE;
     const g = c.getContext('2d');
-    const floorAt = (tx, ty) => this.get(tx, ty) === T_FLOOR;
-    const inRoom = new Uint8Array(this.width * this.height);
+    this.cache = c; this.cacheCtx = g;
+    this.inRoom = new Uint8Array(this.width * this.height);
     for (const r of this.rooms)
-      for (let ty = r.y0; ty < r.y0 + r.h; ty++) for (let tx = r.x0; tx < r.x0 + r.w; tx++) inRoom[ty * this.width + tx] = 1;
+      for (let ty = r.y0; ty < r.y0 + r.h; ty++) for (let tx = r.x0; tx < r.x0 + r.w; tx++) this.inRoom[ty * this.width + tx] = 1;
+    const solidish = (t) => t === T_WALL || t === T_DOOR || t === T_COVER || t === T_CRATE;
+    // 1) 바닥 (엄폐물·상자 아래에도 바닥을 깔아 둠)
     for (let ty = 0; ty < this.height; ty++)
       for (let tx = 0; tx < this.width; tx++) {
-        if (!floorAt(tx, ty)) continue;
-        const cols = inRoom[ty * this.width + tx] ? pal.floor : pal.corridor;
-        drawFloorTile(g, tx * TILE, ty * TILE, cols[(tx + ty) % 2], pal.style);
-        if (pal.deco && Math.random() < 0.07) { g.fillStyle = pal.deco; g.fillRect(tx * TILE + randInt(2, 12), ty * TILE + randInt(2, 12), 2, 1); }
+        const t = this.get(tx, ty);
+        if (t === T_FLOOR || t === T_COVER || t === T_CRATE) this.drawFloorAt(g, tx, ty);
       }
-    const overlay = { boss: 'rgba(200,40,60,0.13)', treasure: 'rgba(220,180,60,0.10)', shop: 'rgba(80,200,120,0.10)',
-      exit: 'rgba(80,160,255,0.12)', start: 'rgba(80,140,255,0.05)' };
-    for (const r of this.rooms)
+    // 2) 방 색조 + 방 장식
+    const overlay = { boss: 'rgba(200,40,60,0.10)', treasure: 'rgba(220,180,60,0.07)', shop: 'rgba(80,200,120,0.07)', exit: 'rgba(80,160,255,0.08)' };
+    for (const r of this.rooms) {
       if (overlay[r.type]) { g.fillStyle = overlay[r.type]; g.fillRect(r.x0 * TILE, r.y0 * TILE, r.w * TILE, r.h * TILE); }
+      drawRoomArt(g, r, pal);
+    }
     if (this.decorate) this.decorate(g);
+    // 3) 벽 (+ 바닥에 드리운 그림자)
     for (let ty = 0; ty < this.height; ty++)
       for (let tx = 0; tx < this.width; tx++) {
         const t = this.get(tx, ty);
         if (t !== T_WALL && t !== T_DOOR) continue;
-        const face = floorAt(tx, ty + 1);
-        drawWallTile(g, tx * TILE, ty * TILE, pal, face);
+        const below = this.get(tx, ty + 1), face = below === T_FLOOR || below === T_COVER || below === T_CRATE;
+        drawWallTile(g, tx * TILE, ty * TILE, pal, face, style, tx, ty);
         if (face) { g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(tx * TILE, (ty + 1) * TILE, TILE, 3); }
       }
-    this.cache = c;
+    // 4) 엄폐물·상자
+    for (let ty = 0; ty < this.height; ty++)
+      for (let tx = 0; tx < this.width; tx++) {
+        const t = this.get(tx, ty);
+        if (t === T_COVER) drawCover(g, tx * TILE, ty * TILE, style, tx, ty);
+        else if (t === T_CRATE) drawCrate(g, tx * TILE, ty * TILE, style);
+      }
+    // 5) 애니메이션 위치: 방 윗벽의 횃불, 용암 균열
+    this.torches = []; this.glows = [];
+    for (const r of this.rooms) {
+      const ty = r.y0 - 1;
+      for (let tx = r.x0 + 1; tx < r.x0 + r.w - 1; tx++) {
+        if ((tx - r.x0) % 4 !== 2 || this.get(tx, ty) !== T_WALL || this.get(tx, ty + 1) !== T_FLOOR) continue;
+        if (r.doors.some((d) => Math.abs(d.x - tx) <= 1 && d.y === ty)) continue;
+        this.torches.push({ x: tx * TILE + 8, y: ty * TILE + 10, seed: hash2(tx, ty, 7) * 10 });
+      }
+    }
+    if (style === 'basalt')
+      for (let ty = 0; ty < this.height; ty++) for (let tx = 0; tx < this.width; tx++)
+        if (this.get(tx, ty) === T_FLOOR && hash2(tx, ty, 5) < 0.1) this.glows.push({ x: tx * TILE + 8, y: ty * TILE + 8, seed: hash2(tx, ty, 9) * 10 });
+  }
+  drawFloorAt(g, tx, ty) {
+    const pal = this.palette, cols = this.inRoom[ty * this.width + tx] ? pal.floor : pal.corridor;
+    drawFloorTile(g, tx * TILE, ty * TILE, cols[(tx + ty) % 2], pal.style || 'stone', tx, ty);
+  }
+  // 상자가 부서진 자리를 바닥으로 다시 그림
+  redrawTile(tx, ty) {
+    if (!this.cacheCtx) return;
+    const g = this.cacheCtx;
+    this.drawFloorAt(g, tx, ty);
+    const above = this.get(tx, ty - 1);
+    if (above === T_WALL || above === T_DOOR) { g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(tx * TILE, ty * TILE, TILE, 3); }
+    for (const r of this.rooms) if (tx >= r.x0 && tx < r.x0 + r.w && ty >= r.y0 && ty < r.y0 + r.h && r.type === 'boss') drawRoomArt(g, r, this.palette);
+  }
+  // 횃불 불꽃·빛, 용암 균열의 맥동
+  renderAnim(ctx, time, cam) {
+    const T = THEME[this.palette.style] || THEME.stone;
+    const vis = (o) => o.x > cam.x - 40 && o.x < cam.x + VIEW_W + 40 && o.y > cam.y - 40 && o.y < cam.y + VIEW_H + 40;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (const t of this.torches) {
+      if (!vis(t)) continue;
+      const f = 0.8 + 0.2 * Math.sin(time * 9 + t.seed) + 0.1 * Math.sin(time * 23 + t.seed * 3);
+      const grd = ctx.createRadialGradient(t.x, t.y - 2, 0, t.x, t.y - 2, 30 * f);
+      grd.addColorStop(0, T.torch + '55'); grd.addColorStop(1, T.torch + '00');
+      ctx.fillStyle = grd; ctx.fillRect(t.x - 32, t.y - 34, 64, 64);
+    }
+    for (const gl of this.glows) {
+      if (!vis(gl)) continue;
+      const a = 0.12 + 0.1 * Math.sin(time * 2.5 + gl.seed);
+      const grd = ctx.createRadialGradient(gl.x, gl.y, 0, gl.x, gl.y, 14);
+      grd.addColorStop(0, `rgba(255,110,40,${a})`); grd.addColorStop(1, 'rgba(255,110,40,0)');
+      ctx.fillStyle = grd; ctx.fillRect(gl.x - 14, gl.y - 14, 28, 28);
+    }
+    ctx.restore();
+    for (const t of this.torches) { // 횃대 + 일렁이는 불꽃
+      if (!vis(t)) continue;
+      const x = Math.round(t.x), y = Math.round(t.y), fr = Math.floor(time * 10 + t.seed) % 3;
+      ctx.fillStyle = OUTLINE; ctx.fillRect(x - 2, y, 4, 3); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(x - 1, y, 2, 4);
+      ctx.fillStyle = T.torch; ctx.fillRect(x - 2, y - 3 - (fr === 1 ? 1 : 0), 4, 3); ctx.fillRect(x - 1 + (fr === 2 ? 1 : 0), y - 5 - (fr === 1 ? 1 : 0), 2, 2);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 1, y - 2, 2, 1);
+    }
   }
   render(ctx, cam) {
     if (!this.cache) this.buildCache();
@@ -154,19 +218,36 @@ function generateDungeon(opts) {
     }
     map.edges.push([ra, rb]);
   }
+  for (const r of map.rooms) if (r.type === 'combat') placeCrates(map, r, randInt(2, 5)); else if (r.type === 'start') placeCrates(map, r, 1);
   map.startRoom = start.room;
   map.roomOf = (type) => map.rooms.find((r) => r.type === type) || null;
   return map;
 }
 
+// 전투방 엄폐물 (문 통로를 막지 않고, 큰 적도 지나가도록 2칸 이상 틈 유지)
 function placeCover(map, r) {
-  const block = (x, y, w, h) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) map.set(x + i, y + j, T_WALL); };
+  const block = (x, y, w, h) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) map.set(x + i, y + j, T_COVER); };
   const { cx, cy } = r;
-  switch (randInt(0, 3)) {
+  switch (randInt(0, 6)) {
     case 0: block(cx - 5, cy - 3, 2, 2); block(cx + 4, cy - 3, 2, 2); block(cx - 5, cy + 2, 2, 2); block(cx + 4, cy + 2, 2, 2); break;
     case 1: block(cx - 3, cy - 3, 7, 1); block(cx - 3, cy + 3, 7, 1); break;
     case 2: block(cx - 1, cy - 1, 3, 3); break;
+    case 3: block(cx - 4, cy - 3, 2, 2); block(cx + 3, cy + 2, 2, 2); break;
+    case 4: for (const [dx, dy] of [[-4, -3], [0, -3], [4, -3], [-4, 3], [0, 3], [4, 3]]) block(cx + dx, cy + dy, 1, 1); break;
+    case 5: block(cx - 4, cy - 2, 1, 5); block(cx + 4, cy - 2, 1, 5); break;
     default: break;
+  }
+}
+// 부서지는 상자: 주변 8칸이 모두 바닥인 자리에만 (길을 막지 않도록), 문 앞·방 중앙 제외
+function placeCrates(map, r, n) {
+  for (let k = 0, tries = 0; k < n && tries < 80; tries++) {
+    const tx = randInt(r.x0 + 1, r.x0 + r.w - 2), ty = randInt(r.y0 + 1, r.y0 + r.h - 2);
+    if (Math.abs(tx - r.cx) <= 2 && Math.abs(ty - r.cy) <= 2) continue;
+    if (r.doors.some((d) => Math.abs(d.x - tx) + Math.abs(d.y - ty) <= 3)) continue;
+    let ok = true;
+    for (let dy = -1; dy <= 1 && ok; dy++) for (let dx = -1; dx <= 1; dx++) if (map.get(tx + dx, ty + dy) !== T_FLOOR) { ok = false; break; }
+    if (!ok) continue;
+    map.set(tx, ty, T_CRATE); k++;
   }
 }
 

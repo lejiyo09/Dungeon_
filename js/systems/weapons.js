@@ -106,6 +106,7 @@ class WeaponSystem {
       if (d > 4 && angleDiff(Math.atan2(dy, dx), ang) > arc / 2 + Math.atan2(e.radius, d)) continue;
       world.damageEnemy(e, src, dx / (d || 1), dy / (d || 1)); hits++;
     }
+    world.breakCratesInArc(player.x, player.y, ang, arc, def.range);
     if (def.lifesteal && hits > 0) player.hp = Math.min(player.maxHp, player.hp + Math.min(3, hits * def.lifesteal));
     if (def.deflect) {
       for (const b of world.enemyBullets) {

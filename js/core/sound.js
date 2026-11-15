@@ -99,6 +99,7 @@ const SOUNDS = {
   boss: (s) => { s.tone('sawtooth', 90, 45, 0.7, 0.18); s.tone('square', 60, 40, 0.7, 0.08); },
   clear: (s) => { [523, 659, 784].forEach((f, i) => s.tone('square', f, f, 0.1, 0.06, i * 0.08)); },
   victory: (s) => { [523, 659, 784, 1046].forEach((f, i) => s.tone('square', f, f, 0.16, 0.07, i * 0.12)); },
+  crate: (s) => { s.noise(0.09, 0.1, 'bandpass', 900); s.tone('square', 160, 90, 0.07, 0.05); },
   ui: (s) => s.tone('square', 660, 660, 0.03, 0.05),
   buy: (s) => { s.tone('square', 880, 880, 0.05, 0.05); s.tone('square', 1320, 1320, 0.08, 0.05, 0.05); },
   deny: (s) => s.tone('square', 180, 150, 0.12, 0.07),

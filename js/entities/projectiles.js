@@ -65,6 +65,7 @@ class Projectile {
     }
     if (wallT >= 0) {
       const px = sx + (ex - sx) * wallT, py = sy + (ey - sy) * wallT;
+      world.hitTile(px + this.dx * 3, py + this.dy * 3); // 부서지는 상자
       if (this.mine) { this.x = px - this.dx * 4; this.y = py - this.dy * 4; this.planted = true; this.mineLeft = this.mine.life; return; }
       if (this.explodeRadius) { this.x = px; this.y = py; this.detonate(world); return; }
       if (this.boomerang) { this.x = px - this.dx * 2; this.y = py - this.dy * 2; this.back = true; this.hitTargets.clear(); return; }
@@ -165,7 +166,7 @@ class EnemyBullet {
     this.life -= dt;
     this.x += this.vx * dt; this.y += this.vy * dt;
     if (this.life <= 0) { this.alive = false; return; }
-    if (world.map.isSolidAt(this.x, this.y)) { this.alive = false; world.effects.spark(this.x, this.y, this.color); return; }
+    if (world.map.isSolidAt(this.x, this.y)) { world.hitTile(this.x, this.y); this.alive = false; world.effects.spark(this.x, this.y, this.color); return; }
     const p = world.player;
     if (p.state !== 'DEAD' && Math.abs(p.x - this.x) < p.half + this.r - 1 && Math.abs(p.y - this.y) < p.half + this.r - 1) {
       if (world.damagePlayer(this.damage)) { this.alive = false; world.effects.spark(this.x, this.y, '#fff'); }

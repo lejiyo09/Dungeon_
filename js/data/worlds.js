@@ -5,19 +5,19 @@
 const DATA_WORLDS = [
   { id: 'world_forest', name: '이끼 숲', boss: 'boss_gel_tyrant', waves: 2,
     enemies: [['enemy_slime_001', 4], ['enemy_goblin_001', 3], ['enemy_boar_001', 2], ['enemy_shroom_001', 2]],
-    palette: { floor: ['#24301f', '#283522'], corridor: ['#1e281a', '#212c1d'], wall: '#2f3b2a', wallTop: '#3a4a33',
+    palette: { style: 'moss', accent: '#a0e070', floor: ['#3a4236', '#3e4639'], corridor: ['#1e281a', '#212c1d'], wall: '#2f3b2a', wallTop: '#3a4a33',
       wallFace: '#4f6444', faceLine: '#435638', deco: 'rgba(120,200,90,0.35)' } },
   { id: 'world_ice', name: '서리 동굴', boss: 'boss_frost_golem', waves: 2,
     enemies: [['enemy_iceslime_001', 4], ['enemy_frostarcher_001', 3], ['enemy_yeti_001', 2], ['enemy_icemage_001', 2]],
-    palette: { floor: ['#26313f', '#2a3646'], corridor: ['#222b37', '#252f3c'], wall: '#3a4a66', wallTop: '#4a5d80',
+    palette: { style: 'ice', accent: '#bfefff', floor: ['#34485e', '#384c62'], corridor: ['#222b37', '#252f3c'], wall: '#3a4a66', wallTop: '#4a5d80',
       wallFace: '#7d9cc4', faceLine: '#6a88b0', deco: 'rgba(230,240,255,0.35)' } },
   { id: 'world_lava', name: '용암 요새', boss: 'boss_flame_lord', waves: 2,
     enemies: [['enemy_imp_001', 3], ['enemy_bomber_001', 3], ['enemy_golem_001', 2], ['enemy_flamecaster_001', 2]],
-    palette: { floor: ['#33221f', '#382622'], corridor: ['#2a1c1a', '#2e1f1c'], wall: '#4a2a22', wallTop: '#5e352a',
+    palette: { style: 'basalt', accent: '#ff8a3a', floor: ['#2e2426', '#322729'], corridor: ['#2a1c1a', '#2e1f1c'], wall: '#4a2a22', wallTop: '#5e352a',
       wallFace: '#8a4a33', faceLine: '#7a3e2a', deco: 'rgba(255,140,60,0.4)' } },
   { id: 'world_void', name: '공허 성채', boss: 'boss_void_eye', waves: 2,
     enemies: [['enemy_wraith_001', 3], ['enemy_hound_001', 3], ['enemy_crystal_001', 2], ['enemy_voidcaster_001', 2]],
-    palette: { floor: ['#1e1a2e', '#221d33'], corridor: ['#18152a', '#1b172d'], wall: '#2a2244', wallTop: '#3a2f5c',
+    palette: { style: 'void', accent: '#c8a0ff', floor: ['#1e1a2e', '#221d33'], corridor: ['#18152a', '#1b172d'], wall: '#2a2244', wallTop: '#3a2f5c',
       wallFace: '#5a4a8a', faceLine: '#4a3c78', deco: 'rgba(180,120,255,0.4)' } }
 ];
 const LOBBY_PALETTE = { style: 'wood', floor: ['#3a2e26', '#3d3129'], corridor: ['#3a2e26', '#3d3129'], wall: '#40354f', wallTop: '#4b3f5c',

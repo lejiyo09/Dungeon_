@@ -575,6 +575,33 @@ class Game {
     }
     return dt * 0.25;
   }
+  // ── 부서지는 상자
+  breakCrate(tx, ty) {
+    if (this.map.get(tx, ty) !== T_CRATE) return false;
+    this.map.set(tx, ty, T_FLOOR); this.map.redrawTile(tx, ty); this.flowTile = -1;
+    const c = this.map.tileCenter(tx, ty), st = this.map.palette.style;
+    const col = st === 'ice' ? '#8a9aaa' : st === 'basalt' ? '#c87a50' : st === 'void' ? '#b080ff' : '#b88450';
+    this.effects.burst(c.x, c.y, col, 10); SFX.play('crate', 0.03);
+    if (this.mode === 'dungeon') {
+      if (Math.random() < 0.25) this.pickups.push(new Pickup('coin', c.x, c.y));
+      if (Math.random() < 0.15) this.pickups.push(new Pickup('energy', c.x, c.y, { value: 6 }));
+      if (Math.random() < 0.04) this.pickups.push(new Pickup('hp', c.x, c.y, { value: 10 }));
+    }
+    return true;
+  }
+  hitTile(x, y) { return this.breakCrate(Math.floor(x / TILE), Math.floor(y / TILE)); }
+  breakCratesInRadius(x, y, r) {
+    for (let ty = Math.floor((y - r) / TILE); ty <= Math.floor((y + r) / TILE); ty++)
+      for (let tx = Math.floor((x - r) / TILE); tx <= Math.floor((x + r) / TILE); tx++)
+        if (Math.hypot(tx * TILE + 8 - x, ty * TILE + 8 - y) <= r + 6) this.breakCrate(tx, ty);
+  }
+  breakCratesInArc(x, y, ang, arc, range) {
+    for (let ty = Math.floor((y - range) / TILE); ty <= Math.floor((y + range) / TILE); ty++)
+      for (let tx = Math.floor((x - range) / TILE); tx <= Math.floor((x + range) / TILE); tx++) {
+        const cx = tx * TILE + 8, cy = ty * TILE + 8, d = Math.hypot(cx - x, cy - y);
+        if (d <= range + 6 && (d < 10 || angleDiff(Math.atan2(cy - y, cx - x), ang) <= arc / 2 + 0.3)) this.breakCrate(tx, ty);
+      }
+  }
   // 원소 반응
   triggerReaction(e, type, mods) {
     const atk = 1 + (mods ? mods.attackBonus : 0), quiet = { damage: 0, mods: { attackBonus: 0, critChance: 0, critMultiplier: 1 }, knockback: 0 };
@@ -620,6 +647,7 @@ class Game {
   explodeAt(x, y, r, o) {
     this.effects.explosion(x, y, r, o.color || '#ff8a3a');
     this.addShake(0.12, 3);
+    this.breakCratesInRadius(x, y, r);
     SFX.play('explode', 0.06);
     if (o.hurtEnemies) {
       for (const e of this.enemies) {
@@ -690,6 +718,9 @@ class Game {
         ctx.restore();
       }
     }
+    const amb = (THEME[this.map.palette.style] || THEME.stone).ambient; // 월드별 조명 분위기
+    if (amb) { const v = ctx.createRadialGradient(VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.3, VIEW_W / 2, VIEW_H / 2, VIEW_W * 0.65);
+      v.addColorStop(0, `rgba(${amb[0]},${amb[1]},${amb[2]},0)`); v.addColorStop(1, `rgba(${amb[0]},${amb[1]},${amb[2]},${amb[3]})`); ctx.fillStyle = v; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
     if (this.screenFlash > 0) { ctx.fillStyle = `rgba(255,255,255,${Math.min(0.8, this.screenFlash * 1.2)})`; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
     const low = p.state !== 'DEAD' && p.hp < p.maxHp * 0.3 ? 0.18 + 0.12 * Math.sin(this.time * 7) : 0;
     const a = Math.max(low, this.hurtFlash * 1.4);
@@ -714,6 +745,7 @@ class Game {
 
     this.map.render(ctx, { x: cx, y: cy });
     this.map.renderDoors(ctx, this.time);
+    this.map.renderAnim(ctx, this.time, { x: cx, y: cy });
     for (const po of this.portals) po.render(ctx);
     for (const h of this.hazards) h.render(ctx);
     for (const o of this.props) o.render(ctx, this);
