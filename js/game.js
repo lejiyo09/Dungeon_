@@ -136,7 +136,7 @@ class Game {
   }
   pickTreasure(tr) {
     const s = this.save;
-    if (tr && !s.treasures.includes(tr.id)) { s.treasures.push(tr.id); if (!s.treasureEquipped) s.treasureEquipped = tr.id; }
+    if (tr && !s.treasures.includes(tr.id)) { s.treasures.push(tr.id); if (!s.treasureEquipped) s.treasureEquipped = tr.id; this.treasureToast = { T: tr, start: performance.now() }; }
     writeSave(s);
     this.endRun(true); this.overlay.after = SANCTUM_AFTER;
   }
@@ -961,6 +961,7 @@ class Game {
     ctx.setTransform(R, 0, 0, R, 0, 0);
     this.renderScreenFx(ctx, cx, cy);
     this.hud.render(ctx, this);
+    if (this.treasureToast) HUD.treasureToast(ctx, this); // 보구 획득 알림 (결과 화면 위에도 보임)
 
     const mx = Math.round(this.input.mouse.x), my = Math.round(this.input.mouse.y);
     ctx.fillStyle = '#fff';

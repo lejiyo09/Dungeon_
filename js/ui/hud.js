@@ -58,7 +58,7 @@ class HUD {
       const T = p.treasure, ready = p.treasureCd <= 0, bx = VIEW_W - 172, by = VIEW_H - 54;
       ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(bx, by, 168, 14);
       ctx.fillStyle = ready ? T.color : '#555'; ctx.fillRect(bx, by + 12, Math.round(168 * (ready ? 1 : 1 - p.treasureCd / T.cooldown)), 2);
-      ctx.globalAlpha = ready ? 1 : 0.45; drawTreasureIcon(ctx, T, bx + 8, by + 6, 0.75); ctx.globalAlpha = 1;
+      ctx.globalAlpha = ready ? 1 : 0.45; drawTreasureIcon(ctx, T, bx + 8, by + 6, 0.85); ctx.globalAlpha = 1;
       hudText(ctx, `[R] ${T.name}`, bx + 17, by + 2, ready ? T.color : '#888', 'left', 8);
       hudText(ctx, ready ? '준비' : `${Math.ceil(p.treasureCd)}초`, bx + 164, by + 2, ready ? '#fff' : '#888', 'right', 8);
     }
@@ -236,6 +236,24 @@ class HUD {
       hudText(ctx, '던전 골드는 로비로 가져가지 않습니다', VIEW_W / 2, 142, '#888', 'center', 8);
       hudText(ctx, 'Enter: 로비로', VIEW_W / 2, 160, '#fff', 'center', 10);
     }
+  }
+  // 보구 획득 알림: 오른쪽 아래에서 아이콘과 함께 미끄러져 들어와 6초 동안 표시
+  static treasureToast(ctx, game) {
+    const o = game.treasureToast, t = (performance.now() - o.start) / 1000, D = 6;
+    if (t > D) { game.treasureToast = null; return; }
+    const slide = Math.min(1, t / 0.35), out = Math.max(0, (t - (D - 0.5)) / 0.5), ease = 1 - Math.pow(1 - slide, 3);
+    const w = 190, h = 44, x = Math.round(VIEW_W - 8 - w + (1 - ease + out) * (w + 12)), y = VIEW_H - h - 70;
+    ctx.globalAlpha = 1 - out;
+    ctx.fillStyle = 'rgba(12,10,20,0.92)'; ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#ffd84a'; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); ctx.strokeStyle = 'rgba(255,216,74,0.35)'; ctx.strokeRect(x + 2.5, y + 2.5, w - 5, h - 5);
+    const glow = 0.15 + 0.1 * Math.sin(t * 5);
+    ctx.fillStyle = `rgba(255,216,74,${glow})`; ctx.beginPath(); ctx.arc(x + 22, y + h / 2, 17, 0, TAU); ctx.fill();
+    drawTreasureIcon(ctx, o.T, x + 22, y + h / 2, 2);
+    hudText(ctx, '보구 획득', x + 44, y + 6, '#c8b890', 'left', 8);
+    hudText(ctx, o.T.name, x + 44, y + 17, '#ffe9a0', 'left', 11);
+    hudText(ctx, `${o.T.origin} · R키로 사용`, x + 44, y + 31, '#a898c0', 'left', 7);
+    if (t < 0.6) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(255,240,180,${0.5 * (1 - t / 0.6)})`; ctx.fillRect(x, y, w, h); ctx.globalCompositeOperation = 'source-over'; }
+    ctx.globalAlpha = 1;
   }
   static treasureRect(i, n) { const w = 140, h = 150, gap = 10, cols = Math.min(n, 3), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % 3) * (w + gap), y: 74 + Math.floor(i / 3) * (h + gap), w, h }; }
   static buffRect(i) { const w = 140, h = 80, gap = 12, total = w * 3 + gap * 2; return { x: (VIEW_W - total) / 2 + i * (w + gap), y: 90, w, h }; }
