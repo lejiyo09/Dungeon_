@@ -74,6 +74,25 @@ class Effects {
     for (let i = 0; i < 3; i++) this.part(x + randInt(-4, 4), y, randInt(-8, 8), -30 - Math.random() * 30, { color: '#dfe8ff', life: 0.7, size: 2.5, size2: 0, drag: 1, add: true, shape: 'circle' });
     this.part(x, y, 0, 0, { color: '#ffffff', life: 0.1, size: size * 0.9, size2: 0, add: true, shape: 'circle' });
   }
+  // ── 보구 연출
+  excalibur(x, y, x1, y1, w) { // 금빛 검기: 빛기둥 + 흐르는 초승달 + 경로의 빛 알갱이 + 하늘의 검
+    this.push({ kind: 'excal', x, y, x1, y1, w, t: 0, life: 0.75, add: true });
+    const L = Math.hypot(x1 - x, y1 - y) || 1, dx = (x1 - x) / L, dy = (y1 - y) / L;
+    for (let d = 0; d < L; d += 6) {
+      const px = x + dx * d, py = y + dy * d, s = (Math.random() - 0.5) * w * 2.2;
+      this.part(px - dy * s, py + dx * s, dx * 60 + (Math.random() - 0.5) * 40, dy * 60 - 30 - Math.random() * 40,
+        { color: Math.random() < 0.5 ? '#fff4c0' : '#ffd84a', color2: '#c8a050', life: 0.5 + Math.random() * 0.5, size: 2.5, size2: 0, drag: 2, add: true, shape: Math.random() < 0.3 ? 'plus' : 'circle' });
+    }
+    this.push({ kind: 'excalSword', x, y, t: 0, life: 0.6, add: true });
+  }
+  solomonSeal(x, y) { // 솔로몬의 인장: 육각별 마법진이 펼쳐지고 빛기둥이 솟음
+    this.push({ kind: 'seal', x, y, t: 0, life: 1.1, add: true });
+    for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; this.push({ kind: 'pillar', x: x + Math.cos(a) * 30, y: y + 6 + Math.sin(a) * 18, t: -i * 0.04, life: 0.6, add: true }); }
+    for (let i = 0; i < 24; i++) { const a = Math.random() * TAU, s = 30 + Math.random() * 60;
+      this.part(x, y, Math.cos(a) * s, Math.sin(a) * s * 0.6 - 30, { color: i % 2 ? '#e0c0ff' : '#ffd84a', life: 0.7, size: 2, size2: 0, drag: 2.5, add: true, shape: 'plus' }); }
+  }
+  goldBurst(x, y, n = 16) { for (let i = 0; i < n; i++) { const a = Math.random() * TAU, s = 40 + Math.random() * 70;
+    this.part(x, y, Math.cos(a) * s, Math.sin(a) * s - 20, { color: '#ffd84a', color2: '#c8a050', life: 0.5 + Math.random() * 0.3, size: 2, size2: 0, drag: 3, grav: 60, add: true }); } }
   beamline(x, y, x1, y1, w, color) { this.push({ kind: 'beamline', x, y, x1, y1, w, color, t: 0, life: 0.3, add: true }); }
   afterimage(img, x, y, w, h) { this.push({ kind: 'ghost', img, x, y, w, h, t: 0, life: 0.22 }); } // 대시 잔상
   dust(x, y) { for (let i = 0; i < 2; i++) this.part(x + randInt(-3, 3), y, randInt(-12, 12), -randInt(4, 14), { color: 'rgba(200,190,170,0.5)', life: 0.35, size: 1.5, size2: 3, drag: 4, shape: 'circle' }); }
@@ -147,6 +166,43 @@ class Effects {
         ctx.fillStyle = '#fff6c0'; ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(9, 0); ctx.lineTo(0, 3); ctx.closePath(); ctx.fill();
         ctx.fillStyle = fx.color || '#ffb040'; ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(13, 0); ctx.lineTo(0, 2); ctx.closePath(); ctx.fill();
         ctx.restore(); break;
+      }
+      case 'excal': {
+        const p = fx.t / fx.life, grow = Math.min(1, p / 0.12), fade = 1 - Math.max(0, (p - 0.35) / 0.65);
+        const W = fx.w * (0.6 + 0.9 * grow) * (0.4 + 0.6 * fade), ang = Math.atan2(fx.y1 - fx.y, fx.x1 - fx.x), L = Math.hypot(fx.x1 - fx.x, fx.y1 - fx.y);
+        ctx.globalAlpha = 1; ctx.save(); ctx.translate(fx.x, fx.y); ctx.rotate(ang);
+        const g = ctx.createLinearGradient(0, -W * 1.6, 0, W * 1.6);
+        g.addColorStop(0, 'rgba(255,200,60,0)'); g.addColorStop(0.3, `rgba(255,200,60,${0.5 * fade})`); g.addColorStop(0.5, `rgba(255,255,230,${fade})`);
+        g.addColorStop(0.7, `rgba(255,200,60,${0.5 * fade})`); g.addColorStop(1, 'rgba(255,200,60,0)');
+        ctx.fillStyle = g; ctx.fillRect(0, -W * 1.6, L, W * 3.2);                            // 빛기둥
+        ctx.fillStyle = `rgba(255,255,255,${fade})`; ctx.fillRect(0, -W * 0.25, L, W * 0.5);   // 흰 심
+        ctx.strokeStyle = `rgba(255,240,180,${fade})`; ctx.lineWidth = 2;
+        for (let i = 0; i < 3; i++) { const cx = ((p * 2.2 + i / 3) % 1) * L; ctx.beginPath(); ctx.arc(cx - W * 2, 0, W * 2.4, -0.9, 0.9); ctx.stroke(); } // 흐르는 초승달
+        ctx.fillStyle = `rgba(255,230,140,${0.7 * fade})`; ctx.beginPath(); ctx.arc(L, 0, W * 0.9, 0, TAU); ctx.fill(); // 끝점 섬광
+        ctx.restore(); ctx.lineWidth = 1; break;
+      }
+      case 'excalSword': { // 하늘에서 내려와 휘둘러지는 거대한 빛의 검
+        const p = fx.t / fx.life, a = Math.min(1, p * 4) * (1 - Math.max(0, (p - 0.5) * 2)), sy = fx.y - 30 + Math.min(1, p * 3) * 10;
+        ctx.globalAlpha = a; ctx.fillStyle = '#fff4c0';
+        ctx.beginPath(); ctx.moveTo(fx.x, sy - 26); ctx.lineTo(fx.x + 3, sy - 20); ctx.lineTo(fx.x + 3, sy); ctx.lineTo(fx.x - 3, sy); ctx.lineTo(fx.x - 3, sy - 20); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#ffd84a'; ctx.fillRect(fx.x - 8, sy, 16, 2); ctx.fillRect(fx.x - 1, sy + 2, 2, 6); ctx.fillRect(fx.x - 2, sy + 8, 4, 2);
+        ctx.fillStyle = `rgba(255,220,120,${0.35 * a})`; ctx.beginPath(); ctx.arc(fx.x, sy - 10, 18, 0, TAU); ctx.fill(); break;
+      }
+      case 'seal': { // 육각별 + 이중 원 + 회전하는 눈금
+        const p = fx.t / fx.life, R = 14 + 26 * Math.min(1, p / 0.3), rot = p * 2.5, a = 1 - Math.max(0, (p - 0.6) / 0.4);
+        ctx.globalAlpha = a; ctx.save(); ctx.translate(fx.x, fx.y + 6); ctx.scale(1, 0.6);
+        ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = '#e0c0ff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, R * 0.82, 0, TAU); ctx.stroke();
+        for (let tri = 0; tri < 2; tri++) { ctx.beginPath(); for (let i = 0; i <= 3; i++) { const t = rot + tri * Math.PI / 3 + i * TAU / 3; ctx[i ? 'lineTo' : 'moveTo'](Math.cos(t) * R * 0.78, Math.sin(t) * R * 0.78); } ctx.stroke(); }
+        for (let i = 0; i < 12; i++) { const t = -rot * 1.5 + i * TAU / 12; ctx.fillStyle = '#fff4c0'; ctx.fillRect(Math.cos(t) * R * 1.12 - 1, Math.sin(t) * R * 1.12 - 1, 2, 2); }
+        ctx.restore(); ctx.lineWidth = 1; break;
+      }
+      case 'pillar': { // 솟아오르는 빛기둥
+        if (fx.t < 0) break;
+        const p = fx.t / fx.life, h = 40 * Math.min(1, p / 0.3), a = 1 - p;
+        const g = ctx.createLinearGradient(0, fx.y - h, 0, fx.y);
+        g.addColorStop(0, 'rgba(224,192,255,0)'); g.addColorStop(1, `rgba(255,230,160,${0.8 * a})`);
+        ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(Math.round(fx.x) - 2, fx.y - h, 4, h); break;
       }
       case 'beamline':
         ctx.strokeStyle = fx.color; ctx.lineWidth = fx.w * 2 * k + 1; ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x1, fx.y1); ctx.stroke();

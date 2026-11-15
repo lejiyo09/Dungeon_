@@ -114,6 +114,8 @@ class Player extends Entity {
     if (this.solomon > 0) { // 솔로몬의 반지: 보랏빛·금빛 고리
       ctx.strokeStyle = `rgba(200,160,255,${0.5 + 0.3 * Math.sin(this.time * 8)})`; ctx.beginPath(); ctx.ellipse(x, y + 6, 11, 4, 0, 0, TAU); ctx.stroke();
       ctx.strokeStyle = 'rgba(255,216,74,0.6)'; ctx.beginPath(); ctx.ellipse(x, y + 6, 8, 3, 0, this.time * 3, this.time * 3 + 2.5); ctx.stroke();
+      for (let i = 0; i < 3; i++) { const a = this.time * 2.5 + i * TAU / 3, gx = Math.round(x + Math.cos(a) * 13), gy = Math.round(y - 2 + Math.sin(a) * 5); // 도는 인장 조각
+        ctx.fillStyle = '#ffd84a'; ctx.fillRect(gx - 1, gy - 2, 3, 1); ctx.fillRect(gx - 1, gy + 1, 3, 1); ctx.fillStyle = '#e0c0ff'; ctx.fillRect(gx, gy - 1, 1, 2); }
     }
     if (this.rage > 0) { // 분노: 붉은 기운
       ctx.fillStyle = `rgba(255,60,40,${0.22 + 0.12 * Math.sin(this.time * 18)})`;

@@ -392,9 +392,12 @@ class Game {
     if (T.use === 'chains') { // 게이트 오브 바빌론: 조준 지점(최대 사거리)에 원형 범위 → 황금 사슬로 묶음
       const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
       const cx = p.x + dx * k, cy = p.y + dy * k;
-      this.zones.push(new ChainCircle(cx, cy, T));
-      for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - cx, e.y - cy) < T.radius + e.radius) { e.chainT = T.duration; e.chainMax = T.duration; }
-      this.addShake(0.15, 3);
+      const caught = [];
+      for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - cx, e.y - cy) < T.radius + e.radius) { e.chainT = T.duration; e.chainMax = T.duration; caught.push(e); }
+      this.zones.push(new ChainCircle(cx, cy, T, caught));
+      for (const e of caught) this.effects.goldBurst(e.x, e.y, 10);
+      this.effects.ring(cx, cy, T.radius, '#ffd84a'); this.effects.ring(cx, cy, T.radius * 0.6, '#fff4c0');
+      this.addShake(0.25, 4); this.screenFlash = 0.08; this.flashColor = '255,216,74'; this.hitStop(0.05);
     } else if (T.use === 'beam') { // 엑스칼리버: 벽까지 일직선, 스테이지가 깊을수록 피해도 커짐
       const sx = p.x + p.aim.x * 8, sy = p.y + p.aim.y * 8, L = T.range;
       const wt = sweepWall(sx, sy, sx + p.aim.x * L, sy + p.aim.y * L, this.map, 3), len = wt < 0 ? L : wt * L;
@@ -403,12 +406,13 @@ class Game {
         this.damageEnemy(e, { damage: dmg, mods: p.mods, knockback: 10 }, p.aim.x, p.aim.y);
       for (const b of this.enemyBullets) if (segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸
       this.hitTile(ex + p.aim.x * 3, ey + p.aim.y * 3);
-      this.effects.beamline(sx, sy, ex, ey, T.width, T.color); this.effects.beamline(sx, sy, ex, ey, T.width * 0.5, '#ffffff');
-      this.effects.impact(ex, ey, T.color, Math.atan2(p.aim.y, p.aim.x)); this.effects.burst(sx, sy, T.color, 12);
-      this.addShake(0.3, 6); this.screenFlash = 0.25; this.hitStop(0.06); SFX.play('heavy');
+      this.effects.excalibur(sx, sy, ex, ey, T.width); this.effects.goldBurst(ex, ey, 24); this.effects.ring(ex, ey, 30, '#ffe9a0');
+      this.effects.impact(ex, ey, T.color, Math.atan2(p.aim.y, p.aim.x)); this.effects.goldBurst(sx, sy, 12);
+      this.addShake(0.4, 7); this.screenFlash = 0.3; this.flashColor = '255,236,170'; this.hitStop(0.08); SFX.play('heavy'); SFX.play('explode', 0.05);
     } else if (T.use === 'blessing') { // 솔로몬의 반지: 각종 버프
       p.solomon = T.duration; p.shield = p.maxShield;
-      this.effects.ring(p.x, p.y, 26, T.color); this.effects.ring(p.x, p.y, 40, '#ffd84a'); this.effects.sparkle(p.x, p.y, T.color);
+      this.effects.solomonSeal(p.x, p.y); this.effects.ring(p.x, p.y, 40, '#ffd84a');
+      this.screenFlash = 0.12; this.flashColor = '210,180,255'; SFX.play('heal');
     }
   }
   // ── 스킬
@@ -883,7 +887,7 @@ class Game {
     const amb = (THEME[this.map.palette.style] || THEME.stone).ambient; // 월드별 조명 분위기
     if (amb) { const v = ctx.createRadialGradient(VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.3, VIEW_W / 2, VIEW_H / 2, VIEW_W * 0.65);
       v.addColorStop(0, `rgba(${amb[0]},${amb[1]},${amb[2]},0)`); v.addColorStop(1, `rgba(${amb[0]},${amb[1]},${amb[2]},${amb[3]})`); ctx.fillStyle = v; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
-    if (this.screenFlash > 0) { ctx.fillStyle = `rgba(255,255,255,${Math.min(0.8, this.screenFlash * 1.2)})`; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
+    if (this.screenFlash > 0) { ctx.fillStyle = `rgba(${this.flashColor || '255,255,255'},${Math.min(0.8, this.screenFlash * 1.2)})`; ctx.fillRect(0, 0, VIEW_W, VIEW_H); } else this.flashColor = null;
     const low = p.state !== 'DEAD' && p.hp < p.maxHp * 0.3 ? 0.18 + 0.12 * Math.sin(this.time * 7) : 0;
     const a = Math.max(low, this.hurtFlash * 1.4);
     if (a > 0.01) {
@@ -917,6 +921,7 @@ class Game {
     const actors = [...this.enemies, ...this.allies, this.player].sort((a, b) => a.y - b.y);
     for (const a of actors) a.render(ctx);
     for (const pr of this.projectiles) pr.render(ctx);
+    for (const z of this.zones) if (z.renderTop) z.renderTop(ctx);
     const w = this.player.weapon;
     if (w && w.beamActive && w.beamEnd) {
       const b = w.beamEnd;
