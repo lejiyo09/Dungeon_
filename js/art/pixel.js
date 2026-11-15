@@ -313,7 +313,7 @@ function drawEnemy(ctx, e, x, y, flash) {
   let sq = 0, oy = 0;
   if (e.state === 'TELEGRAPH' && ['slime', 'iceslime', 'shroom', 'golem', 'boss_gel', 'boss_frost'].includes(def.sprite)) sq = def.boss ? 4 : 2;
   else if (def.sprite === 'slime' || def.sprite === 'iceslime' || def.sprite === 'boss_gel') sq = Math.round((Math.sin(e.stateTime * (def.boss ? 4 : 9)) + 1) * (def.boss ? 1 : 0.6));
-  if (def.sprite === 'imp' || def.sprite === 'wraith' || def.sprite === 'boss_flame' || def.sprite === 'boss_void') oy = Math.round(Math.sin(e.stateTime * (def.boss ? 3 : 9)) * 1.5) - (def.boss ? 4 : 3);
+  if (def.sprite === 'imp' || def.sprite === 'wraith' || def.sprite === 'boss_flame' || def.sprite === 'boss_void' || def.sprite === 'boss_sand') oy = Math.round(Math.sin(e.stateTime * (def.boss ? 3 : 9)) * 1.5) - (def.boss ? 4 : 3);
   const lift = Math.round(e.jumpH || 0), bottom = y + def.hitboxHalf + 1;
   const sw = Math.round(spr.w * sc * 0.65 - Math.min(10, lift / 4));
   ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(Math.round(x - sw / 2), bottom - 2, sw, def.boss ? 3 : 2);

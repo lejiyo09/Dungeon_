@@ -101,7 +101,7 @@ class Game {
   }
   get stageIndex() { return this.worldIdx * STAGES_PER_WORLD + this.levelIdx; }
   get isBossStage() { return this.levelIdx === STAGES_PER_WORLD - 1; }
-  get scale() { const i = this.mode === 'lobby' ? 0 : this.stageIndex; return { hp: 1 + BALANCE.stageScale.hp * i, dmg: 1 + BALANCE.stageScale.dmg * i }; }
+  get scale() { const S = BALANCE.stageScale, k = this.mode === 'lobby' ? 0 : this.stageIndex, i = k > S.taperFrom ? S.taperFrom + (k - S.taperFrom) * S.taper : k; return { hp: 1 + BALANCE.stageScale.hp * i, dmg: 1 + BALANCE.stageScale.dmg * i }; }
   loadStage() {
     const W = DATA_WORLDS[this.worldIdx];
     const map = this.isBossStage

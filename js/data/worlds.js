@@ -18,7 +18,15 @@ const DATA_WORLDS = [
   { id: 'world_void', name: '공허 성채', boss: 'boss_void_eye', waves: 2,
     enemies: [['enemy_wraith_001', 3], ['enemy_hound_001', 3], ['enemy_crystal_001', 2], ['enemy_voidcaster_001', 2]],
     palette: { style: 'void', accent: '#c8a0ff', floor: ['#1e1a2e', '#221d33'], corridor: ['#18152a', '#1b172d'], wall: '#2a2244', wallTop: '#3a2f5c',
-      wallFace: '#5a4a8a', faceLine: '#4a3c78', deco: 'rgba(180,120,255,0.4)' } }
+      wallFace: '#5a4a8a', faceLine: '#4a3c78', deco: 'rgba(180,120,255,0.4)' } },
+  { id: 'world_sand', name: '모래 무덤', boss: 'boss_sarcophagus', waves: 2,
+    enemies: [['enemy_scarab_001', 4], ['enemy_skelarcher_001', 3], ['enemy_sandworm_001', 2], ['enemy_sandmage_001', 2]],
+    palette: { style: 'sand', accent: '#ffd06a', floor: ['#6a5638', '#6e5a3b'], corridor: ['#4a3c28', '#4d3f2a'], wall: '#7a6440', wallTop: '#8e7650',
+      wallFace: '#a88a58', faceLine: '#957a4c', deco: 'rgba(255,210,120,0.35)' } },
+  { id: 'world_clock', name: '태엽 공장', boss: 'boss_clock_titan', waves: 2,
+    enemies: [['enemy_clockbomb_001', 3], ['enemy_ironknight_001', 3], ['enemy_gunbot_001', 3], ['enemy_teslatower_001', 2]],
+    palette: { style: 'metal', accent: '#7affff', floor: ['#3a3e44', '#3d4148'], corridor: ['#2a2d32', '#2c3035'], wall: '#4a4e56', wallTop: '#5c616a',
+      wallFace: '#7a808a', faceLine: '#686e78', deco: 'rgba(120,240,255,0.35)' } }
 ];
 const LOBBY_PALETTE = { style: 'wood', floor: ['#3a2e26', '#3d3129'], corridor: ['#3a2e26', '#3d3129'], wall: '#40354f', wallTop: '#4b3f5c',
   wallFace: '#6a5a82', faceLine: '#5a4c70', deco: null };

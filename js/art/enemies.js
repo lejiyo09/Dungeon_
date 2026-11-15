@@ -273,6 +273,53 @@ Object.assign(PIX, {
     '.....kkk........',
     '....kaaak.......'].concat(CASTER_BODY) },
 
+  // ── 5월드
+  scarab: { tint: '#c8a030', w: 16, h: 16, pal: { e: '#ff5a3a', n: '#3a2a1a' }, proc: (P) => {
+    for (const y of [8, 10, 12]) { P.line(3, y, 1, y + 2, 'n'); P.line(12, y, 14, y + 2, 'n'); }   // 다리
+    P.ell(8, 10, 5, 4, 'a'); P.ell(8, 12, 5, 2, 'b'); P.line(8, 7, 8, 14, 'b'); P.ell(6, 8, 1, 1, 'c'); // 등딱지
+    P.ell(8, 5, 3, 2, 'b'); P.line(8, 3, 8, 1, 'b'); P.px(7, 5, 'e'); P.px(9, 5, 'e');               // 머리·뿔
+  } },
+  skelarcher: { tint: '#e0d8c0', w: 16, h: 16, pal: { e: '#ff5a3a', d: '#7a5530', s: '#dddddd' }, proc: (P) => {
+    P.line(13, 2, 15, 7, 'd'); P.line(15, 7, 13, 12, 'd'); P.line(13, 2, 13, 12, 's');               // 활
+    P.ell(7, 4, 3, 3, 'a'); P.rect(5, 4, 2, 2, 'k'); P.rect(8, 4, 2, 2, 'k'); P.px(5, 4, 'e'); P.px(8, 4, 'e'); P.rect(6, 7, 3, 1, 'b'); // 해골
+    P.rect(6, 8, 3, 4, 'a'); P.line(5, 9, 9, 9, 'b'); P.line(5, 11, 9, 11, 'b');                     // 갈비뼈
+    P.line(9, 9, 12, 7, 'a'); P.line(5, 9, 3, 11, 'a'); P.line(6, 12, 5, 15, 'a'); P.line(8, 12, 9, 15, 'a');
+  } },
+  sandworm: { tint: '#a07a4a', w: 16, h: 16, pal: { t: '#f0e8d0', e: '#ffd84a', m: '#5a2a2a' }, proc: (P) => {
+    P.ell(3, 13, 2, 2, 'b'); P.ell(5, 11, 3, 3, 'a'); P.ell(8, 9, 3, 3, 'a'); P.ell(10, 7, 4, 4, 'a');  // 몸 마디
+    P.line(5, 9, 5, 13, 'b'); P.line(8, 7, 8, 11, 'b');
+    P.ell(11, 6, 2, 2, 'm'); P.px(10, 4, 't'); P.px(12, 4, 't'); P.px(13, 6, 't'); P.px(10, 8, 't'); P.px(13, 8, 't'); // 둥근 입·이빨
+    P.px(8, 4, 'e');
+  } },
+  sandmage: { tint: '#a0702a', pal: { x: '#ffd06a', n: '#7a5a3a', s: '#e8c890', y: '#ffd06a' }, rows: [
+    '................',
+    '....kkkkk.......',
+    '...kyyyyyk......'].concat(CASTER_BODY) },
+  // ── 6월드
+  clockbomb: { tint: '#8a6a3a', w: 16, h: 16, pal: { m: '#a8b0bc', e: '#ff5a3a', s: '#ffe36b', w: '#ffffff' }, proc: (P) => {
+    P.rect(7, 1, 2, 3, 'm'); P.rect(5, 1, 6, 1, 'm');                                     // 태엽 열쇠
+    P.ell(8, 9, 6, 5, 'a'); P.ell(8, 12, 5, 2, 'b'); P.ell(6, 7, 2, 1, 'c');
+    P.rect(5, 8, 2, 2, 'w'); P.rect(9, 8, 2, 2, 'w'); P.px(6, 9, 'e'); P.px(10, 9, 'e');     // 눈
+    P.line(3, 14, 5, 13, 'm'); P.line(13, 14, 11, 13, 'm'); P.px(13, 4, 's');               // 다리·불꽃
+  } },
+  ironknight: { tint: '#8a94a4', w: 16, h: 16, pal: { e: '#ff5a3a', r: '#c04040', m: '#d8dde4' }, proc: (P) => {
+    P.rect(4, 13, 3, 3, 'b'); P.rect(9, 13, 3, 3, 'b');                                     // 다리
+    P.rect(3, 7, 10, 7, 'a'); P.rect(3, 12, 10, 2, 'b'); P.rect(1, 8, 2, 5, 'a'); P.rect(13, 8, 2, 5, 'a'); // 몸·팔
+    P.rect(5, 1, 6, 6, 'a'); P.rect(5, 3, 6, 1, 'k'); P.px(6, 3, 'e'); P.px(9, 3, 'e'); P.rect(7, 0, 2, 1, 'r'); // 투구
+    P.line(15, 3, 15, 13, 'm'); P.px(4, 8, 'c'); P.px(4, 9, 'c');                           // 검
+  } },
+  gunbot: { tint: '#c0803a', w: 16, h: 16, pal: { e: '#7affff', g: '#3a3a44', m: '#a8b0bc' }, proc: (P) => {
+    P.line(8, 0, 8, 2, 'm'); P.px(8, 0, 'e');                                              // 안테나
+    P.rect(4, 3, 8, 6, 'a'); P.rect(5, 5, 6, 2, 'g'); P.px(6, 5, 'e'); P.px(9, 5, 'e');     // 머리
+    P.rect(5, 9, 6, 4, 'b'); P.rect(11, 9, 4, 2, 'g');                                     // 몸·총
+    P.rect(4, 13, 3, 2, 'g'); P.rect(9, 13, 3, 2, 'g');                                    // 바퀴
+  } },
+  teslatower: { tint: '#5a6a7a', w: 16, h: 16, pal: { e: '#7affff', w: '#ffffff', y: '#c08a30' }, proc: (P) => {
+    P.rect(3, 13, 10, 3, 'b'); P.rect(6, 4, 4, 10, 'a');                                   // 받침·기둥
+    for (const y of [6, 9, 12]) P.rect(5, y, 6, 1, 'y');                                   // 코일
+    P.ell(8, 3, 3, 3, 'e'); P.px(7, 2, 'w');                                               // 전기 구슬
+  } },
+
   // ── 보스 (32×32, 페이즈마다 a/b/c 색이 바뀜)
   boss_gel: { tint: '#c060c0', w: 32, h: 32, pal: { w: '#ffffff', y: '#ffd84a', o: '#c09020', r: '#ff3a5a' }, proc: (P) => {
     P.ell(6, 28, 2, 2, 'b'); P.ell(25, 28, 2, 2, 'b'); P.ell(15, 29, 1, 2, 'b');      // 흘러내리는 점액
@@ -312,5 +359,23 @@ Object.assign(PIX, {
     P.ell(16, 14, 13, 11, 'a'); P.ell(16, 21, 10, 3, 'b'); P.ell(9, 7, 2, 1, 'c');
     P.ell(16, 14, 9, 7, 'w'); P.line(7, 14, 10, 13, 'r'); P.line(25, 15, 22, 14, 'r'); P.line(9, 18, 11, 17, 'r');  // 흰자·핏줄
     P.ell(16, 14, 5, 5, 'h'); P.ell(16, 14, 2, 4, 'e'); P.px(14, 11, 'w'); P.px(15, 11, 'w');                   // 홍채·동공
+  } },
+  boss_sand: { tint: '#3a5a8a', w: 32, h: 32, pal: { y: '#e0b040', o: '#a07820', s: '#e8d0a0', e: '#7affff', w: '#ffffff' }, proc: (P) => {
+    P.ell(16, 18, 10, 13, 'y'); P.ell(16, 18, 8, 11, 'a');                                  // 석관 몸통 (금테)
+    for (const y of [20, 24, 28]) P.rect(9, y, 14, 1, 'y');                                // 금띠
+    P.rect(13, 16, 6, 3, 'o'); P.px(16, 17, 'e');                                          // 가슴 보석
+    P.rect(10, 3, 12, 11, 'y'); P.rect(8, 6, 3, 10, 'b'); P.rect(21, 6, 3, 10, 'b');        // 두건
+    P.rect(12, 5, 8, 8, 's'); P.rect(13, 8, 2, 1, 'k'); P.rect(17, 8, 2, 1, 'k'); P.px(13, 8, 'e'); P.px(18, 8, 'e'); // 가면·눈
+    P.rect(15, 11, 2, 3, 'o');                                                             // 턱수염
+    P.ell(4, 18, 3, 3, 's'); P.ell(28, 18, 3, 3, 's');                                     // 떠 있는 손
+  } },
+  boss_clock: { tint: '#8a6a3a', w: 32, h: 32, pal: { m: '#a8b0bc', g: '#5a6070', w: '#f0e8d0', e: '#7affff', r: '#d04040' }, proc: (P) => {
+    P.rect(9, 25, 5, 6, 'g'); P.rect(18, 25, 5, 6, 'g');                                   // 다리
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; P.rect(16 + Math.cos(a) * 13 - 1, 15 + Math.sin(a) * 13 - 1, 3, 3, 'b'); } // 톱니
+    P.ell(16, 15, 12, 12, 'a'); P.ell(16, 15, 8, 8, 'w');                                  // 몸통·시계판
+    for (let i = 0; i < 12; i += 3) { const a = i / 12 * Math.PI * 2; P.px(16 + Math.cos(a) * 7, 15 + Math.sin(a) * 7, 'g'); }
+    P.line(16, 15, 16, 9, 'k'); P.line(16, 15, 20, 17, 'r');                               // 바늘
+    P.ell(16, 15, 1, 1, 'e');
+    P.rect(0, 12, 4, 8, 'm'); P.rect(28, 12, 4, 8, 'm');                                   // 팔
   } }
 });

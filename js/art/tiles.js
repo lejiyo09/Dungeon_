@@ -1,7 +1,7 @@
 'use strict';
 // ════════════════════════════════════════════
 // 맵 아트: 월드 테마별 바닥·벽·엄폐물·상자, 바닥 장식, 방 장식, 횃불·용암 애니메이션
-//  테마(style): moss(숲) / ice(얼음) / basalt(용암) / void(공허) / wood(로비)
+//  테마(style): moss(숲) / ice(얼음) / basalt(용암) / void(공허) / sand(모래 무덤) / metal(태엽 공장) / wood(로비)
 //  타일마다 좌표 해시로 무작위를 정해서 같은 타일은 언제 다시 그려도 똑같이 나옴
 // ════════════════════════════════════════════
 function hash2(x, y, s = 0) {
@@ -25,6 +25,8 @@ const THEME = {
   ice: { torch: '#bfefff', ambient: [20, 40, 70, 0.3] },
   basalt: { lava: '#ff6a2a', lavaHi: '#ffc04a', torch: '#ff8a3a', ambient: [60, 10, 0, 0.32] },
   void: { rune: '#9a6ae0', star: '#d8c8ff', torch: '#c080ff', ambient: [20, 0, 40, 0.42] },
+  sand: { sand: '#c8a868', glyph: '#4a3a22', torch: '#ffc060', ambient: [50, 30, 0, 0.22] },
+  metal: { rivet: '#9aa2ac', stripe: '#d0a030', pipe: '#6a5a4a', torch: '#7affff', ambient: [0, 20, 30, 0.3] },
   wood: { torch: '#ffb040', ambient: [30, 15, 0, 0.18] },
   stone: { torch: '#ffb040', ambient: [0, 0, 0, 0.25] }
 };
@@ -69,6 +71,22 @@ function drawFloorTile(g, x, y, base, style, tx = 0, ty = 0) {
     if (h(1) < 0.06) { const rx = x + 5, ry = y + 4; pxs(g, T.rune, [[rx, ry, 5, 1], [rx + 2, ry, 1, 7], [rx, ry + 3, 1, 3], [rx + 4, ry + 4, 1, 3], [rx, ry + 6, 5, 1]]); }
     return;
   }
+  if (style === 'sand') { // 사암 석판 + 모래알 + 가끔 새겨진 문양
+    const T = THEME.sand;
+    if (tx % 2 === 0) pxs(g, hi, [[x, y, 1, TILE]]); else pxs(g, lo, [[x + 15, y, 1, TILE]]);
+    if (ty % 2 === 0) pxs(g, hi, [[x, y, TILE, 1]]); else pxs(g, lo, [[x, y + 15, TILE, 1]]);
+    for (let i = 0; i < 4; i++) pxs(g, i % 2 ? T.sand : sp, [[x + 2 + Math.floor(h(20 + i) * 12), y + 2 + Math.floor(h(30 + i) * 12)]]);
+    if (h(1) < 0.05) { const gx = x + 5, gy = y + 4; pxs(g, T.glyph, [[gx, gy, 6, 1], [gx, gy + 7, 6, 1], [gx + 1, gy + 2, 1, 4], [gx + 4, gy + 2, 1, 2], [gx + 3, gy + 4, 2, 1]]); }
+    return;
+  }
+  if (style === 'metal') { // 강철판 + 리벳 + 가끔 경고 줄무늬
+    const T = THEME.metal;
+    pxs(g, hi, [[x, y, TILE - 1, 1], [x, y, 1, TILE - 1]]); pxs(g, lo, [[x + 15, y, 1, TILE], [x, y + 15, TILE, 1]]);
+    pxs(g, T.rivet, [[x + 2, y + 2], [x + 13, y + 2], [x + 2, y + 13], [x + 13, y + 13]]);
+    if (h(1) < 0.05) for (let i = 0; i < 4; i++) pxs(g, i % 2 ? '#2a2a2a' : T.stripe, [[x + 3 + i * 3, y + 6, 3, 4]]);
+    else if (h(2) < 0.12) pxs(g, sp, [[x + 4, y + 7, 8, 1], [x + 7, y + 4, 1, 8]]);
+    return;
+  }
   // 기본 석판
   pxs(g, hi, [[x, y, TILE - 1, 1], [x, y, 1, TILE - 1]]); pxs(g, lo, [[x + 15, y, 1, TILE], [x, y + 15, TILE, 1]]);
 }
@@ -101,6 +119,12 @@ function drawWallTile(g, x, y, pal, face, style, tx = 0, ty = 0) {
     if (face) for (let i = 0; i < 3; i++) if (h(i + 3) < 0.55) { const ix = x + 2 + i * 5; pxs(g, '#dff4ff', [[ix, y + 16, 2, 2], [ix, y + 18, 1, 2]]); }
   } else if (style === 'basalt') { // 불씨 균열
     if (face && h(1) < 0.4) { let cx = x + 3 + Math.floor(h(2) * 8), cy = y + 9; for (let i = 0; i < 5; i++) { pxs(g, i % 2 ? '#ff6a2a' : '#c03a1a', [[cx, cy]]); cx += h(3 + i) < 0.5 ? 1 : -1; cy++; } }
+  } else if (style === 'sand') { // 모래가 쌓인 윗면
+    pxs(g, THEME.sand.sand, [[x, y, TILE, 2]]); pxs(g, shade(THEME.sand.sand, 1.15), [[x + Math.floor(h(1) * 12), y, 4, 1]]);
+    if (face && h(2) < 0.35) pxs(g, THEME.sand.glyph, [[x + 6, y + 9, 4, 1], [x + 7, y + 10, 2, 2]]);
+  } else if (style === 'metal') { // 파이프
+    if (face) { pxs(g, THEME.metal.pipe, [[x, y + 9, TILE, 2]]); pxs(g, shade(THEME.metal.pipe, 1.3), [[x, y + 9, TILE, 1]]); if (h(1) < 0.3) pxs(g, '#3a3a3a', [[x + 7, y + 8, 2, 4]]); }
+    pxs(g, THEME.metal.rivet, [[x + 3, y + 1], [x + 12, y + 1]]);
   } else if (style === 'void') { // 보랏빛 룬 띠
     if (face) { g.fillStyle = 'rgba(170,110,255,0.45)'; g.fillRect(x, y + 10, TILE, 1); if (h(1) < 0.3) pxs(g, '#c8a0ff', [[x + 6, y + 9, 3, 3]]); }
   }
@@ -120,6 +144,12 @@ function drawCover(g, x, y, style, tx, ty) {
     fillEll(g, x + 8, y + 13, 6, 2, '#2a2244');
     pxs(g, OUTLINE, [[x + 6, y + 1, 4, 14], [x + 4, y + 4, 8, 9]]); pxs(g, '#7a4ac0', [[x + 7, y + 2, 2, 12], [x + 5, y + 5, 6, 7]]);
     pxs(g, '#c8a0ff', [[x + 7, y + 3, 1, 5], [x + 5, y + 6, 1, 3]]); pxs(g, '#4a2a7a', [[x + 9, y + 7, 2, 5]]);
+  } else if (style === 'sand') { // 부서진 사암 기둥
+    pxs(g, OUTLINE, [[x + 3, y + 1, 10, 14]]); pxs(g, '#b89860', [[x + 4, y + 2, 8, 12]]); pxs(g, '#d0b078', [[x + 4, y + 2, 8, 2]]);
+    pxs(g, '#8a7040', [[x + 4, y + 12, 8, 2], [x + 7, y + 5, 1, 6]]); pxs(g, '#c8a868', [[x + 9, y + 1, 3, 1]]);
+  } else if (style === 'metal') { // 강철 블록
+    pxs(g, OUTLINE, [[x + 1, y + 2, 14, 13]]); pxs(g, '#6a707a', [[x + 2, y + 3, 12, 11]]); pxs(g, '#8a909a', [[x + 2, y + 3, 12, 2]]);
+    pxs(g, '#4a4e56', [[x + 2, y + 12, 12, 2]]); pxs(g, '#b0b8c0', [[x + 3, y + 6], [x + 12, y + 6], [x + 3, y + 10], [x + 12, y + 10]]);
   } else { // moss / 기본: 이끼 낀 바위
     fillEll(g, x + 8, y + 9, 7, 6, OUTLINE); fillEll(g, x + 8, y + 9, 6, 5, '#6a6f66'); fillEll(g, x + 7, y + 7, 4, 2, '#868b80');
     pxs(g, '#4a4e48', [[x + 3, y + 12, 10, 1]]);
@@ -139,6 +169,12 @@ function drawCrate(g, x, y, style) {
   } else if (style === 'void') {
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#2a2040', [[x + 3, y + 4, 10, 10]]); pxs(g, '#3a3058', [[x + 3, y + 4, 10, 2]]);
     pxs(g, '#b080ff', [[x + 6, y + 7, 4, 1], [x + 7, y + 7, 2, 5], [x + 6, y + 11, 4, 1]]);
+  } else if (style === 'sand') { // 토기 항아리
+    fillEll(g, x + 8, y + 10, 5, 5, OUTLINE); fillEll(g, x + 8, y + 10, 4, 4, '#c08050'); pxs(g, OUTLINE, [[x + 5, y + 2, 6, 4]]);
+    pxs(g, '#c08050', [[x + 6, y + 3, 4, 3]]); pxs(g, '#4a3a22', [[x + 4, y + 9, 8, 1]]); pxs(g, '#e0a070', [[x + 6, y + 7, 2, 2]]);
+  } else if (style === 'metal') { // 철통
+    pxs(g, OUTLINE, [[x + 3, y + 2, 10, 13]]); pxs(g, '#a05a2a', [[x + 4, y + 3, 8, 11]]); pxs(g, '#c07a3a', [[x + 4, y + 3, 3, 11]]);
+    pxs(g, '#5a3a20', [[x + 4, y + 6, 8, 1], [x + 4, y + 11, 8, 1]]); pxs(g, '#ffe36b', [[x + 7, y + 8, 2, 2]]);
   } else { // 나무 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#9a6a3a', [[x + 3, y + 4, 10, 10]]); pxs(g, '#b88450', [[x + 3, y + 4, 10, 1]]);
     pxs(g, '#6a4422', [[x + 3, y + 8, 10, 1]]); for (let i = 0; i < 8; i++) pxs(g, '#6a4422', [[x + 4 + i, y + 5 + i]]);

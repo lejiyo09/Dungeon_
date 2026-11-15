@@ -35,7 +35,7 @@ const RUNS = +(process.argv[2] || 8);
       g.save.unlocked = DATA_HEROES.map((h) => h.id); g.save.selected = DATA_HEROES[run % 4].id; g.save.loadout = null;
       g.startRun(); g.worldIdx = w; g.levelIdx = STAGES_PER_WORLD - 1; g.loadStage(); g.banner = null;
       const p = g.player;
-      p.weapons = LOAD[w].map((r) => new WeaponInstance(pickW(r))); p.slot = 0;
+      p.weapons = LOAD[Math.min(w, LOAD.length - 1)].map((r) => new WeaponInstance(pickW(r))); p.slot = 0;
       for (const bf of shuffled(DATA_BUFFS).slice(0, w)) bf.apply(p);
       p.maxHp += 15 * w; p.hp = p.maxHp; // 층이 늘어 더 많이 파밍한 상태를 근사
       const room = g.map.roomOf('boss'), c = g.map.tileCenter(room.cx, room.cy + 5);
@@ -60,7 +60,7 @@ const RUNS = +(process.argv[2] || 8);
     return res;
   }, RUNS);
   const to = await pg.evaluate(() => window.__timeouts || []); if (to.length) console.log('TIMEOUTS', JSON.stringify(to));
-  for (let w = 0; w < 4; w++) {
+  for (let w = 0; w < 8; w++) {
     const r = out.filter((x) => x.world === w); if (!r.length) continue;
     const won = r.filter((x) => x.won), died = r.filter((x) => x.died);
     const led = {}; let tot = 0;
