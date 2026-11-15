@@ -1,7 +1,7 @@
 'use strict';
 // ════════════════════════════════════════════
 // 맵 아트: 월드 테마별 바닥·벽·엄폐물·상자, 바닥 장식, 방 장식, 횃불·용암 애니메이션
-//  테마(style): moss(숲) / ice(얼음) / basalt(용암) / void(공허) / sand(모래 무덤) / metal(태엽 공장) / swamp(독 늪지) / bone(망자의 성) / wood(로비)
+//  테마(style): moss(숲) / ice(얼음) / basalt(용암) / void(공허) / sand(모래 무덤) / metal(태엽 공장) / swamp(독 늪지) / bone(망자의 성) / mine(수정 광산) / wood(로비)
 //  타일마다 좌표 해시로 무작위를 정해서 같은 타일은 언제 다시 그려도 똑같이 나옴
 // ════════════════════════════════════════════
 function hash2(x, y, s = 0) {
@@ -29,6 +29,7 @@ const THEME = {
   metal: { rivet: '#9aa2ac', stripe: '#d0a030', pipe: '#6a5a4a', torch: '#7affff', ambient: [0, 20, 30, 0.3] },
   swamp: { water: '#2a4a3a', waterHi: '#4a7a5a', reed: '#6a8a3a', torch: '#9aff5a', ambient: [10, 30, 10, 0.32] },
   bone: { bone: '#c8c0b0', rune: '#7affc0', torch: '#7affc0', ambient: [0, 20, 20, 0.4] },
+  mine: { crystal: '#ff7ad0', crystalHi: '#ffc0ec', rail: '#6a5a4a', torch: '#ffb040', ambient: [30, 10, 30, 0.34] },
   wood: { torch: '#ffb040', ambient: [30, 15, 0, 0.18] },
   stone: { torch: '#ffb040', ambient: [0, 0, 0, 0.25] }
 };
@@ -103,6 +104,13 @@ function drawFloorTile(g, x, y, base, style, tx = 0, ty = 0) {
     if (h(4) < 0.02) pxs(g, 'rgba(120,255,190,0.35)', [[x + 5, y + 5, 6, 1], [x + 5, y + 10, 6, 1], [x + 7, y + 5, 2, 6]]);
     return;
   }
+  if (style === 'mine') { // 거친 암반 + 수정 조각 + 가끔 광차 레일
+    const T = THEME.mine;
+    for (let i = 0; i < 4; i++) pxs(g, i % 2 ? lo : hi, [[x + 1 + Math.floor(h(20 + i) * 13), y + 1 + Math.floor(h(30 + i) * 13), 2, 1]]);
+    if (h(1) < 0.06) { const cx = x + 5 + Math.floor(h(2) * 6), cy = y + 6 + Math.floor(h(3) * 6); pxs(g, T.crystal, [[cx, cy - 3, 2, 4], [cx - 2, cy - 1, 2, 2], [cx + 2, cy - 2, 1, 3]]); pxs(g, T.crystalHi, [[cx, cy - 3, 1, 2]]); }
+    if (tx % 9 === 4) { pxs(g, T.rail, [[x + 4, y, 1, TILE], [x + 11, y, 1, TILE]]); pxs(g, shade(T.rail, 0.7), [[x + 3, y + 3, 10, 2], [x + 3, y + 11, 10, 2]]); }
+    return;
+  }
   // 기본 석판
   pxs(g, hi, [[x, y, TILE - 1, 1], [x, y, 1, TILE - 1]]); pxs(g, lo, [[x + 15, y, 1, TILE], [x, y + 15, TILE, 1]]);
 }
@@ -146,6 +154,9 @@ function drawWallTile(g, x, y, pal, face, style, tx = 0, ty = 0) {
     if (face && h(2) < 0.5) pxs(g, THEME.swamp.reed, [[x + 3 + Math.floor(h(3) * 10), y + 8, 1, 5 + Math.floor(h(4) * 4)]]);
   } else if (style === 'bone') { // 해골 장식
     if (face && h(1) < 0.25) { pxs(g, THEME.bone.bone, [[x + 6, y + 9, 4, 3]]); pxs(g, OUTLINE, [[x + 6, y + 10], [x + 9, y + 10]]); }
+  } else if (style === 'mine') { // 나무 버팀목 + 수정
+    if (face && tx % 4 === 0) pxs(g, '#7a5530', [[x + 2, y + 8, 3, 8]]);
+    if (h(1) < 0.2) pxs(g, THEME.mine.crystal, [[x + 9, y + 2, 2, 3]]);
   } else if (style === 'void') { // 보랏빛 룬 띠
     if (face) { g.fillStyle = 'rgba(170,110,255,0.45)'; g.fillRect(x, y + 10, TILE, 1); if (h(1) < 0.3) pxs(g, '#c8a0ff', [[x + 6, y + 9, 3, 3]]); }
   }
@@ -177,6 +188,10 @@ function drawCover(g, x, y, style, tx, ty) {
   } else if (style === 'bone') { // 묘비
     pxs(g, OUTLINE, [[x + 3, y + 2, 10, 13]]); pxs(g, '#6a6878', [[x + 4, y + 3, 8, 11]]); pxs(g, '#8a8898', [[x + 4, y + 3, 8, 2]]);
     pxs(g, '#4a4858', [[x + 7, y + 6, 2, 6], [x + 5, y + 8, 6, 1]]);
+  } else if (style === 'mine') { // 수정 덩어리
+    fillEll(g, x + 8, y + 12, 6, 2, '#2a2422');
+    pxs(g, OUTLINE, [[x + 6, y + 1, 4, 13], [x + 2, y + 5, 4, 9], [x + 10, y + 4, 4, 10]]);
+    pxs(g, '#c05aa0', [[x + 7, y + 2, 2, 11], [x + 3, y + 6, 2, 7], [x + 11, y + 5, 2, 8]]); pxs(g, '#ffc0ec', [[x + 7, y + 2, 1, 5], [x + 3, y + 6, 1, 3]]);
   } else { // moss / 기본: 이끼 낀 바위
     fillEll(g, x + 8, y + 9, 7, 6, OUTLINE); fillEll(g, x + 8, y + 9, 6, 5, '#6a6f66'); fillEll(g, x + 7, y + 7, 4, 2, '#868b80');
     pxs(g, '#4a4e48', [[x + 3, y + 12, 10, 1]]);
@@ -208,6 +223,9 @@ function drawCrate(g, x, y, style) {
   } else if (style === 'bone') { // 관
     pxs(g, OUTLINE, [[x + 4, y + 1, 8, 14]]); pxs(g, '#5a3a2a', [[x + 5, y + 2, 6, 12]]); pxs(g, '#7a5a3a', [[x + 5, y + 2, 6, 1]]);
     pxs(g, '#c8c0b0', [[x + 7, y + 4, 2, 6], [x + 6, y + 6, 4, 1]]);
+  } else if (style === 'mine') { // 광석 수레
+    pxs(g, OUTLINE, [[x + 2, y + 4, 12, 9]]); pxs(g, '#6a5a4a', [[x + 3, y + 5, 10, 7]]); pxs(g, '#c05aa0', [[x + 4, y + 4, 3, 2], [x + 8, y + 3, 3, 3]]);
+    pxs(g, OUTLINE, [[x + 3, y + 12, 3, 3], [x + 10, y + 12, 3, 3]]); pxs(g, '#8a8a94', [[x + 4, y + 13], [x + 11, y + 13]]);
   } else { // 나무 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#9a6a3a', [[x + 3, y + 4, 10, 10]]); pxs(g, '#b88450', [[x + 3, y + 4, 10, 1]]);
     pxs(g, '#6a4422', [[x + 3, y + 8, 10, 1]]); for (let i = 0; i < 8; i++) pxs(g, '#6a4422', [[x + 4 + i, y + 5 + i]]);

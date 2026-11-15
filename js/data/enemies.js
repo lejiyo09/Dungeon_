@@ -111,6 +111,20 @@ const DATA_ENEMIES = [
   { id: 'enemy_bonemage_001', name: '해골 마법사', sprite: 'bonemage', color: '#2a3a3a', aiType: 'caster',
     health: 95, damage: 15, moveSpeed: 30, hitboxHalf: 6, attackRange: 260, telegraphTime: 0.7,
     attackCooldown: 2.4, recoveryTime: 0.4, bulletSpeed: 110, bulletCount: 12, bulletColor: '#7affc0', rewardGold: 4 },
+  // ── 9월드: 수정 광산
+  { id: 'enemy_bat_001', name: '동굴 박쥐', sprite: 'bat', color: '#5a4a6a', aiType: 'melee_chase',
+    health: 90, damage: 15, moveSpeed: 100, hitboxHalf: 5, attackRange: 18, telegraphTime: 0.3,
+    attackCooldown: 1.1, recoveryTime: 0.35, rewardGold: 3 },
+  { id: 'enemy_mole_001', name: '두더지 광부', sprite: 'mole', color: '#7a5a4a', aiType: 'charger',
+    health: 170, damage: 18, moveSpeed: 50, hitboxHalf: 7, attackRange: 160, telegraphTime: 0.5,
+    dashSpeed: 340, dashDuration: 0.5, attackCooldown: 1.7, recoveryTime: 0.4, stunTime: 0.8, knockbackResist: 0.6, rewardGold: 4 },
+  { id: 'enemy_cspider_001', name: '수정 거미', sprite: 'cspider', color: '#c05aa0', aiType: 'ranged_kite',
+    health: 85, damage: 15, moveSpeed: 70, hitboxHalf: 6, preferredRange: 120, attackRange: 250,
+    telegraphTime: 0.45, attackCooldown: 1.8, recoveryTime: 0.3, bulletSpeed: 190, bulletCount: 3, bulletSpread: 0.16,
+    bulletColor: '#ff7ad0', rewardGold: 4 },
+  { id: 'enemy_cgolem_001', name: '수정 골렘', sprite: 'cgolem', color: '#6a5a6a', aiType: 'melee_chase',
+    health: 240, damage: 18, moveSpeed: 40, hitboxHalf: 8, attackRange: 26, telegraphTime: 0.6,
+    attackCooldown: 1.5, recoveryTime: 0.55, knockbackResist: 0.8, rewardGold: 5 },
   // ── 로비 허수아비
   { id: 'dummy_001', name: '훈련용 허수아비', sprite: 'dummy', aiType: 'dummy', dummy: true,
     health: 99999, damage: 0, moveSpeed: 0, hitboxHalf: 7, knockbackResist: 1, rewardGold: 0 },
@@ -196,5 +210,15 @@ const DATA_ENEMIES = [
       { type: 'summon', enemyId: 'enemy_skelknight_001', count: 2 }],
     phase2Patterns: [{ type: 'spiral', duration: 2.4, arms: 4, interval: 0.08, spin: -2.0, color: '#7affc0' },
       { type: 'radial', rings: 3, count: 24, color: '#c0ffe0' }],
-    finalPatterns: [{ type: 'vortex', name: '영원한 밤', duration: 4, pull: 44, arms: 3, interval: 0.1, spin: 2.2, color: '#7affc0' }] }
+    finalPatterns: [{ type: 'vortex', name: '영원한 밤', duration: 4, pull: 44, arms: 3, interval: 0.1, spin: 2.2, color: '#7affc0' }] },
+  { id: 'boss_crystal_queen', name: '수정 거미 여왕', title: '빛나는 동굴의 어미', sprite: 'boss_cqueen', color: '#5a3a5a', phaseColors: ['#5a3a5a', '#6a2a6a', '#8a1a7a'],
+    boss: true, aiType: 'boss', health: 1050, damage: 18, moveSpeed: 44, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.2, bulletSpeed: 130,
+    rewardGold: 190, patterns: [
+      { type: 'aimed', volleys: 4, count: 5, spread: 0.15, color: '#ff7ad0' },
+      { type: 'radial', rings: 3, count: 22, color: '#ffb0e8' },
+      { type: 'zones', count: 6, radius: 26, delay: 0.9, bullets: 5, spreadAround: 100, stagger: 0.1, color: '#ff7ad0' },
+      { type: 'summon', enemyId: 'enemy_cspider_001', count: 2 }],
+    phase2Patterns: [{ type: 'charge', dashes: 4, speed: 380, color: '#ffb0e8' },
+      { type: 'spiral', duration: 2.4, arms: 5, interval: 0.09, spin: 1.8, color: '#ff7ad0' }],
+    finalPatterns: [{ type: 'laser', name: '수정 굴절', beams: 6, spreadAng: Math.PI / 3, sweep: 0.9, duration: 2.4, width: 6, telegraph: 1.0, color: '#ff7ad0' }] }
 ];

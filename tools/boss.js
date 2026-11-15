@@ -61,7 +61,7 @@ const RUNS = +(process.argv[2] || 8);
     return res;
   }, RUNS);
   const to = await pg.evaluate(() => window.__timeouts || []); if (to.length) console.log('TIMEOUTS', JSON.stringify(to));
-  for (let w = 0; w < 8; w++) {
+  for (let w = 0; w < 32; w++) {
     const r = out.filter((x) => x.world === w); if (!r.length) continue;
     const won = r.filter((x) => x.won), died = r.filter((x) => x.died);
     const led = {}; let tot = 0;

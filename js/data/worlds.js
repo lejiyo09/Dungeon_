@@ -34,7 +34,11 @@ const DATA_WORLDS = [
   { id: 'world_bone', name: '망자의 성', boss: 'boss_lich_king', waves: 2,
     enemies: [['enemy_skelknight_001', 3], ['enemy_ghost_001', 3], ['enemy_skullbomb_001', 2], ['enemy_bonemage_001', 2]],
     palette: { style: 'bone', accent: '#7affc0', floor: ['#2a2830', '#2d2b34'], corridor: ['#1c1a22', '#1e1c24'], wall: '#3a3644', wallTop: '#4a4556',
-      wallFace: '#625c70', faceLine: '#544e62', deco: 'rgba(120,255,190,0.35)' } }
+      wallFace: '#625c70', faceLine: '#544e62', deco: 'rgba(120,255,190,0.35)' } },
+  { id: 'world_mine', name: '수정 광산', boss: 'boss_crystal_queen', waves: 2,
+    enemies: [['enemy_bat_001', 4], ['enemy_mole_001', 2], ['enemy_cspider_001', 3], ['enemy_cgolem_001', 2]],
+    palette: { style: 'mine', accent: '#ff7ad0', floor: ['#3a3230', '#3d3533'], corridor: ['#2a2422', '#2c2624'], wall: '#4a3e3a', wallTop: '#5a4c46',
+      wallFace: '#7a6860', faceLine: '#6a5a52', deco: 'rgba(255,120,210,0.35)' } }
 ];
 const LOBBY_PALETTE = { style: 'wood', floor: ['#3a2e26', '#3d3129'], corridor: ['#3a2e26', '#3d3129'], wall: '#40354f', wallTop: '#4b3f5c',
   wallFace: '#6a5a82', faceLine: '#5a4c70', deco: null };
