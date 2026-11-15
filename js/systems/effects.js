@@ -74,6 +74,7 @@ class Effects {
     for (let i = 0; i < 3; i++) this.part(x + randInt(-4, 4), y, randInt(-8, 8), -30 - Math.random() * 30, { color: '#dfe8ff', life: 0.7, size: 2.5, size2: 0, drag: 1, add: true, shape: 'circle' });
     this.part(x, y, 0, 0, { color: '#ffffff', life: 0.1, size: size * 0.9, size2: 0, add: true, shape: 'circle' });
   }
+  beamline(x, y, x1, y1, w, color) { this.push({ kind: 'beamline', x, y, x1, y1, w, color, t: 0, life: 0.3, add: true }); }
   afterimage(img, x, y, w, h) { this.push({ kind: 'ghost', img, x, y, w, h, t: 0, life: 0.22 }); } // 대시 잔상
   dust(x, y) { for (let i = 0; i < 2; i++) this.part(x + randInt(-3, 3), y, randInt(-12, 12), -randInt(4, 14), { color: 'rgba(200,190,170,0.5)', life: 0.35, size: 1.5, size2: 3, drag: 4, shape: 'circle' }); }
   sparkle(x, y, color) { // 획득 반짝임
@@ -147,6 +148,10 @@ class Effects {
         ctx.fillStyle = fx.color || '#ffb040'; ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(13, 0); ctx.lineTo(0, 2); ctx.closePath(); ctx.fill();
         ctx.restore(); break;
       }
+      case 'beamline':
+        ctx.strokeStyle = fx.color; ctx.lineWidth = fx.w * 2 * k + 1; ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x1, fx.y1); ctx.stroke();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1, fx.w * 0.7 * k); ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x1, fx.y1); ctx.stroke();
+        ctx.lineWidth = 1; break;
       case 'ghost': ctx.globalAlpha = 0.45 * k; ctx.drawImage(fx.img, Math.round(fx.x), Math.round(fx.y), fx.w, fx.h); break;
       case 'slash': {
         const a0 = fx.ang - fx.arc / 2, a1 = fx.ang + fx.arc / 2;

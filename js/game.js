@@ -55,7 +55,7 @@ class Game {
   resetWorldLists(map) {
     this.map = map;
     this.enemies = []; this.projectiles = []; this.enemyBullets = []; this.pickups = [];
-    this.props = []; this.portals = []; this.hazards = []; this.allies = [];
+    this.props = []; this.portals = []; this.hazards = []; this.allies = []; this.zones = [];
     this.activeRoom = null; this.effects.clear(); this.interactTarget = null;
     this.flow = new Int16Array(map.width * map.height).fill(-1); this.flowTile = -1;
   }
@@ -231,12 +231,14 @@ class Game {
     for (const pk of this.pickups) pk.update(dt, this);
     for (const h of this.hazards) h.update(dt, this);
     for (const a of this.allies) a.update(dt, this);
+    for (const z of this.zones) z.update(dt, this);
     for (const po of this.portals) po.t += dt;
     this.projectiles = this.projectiles.filter((x) => x.alive);
     this.enemyBullets = this.enemyBullets.filter((x) => x.alive);
     this.pickups = this.pickups.filter((x) => x.alive);
     this.hazards = this.hazards.filter((x) => x.alive);
     this.allies = this.allies.filter((x) => x.alive);
+    this.zones = this.zones.filter((x) => x.alive);
     this.enemies = this.enemies.filter((e) => !e.removed);
     this.effects.update(dt);
     this.shake = Math.max(0, this.shake - dt);
@@ -596,6 +598,17 @@ class Game {
     }
     return dt * 0.25;
   }
+  // 충전 광선포: 조준 방향 일직선(벽까지)의 모든 적에게 피해
+  fireBeamShot(p, def, k) {
+    const sx = p.x + p.aim.x * 10, sy = p.y + 1 + p.aim.y * 10, L = def.range;
+    const wt = sweepWall(sx, sy, sx + p.aim.x * L, sy + p.aim.y * L, this.map, 3), len = wt < 0 ? L : wt * L;
+    const ex = sx + p.aim.x * len, ey = sy + p.aim.y * len, w = def.beamShot.width * (0.5 + 0.5 * k);
+    for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, ex, ey, e.x, e.y, e.radius + w) >= 0)
+      this.damageEnemy(e, { damage: def.damage * k, mods: p.mods, knockback: def.knockback }, p.aim.x, p.aim.y);
+    this.hitTile(ex + p.aim.x * 3, ey + p.aim.y * 3);
+    this.effects.beamline(sx, sy, ex, ey, w, def.bulletColor); this.effects.impact(ex, ey, def.bulletColor, Math.atan2(p.aim.y, p.aim.x));
+    this.addShake(0.15, 3 * k); p.recoil = 1; SFX.play('heavy');
+  }
   // ── 부서지는 상자
   breakCrate(tx, ty) {
     if (this.map.get(tx, ty) !== T_CRATE) return false;
@@ -769,6 +782,7 @@ class Game {
     this.map.renderAnim(ctx, this.time, { x: cx, y: cy });
     for (const po of this.portals) po.render(ctx);
     for (const h of this.hazards) h.render(ctx);
+    for (const z of this.zones) z.render(ctx);
     for (const o of this.props) o.render(ctx, this);
     for (const pk of this.pickups) pk.render(ctx);
     for (const e of this.enemies) e.renderTelegraph(ctx);

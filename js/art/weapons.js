@@ -52,7 +52,22 @@ Object.assign(WPIX, {
   shortbow: { auto: true, p: [3, 4], rows: ['.a....', '.sa...', '.s.a..', '.s.a..', '.s.a..', '.s.a..', '.s.a..', '.sa...', '.a....'] },
   frostbow: { auto: true, p: [5, 6], rows: ['.oo....', '.sa....', '.s.a...', '.s..a..', '.s...a.', '.s...a.', '.s...oo', '.s...a.', '.s...a.', '.s..a..', '.s.a...', '.sa....', '.oo....'] },
   triplebow: { auto: true, p: [5, 6], rows: ['.a......', '.sa.a...', '.s.a.a..', '.s..a.a.', '.s...a.a', '.s...a.a', '.s...a.a', '.s...a.a', '.s...a.a', '.s..a.a.', '.s.a.a..', '.sa.a...', '.a......'] },
-  thunderbow: { auto: true, p: [3, 3], rows: ['.........o.', '........ao.', '.dddddddda.', 'nnnnnnnnna.', '.dd.....ao.', '..d......o.'] }
+  thunderbow: { auto: true, p: [3, 3], rows: ['.........o.', '........ao.', '.dddddddda.', 'nnnnnnnnna.', '.dd.....ao.', '..d......o.'] },
+  // ── 특수 메커닉 무기
+  bubblegun: { auto: true, p: [2, 3], rows: ['...oooo...', '..owwoo...', '.aaaaaaaao', '.accccccaa', '.aa.......', '.aa.......'] },
+  javelin: { auto: true, p: [6, 1], rows: ['....................m.', 'dddddddddddddddddddmmm', '....................m.'] },
+  molotov: { auto: true, p: [2, 5], rows: ['....oo', '....ro', '...nn.', '..aaaa', '.aaaaa', '.acaaa', '.aaaaa', '..aaa.'] },
+  grenade: { auto: true, p: [2, 3], rows: ['..nn.', '.naan', 'aaaaa', 'acaaa', 'aaaaa', '.aaa.'] },
+  chakram: { auto: true, p: [4, 4], rows: ['..aaaa..', '.a....a.', 'a..cc..a', 'a.c..c.a', 'a.c..c.a', 'a..cc..a', '.a....a.', '..aaaa..'] },
+  orbstaff: { auto: true, p: [3, 2], rows: ['..........o..', '.........o.o.', 'dddddddddd.wo', '.........o.o.', '..........o..'] },
+  ringgun: { auto: true, p: [2, 6], rows: ['..nnnnnn...', '.naaaaaan..', 'naaoaoaaann', 'naoaaaoaamm', 'naaoaoaaann', '.naaaaaan..', '..gg.......', '..gg.......'] },
+  firework: { auto: true, p: [2, 4], rows: ['......rrr...', '..aaaaaaaao.', '.aaaaaaaarrr', '.abbbbbbaa..', '..gg........', '..gg........'] },
+  freezeray: { auto: true, p: [2, 3], rows: ['.ccccccc.oo.', '.aaaaaaanoww', '.bbbbbbbnoo.', '.gg.........', '.gg.........'] },
+  wavesword: { auto: true, p: [1, 2], rows: ['..yy...........', '..yy.cccccccc..', 'ggyyyaaaaaaaaao', '..yy.bbbbbbbb..', '..yy...........'] },
+  shield: { auto: true, p: [1, 4], rows: ['....aa.', '...acca', '...acca', '...acya', 'gggaayy', '...acya', '...acca', '...acca', '....aa.'] },
+  dronectl: { auto: true, p: [2, 5], rows: ['......o.', '......n.', '.aaaaaan', '.aroaraa', '.aaaaaaa', '.gg.....', '.gg.....'] },
+  chargebeam: { auto: true, p: [4, 5], rows: ['....nnnnnnnnnnn.', '..aaaaaaaaaaaaoo', '.acccoocccccaaoo', '.aaaaaaaaaaaaaoo', '..bbbbbbbbbbbb..', '....gg..........', '....gg..........'] },
+  headshot: { auto: true, p: [5, 3], rows: ['.....nnnnnnn........', '.....nooooon........', 'bbbbaaaaaaaaaaaaaaaan', 'bb...aanbb..........', '.....gg.............', '.....gg.............'] }
 });
 
 Object.assign(WEAPON_SPRITE, {
@@ -66,7 +81,10 @@ Object.assign(WEAPON_SPRITE, {
   weapon_firestaff_001: 'firestaff', weapon_windstaff_001: 'windstaff', weapon_void_001: 'voidstaff',
   weapon_rapier_001: 'rapier', weapon_halberd_001: 'halberd',
   weapon_longbow_001: 'longbow', weapon_shortbow_001: 'shortbow', weapon_frostbow_001: 'frostbow', weapon_triplebow_001: 'triplebow',
-  weapon_thunderbow_001: 'thunderbow'
+  weapon_thunderbow_001: 'thunderbow', weapon_bubble_001: 'bubblegun', weapon_javelin_001: 'javelin', weapon_molotov_001: 'molotov',
+  weapon_grenade_001: 'grenade', weapon_chakram_001: 'chakram', weapon_orbstaff_001: 'orbstaff', weapon_ringgun_001: 'ringgun',
+  weapon_firework_001: 'firework', weapon_freezeray_001: 'freezeray', weapon_wavesword_001: 'wavesword', weapon_shield_001: 'shield',
+  weapon_drone_001: 'dronectl', weapon_chargebeam_001: 'chargebeam', weapon_headshot_001: 'headshot'
 });
 
 // auto 외곽선: 사방 1px 여백을 두고, 그림에 맞닿은 빈칸을 외곽선으로
