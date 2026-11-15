@@ -169,6 +169,16 @@ class HUD {
         hudText(ctx, b.desc, r.x + r.w / 2, r.y + 50, '#ccc', 'center', 9);
       });
       hudText(ctx, '클릭 또는 1 / 2 / 3', VIEW_W / 2, 200, '#888', 'center', 9);
+    } else if (o.type === 'resume') {
+      const r = game.save.run, hero = r && game.data.heroes.get(r.hero), W = r && DATA_WORLDS[r.worldIdx];
+      hudText(ctx, '진행 중인 탐험이 있습니다', VIEW_W / 2, 70, '#7ad0ff', 'center', 16);
+      if (r && W) {
+        hudText(ctx, `${r.worldIdx + 1}-${r.levelIdx + 1} ${W.name}   ·   ${hero ? hero.name : '?'}`, VIEW_W / 2, 100, '#fff', 'center', 11);
+        hudText(ctx, `체력 ${Math.round(r.p.hp)}/${r.p.maxHp}   ·   무기 ${r.p.weapons.map((id) => (game.data.weapons.get(id) || { name: '?' }).name).join(', ')}   ·   골드 ${r.gold}`, VIEW_W / 2, 118, '#ccc', 'center', 9);
+        hudText(ctx, '그 스테이지의 시작 지점부터 다시 시작합니다', VIEW_W / 2, 134, '#888', 'center', 8);
+      }
+      hudText(ctx, 'Enter: 이어하기', VIEW_W / 2, 164, '#ffd84a', 'center', 11);
+      hudText(ctx, 'N: 새로 시작 (저장된 탐험은 사라집니다)   ·   Esc: 로비에 머무르기', VIEW_W / 2, 182, '#aaa', 'center', 9);
     } else if (o.type === 'story') {
       if (o.sanctum) { // 형체 없는 빛 (전설의 존재의 외형은 미정)
         const k = Math.min(1, (o.i + o.t) / 3), cx = VIEW_W / 2, cy = 92, R = 30 + 50 * k;

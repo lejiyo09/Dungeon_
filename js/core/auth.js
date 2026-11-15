@@ -41,6 +41,15 @@ const Auth = {
     this.saveList(this.list().filter((x) => x.id !== p.id));
     try { localStorage.removeItem(this.saveKeyOf(p)); } catch (e) { /* 무시 */ }
   },
+  // 이 기기에서 다음부터 로그인 화면 없이 바로 시작할 계정 (로그아웃하면 해제)
+  AUTO_KEY: 'project_dungeon_autologin_v1',
+  getAuto() { try { const id = localStorage.getItem(this.AUTO_KEY); return id ? this.list().find((p) => p.id === id) || null : null; } catch (e) { return null; } },
+  setAuto(p) { try { if (p) localStorage.setItem(this.AUTO_KEY, p.id); else localStorage.removeItem(this.AUTO_KEY); } catch (e) { /* 무시 */ } },
+  // 계정 목록에 보여줄 진행 요약
+  summary(p) {
+    try { const s = JSON.parse(localStorage.getItem(this.saveKeyOf(p)) || 'null'); if (!s) return null;
+      return { bank: s.bank || 0, best: s.bestStage || 0, run: s.run ? `${s.run.worldIdx + 1}-${s.run.levelIdx + 1}` : null, clears: s.clears || 0 }; } catch (e) { return null; }
+  },
   touch() {
     if (!this.current) return;
     const all = this.list(), me = all.find((x) => x.id === this.current.id);

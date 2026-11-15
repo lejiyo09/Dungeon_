@@ -103,6 +103,29 @@ class Game {
     this.loadStage();
     if (!this.save.prologueSeen) this.showPrologue();
   }
+  // ── 이어하기: 스테이지 시작 시점의 런 상태 (맵은 그 스테이지를 새로 생성)
+  snapshotRun() {
+    const p = this.player;
+    return { v: 1, t: Date.now(), hero: p.hero.id, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills,
+      p: { maxHp: p.maxHp, hp: p.hp, maxShield: p.maxShield, maxEnergy: p.maxEnergy, energy: p.energy, moveSpeed: p.moveSpeed,
+        dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction,
+        stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), slot: p.slot,
+        treasure: p.treasure ? p.treasure.id : null } };
+  }
+  resumeRun() {
+    const r = this.save.run, hero = r && this.data.heroes.get(r.hero);
+    if (!r || !hero || r.worldIdx >= DATA_WORLDS.length) { this.save.run = null; writeSave(this.save); this.startRun(); return; }
+    this.mode = 'dungeon'; this.worldIdx = r.worldIdx; this.levelIdx = r.levelIdx; this.gold = r.gold; this.kills = r.kills;
+    const p = this.player = new Player(0, 0, hero, this.data.base), s = r.p;
+    for (const k of ['maxHp', 'hp', 'maxShield', 'maxEnergy', 'energy', 'moveSpeed', 'dashCdMax', 'skillCdMax', 'vampire', 'damageReduction']) if (typeof s[k] === 'number') p[k] = s[k];
+    Object.assign(p.stats, s.stats); p.buffs = s.buffs || [];
+    p.weapons = (s.weapons || []).filter((id) => this.data.weapons.get(id)).map((id) => new WeaponInstance(this.data.weapons.get(id)));
+    if (!p.weapons.length) p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
+    p.slot = Math.min(s.slot || 0, p.weapons.length - 1);
+    p.treasure = DATA_TREASURES.find((t) => t.id === s.treasure) || null; // 보구 효과는 위 능력치에 이미 반영돼 있음
+    this.loadStage();
+    this.showBanner(`이어하기 · ${this.worldIdx + 1}-${this.levelIdx + 1} ${DATA_WORLDS[this.worldIdx].name}`, '스테이지 시작 지점부터 다시 시작합니다', '#7ad0ff');
+  }
   // 프롤로그 (첫 던전 입장 시 1회, 로비 일시정지 메뉴에서 다시 보기)
   showPrologue() { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => { this.save.prologueSeen = true; writeSave(this.save); } }; }
   // 기원의 성역 깊은 곳: 전설의 존재와 마주함 → 소원이 드러남 → 보구 선택
@@ -134,7 +157,8 @@ class Game {
     if (shop) this.stockShop(shop);
     const ex = map.roomOf('exit');
     if (ex) { const c = map.tileCenter(ex.cx, ex.cy); this.portals.push(new Portal(c.x, c.y, () => this.advanceStage(), '다음 스테이지')); }
-    this.save.bestStage = Math.max(this.save.bestStage, this.stageIndex + 1); writeSave(this.save);
+    this.save.bestStage = Math.max(this.save.bestStage, this.stageIndex + 1);
+    this.save.run = this.snapshotRun(); writeSave(this.save); // 이어하기용: 이 스테이지 시작 지점을 저장
     this.snapCamera();
     this.showBanner(`${this.worldIdx + 1}-${this.levelIdx + 1}  ${W.name}`, this.isBossStage ? '보스가 기다리고 있습니다' : '출구 포탈을 찾으세요');
   }
@@ -156,7 +180,7 @@ class Game {
     });
   }
   endRun(victory) {
-    SFX.stopMusic();
+    SFX.stopMusic(); this.save.run = null; writeSave(this.save);
     SFX.play(victory ? 'victory' : 'hurt');
     // 로비 재화: 클리어한 스테이지 수 · 쓰러뜨린 필드 보스 수 · 승리 보너스 (던전 골드는 런과 함께 사라짐)
     const stages = this.stageIndex + (victory ? 1 : 0), bosses = this.worldIdx + (victory ? 1 : 0);
@@ -178,10 +202,11 @@ class Game {
     Auth.current = profile; this.profile = profile;
     this.save = loadSave(); SFX.setMuted(!!this.save.muted);
     this.locked = false; this.enterLobby();
+    if (this.save.run) this.overlay = { type: 'resume' };
     this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다', '#ffd84a');
   }
   logout() {
-    writeSave(this.save); Auth.current = null; this.profile = null;
+    writeSave(this.save); Auth.current = null; this.profile = null; Auth.setAuto(null);
     this.overlay = null; this.locked = true; this.enterLobby();
     if (typeof LoginUI !== 'undefined') LoginUI.show(this); // const 전역은 window 속성이 아니므로 typeof로 확인
   }
@@ -269,7 +294,10 @@ class Game {
       if (this.mode === 'dungeon') this.updateRooms();
       this.updateInteraction(input);
       for (const po of this.portals)
-        if (Math.hypot(p.x - po.x, p.y - po.y) < 12) { this.transition = { t: 0, swapped: false, action: po.onEnter }; break; }
+        if (Math.hypot(p.x - po.x, p.y - po.y) < 12) {
+          if (this.mode === 'lobby' && this.save.run) { this.overlay = { type: 'resume' }; p.y += 22; break; } // 진행 중인 탐험이 있으면 이어하기 물음
+          this.transition = { t: 0, swapped: false, action: po.onEnter }; break;
+        }
     } else if (p.deathTimer > 1 && !this.overlay) {
       SFX.stopMusic();
       this.endRun(false);
@@ -331,6 +359,10 @@ class Game {
       }
     } else if (o.type === 'result') {
       if (input.wasPressed('Enter')) this.finishResult();
+    } else if (o.type === 'resume') {
+      if (input.wasPressed('Enter')) { this.overlay = null; this.transition = { t: 0, swapped: false, action: () => this.resumeRun() }; }
+      else if (input.wasPressed('KeyN')) { this.overlay = null; this.save.run = null; writeSave(this.save); this.transition = { t: 0, swapped: false, action: () => this.startRun() }; }
+      else if (input.wasPressed('Escape')) this.overlay = null;
     } else if (o.type === 'story') { // 한 줄씩: 클릭/Enter/Space 다음, Esc 건너뛰기
       o.t += STEP;
       const next = input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('Mouse0');
