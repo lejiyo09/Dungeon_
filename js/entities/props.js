@@ -69,7 +69,7 @@ class ShopItem {
 }
 
 class Pedestal {
-  constructor(x, y, hero) { this.x = x; this.y = y; this.hero = hero; this.radius = 20; this.seed = Math.random() * 3; this.t = 0; }
+  constructor(x, y, hero, row = 0) { this.x = x; this.y = y; this.hero = hero; this.row = row; this.radius = 18; this.seed = Math.random() * 3; this.t = 0; }
   label(game) {
     const s = game.save;
     if (s.selected === this.hero.id) return null;
@@ -91,9 +91,10 @@ class Pedestal {
       drawHero(ctx, this.hero, x, y - 3, 1, 0, false);
       ctx.globalAlpha = 1;
     }
-    hudText(ctx, this.hero.name, x, y - 28, selected ? '#ffd84a' : unlocked ? '#fff' : '#888', 'center', 8);
-    if (!unlocked) hudText(ctx, `잠김 · ${this.hero.price}골드`, x, y + 11, '#ffd84a', 'center', 8);
-    else if (selected) hudText(ctx, '선택됨', x, y + 11, '#ffd84a', 'center', 8);
+    const up = this.row ? 10 : 0; // 이웃 단상과 글자가 겹치지 않게 한 칸씩 위아래로 엇갈림
+    hudText(ctx, this.hero.name, x, y - 28 - up, selected ? '#ffd84a' : unlocked ? '#fff' : '#888', 'center', 8);
+    if (!unlocked) hudText(ctx, `${this.hero.price}골드`, x, y + 11 + up, '#ffd84a', 'center', 8);
+    else if (selected) hudText(ctx, '선택됨', x, y + 11 + up, '#ffd84a', 'center', 8);
   }
 }
 

@@ -111,7 +111,76 @@ const HERO_SPRITES = {
     '...kbbbbbbbbk...'],
     legs: [
       ['....kllkkllk....', '....kddkkddk....', '...kkkk..kkkk...'],
-      ['....kllk.kllk...', '...kddk...kddk..', '..kkkk....kkkk..']] }
+      ['....kllk.kllk...', '...kddk...kddk..', '..kkkk....kkkk..']] },
+  // ── 추가 캐릭터: 암살자(두건·복면·붉은 목도리) / 사제(금테 흰 로브·십자) / 광전사(뿔 투구·수염·모피) / 드루이드(사슴뿔 두건·녹색 망토)
+  assassin: { pal: { e: '#ff5a7a' }, rows: [
+    '................',
+    '.....kkkkkk.....',
+    '....kaaaaaak....',
+    '...kaaaaaaaak...',
+    '...kakkkkkkak...',
+    '...kaksesesak...',
+    '...kakkkkkkak...',
+    '..krrrrrrrrrrk..',
+    '.kaarrrraaaaaak.',
+    '.kbaaaaaaaaaabk.',
+    '.kskaaaggaaaksk.',
+    '..kbbbbbbbbbbk..',
+    '...kbbkkkkbbk...'],
+    legs: [
+      ['....kllkkllk....', '....kllkkllk....', '...kkkk..kkkk...'],
+      ['....kllk.kllk...', '...kllk...kllk..', '..kkkk....kkkk..']] },
+  priest: { pal: { e: '#3a5aa0' }, rows: [
+    '................',
+    '......kkkk......',
+    '.....kaaaak.....',
+    '....kaaaaaak....',
+    '...kaayyyyaak...',
+    '...kakseseskak..',
+    '...kaksssssak...',
+    '..kaaaaaaaaaak..',
+    '.kaaaaayyaaaaak.',
+    '.kaaayyyyyyaaak.',
+    '.kskaaayyaaaksk.',
+    '.kaaaaayyaaaaak.',
+    '.kbaaaaaaaaaabk.'],
+    legs: [
+      ['.kbbbbbbbbbbbbk.', '..kkkkkkkkkkkk..'],
+      ['..kbbbbbbbbbbk..', '...kkkkkkkkkkk..']] },
+  berserker: { pal: { w: '#f0e8d0', e: '#ffd84a' }, rows: [
+    '.kwk........kwk.',
+    '.kwk.kkkkkk.kwk.',
+    '..kwkmmmmmmkwk..',
+    '...kmmmmmmmmk...',
+    '...kmkkkkkkmk...',
+    '...kssesesssk...',
+    '...knnsssnnnk...',
+    '..knnnnnnnnnnk..',
+    '.ksknnnnnnnnksk.',
+    '.kskaaannaaaksk.',
+    '.kskaaaaaaaaksk.',
+    '.kssbrrrrrrbssk.',
+    '..kbbbbbbbbbbk..'],
+    legs: [
+      ['....kllkkllk....', '....kllkkllk....', '...kkkk..kkkk...'],
+      ['....kllk.kllk...', '...kllk...kllk..', '..kkkk....kkkk..']] },
+  druid: { pal: { y: '#d0a040' }, rows: [
+    '..kk........kk..',
+    '..knk......knk..',
+    '...knkkkkkkknk..',
+    '....kaaaaaaak...',
+    '...kaaaaaaaaak..',
+    '...kaksesesak...',
+    '...kaksssssak...',
+    '..kaaaayyaaaak..',
+    '.kaaaaaaaaaaaak.',
+    '.kaacaaaaaacaak.',
+    '.kskaaaaaaaaksk.',
+    '.kbaaaaaaaaaabk.',
+    '..kbbbbbbbbbbk..'],
+    legs: [
+      ['....kllkkllk....', '....kllkkllk....', '...kkkk..kkkk...'],
+      ['....kllk.kllk...', '...kllk...kllk..', '..kkkk....kkkk..']] }
 };
 
 const PIX = {

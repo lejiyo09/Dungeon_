@@ -364,3 +364,51 @@ class Strike {
     }
   }
 }
+
+// 사제 스킬 '성역': 안에 있으면 회복, 들어오는 적 탄 소멸
+class Sanctuary {
+  constructor(x, y, owner) { this.x = x; this.y = y; this.owner = owner; this.r = 54; this.life = 6; this.t = 0; this.heal = 0; this.alive = true; }
+  update(dt, world) {
+    this.t += dt;
+    if (this.t >= this.life) { this.alive = false; return; }
+    const p = this.owner;
+    if (p.state !== 'DEAD' && Math.hypot(p.x - this.x, p.y - this.y) < this.r) {
+      this.heal += 4 * dt;
+      if (this.heal >= 1) { const n = Math.floor(this.heal); this.heal -= n; p.hp = Math.min(p.maxHp, p.hp + n); if (Math.random() < 0.5) world.effects.heal(p.x, p.y); }
+    }
+    for (const b of world.enemyBullets) if (b.alive && Math.hypot(b.x - this.x, b.y - this.y) < this.r) { b.alive = false; world.effects.spark(b.x, b.y, '#ffe9a0'); }
+  }
+  render(ctx) {
+    const k = Math.min(1, (this.life - this.t) / 0.5, this.t / 0.2), pulse = 0.5 + 0.5 * Math.sin(this.t * 4);
+    ctx.globalAlpha = (0.12 + 0.05 * pulse) * k; ctx.fillStyle = '#ffe9a0';
+    ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r, this.r * 0.7, 0, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.7 * k; ctx.strokeStyle = '#ffe9a0';
+    ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r, this.r * 0.7, 0, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.4 * k; ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 0.6, this.r * 0.42, 0, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+// 드루이드 스킬 '영혼 늑대': 가까운 적에게 달려가 물어뜯음
+class SpiritWolf {
+  constructor(x, y, owner) { this.x = x; this.y = y; this.owner = owner; this.half = 5; this.life = 10; this.cd = 0; this.face = 1; this.t = 0; this.alive = true; }
+  update(dt, world) {
+    this.t += dt; this.life -= dt; this.cd -= dt;
+    if (this.life <= 0 || this.owner.state === 'DEAD') { this.alive = false; world.effects.burst(this.x, this.y, '#9ad8ff', 8); return; }
+    let best = null, bd = 220;
+    for (const e of world.enemies) { if (!e.targetable || e.def.dummy && world.mode !== 'lobby') continue; const d = Math.hypot(e.x - this.x, e.y - this.y); if (d < bd) { bd = d; best = e; } }
+    const tx = best ? best.x : this.owner.x + this.face * -14, ty = best ? best.y : this.owner.y + 6;
+    const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy) || 1;
+    if (d > (best ? best.radius + 6 : 10)) { const v = 150 * dt; moveAndCollide(this, dx / d * v, dy / d * v, world.map); if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1; }
+    if (best && d < best.radius + 10 && this.cd <= 0) {
+      this.cd = 0.5;
+      world.damageEnemy(best, { damage: 14, mods: this.owner.mods, knockback: 3 }, dx / d, dy / d);
+      world.effects.slash(this.x, this.y, Math.atan2(dy, dx), 10, 1.2, '#9ad8ff');
+    }
+  }
+  render(ctx) {
+    if (this.life < 2 && Math.floor(this.life * 10) % 2 === 0) return;
+    const spr = getSprite('spiritwolf');
+    ctx.globalAlpha = 0.85; drawSprite(ctx, spr, Math.round(this.x), Math.round(this.y) + 7, { flip: this.face < 0 }); ctx.globalAlpha = 1;
+  }
+}

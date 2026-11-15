@@ -389,6 +389,12 @@ Object.assign(PIX, {
     P.rect(5, 8, 6, 1, 'k'); P.px(6, 8, 'e'); P.px(9, 8, 'e'); P.rect(3, 12, 10, 1, 'b');
   } },
 
+  // 드루이드 소환수
+  spiritwolf: { tint: '#9ad8ff', w: 16, h: 12, pal: { e: '#ffffff', w: '#e8f8ff' }, proc: (P) => {
+    P.line(0, 4, 3, 6, 'a'); P.rect(3, 5, 8, 4, 'a'); P.rect(3, 8, 8, 1, 'b');           // 꼬리·몸
+    P.ell(12, 4, 3, 2, 'a'); P.tri(10, 3, 12, 3, 11, 0, 'a'); P.tri(13, 3, 15, 3, 14, 0, 'a'); P.rect(14, 5, 2, 1, 'c'); // 머리·귀·주둥이
+    P.px(13, 4, 'e'); P.rect(4, 9, 2, 2, 'b'); P.rect(9, 9, 2, 2, 'b'); P.px(5, 5, 'w');
+  } },
   // ── 보스 (32×32, 페이즈마다 a/b/c 색이 바뀜)
   boss_gel: { tint: '#c060c0', w: 32, h: 32, pal: { w: '#ffffff', y: '#ffd84a', o: '#c09020', r: '#ff3a5a' }, proc: (P) => {
     P.ell(6, 28, 2, 2, 'b'); P.ell(25, 28, 2, 2, 'b'); P.ell(15, 29, 1, 2, 'b');      // 흘러내리는 점액

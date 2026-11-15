@@ -257,7 +257,7 @@ function buildLobby() {
   const room = { type: 'lobby', gx: 0, gy: 0, x0: 3, y0: 4, w: 28, h: 16, cx: 17, cy: 12, doors: [], state: 'cleared', visited: true, wavesLeft: 0 };
   map.carveRoom(room.x0, room.y0, room.w, room.h);
   // 기둥
-  for (const [x, y] of [[6, 7], [27, 7], [6, 16], [27, 16]]) map.set(x, y, T_WALL);
+  for (const [x, y] of [[4, 5], [29, 5], [6, 16], [27, 16]]) map.set(x, y, T_WALL);
   map.rooms.push(room);
   map.startRoom = room;
   map.decorate = (g) => {
@@ -267,7 +267,7 @@ function buildLobby() {
     g.fillStyle = '#c89a40';
     g.fillRect(12 * TILE + 6, 10 * TILE + 6, 10 * TILE - 12, 1); g.fillRect(12 * TILE + 6, 17 * TILE - 7, 10 * TILE - 12, 1);
     // 캐릭터 단상 바닥 띠
-    g.fillStyle = 'rgba(255,220,150,0.06)'; g.fillRect(9 * TILE, 4 * TILE, 16 * TILE, 5 * TILE);
+    g.fillStyle = 'rgba(255,220,150,0.06)'; g.fillRect(5 * TILE, 4 * TILE, 24 * TILE, 5 * TILE);
   };
   return map;
 }

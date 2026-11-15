@@ -20,15 +20,15 @@ class Player extends Entity {
     this.state = 'NORMAL';
     this.aim = { x: 1, y: 0 }; this.lastMoveDir = { x: 1, y: 0 }; this.dashDir = { x: 1, y: 0 };
     this.dashRemaining = 0; this.dashCooldown = 0; this.dashInvuln = 0; this.hurtInvuln = 0;
-    this.skillCooldown = 0; this.whirl = 0; this.whirlTick = 0; this.overdrive = 0; this.vampire = 0;
+    this.skillCooldown = 0; this.whirl = 0; this.whirlTick = 0; this.overdrive = 0; this.vampire = 0; this.rage = 0; this.blinkInv = 0;
     this.sinceHit = 99; this.deathTimer = 0; this.time = 0; this.moving = false;
     this.swing = null; this.aimVis = 0; this.faceVis = 1; this.recoil = 0;
-    this.stats = { attackBonus: 0, fireRateBonus: 0, critChance: base.critChance, critMultiplier: base.critMultiplier };
+    this.stats = { attackBonus: 0, fireRateBonus: 0, critChance: base.critChance + (hero.critBonus || 0), critMultiplier: base.critMultiplier };
     this.weapons = []; this.slot = 0; this.buffs = [];
   }
   get weapon() { return this.weapons[this.slot] || null; }
-  get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0; }
-  get mods() { return { attackBonus: this.stats.attackBonus, critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
+  get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0; }
+  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? 0.6 : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
 
   update(dt, input, map, mouseWorld) {
     this.time += dt;
@@ -37,11 +37,11 @@ class Player extends Entity {
     this.skillCooldown = Math.max(0, this.skillCooldown - dt);
     this.dashInvuln = Math.max(0, this.dashInvuln - dt);
     this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
-    this.overdrive = Math.max(0, this.overdrive - dt);
+    this.overdrive = Math.max(0, this.overdrive - dt); this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt);
     if (this.swing) { this.swing.t += dt; if (this.swing.t >= this.swing.dur) this.swing = null; }
     this.sinceHit += dt;
     if (this.sinceHit >= this.cfg.shieldRegenDelay)
-      this.shield = Math.min(this.maxShield, this.shield + this.cfg.shieldRegenRate * dt);
+      this.shield = Math.min(this.maxShield, this.shield + this.cfg.shieldRegenRate * (this.hero.shieldRegenMul || 1) * dt);
 
     const ax = mouseWorld.x - this.x, ay = mouseWorld.y - this.y, alen = Math.hypot(ax, ay);
     if (alen > 0.5) { this.aim.x = ax / alen; this.aim.y = ay / alen; }
@@ -66,7 +66,8 @@ class Player extends Entity {
     if (input.wasPressed('Space') && this.dashCooldown <= 0) {
       this.startDash(); this.updateDash(dt, map); return;
     }
-    moveAndCollide(this, ix * this.moveSpeed * dt, iy * this.moveSpeed * dt, map);
+    const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1);
+    moveAndCollide(this, ix * spd * dt, iy * spd * dt, map);
   }
   startDash() {
     this.state = 'DASH';
@@ -110,6 +111,10 @@ class Player extends Entity {
     }
     if (this.hurtInvuln > 0 && Math.floor(this.time * 20) % 2 === 0) return;
     const frame = this.moving && this.state !== 'DASH' ? Math.floor(this.time * 8) % 2 : 0;
+    if (this.rage > 0) { // 분노: 붉은 기운
+      ctx.fillStyle = `rgba(255,60,40,${0.22 + 0.12 * Math.sin(this.time * 18)})`;
+      ctx.beginPath(); ctx.arc(x, y - 1, 13, 0, TAU); ctx.fill();
+    }
     if (this.overdrive > 0) {
       ctx.fillStyle = `rgba(255,200,60,${0.25 + 0.15 * Math.sin(this.time * 20)})`;
       ctx.beginPath(); ctx.arc(x, y - 1, 12, 0, TAU); ctx.fill();

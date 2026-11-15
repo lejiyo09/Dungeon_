@@ -68,7 +68,7 @@ class Game {
     this.resetWorldLists(buildLobby());
     const sp = this.map.tileCenter(17, 14);
     this.player = this.makePlayer(sp.x, sp.y);
-    DATA_HEROES.forEach((h, i) => { const c = this.map.tileCenter(11 + i * 4, 8); this.props.push(new Pedestal(c.x, c.y, h)); });
+    DATA_HEROES.forEach((h, i) => { const c = this.map.tileCenter(6 + i * 3, 8); this.props.push(new Pedestal(c.x, c.y, h, i % 2)); });
     const cb = this.map.tileCenter(5, 12); this.props.push(new CodexBoard(cb.x, cb.y));
     const ar = this.map.tileCenter(9, 16); this.props.push(new Armory(ar.x, ar.y));
     const dm = this.map.tileCenter(28, 12);
@@ -334,6 +334,18 @@ class Game {
         break;
       }
       case 'turret': this.allies.push(new Turret(p.x, p.y, p)); break;
+      case 'blink': { // 그림자 습격: 벽 앞까지 순간이동, 지나간 길의 적을 벰
+        const sx = p.x, sy = p.y, D = 90;
+        moveAndCollide(p, p.aim.x * D, p.aim.y * D, this.map);
+        for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, p.x, p.y, e.x, e.y, e.radius + 8) >= 0)
+          this.damageEnemy(e, { damage: 45, mods: p.mods, knockback: 4 }, p.aim.x, p.aim.y);
+        p.blinkInv = 0.4;
+        this.effects.beamline(sx, sy, p.x, p.y, 3, '#b080ff'); this.effects.burst(sx, sy, '#3a3048', 10); this.effects.burst(p.x, p.y, '#b080ff', 10);
+        break;
+      }
+      case 'sanctuary': this.zones.push(new Sanctuary(p.x, p.y, p)); this.effects.ring(p.x, p.y, 54, '#ffe9a0'); break;
+      case 'rage': p.rage = 5; this.effects.text(p.x, p.y - 18, '분노!', '#ff5a3a'); this.effects.ring(p.x, p.y, 30, '#ff5a3a'); this.addShake(0.15, 3); break;
+      case 'wolves': for (let i = 0; i < 2; i++) this.allies.push(new SpiritWolf(p.x + (i ? 12 : -12), p.y, p)); this.effects.sparkle(p.x, p.y, '#9ad8ff'); break;
     }
   }
   updateSkillEffects(dt) {
@@ -443,6 +455,8 @@ class Game {
   }
   clearRoom(r) {
     r.state = 'cleared'; this.activeRoom = null;
+    const P = this.player;
+    if (P.hero.roomHeal && P.state !== 'DEAD' && r.type === 'combat') { P.hp = Math.min(P.maxHp, P.hp + P.hero.roomHeal); this.effects.heal(P.x, P.y); this.effects.text(P.x, P.y - 20, '+' + P.hero.roomHeal, '#7aff7a'); }
     this.map.setDoors(r, false);
     const c0 = this.map.tileCenter(r.cx, r.cy), c = this.freeSpot(r, c0.x, c0.y, 8);
     if (r.type === 'boss') {
