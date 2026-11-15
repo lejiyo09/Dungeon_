@@ -2,7 +2,7 @@
 // 거리 유지, 탄/장판 회피, 대시, 스킬, 에너지에 따른 무기 선택을 흉내냄
 // 사용: await page.addScriptTag({ path: 'tools/bot.js' }); 이후 page.evaluate 안에서 Bot.step(game, state)
 window.Bot = {
-  RANK: { common: 0, uncommon: 1, rare: 2, epic: 3 },
+  RANK: { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 },
   newState() { return { strafe: 1, strafeT: 0, t: 0 }; },
   chooseWeapon(p) {
     let best = 0, bs = -1;

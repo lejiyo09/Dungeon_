@@ -83,6 +83,14 @@ Object.assign(WPIX, {
   crystalstaff: { auto: true, p: [3, 2], rows: ['..........o.', '.........ooo', 'dddddddddowo', '.........ooo', '..........o.'] },
   kitchenknife: { auto: true, p: [1, 1], rows: ['...cccccc.', 'gggaaaaaaa', '...aaaaa..'] },
   pickaxe: { auto: true, p: [1, 2], rows: ['.......aa...', '.........aa.', 'ddddddddddaa', '.........aa.', '.......aa...'] },
+  flail: { auto: true, p: [1, 1], rows: ['........mm..', 'dddddm.m..aa', '.......m.acca', '.........acca', '..........aa.'] },
+  sunsword: { auto: true, p: [4, 2], rows: ['...yy...............', '..y..y.cccccccccccc.', 'ggyoyyyaaaaaaaaaaaaw', '..y..y.bbbbbbbbbbbb.', '...yy...............'] },
+  shadowblades: { auto: true, p: [1, 2], rows: ['..n..cccccc..', 'ggnnaaaaaaaa.', '..n..bbbbbb..', '...cccccc....', 'ggnaaaaaa....'] },
+  judgebow: { auto: true, p: [5, 6], rows: ['.yo....', '.sy....', '.s.y...', '.s..a..', '.s...a.', '.s...a.', '.s...yo', '.s...a.', '.s...a.', '.s..a..', '.s.y...', '.sy....', '.yo....'] },
+  cometgun: { auto: true, p: [5, 3], rows: ['......nnnn......', '..aaaaaaaaammmmo', '.ayyyyaaaaammmmo', '.aaaaaaaaaammmmo', '....gg.nn.......', '....gg..........'] },
+  worldtree: { auto: true, p: [3, 2], rows: ['..........oo.o', '.........ddoo.', 'ddddddddddd.oo', '.........ddoo.', '..........oo.o'] },
+  frostscepter: { auto: true, p: [3, 2], rows: ['..........y.y.', '.........yoooy', 'cccccccccyowoy', '.........yoooy', '..........y.y.'] },
+  judgment: { auto: true, p: [2, 3], rows: ['...yyyyyyy...', '.aaaaaaaaayoo', '.ayooooooayow', '.aaaaaaaaayoo', '.gg..........', '.gg..........'] },
   headshot: { auto: true, p: [5, 3], rows: ['.....nnnnnnn........', '.....nooooon........', 'bbbbaaaaaaaaaaaaaaaan', 'bb...aanbb..........', '.....gg.............', '.....gg.............'] }
 });
 
@@ -105,6 +113,11 @@ Object.assign(WEAPON_SPRITE, {
   weapon_rainbow_001: 'rainbow', weapon_lavastaff_001: 'lavastaff', weapon_turretgun_001: 'turretgun',
   weapon_pan_001: 'pan', weapon_spinaxe_001: 'spinaxe',
   weapon_lance_001: 'lance',
+  weapon_autopistol_001: 'pistol2', weapon_ironstaff_001: 'froststaff', weapon_scatterstaff_001: 'starstaff', weapon_fireshotgun_001: 'shotgun2',
+  weapon_blizzardstaff_001: 'crystalstaff', weapon_homingdual_001: 'dual', weapon_splitplasma_001: 'plasma', weapon_woodspear_001: 'lance',
+  weapon_frostdagger_001: 'kitchenknife', weapon_flail_001: 'flail', weapon_viperwhip_001: 'whip', weapon_twinxbow_001: 'repeatxbow',
+  weapon_cometgun_001: 'cometgun', weapon_worldtree_001: 'worldtree', weapon_frostscepter_001: 'frostscepter', weapon_sunsword_001: 'sunsword',
+  weapon_shadowblades_001: 'shadowblades', weapon_judgebow_001: 'judgebow', weapon_judgment_001: 'judgment',
   weapon_dartgun_001: 'dartgun', weapon_waterballoon_001: 'sling', weapon_iceshuriken_001: 'shuriken', weapon_beehive_001: 'beehive',
   weapon_crystalstaff_001: 'crystalstaff', weapon_thunderjavelin_001: 'javelin', weapon_goldrevolver_001: 'revolver',
   weapon_kitchenknife_001: 'kitchenknife', weapon_pickaxe_001: 'pickaxe', weapon_icegreatsword_001: 'greatsword', weapon_steelxbow_001: 'repeatxbow', weapon_quakehammer_001: 'quakehammer'

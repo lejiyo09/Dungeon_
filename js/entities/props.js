@@ -138,9 +138,14 @@ const WEAPON_TABS = [
   { name: '활·특수', test: (d) => d.type === 'charge' || d.type === 'beam' }
 ];
 function tabRect(i) { const w = 90, gap = 6, total = w * 4 + gap * 3; return { x: (VIEW_W - total) / 2 + i * (w + gap), y: 22, w, h: 14 }; }
-function weaponGrid(tab = 0) {
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+const GRID_PER_PAGE = 40;
+function tabWeapons(tab) { return DATA_WEAPONS.filter(WEAPON_TABS[tab].test).sort((a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity)); }
+function gridPages(tab) { return Math.max(1, Math.ceil(tabWeapons(tab).length / GRID_PER_PAGE)); }
+function weaponGrid(tab = 0, page = 0) { // 한 페이지 40칸 (5열 × 8줄), 등급순
   const cols = 5, cw = 100, rh = 26, ox = 3, oy = 40;
-  return DATA_WEAPONS.filter(WEAPON_TABS[tab].test).map((d, i) => ({ d, x: ox + (i % cols) * (cw + 1), y: oy + Math.floor(i / cols) * rh, w: cw, h: rh - 2 }));
+  return tabWeapons(tab).slice(page * GRID_PER_PAGE, (page + 1) * GRID_PER_PAGE)
+    .map((d, i) => ({ d, x: ox + (i % cols) * (cw + 1), y: oy + Math.floor(i / cols) * rh, w: cw, h: rh - 2 }));
 }
 function weaponShortLine(d) {
   const dmg = d.projectileCount > 1 ? `${d.damage}×${d.projectileCount}` : d.burst ? `${d.damage}×${d.burst.count}` : d.damage;

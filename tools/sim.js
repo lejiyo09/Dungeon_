@@ -8,7 +8,7 @@ const [,, mode, arg, runsArg] = process.argv;
   await pg.goto('file://' + (process.env.FILE || require('path').resolve(__dirname, '../index.html')) + '?guest=1'); await pg.waitForTimeout(300);
   const out = await pg.evaluate(async ({ mode, arg, runs }) => {
     const g = window.__game; g.render = () => {};
-    const RANK = { common: 0, uncommon: 1, rare: 2, epic: 3 };
+    const RANK = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 };
     const res = [];
     for (let run = 0; run < runs; run++) {
       g.save.unlocked = DATA_HEROES.map(h => h.id); g.save.selected = mode === 'real' ? arg : 'hero_gunner'; g.save.loadout = null;

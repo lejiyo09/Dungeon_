@@ -263,8 +263,13 @@ class Game {
       else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
       else if (this.mode === 'dungeon' && input.wasPressed('KeyL')) { this.player.state = 'DEAD'; this.endRun(false); }
     } else if (o.type === 'codex' || o.type === 'armory') {
+      const t0 = o.tab;
       ['Digit1', 'Digit2', 'Digit3', 'Digit4'].forEach((k, i) => { if (input.wasPressed(k)) o.tab = i; });
       if (input.wasPressed('Mouse0')) WEAPON_TABS.forEach((_, i) => { const r = tabRect(i), m = input.mouse; if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) o.tab = i; });
+      if (o.tab !== t0) o.page = 0;
+      const pages = gridPages(o.tab || 0); // 페이지 넘기기
+      if (input.wasPressed('KeyD') || input.wasPressed('ArrowRight') || input.wasPressed('WheelDown')) o.page = ((o.page || 0) + 1) % pages;
+      if (input.wasPressed('KeyA') || input.wasPressed('ArrowLeft') || input.wasPressed('WheelUp')) o.page = ((o.page || 0) - 1 + pages) % pages;
     }
     if (o.type === 'codex') {
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) this.overlay = null;
@@ -272,7 +277,7 @@ class Game {
       if (o.msg) o.msg.t -= STEP;
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
       if (!input.wasPressed('Mouse0')) return;
-      const m = input.mouse, c = weaponGrid(o.tab || 0).find((c) => m.x >= c.x && m.x < c.x + c.w && m.y >= c.y && m.y < c.y + c.h);
+      const m = input.mouse, c = weaponGrid(o.tab || 0, o.page || 0).find((c) => m.x >= c.x && m.x < c.x + c.w && m.y >= c.y && m.y < c.y + c.h);
       if (!c) return;
       const sv = this.save, d = c.d, say = (text, color) => { o.msg = { text, color, t: 2 }; };
       if (!sv.discovered.includes(d.id)) say('아직 발견하지 못한 무기입니다. 던전에서 먼저 찾아보세요.', '#ff9a9a');
@@ -493,7 +498,7 @@ class Game {
   randomWeaponDef() {
     const owned = new Set(this.player.weapons.map((w) => w.def.id));
     const pool = DATA_WEAPONS.filter((d) => d.rarity !== 'common' && !owned.has(d.id));
-    return weightedPick(pool.length ? pool : DATA_WEAPONS, (d) => RARITY_WEIGHT[d.rarity] + (d.rarity === 'epic' ? this.worldIdx * BALANCE.epicPerWorld : 0));
+    return weightedPick(pool.length ? pool : DATA_WEAPONS, (d) => RARITY_WEIGHT[d.rarity] + (d.rarity === 'epic' ? this.worldIdx * BALANCE.epicPerWorld : d.rarity === 'legendary' ? this.worldIdx * BALANCE.legendaryPerWorld : 0));
   }
   openChest(c) {
     this.effects.burst(c.x, c.y - 6, '#ffd84a', 10);

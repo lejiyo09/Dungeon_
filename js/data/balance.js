@@ -19,11 +19,11 @@ const BALANCE = {
   roomHpChance: 0.3, roomHpValue: 15,
   // 상점 (스테이지마다 가격 +inflate)
   shopInflate: 0.06,
-  shopPrice: { common: 20, uncommon: 35, rare: 55, epic: 85, hp: 15, energy: 12 },
+  shopPrice: { common: 20, uncommon: 35, rare: 55, epic: 85, legendary: 130, hp: 15, energy: 12 },
   // 로비 무기고 해금 가격
-  armoryPrice: { common: 30, uncommon: 60, rare: 120, epic: 220 },
-  // 무기 드롭 가중치 (영웅은 월드마다 +epicPerWorld)
-  rarityWeight: { common: 5, uncommon: 4, rare: 3, epic: 1.5 }, epicPerWorld: 0.8,
+  armoryPrice: { common: 30, uncommon: 60, rare: 120, epic: 220, legendary: 400 },
+  // 무기 드롭 가중치 (영웅은 월드마다 +epicPerWorld, 전설은 +legendaryPerWorld)
+  rarityWeight: { common: 5, uncommon: 4, rare: 3, epic: 1.5, legendary: 0.25 }, epicPerWorld: 0.8, legendaryPerWorld: 0.2,
   victoryBonusGold: 80,
   bossHealRatio: 0.5,         // 월드 보스 처치 시 최대 체력 대비 회복
   // 정예 몬스터: 2월드부터 등장, 확률 = base + perWorld × (월드-1)

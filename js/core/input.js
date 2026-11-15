@@ -25,7 +25,7 @@ class InputManager {
       if (e.button === 2) this.pressed.add('Mouse2');
     });
     window.addEventListener('mouseup', (e) => { if (e.button === 0) this.mouse.down = false; });
-    canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.pressed.add('Wheel'); }, { passive: false });
+    canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.pressed.add('Wheel'); this.pressed.add(e.deltaY < 0 ? 'WheelUp' : 'WheelDown'); }, { passive: false });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
   updatePointer(e) {

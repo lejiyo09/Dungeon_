@@ -33,7 +33,7 @@ const JSON_OUT = process.argv.includes('--json');
   // 화력 지수: 단일 대상 60% + 범위(3마리 기준 1인당 환산 아님, 총합의 0.4/1.8) 40%
   for (const r of rows) r.power = 0.6 * r.single + 0.4 * r.multi / 1.8;
   if (JSON_OUT) { console.log(JSON.stringify(rows)); await b.close(); return; }
-  const order = ['common', 'uncommon', 'rare', 'epic'];
+  const order = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
   for (const rar of order) {
     const rs = rows.filter((r) => r.rarity === rar).sort((a, b) => b.power - a.power);
     const avg = rs.reduce((s, r) => s + r.power, 0) / rs.length;
