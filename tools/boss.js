@@ -13,7 +13,8 @@ const RUNS = +(process.argv[2] || 8);
   await pg.waitForTimeout(300);
   await pg.addScriptTag({ path: path.resolve(__dirname, 'bot.js') });
   if (process.env.FROM_W) await pg.evaluate((w) => { window.__fromW = w; }, process.env.FROM_W);
-  if (process.env.DEEP) await pg.evaluate((d) => { window.__deep = d; }, process.env.DEEP); // 심층 필드 수만큼 추가 측정
+  if (process.env.DEEP) await pg.evaluate((d) => { window.__deep = d; }, process.env.DEEP);
+  if (process.env.POWER) await pg.evaluate(() => { window.__power = true; }); // 심층 필드 수만큼 추가 측정
   const out = await pg.evaluate(async (RUNS) => {
     const g = window.__game; g.render = () => {};
     // 피해 출처 추적
@@ -40,6 +41,11 @@ const RUNS = +(process.argv[2] || 8);
       p.weapons = LOAD[Math.min(w, LOAD.length - 1)].map((r) => new WeaponInstance(pickW(r))); p.slot = 0;
       for (const bf of shuffled(DATA_BUFFS).slice(0, w)) bf.apply(p);
       p.maxHp += 15 * w; p.hp = p.maxHp; // 층이 늘어 더 많이 파밍한 상태를 근사
+      if (window.__power) { // POWER=1: 무기 강화·직업 진화·보구까지 갖춘 플레이어를 흉내
+        for (const wi of p.weapons) wi.lv = Math.min(5, Math.floor(w / 2));
+        const L = jobLines(p.hero.id)[0]; if (L) { g.applyVariant(L); p.weapons = LOAD[Math.min(w, LOAD.length - 1)].map((r) => new WeaponInstance(pickW(r), Math.min(5, Math.floor(w / 2)))); g.setJob(p, L, w >= 9 ? 2 : w >= 4 ? 1 : 0); }
+        if (w >= 9) { p.treasure = DATA_TREASURES[run % DATA_TREASURES.length]; p.treasureCd = 0; }
+      }
       const room = g.map.roomOf('boss'), c = g.map.tileCenter(room.cx, room.cy + 5);
       p.x = c.x; p.y = c.y;
       ledger = {};
@@ -47,6 +53,7 @@ const RUNS = +(process.argv[2] || 8);
       while (t < 60 * 180) {
         if (g.overlay) break;
         Bot.step(g, st); t++;
+        if (window.__power && p.treasure && p.treasureCd <= 0 && boss && boss.targetable && Math.hypot(boss.x - p.x, boss.y - p.y) < 220) g.useTreasure(); // 보구는 쿨타임마다 보스에게
         boss = boss || g.enemies.find((e) => e.def.boss);
         if (boss && boss.phase >= 2 && enrageAt === null) enrageAt = t / 60;
         if (p.state === 'DEAD' || (boss && !boss.alive)) break;

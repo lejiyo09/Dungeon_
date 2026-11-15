@@ -405,6 +405,14 @@ function drawEnemy(ctx, e, x, y, flash) {
     ctx.beginPath(); ctx.arc(x, bottom - spr.h * sc / 2, spr.w * sc * 0.62, 0, TAU); ctx.fill();
   }
   ctx.globalAlpha = e.fade ?? 1;
+  if (!def.boss && !def.dummy && e.state !== 'SPAWN') { // 잡몹 가시성: 발밑 붉은 표식 + 밝은 테두리
+    const rx = Math.max(6, spr.w * 0.5);
+    ctx.fillStyle = 'rgba(255,60,60,0.16)'; ctx.beginPath(); ctx.ellipse(x, bottom - 2, rx, 3.5, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = e.elite ? 'rgba(255,216,74,0.8)' : 'rgba(255,100,100,0.65)'; ctx.beginPath(); ctx.ellipse(x, bottom - 2, rx, 3.5, 0, 0, TAU); ctx.stroke();
+    const a0 = ctx.globalAlpha; ctx.globalAlpha = a0 * 0.4;
+    for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) drawSprite(ctx, spr, x + ox, by + oy, { flip: e.face < 0, white: true, scale: sc, squash: sq });
+    ctx.globalAlpha = a0;
+  }
   drawSprite(ctx, spr, x, by, { flip: e.face < 0, white: flash || blink || (e.state === 'PHASE' && Math.floor(e.stateTime * 14) % 2 === 0), scale: sc, squash: sq });
   ctx.globalAlpha = 1;
   if (e.elite) { ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 1, by - spr.h * sc - 6, 3, 3); ctx.fillRect(x - 3, by - spr.h * sc - 5, 7, 1); }
