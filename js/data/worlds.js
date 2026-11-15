@@ -46,6 +46,27 @@ const DATA_WORLDS = [
     palette: { style: 'sanctum', accent: '#ffe9a0', floor: ['#4a4652', '#4d4955'], corridor: ['#34313c', '#36333e'], wall: '#5a5666', wallTop: '#6c6878',
       wallFace: '#8e8a9c', faceLine: '#7c788a', deco: 'rgba(255,233,160,0.35)' } }
 ];
+// ── 심층 (기획서 10장: 전설의 존재 아래로 무한히 이어짐)
+//  [사용자 결정] 같은 런에서 계속 내려감 · 무한 · 새 심층 테마와 보스. 아래 테마·몬스터·보스는 세계관과 엮지 않은 임시 디자인
+//  심층 필드는 아래 테마가 차례로 반복되고, 깊이 내려갈수록 기존 스테이지 강화 곡선대로 계속 강해짐
+const DEEP_WORLDS = [
+  { id: 'deep_abyss', name: '잿빛 심연', boss: 'boss_abyss_maw', waves: 2, deep: true,
+    enemies: [['enemy_abyssjelly_001', 3], ['enemy_bonecrawler_001', 2], ['enemy_eyebat_001', 4], ['enemy_sporetower_001', 2]],
+    palette: { style: 'abyss', accent: '#5affd8', floor: ['#1e2226', '#202428'], corridor: ['#15181b', '#16191c'], wall: '#2a2f34', wallTop: '#353b42',
+      wallFace: '#4a525a', faceLine: '#3e454c', deco: 'rgba(90,255,216,0.35)' } },
+  { id: 'deep_starfall', name: '부서진 별의 정원', boss: 'boss_fallen_star', waves: 2, deep: true,
+    enemies: [['enemy_starwisp_001', 3], ['enemy_meteorgolem_001', 2], ['enemy_cometdog_001', 3], ['enemy_nebulamage_001', 2]],
+    palette: { style: 'starfall', accent: '#9ad8ff', floor: ['#1a1e36', '#1c2039'], corridor: ['#12152a', '#13162c'], wall: '#262c4e', wallTop: '#30375e',
+      wallFace: '#4a5488', faceLine: '#3e4878', deco: 'rgba(154,216,255,0.35)' } }
+];
+const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
+function worldDef(i) {
+  if (i < DEEP_START) return DATA_WORLDS[i];
+  const d = i - DEEP_START, base = DEEP_WORLDS[d % DEEP_WORLDS.length];
+  return Object.assign({}, base, { depth: d + 1, name: `${base.name}` });
+}
+// 화면 표시용 스테이지 이름: 1-1 ~ 10-4, 심층은 '심층 1-1'
+function stageLabel(w, l) { return w >= DEEP_START ? `심층 ${w - DEEP_START + 1}-${l + 1}` : `${w + 1}-${l + 1}`; }
 const LOBBY_PALETTE = { style: 'wood', floor: ['#3a2e26', '#3d3129'], corridor: ['#3a2e26', '#3d3129'], wall: '#40354f', wallTop: '#4b3f5c',
   wallFace: '#6a5a82', faceLine: '#5a4c70', deco: null };
 const STAGES_PER_WORLD = 4; // x-1 ~ x-3: 일반 / x-4: 보스

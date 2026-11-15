@@ -25,7 +25,8 @@ const { chromium } = require('playwright');
     g.selectHero(DATA_HEROES[1]);
     g.startRun();
     const log = [];
-    for (let stage = 0; stage < DATA_WORLDS.length * STAGES_PER_WORLD; stage++) {
+    const TOTAL = (DATA_WORLDS.length + 2) * STAGES_PER_WORLD; // 1~10필드 + 심층 2필드
+    for (let stage = 0; stage < TOTAL; stage++) {
       const p = g.player; p.takeDamage = () => false; p.energy = 9999;
       p.weapons = [new WeaponInstance(GAME_DATA.weapons.get('weapon_rifle_001'))]; p.slot = 0; p.stats.attackBonus = 2;
       const label = `${g.worldIdx+1}-${g.levelIdx+1}`;
@@ -49,7 +50,7 @@ const { chromium } = require('playwright');
       }
       if (g.overlay && g.overlay.type === 'buff') { g.input.pressed.add('Digit1'); g.update(STEP); }
       log.push(label + ' ok rooms=' + rooms.length + ' kills=' + g.kills + ' gold=' + g.gold + ' buffs=' + g.player.buffs.join(','));
-      const portal = g.portals[g.portals.length - 1];
+      const last = stage === TOTAL - 1, portal = g.portals.find((po) => last ? po.label.includes('귀환') : !po.label.includes('귀환')) || g.portals[g.portals.length - 1]; // 심층: 마지막에만 귀환
       if (!portal) { log.push('no portal'); break; }
       p.x = portal.x; p.y = portal.y;
       // 포탈 진입: 화면 전환이 시작됐다가 끝날 때까지 (보스 처치 히트스톱 동안은 포탈 판정이 멈춤)
@@ -57,7 +58,8 @@ const { chromium } = require('playwright');
       for (let i = 0; i < 600; i++) { g.update(STEP); if (g.transition) seen = true; if ((seen && !g.transition) || (g.overlay && g.overlay.type === 'result' && !g.transition)) break;
         if (g.overlay && (g.overlay.type === 'story' || g.overlay.type === 'treasure_pick')) { // 기원의 성역 장면 → 보구 선택
           if (!log.includes('SANCTUM')) log.push('SANCTUM');
-          for (let k = 0; k < 400 && g.overlay && g.overlay.type !== 'result'; k++) { if (g.overlay.type === 'treasure_pick' && DATA_TREASURES.length && !g.save.treasures.length) { g.pickTreasure(DATA_TREASURES[1]); log.push('PICK ' + g.save.treasures.join(',')); break; } if (k % 30 === 0) g.input.pressed.add('Enter'); g.update(STEP); }
+          for (let k = 0; k < 400 && g.overlay && g.overlay.type !== 'result'; k++) { if (g.overlay.type === 'treasure_pick' && DATA_TREASURES.length && !g.save.treasures.length) { g.pickTreasure(DATA_TREASURES[1]); log.push('PICK ' + g.save.treasures.join(',') + ' portals=' + g.portals.map((po) => po.label).join('|'));
+            const dp = g.portals.find((po) => !po.label.includes('귀환')); p.x = dp.x; p.y = dp.y; let sn = false; for (let q = 0; q < 600; q++) { g.update(STEP); if (g.transition) sn = true; if (sn && !g.transition) break; } break; } if (k % 30 === 0) g.input.pressed.add('Enter'); g.update(STEP); }
           break; } }
       if (g.overlay && g.overlay.type === 'result') { log.push('RESULT victory=' + g.overlay.victory + ' reward=' + g.overlay.reward + ' stages=' + g.overlay.stages + ' bosses=' + g.overlay.bosses); break; }
     }

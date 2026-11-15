@@ -114,7 +114,7 @@ class Game {
   }
   resumeRun() {
     const r = this.save.run, hero = r && this.data.heroes.get(r.hero);
-    if (!r || !hero || r.worldIdx >= DATA_WORLDS.length) { this.save.run = null; writeSave(this.save); this.startRun(); return; }
+    if (!r || !hero) { this.save.run = null; writeSave(this.save); this.startRun(); return; }
     this.mode = 'dungeon'; this.worldIdx = r.worldIdx; this.levelIdx = r.levelIdx; this.gold = r.gold; this.kills = r.kills;
     const p = this.player = new Player(0, 0, hero, this.data.base), s = r.p;
     for (const k of ['maxHp', 'hp', 'maxShield', 'maxEnergy', 'energy', 'moveSpeed', 'dashCdMax', 'skillCdMax', 'vampire', 'damageReduction']) if (typeof s[k] === 'number') p[k] = s[k];
@@ -124,7 +124,7 @@ class Game {
     p.slot = Math.min(s.slot || 0, p.weapons.length - 1);
     p.treasure = DATA_TREASURES.find((t) => t.id === s.treasure) || null; // 보구 효과는 위 능력치에 이미 반영돼 있음
     this.loadStage();
-    this.showBanner(`이어하기 · ${this.worldIdx + 1}-${this.levelIdx + 1} ${DATA_WORLDS[this.worldIdx].name}`, '스테이지 시작 지점부터 다시 시작합니다', '#7ad0ff');
+    this.showBanner(`이어하기 · ${stageLabel(this.worldIdx, this.levelIdx)} ${this.W.name}`, '스테이지 시작 지점부터 다시 시작합니다', '#7ad0ff');
   }
   // 프롤로그 (첫 던전 입장 시 1회, 로비 일시정지 메뉴에서 다시 보기)
   showPrologue() { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => { this.save.prologueSeen = true; writeSave(this.save); } }; }
@@ -138,16 +138,25 @@ class Game {
     const s = this.save;
     if (tr && !s.treasures.includes(tr.id)) { s.treasures.push(tr.id); if (!s.treasureEquipped) s.treasureEquipped = tr.id; this.treasureToast = { T: tr, start: performance.now() }; }
     writeSave(s);
-    this.endRun(true); this.overlay.after = SANCTUM_AFTER;
+    const p = this.player;
+    if (tr && !p.treasure) { p.treasure = tr; p.treasureCd = 0; } // 이번 탐험부터 바로 R로 사용
+    this.overlay = null; this.input.mouse.down = false;
+    const c = this.portalSpot || { x: p.x, y: p.y - 30 }, next = worldDef(this.worldIdx + 1);
+    this.portals = [];
+    this.portals.push(new Portal(c.x + 26, c.y + 24, () => this.advanceStage(), `${stageLabel(this.worldIdx + 1, 0)} ${next.name}`, [120, 200, 255]));
+    this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90]));
+    this.showBanner(SANCTUM_AFTER, '심층으로 내려가거나, 여기서 돌아갈 수 있습니다', '#9ad8ff');
   }
+  get W() { return worldDef(this.worldIdx); }
   get stageIndex() { return this.worldIdx * STAGES_PER_WORLD + this.levelIdx; }
   get isBossStage() { return this.levelIdx === STAGES_PER_WORLD - 1; }
   get scale() { const S = BALANCE.stageScale, k = this.mode === 'lobby' ? 0 : this.stageIndex, i = k > S.taperFrom ? S.taperFrom + (k - S.taperFrom) * S.taper : k; return { hp: 1 + BALANCE.stageScale.hp * i, dmg: 1 + BALANCE.stageScale.dmg * i }; }
   loadStage() {
-    const W = DATA_WORLDS[this.worldIdx];
+    const W = this.W;
+    if (W.deep) this.save.bestDeep = Math.max(this.save.bestDeep || 0, W.depth); // 가장 깊이 내려간 심층
     const map = this.isBossStage
       ? generateDungeon({ roomCount: 4, specials: ['boss'], waves: W.waves, palette: W.palette })
-      : generateDungeon({ roomCount: 8 + this.worldIdx, specials: ['exit', 'treasure', 'shop'], waves: W.waves, palette: W.palette });
+      : generateDungeon({ roomCount: Math.min(14, 8 + this.worldIdx), specials: ['exit', 'treasure', 'shop'], waves: W.waves, palette: W.palette });
     this.resetWorldLists(map);
     const s = map.startRoom, sp = map.tileCenter(s.cx, s.cy), p = this.player;
     p.x = sp.x; p.y = sp.y; p.state = 'NORMAL'; p.shield = p.maxShield;
@@ -160,7 +169,7 @@ class Game {
     this.save.bestStage = Math.max(this.save.bestStage, this.stageIndex + 1);
     this.save.run = this.snapshotRun(); writeSave(this.save); // 이어하기용: 이 스테이지 시작 지점을 저장
     this.snapCamera();
-    this.showBanner(`${this.worldIdx + 1}-${this.levelIdx + 1}  ${W.name}`, this.isBossStage ? '보스가 기다리고 있습니다' : '출구 포탈을 찾으세요');
+    this.showBanner(`${stageLabel(this.worldIdx, this.levelIdx)}  ${W.name}`, this.isBossStage ? '보스가 기다리고 있습니다' : W.deep && this.levelIdx === 0 ? `심층 ${W.depth}번째 필드 — 던전은 더 깊은 곳으로 이어진다` : '출구 포탈을 찾으세요', W.deep ? '#9ad8ff' : undefined);
   }
   advanceStage() {
     this.levelIdx++;
@@ -505,7 +514,7 @@ class Game {
     this.map.setDoors(r, true);
     this.enemyBullets.length = 0;
     if (r.type === 'boss') {
-      const id = DATA_WORLDS[this.worldIdx].boss, c = this.map.tileCenter(r.cx, r.cy - 3);
+      const id = this.W.boss, c = this.map.tileCenter(r.cx, r.cy - 3);
       const boss = this.spawnEnemy(id, c.x, c.y, r);
       boss.setState('INTRO'); boss.jumpH = 160; boss.phase = 1;
       this.cinematic = { t: 0, boss, landed: false, roared: false };
@@ -515,13 +524,13 @@ class Game {
   }
   spawnWave(r) {
     r.wavesLeft--;
-    const pool = DATA_WORLDS[this.worldIdx].enemies;
+    const pool = this.W.enemies;
     const W = BALANCE.waveSize, count = Math.min(W.max, W.base + this.worldIdx + Math.floor(this.levelIdx * W.perLevel) + randInt(0, W.rand));
     for (let i = 0; i < count; i++) {
       const [id] = weightedPick(pool, (x) => x[1]);
       const pt = this.findSpawnPoint(r, 72);
       const e = this.spawnEnemy(id, pt.x, pt.y, r), E = BALANCE.elite;
-      if (this.worldIdx >= E.fromWorld && Math.random() < E.base + E.perWorld * (this.worldIdx - E.fromWorld)) e.makeElite(E);
+      if (this.worldIdx >= E.fromWorld && Math.random() < Math.min(0.45, E.base + E.perWorld * (this.worldIdx - E.fromWorld))) e.makeElite(E);
     }
   }
   spawnEnemy(id, x, y, room) {
@@ -568,13 +577,14 @@ class Game {
       this.pickups.push(new Pickup('hp', c.x, c.y, { value: 30 }));
       const p = this.player; // 월드 보스 처치: 체력 회복
       if (p.state !== 'DEAD') { const heal = Math.round(p.maxHp * BALANCE.bossHealRatio); p.hp = Math.min(p.maxHp, p.hp + heal); this.effects.text(p.x, p.y - 20, '+' + heal, '#7be36b', true); }
-      const last = this.worldIdx === DATA_WORLDS.length - 1;
+      const W = this.W, next = worldDef(this.worldIdx + 1);
+      this.portalSpot = c;
       const after = () => {
-        if (last && DATA_WORLDS[this.worldIdx].sanctum) this.portals.push(new Portal(c.x, c.y + 24, () => this.enterSanctum(), '성역 깊은 곳으로', [255, 233, 160]));
-        else if (last) this.portals.push(new Portal(c.x, c.y + 24, () => this.endRun(true), '귀환', [255, 210, 90]));
+        if (W.sanctum) this.portals.push(new Portal(c.x, c.y + 24, () => this.enterSanctum(), '성역 깊은 곳으로', [255, 233, 160]));
         else {
           this.props.push(new Chest(c.x, c.y - 24, 'weapon'));
-          this.portals.push(new Portal(c.x, c.y + 24, () => this.advanceStage(), `${this.worldIdx + 2}-1 ${DATA_WORLDS[this.worldIdx + 1].name}`));
+          this.portals.push(new Portal(c.x + (W.deep ? 26 : 0), c.y + 24, () => this.advanceStage(), `${stageLabel(this.worldIdx + 1, 0)} ${next.name}`, next.deep ? [120, 200, 255] : undefined));
+          if (W.deep) this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90])); // 심층: 여기서 돌아가거나 더 내려감
         }
       };
       const owned = new Set(this.player.buffs);
@@ -616,7 +626,7 @@ class Game {
   randomWeaponDef() {
     const owned = new Set(this.player.weapons.map((w) => w.def.id));
     const pool = DATA_WEAPONS.filter((d) => d.rarity !== 'common' && !owned.has(d.id));
-    return weightedPick(pool.length ? pool : DATA_WEAPONS, (d) => RARITY_WEIGHT[d.rarity] + (d.rarity === 'epic' ? this.worldIdx * BALANCE.epicPerWorld : d.rarity === 'legendary' ? this.worldIdx * BALANCE.legendaryPerWorld : 0));
+    return weightedPick(pool.length ? pool : DATA_WEAPONS, (d) => { const w = Math.min(this.worldIdx, 12); return RARITY_WEIGHT[d.rarity] + (d.rarity === 'epic' ? w * BALANCE.epicPerWorld : d.rarity === 'legendary' ? w * BALANCE.legendaryPerWorld : 0); });
   }
   openChest(c) {
     this.effects.burst(c.x, c.y - 6, '#ffd84a', 10);

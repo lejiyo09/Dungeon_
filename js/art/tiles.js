@@ -1,7 +1,7 @@
 'use strict';
 // ════════════════════════════════════════════
 // 맵 아트: 월드 테마별 바닥·벽·엄폐물·상자, 바닥 장식, 방 장식, 횃불·용암 애니메이션
-//  테마(style): moss(숲) / ice(얼음) / basalt(용암) / void(공허) / sand(모래 무덤) / metal(태엽 공장) / swamp(독 늪지) / bone(망자의 성) / mine(수정 광산) / sanctum(기원의 성역) / wood(로비)
+//  테마(style): moss(숲) / ice(얼음) / basalt(용암) / void(공허) / sand(모래 무덤) / metal(태엽 공장) / swamp(독 늪지) / bone(망자의 성) / mine(수정 광산) / sanctum(기원의 성역) / abyss·starfall(심층) / wood(로비)
 //  타일마다 좌표 해시로 무작위를 정해서 같은 타일은 언제 다시 그려도 똑같이 나옴
 // ════════════════════════════════════════════
 function hash2(x, y, s = 0) {
@@ -31,6 +31,8 @@ const THEME = {
   bone: { bone: '#c8c0b0', rune: '#7affc0', torch: '#7affc0', ambient: [0, 20, 20, 0.4] },
   mine: { crystal: '#ff7ad0', crystalHi: '#ffc0ec', rail: '#6a5a4a', torch: '#ffb040', ambient: [30, 10, 30, 0.34] },
   sanctum: { gold: '#c8a050', light: '#ffe9a0', torch: '#ffe9a0', ambient: [30, 25, 10, 0.2] },
+  abyss: { vein: '#5affd8', torch: '#5affd8', ambient: [0, 20, 20, 0.45] },
+  starfall: { star: '#dff8ff', shard: '#9ad8ff', torch: '#9ad8ff', ambient: [10, 10, 40, 0.38] },
   wood: { torch: '#ffb040', ambient: [30, 15, 0, 0.18] },
   stone: { torch: '#ffb040', ambient: [0, 0, 0, 0.25] }
 };
@@ -119,6 +121,19 @@ function drawFloorTile(g, x, y, base, style, tx = 0, ty = 0) {
     if (h(1) < 0.08) pxs(g, T.light, [[x + 2 + Math.floor(h(2) * 12), y + 2 + Math.floor(h(3) * 12)]]);
     return;
   }
+  if (style === 'abyss') { // 검은 암반 + 청록빛 맥
+    pxs(g, lo, [[x, y + 15, TILE, 1], [x + 15, y, 1, TILE]]);
+    for (let i = 0; i < 3; i++) pxs(g, hi, [[x + 2 + Math.floor(h(20 + i) * 12), y + 2 + Math.floor(h(30 + i) * 12)]]);
+    if (h(1) < 0.08) { let cx = x + 2 + Math.floor(h(2) * 8), cy = y + 3 + Math.floor(h(3) * 6); for (let i = 0; i < 7; i++) { pxs(g, i % 3 ? 'rgba(90,255,216,0.5)' : '#5affd8', [[cx, cy]]); cx++; cy += h(8 + i) < 0.4 ? 1 : h(8 + i) > 0.8 ? -1 : 0; } }
+    return;
+  }
+  if (style === 'starfall') { // 밤하늘빛 석판 + 별 + 떨어진 별 조각
+    const T = THEME.starfall;
+    pxs(g, hi, [[x, y, TILE - 1, 1], [x, y, 1, TILE - 1]]); pxs(g, lo, [[x + 15, y, 1, TILE], [x, y + 15, TILE, 1]]);
+    for (let i = 0; i < 2; i++) if (h(10 + i) < 0.4) pxs(g, T.star, [[x + 2 + Math.floor(h(20 + i) * 12), y + 2 + Math.floor(h(30 + i) * 12)]]);
+    if (h(1) < 0.05) { const sx = x + 6, sy = y + 6; pxs(g, T.shard, [[sx, sy, 3, 1], [sx + 1, sy - 1, 1, 3]]); pxs(g, T.star, [[sx + 1, sy]]); }
+    return;
+  }
   // 기본 석판
   pxs(g, hi, [[x, y, TILE - 1, 1], [x, y, 1, TILE - 1]]); pxs(g, lo, [[x + 15, y, 1, TILE], [x, y + 15, TILE, 1]]);
 }
@@ -167,6 +182,10 @@ function drawWallTile(g, x, y, pal, face, style, tx = 0, ty = 0) {
     if (h(1) < 0.2) pxs(g, THEME.mine.crystal, [[x + 9, y + 2, 2, 3]]);
   } else if (style === 'sanctum') { // 금빛 띠
     if (face) { pxs(g, THEME.sanctum.gold, [[x, y + 10, TILE, 1]]); if (h(1) < 0.25) pxs(g, THEME.sanctum.light, [[x + 7, y + 9, 2, 3]]); }
+  } else if (style === 'abyss') { // 맥이 흐르는 벽
+    if (face && h(1) < 0.4) { let cx = x + 3 + Math.floor(h(2) * 8), cy = y + 9; for (let i = 0; i < 5; i++) { pxs(g, '#5affd8', [[cx, cy]]); cx += h(3 + i) < 0.5 ? 1 : -1; cy++; } }
+  } else if (style === 'starfall') { // 별빛 띠
+    if (face) { g.fillStyle = 'rgba(154,216,255,0.4)'; g.fillRect(x, y + 10, TILE, 1); if (h(1) < 0.3) pxs(g, '#dff8ff', [[x + 7, y + 9]]); }
   } else if (style === 'void') { // 보랏빛 룬 띠
     if (face) { g.fillStyle = 'rgba(170,110,255,0.45)'; g.fillRect(x, y + 10, TILE, 1); if (h(1) < 0.3) pxs(g, '#c8a0ff', [[x + 6, y + 9, 3, 3]]); }
   }
@@ -205,6 +224,12 @@ function drawCover(g, x, y, style, tx, ty) {
   } else if (style === 'sanctum') { // 흰 돌기둥
     pxs(g, OUTLINE, [[x + 4, y + 1, 8, 14]]); pxs(g, '#c8c4d0', [[x + 5, y + 2, 6, 12]]); pxs(g, '#e8e4f0', [[x + 5, y + 2, 2, 12]]);
     pxs(g, '#c8a050', [[x + 4, y + 1, 8, 1], [x + 4, y + 14, 8, 1]]);
+  } else if (style === 'abyss') { // 맥이 박힌 검은 바위
+    fillEll(g, x + 8, y + 9, 7, 6, OUTLINE); fillEll(g, x + 8, y + 9, 6, 5, '#262b30'); fillEll(g, x + 7, y + 7, 4, 2, '#343a40');
+    pxs(g, '#5affd8', [[x + 5, y + 9], [x + 6, y + 10], [x + 7, y + 10], [x + 9, y + 8]]);
+  } else if (style === 'starfall') { // 떨어진 별 덩어리
+    fillEll(g, x + 8, y + 9, 7, 6, OUTLINE); fillEll(g, x + 8, y + 9, 6, 5, '#3a4270'); fillEll(g, x + 7, y + 7, 4, 2, '#4a548a');
+    pxs(g, '#9ad8ff', [[x + 6, y + 8, 3, 1], [x + 7, y + 7, 1, 3]]); pxs(g, '#ffffff', [[x + 7, y + 8]]);
   } else { // moss / 기본: 이끼 낀 바위
     fillEll(g, x + 8, y + 9, 7, 6, OUTLINE); fillEll(g, x + 8, y + 9, 6, 5, '#6a6f66'); fillEll(g, x + 7, y + 7, 4, 2, '#868b80');
     pxs(g, '#4a4e48', [[x + 3, y + 12, 10, 1]]);
@@ -242,6 +267,10 @@ function drawCrate(g, x, y, style) {
   } else if (style === 'sanctum') { // 돌 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#a8a4b4', [[x + 3, y + 4, 10, 10]]); pxs(g, '#c8c4d0', [[x + 3, y + 4, 10, 2]]);
     pxs(g, '#c8a050', [[x + 7, y + 6, 2, 6]]);
+  } else if (style === 'abyss') { // 검은 돌함
+    pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#2a3036', [[x + 3, y + 4, 10, 10]]); pxs(g, '#3a4148', [[x + 3, y + 4, 10, 2]]); pxs(g, '#5affd8', [[x + 7, y + 7, 2, 4]]);
+  } else if (style === 'starfall') { // 별 상자
+    pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#2a3058', [[x + 3, y + 4, 10, 10]]); pxs(g, '#3a4270', [[x + 3, y + 4, 10, 2]]); pxs(g, '#dff8ff', [[x + 6, y + 8, 4, 1], [x + 7, y + 7, 2, 3]]);
   } else { // 나무 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#9a6a3a', [[x + 3, y + 4, 10, 10]]); pxs(g, '#b88450', [[x + 3, y + 4, 10, 1]]);
     pxs(g, '#6a4422', [[x + 3, y + 8, 10, 1]]); for (let i = 0; i < 8; i++) pxs(g, '#6a4422', [[x + 4 + i, y + 5 + i]]);

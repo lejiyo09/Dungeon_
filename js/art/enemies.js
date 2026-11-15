@@ -238,5 +238,21 @@ Object.assign(PIX, {
     P.line(27, 2, 27, 31, 'y'); P.line(28, 2, 28, 31, 'y');                                           // 창대
     P.rect(25, 3, 6, 2, 'y'); P.rect(25, 7, 6, 2, 'y'); P.rect(29, 3, 2, 6, 'y');                       // 문빗장 모양 날
     P.ell(24, 18, 2, 2, 'b');                                                                          // 창을 쥔 손
+  } },
+  // 심연 포식자: 바닥에서 솟은 거대한 아가리, 둘레의 이빨, 안쪽의 빛, 휘감는 촉수
+  boss_maw: { tint: '#2a3a3a', w: 32, h: 32, pal: { w: '#e8e0d0', e: '#5affd8', g: '#0a1a1a' }, proc: (P) => {
+    P.line(3, 31, 6, 14, 'b'); P.line(4, 31, 7, 14, 'b'); P.line(28, 31, 25, 12, 'b'); P.line(27, 31, 24, 12, 'b'); // 촉수
+    P.ell(16, 18, 12, 13, 'a'); P.ell(16, 27, 11, 4, 'b');
+    P.ell(16, 16, 8, 9, 'g'); P.ell(16, 16, 3, 4, 'e'); P.px(15, 14, 'w');                      // 아가리 속 빛
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, x = 16 + Math.cos(a) * 8, y = 16 + Math.sin(a) * 9; P.tri(x - 1, y, x + 1, y, 16 + Math.cos(a) * 5.5, 16 + Math.sin(a) * 6.5, 'w'); } // 둘레 이빨
+    P.px(7, 8, 'e'); P.px(25, 9, 'e'); P.px(9, 5, 'e');                                         // 몸의 작은 눈들
+  } },
+  // 떨어진 별: 금이 간 거대한 별, 가운데 빛나는 핵과 눈, 떨어져 나가는 조각
+  boss_star: { tint: '#4a5aa0', w: 32, h: 32, pal: { w: '#ffffff', y: '#ffe9a0', e: '#1a1a3a', l: '#dff8ff' }, proc: (P) => {
+    const pts = []; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 6 : 14; pts.push([16 + Math.cos(a) * r, 16 + Math.sin(a) * r]); }
+    for (let i = 0; i < 10; i++) P.tri(16, 16, pts[i][0], pts[i][1], pts[(i + 1) % 10][0], pts[(i + 1) % 10][1], 'a');
+    P.ell(16, 16, 6, 6, 'c'); P.ell(16, 16, 3.5, 3.5, 'l'); P.ell(16, 16, 1.5, 2, 'e'); P.px(15, 14, 'w'); // 빛나는 핵·눈
+    P.line(9, 9, 13, 13, 'b'); P.line(22, 20, 19, 18, 'b'); P.line(11, 22, 14, 19, 'b');       // 금
+    P.tri(25, 26, 28, 26, 27, 29, 'a'); P.tri(4, 25, 6, 24, 5, 28, 'a'); P.px(28, 5, 'y'); P.px(3, 8, 'y'); // 떨어져 나가는 조각
   } }
 });
