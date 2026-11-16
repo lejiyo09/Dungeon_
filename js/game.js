@@ -236,6 +236,15 @@ class Game {
     const o = this.overlay = { type: 'rank', tab: 0, data: null, err: null, loading: true }; this.input.mouse.down = false;
     Net.syncScores().then((d) => { o.data = d; o.loading = false; }).catch((e) => { o.err = e.message; o.loading = false; }); // 서버가 초기화됐으면 이 브라우저의 사본으로 복구
   }
+  applyDeepKit(p) { // 로비에서 바로 심층에 들어갈 때의 시작 장비 (BALANCE.deepStart)
+    const K = BALANCE.deepStart;
+    if (p.line && p.rank < 2) { if (p.rank < 1) { p.maxHp += EVOLUTION.hp[0]; p.maxEnergy += EVOLUTION.energy[0]; } p.maxHp += EVOLUTION.hp[1]; p.maxEnergy += EVOLUTION.energy[1]; this.setJob(p, p.line, 2); p.skillCooldown = 0; }
+    p.maxHp += K.hp; p.hp = p.maxHp; p.energy = p.maxEnergy;
+    p.weapons = K.rarity.map((r) => new WeaponInstance(pick(DATA_WEAPONS.filter((d) => d.rarity === r && !d.questOnly)), K.lv)); p.slot = 0;
+    for (const id of p.weapons.map((w) => w.def.id)) this.discover(id);
+    for (const b of shuffled(DATA_BUFFS).slice(0, K.buffs)) { b.apply(p); p.buffs.push(b.id); }
+    if (p === this.player) this.showBanner('심층 입장', `최종 진화 · ${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv}) · 축복 ${K.buffs}개`, '#9ad8ff');
+  }
   titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
   resetWorldLists(map) {
@@ -279,6 +288,7 @@ class Game {
     this.guild(); // 오늘의 퀘스트·의뢰·진열 준비
     const pc = this.map.tileCenter(17, 18);
     this.portals.push(new Portal(pc.x, pc.y, () => this.startRun(), '던전 입장'));
+    if (this.save.sanctumReached) { const dc = this.map.tileCenter(21, 18); this.portals.push(new Portal(dc.x, dc.y, () => this.startRun(true), '심층 입장', [120, 200, 255])); } // 심층을 열면 로비에서 바로 심층으로
     this.snapCamera();
     this.showBanner('로비', '캐릭터를 고르고 포탈로 들어가세요');
   }
@@ -297,16 +307,17 @@ class Game {
   }
 
   // ── 런 진행
-  startRun() {
-    this.mode = 'dungeon'; this.trialW = null;
-    this.worldIdx = 0; this.levelIdx = 0; this.gold = 0; this.kills = 0;
+  startRun(deep = false) {
+    this.mode = 'dungeon'; this.trialW = null; this.runDeep = !!deep;
+    this.worldIdx = deep ? DEEP_START : 0; this.levelIdx = 0; this.gold = deep ? BALANCE.deepStart.gold : 0; this.kills = 0; // 심층 입장: 심층 1번째 필드부터
     this.save.runReviveUsed = false; // 새 탐험마다 부활 기회 초기화
     this.player = this.makePlayer(0, 0);
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); // 로비에서 고른 보구 (사망해도 영구 보유)
     if (tr) { this.player.treasure = tr; if (tr.apply) tr.apply(this.player); }
     this.guild(); this.applySupplies(); // 길드 퀘스트 준비 · 거래상에서 산 보급품
     this.loadStage();
-    if (!this.save.prologueSeen) this.showPrologue(() => this.askVariant()); else this.askVariant();
+    const after = deep ? () => this.applyDeepKit(this.player) : null; // 심층 입장: 갈래를 고른 뒤 시작 장비
+    if (!this.save.prologueSeen) this.showPrologue(() => this.askVariant(after)); else this.askVariant(after);
     if (Net.inRoom && Net.isHost && Net.players.length > 1) this.coopHostStart(); // 멀티: 방 사람들과 함께 출발
   }
   // ── 이어하기: 스테이지 시작 시점의 런 상태 (맵은 그 스테이지를 새로 생성)
@@ -487,7 +498,6 @@ class Game {
     this.admin = profile && profile.admin ? { god: false, nocd: false } : null; if (this.admin) this.applyAdmin();
     this.locked = false; this.enterLobby();
     if (this.save.run) this.overlay = { type: 'resume' };
-    if (Net.httpBase()) Net.syncScores().catch(() => {}); // 접속할 때마다 랭킹 사본 확인·복구 (서버 재시작 대비)
     this.backfillScore(); // 랭킹판이 생기기 전의 내 최고 기록도 한 번 올림
     this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', this.admin ? '관리자 계정 — 모든 것이 해금됨 · ` 키: 관리자 메뉴' : profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다', '#ffd84a');
   }

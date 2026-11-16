@@ -49,6 +49,8 @@ const BALANCE = {
   //  boss = 1~10필드 보스, bossDeep = 심층 보스 (보구를 가진 상태를 기준으로 더 강함)
   boss: { hp: 1.7, dmg: 1.25, cooldown: 0.85 },
   bossDeep: { hp: 1.9, dmg: 1.3, cooldown: 0.8 },
+  // 로비에서 바로 심층으로 들어갈 때 시작 장비 [제안]: 최종 진화 · 전설/영웅 무기(+강화) · 체력 · 축복 (10필드를 깬 상태를 흉내)
+  deepStart: { hp: 135, rarity: ['legendary', 'epic'], lv: 2, buffs: 4, gold: 300 },
   // 에너지가 모자랄 때 나가는 아주 약한 공격 (피해는 깊이에 따라 조금씩 커짐)
   weakAttack: { damage: 5, interval: 0.4 }
 };

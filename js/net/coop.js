@@ -90,7 +90,7 @@ Object.assign(Game.prototype, {
       if (d.k === 'setup') this.coopAddRemote(m.from, d);
       else if (d.k === 'in') { const R = this.remotes.get(m.from); if (!R) return; if (d.wp === R.warp) { R.rx = d.x; R.ry = d.y; } /* 방장이 옮긴 뒤 참가자가 확인하기 전의 옛 위치는 무시 */ R.aim = { x: d.ax, y: d.ay }; R.vin.mouse.down = !!d.md; R.dash = !!d.d; for (const e of d.ev || []) if (COOP.events.includes(e)) R.vin.pressed.add(e); }
       else if (d.k === 'ov') { const R = this.remotes.get(m.from); if (R) this.coopRemoteOverlay(R, d); }
-      else if (d.k === 'variant') { const R = this.remotes.get(m.from); const L = R && jobLines(R.p.hero.id).find((l) => l.id === d.id); if (L && R.p.rank === 0) this.withPlayer(R.p, () => this.applyVariant(L)); }
+      else if (d.k === 'variant') { const R = this.remotes.get(m.from); const L = R && jobLines(R.p.hero.id).find((l) => l.id === d.id); if (L && (R.p.rank === 0 || this.runDeep) && !R.variantSet) { R.variantSet = true; const keep = R.p.weapons, rk = R.p.rank; this.withPlayer(R.p, () => { this.applyVariant(L); if (this.runDeep) { R.p.weapons = keep; this.setJob(R.p, L, rk); } }); } }
     } else if (m.from === this.coop.hostId) {
       if (d.k === 'map') this.coopGuestMap(d);
       else if (d.k === 'snap') this.coopGuestSnap(d);
@@ -120,6 +120,7 @@ Object.assign(Game.prototype, {
     if (d.loadout && d.loadout !== hero.startWeapon && this.data.weapons.get(d.loadout)) p.weapons.push(new WeaponInstance(this.weaponDef(d.loadout)));
     const tr = DATA_TREASURES.find((t) => t.id === d.treasure); if (tr) { p.treasure = tr; if (tr.apply) tr.apply(p); } // 보구는 각자 하나씩
     const L0 = jobLines(hero.id)[0]; if (L0) this.withPlayer(p, () => this.setJob(p, L0, 0));
+    if (this.runDeep) this.withPlayer(p, () => this.applyDeepKit(p)); // 심층 입장이면 동료도 시작 장비
     this.remotes.set(id, { id, p, vin: new VirtualInput(), aim: { x: p.x + 20, y: p.y }, warp: 0 });
     this.coopSendMap(id);
   },

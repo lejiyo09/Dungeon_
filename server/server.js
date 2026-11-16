@@ -58,7 +58,7 @@ function addScoreRow(cat, row, quiet) {
   const list = scores[cat], key = cat === 'coop' ? row.party : row.name, i = list.findIndex((x) => (cat === 'coop' ? x.party : x.name) === key);
   if (i >= 0) { if (SCORE_SORT[cat](row, list[i]) >= 0) return false; list.splice(i, 1); } // 같은 이름(파티)은 최고 기록만
   list.push(row); list.sort(SCORE_SORT[cat]); list.length = Math.min(list.length, SCORE_KEEP);
-  if (!quiet) scoresDirty = true; return true;
+  if (!quiet) scoresDirty = true; markDirty(); return true;
 }
 const scoreIpAt = new Map();
 function submitScore(ip, b) {
@@ -86,7 +86,22 @@ function restoreScores(ip, b) {
   }
   return added;
 }
-setInterval(() => { if (scoresDirty) { try { fs.writeFileSync(SCORE_FILE, JSON.stringify(scores)); } catch (e) { /* 무시 */ } ghSave(); } }, 30000);
+// 저장은 모아서 (파일 1분, GitHub 5분마다 바뀐 게 있을 때만) + 서버가 꺼질 때(잠들기·재배포) 바로 저장
+let fileDirty = false;
+const markDirty = () => { fileDirty = true; scoresView = null; };
+setInterval(() => { if (fileDirty) { fileDirty = false; try { fs.writeFileSync(SCORE_FILE, JSON.stringify(scores)); } catch (e) { /* 무시 */ } } }, 60000);
+setInterval(() => { ghSave(); }, 5 * 60000);
+let shuttingDown = false;
+process.on('SIGTERM', async () => { if (shuttingDown) return; shuttingDown = true; try { fs.writeFileSync(SCORE_FILE, JSON.stringify(scores)); } catch (e) { /* 무시 */ } try { await Promise.race([ghSave(), new Promise((r) => setTimeout(r, 8000))]); } catch (e) { /* 무시 */ } process.exit(0); });
+// 보여 줄 랭킹은 분야별 상위 15개만, 한 번 만든 응답(압축본·ETag)을 바뀔 때까지 재사용 → 같은 내용이면 304(내용 없음)
+const SCORE_VIEW = 15;
+let scoresView = null;
+function scoresResponse() {
+  if (scoresView) return scoresView;
+  const v = { persist: !!(GH.token && GH.repo) }; for (const k of Object.keys(scores)) v[k] = scores[k].slice(0, SCORE_VIEW).map((r) => ({ name: r.name, hero: r.hero, stage: r.stage, label: r.label, deep: r.deep, kills: r.kills, victory: r.victory, party: r.party }));
+  const raw = Buffer.from(JSON.stringify(v)); scoresView = { raw, gz: zlib.gzipSync(raw), etag: '"s' + crypto.createHash('sha1').update(raw).digest('base64').slice(0, 12) + '"' };
+  return scoresView;
+}
 ghLoad();
 
 // ── 정적 파일
@@ -96,7 +111,9 @@ const server = http.createServer((req, res) => {
   if (p === '/api/scores') { // 랭킹판
     const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
     if (req.method === 'OPTIONS') { res.writeHead(204, cors); res.end(); return; }
-    if (req.method === 'GET') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' }, cors)); res.end(JSON.stringify(Object.assign({ persist: !!(GH.token && GH.repo) }, scores))); return; }
+    if (req.method === 'GET') { const v = scoresResponse(), h = Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', ETag: v.etag, Vary: 'Accept-Encoding' }, cors);
+      if ((req.headers['if-none-match'] || '') === v.etag) { res.writeHead(304, h); res.end(); return; }
+      const gz = /\bgzip\b/.test(req.headers['accept-encoding'] || ''); if (gz) h['Content-Encoding'] = 'gzip'; res.writeHead(200, h); res.end(gz ? v.gz : v.raw); return; }
     if (req.method === 'POST') { let body = ''; req.on('data', (c) => { body += c; if (body.length > 4000) req.destroy(); });
       req.on('end', () => { let b = {}; try { b = JSON.parse(body); } catch (e) { /* 무시 */ } const err = submitScore(req.headers['x-forwarded-for'] ? String(req.headers['x-forwarded-for']).split(',')[0].trim() : req.socket.remoteAddress, b);
         res.writeHead(err ? 429 : 200, Object.assign({ 'Content-Type': 'application/json' }, cors)); res.end(JSON.stringify({ ok: !err, error: err })); }); return; }

@@ -63,7 +63,11 @@ const Net = {
     if (/^https?:$/.test(location.protocol) && !/claude/.test(location.hostname)) return location.origin;
     return NET_CONFIG.server ? NET_CONFIG.server.replace(/^ws/, 'http').replace(/\/ws$/, '') : null;
   },
-  async fetchScores() { const b = this.httpBase(); if (!b) throw new Error('랭킹판은 서버 주소(Render)에서 열었을 때만 볼 수 있어요'); const r = await fetch(b + '/api/scores', { cache: 'no-store' }); if (!r.ok) throw new Error('랭킹을 불러오지 못했습니다'); return r.json(); },
+  async fetchScores() { // 브라우저가 ETag로 다시 확인 → 바뀌지 않았으면 서버는 내용 없이 응답 (데이터 절약)
+    const b = this.httpBase(); if (!b) throw new Error('랭킹판은 서버 주소(Render)에서 열었을 때만 볼 수 있어요');
+    if (this.scoreMem && performance.now() - this.scoreMem.at < 60000) return Object.assign({}, this.scoreMem.d); // 1분 안에 다시 열면 서버에 묻지 않음
+    const r = await fetch(b + '/api/scores', { cache: 'no-cache' }); if (!r.ok) throw new Error('랭킹을 불러오지 못했습니다');
+    const d = await r.json(); this.scoreMem = { at: performance.now(), d }; return Object.assign({}, d); },
   // 랭킹 사본: 본 적 있는 기록을 이 브라우저에 보관 → 서버가 비어 있으면 다시 채워 넣음 (서버 재시작 대비)
   scoreKey(cat, r) { return cat === 'coop' ? r.party : r.name; },
   async syncScores() {
@@ -73,11 +77,11 @@ const Net = {
     for (const cat of ['stage', 'kills', 'deep', 'coop']) { const have = new Map((d[cat] || []).map((r) => [this.scoreKey(cat, r), r]));
       missing[cat] = (cache[cat] || []).filter((r) => { const s = have.get(this.scoreKey(cat, r)); return !s || (cat === 'kills' ? r.kills > s.kills : cat === 'deep' ? r.deep > s.deep : r.stage > s.stage); });
       if (missing[cat].length) need = true; }
-    if (need) { try { await fetch(b + '/api/scores/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(missing) }); const d2 = await this.fetchScores(); Object.assign(d, d2); d.restored = true; } catch (e) { /* 다음에 다시 */ } }
+    if (need) { this.scoreMem = null; try { await fetch(b + '/api/scores/restore', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(missing) }); const d2 = await this.fetchScores(); Object.assign(d, d2); d.restored = true; } catch (e) { /* 다음에 다시 */ } }
     const merged = {}; for (const cat of ['stage', 'kills', 'deep', 'coop']) { const m = new Map(); for (const r of [...(cache[cat] || []), ...(d[cat] || [])]) m.set(this.scoreKey(cat, r), r); merged[cat] = [...m.values()].slice(-60); }
     try { localStorage.setItem('pd_scores_cache', JSON.stringify(merged)); } catch (e) { /* 저장 공간 없음 */ }
     return d;
   },
-  submitScore(row) { const b = this.httpBase(); if (!b) return; fetch(b + '/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(row) }).catch(() => {}); },
+  submitScore(row) { const b = this.httpBase(); if (!b) return; this.scoreMem = null; fetch(b + '/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(row) }).catch(() => {}); },
   nameOf(id) { const p = this.players.find((q) => q.id === id); return p ? p.name : '?'; }
 };
