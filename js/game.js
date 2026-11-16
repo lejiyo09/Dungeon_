@@ -245,6 +245,12 @@ class Game {
     for (const b of shuffled(DATA_BUFFS).slice(0, K.buffs)) { b.apply(p); p.buffs.push(b.id); }
     if (p === this.player) this.showBanner('심층 입장', `최종 진화 · ${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv}) · 축복 ${K.buffs}개`, '#9ad8ff');
   }
+  deepCheckpoint(heroId) { const c = this.save.deepCheckpoints; return (c && c[heroId]) || null; } // 직업마다 10-4를 깼을 때의 캐릭터
+  useCheckpoint(p, cp, tr) { // 체력·에너지 가득, 보구는 지금 장착한 것
+    p.hp = p.maxHp; p.energy = p.maxEnergy; p.shield = p.maxShield; p.skillCooldown = 0;
+    p.treasure = tr || null; if (tr && tr.apply) tr.apply(p);
+    if (p === this.player) for (const w of p.weapons) this.discover(w.def.id);
+  }
   titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
   resetWorldLists(map) {
@@ -313,11 +319,15 @@ class Game {
     this.save.runReviveUsed = false; // 새 탐험마다 부활 기회 초기화
     this.player = this.makePlayer(0, 0);
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); // 로비에서 고른 보구 (사망해도 영구 보유)
-    if (tr) { this.player.treasure = tr; if (tr.apply) tr.apply(this.player); }
+    const cp = deep && this.deepCheckpoint(this.save.selected);
+    if (cp) { this.player = this.playerFromSnapshot(this.player.hero, cp); this.gold = cp.gold || 0; this.useCheckpoint(this.player, cp, tr); } // 심층 입장: 10-4를 깬 그대로 (보구는 지금 장착한 것)
+    else if (tr) { this.player.treasure = tr; if (tr.apply) tr.apply(this.player); }
     this.guild(); this.applySupplies(); // 길드 퀘스트 준비 · 거래상에서 산 보급품
     this.loadStage();
-    const after = deep ? () => this.applyDeepKit(this.player) : null; // 심층 입장: 갈래를 고른 뒤 시작 장비
-    if (!this.save.prologueSeen) this.showPrologue(() => this.askVariant(after)); else this.askVariant(after);
+    if (cp) {
+      this.showBanner('심층 입장', `10-4를 깬 그대로 · ${this.player.weapons.map((w) => w.def.name).join(' + ')} · 축복 ${this.player.buffs.length}개`, '#9ad8ff'); }
+    else { const after = deep ? () => this.applyDeepKit(this.player) : null; // 이 직업의 10-4 기록이 없으면 기본 심층 장비
+      if (!this.save.prologueSeen) this.showPrologue(() => this.askVariant(after)); else this.askVariant(after); }
     if (Net.inRoom && Net.isHost && Net.players.length > 1) this.coopHostStart(); // 멀티: 방 사람들과 함께 출발
   }
   // ── 이어하기: 스테이지 시작 시점의 런 상태 (맵은 그 스테이지를 새로 생성)
@@ -329,19 +339,24 @@ class Game {
         stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
         treasure: p.treasure ? p.treasure.id : null, line: p.line ? p.line.id : null, rank: p.rank || 0, hybrid: p.hybrid ? { id: p.hybrid.id, el: p.hybrid.el } : null } };
   }
+  playerFromSnapshot(hero, s, p = new Player(0, 0, hero, this.data.base)) { // 저장된 캐릭터 상태 → 플레이어 (이어하기·심층 기록 공용)
+    return this.withPlayer(p, () => {
+      for (const k of ['maxHp', 'hp', 'maxShield', 'maxEnergy', 'energy', 'moveSpeed', 'dashCdMax', 'skillCdMax', 'vampire', 'damageReduction']) if (typeof s[k] === 'number') p[k] = s[k];
+      Object.assign(p.stats, s.stats); p.buffs = s.buffs || [];
+      p.weapons = (s.weapons || []).map((id, i) => [id, (s.weaponLv || [])[i] || 0]).filter(([id]) => this.data.weapons.get(id)).map(([id, lv]) => new WeaponInstance(this.data.weapons.get(id), lv));
+      if (!p.weapons.length) p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
+      p.slot = Math.min(s.slot || 0, p.weapons.length - 1);
+      p.treasure = DATA_TREASURES.find((t) => t.id === s.treasure) || null; // 보구 효과는 위 능력치에 이미 반영돼 있음
+      const ln = jobLines(hero.id).find((l) => l.id === s.line) || jobLines(hero.id)[0]; if (ln) { this.setJob(p, ln, Math.min(2, s.rank || 0)); p.skillCdMax = p.skillBaseCd * ((s.skillCdMax || p.skillBaseCd) / p.skillBaseCd); } // 계열·진화 단계
+      if (s.hybrid && HYBRID_JOBS[s.hybrid.id]) { const H = HYBRID_JOBS[s.hybrid.id], el = jobLines(H.master).find((l) => l.id === s.hybrid.el); if (el) this.setHybrid(p, H, el); } // 혼합 직업 (쿨타임 감소 비율 유지)
+      return p;
+    });
+  }
   resumeRun() {
     const r = this.save.run, hero = r && this.data.heroes.get(r.hero);
     if (!r || !hero) { this.save.run = null; writeSave(this.save); this.startRun(); return; }
     this.mode = 'dungeon'; this.worldIdx = r.worldIdx; this.levelIdx = r.levelIdx; this.gold = r.gold; this.kills = r.kills;
-    const p = this.player = new Player(0, 0, hero, this.data.base), s = r.p;
-    for (const k of ['maxHp', 'hp', 'maxShield', 'maxEnergy', 'energy', 'moveSpeed', 'dashCdMax', 'skillCdMax', 'vampire', 'damageReduction']) if (typeof s[k] === 'number') p[k] = s[k];
-    Object.assign(p.stats, s.stats); p.buffs = s.buffs || [];
-    p.weapons = (s.weapons || []).map((id, i) => [id, (s.weaponLv || [])[i] || 0]).filter(([id]) => this.data.weapons.get(id)).map(([id, lv]) => new WeaponInstance(this.data.weapons.get(id), lv));
-    if (!p.weapons.length) p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
-    p.slot = Math.min(s.slot || 0, p.weapons.length - 1);
-    p.treasure = DATA_TREASURES.find((t) => t.id === s.treasure) || null; // 보구 효과는 위 능력치에 이미 반영돼 있음
-    const ln = jobLines(hero.id).find((l) => l.id === s.line) || jobLines(hero.id)[0]; if (ln) { this.setJob(p, ln, Math.min(2, s.rank || 0)); p.skillCdMax = p.skillBaseCd * ((s.skillCdMax || p.skillBaseCd) / p.skillBaseCd); } // 계열·진화 단계
-    if (s.hybrid && HYBRID_JOBS[s.hybrid.id]) { const H = HYBRID_JOBS[s.hybrid.id], el = jobLines(H.master).find((l) => l.id === s.hybrid.el); if (el) this.setHybrid(p, H, el); } // 혼합 직업 (쿨타임 감소 비율 유지)
+    this.player = this.playerFromSnapshot(hero, r.p);
     this.loadStage();
     this.showBanner(`이어하기 · ${stageLabel(this.worldIdx, this.levelIdx)} ${this.W.name}`, '스테이지 시작 지점부터 다시 시작합니다', '#7ad0ff');
   }
@@ -349,7 +364,9 @@ class Game {
   showPrologue(then) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => { this.save.prologueSeen = true; writeSave(this.save); if (then) then(); } }; }
   // 기원의 성역 깊은 곳: 전설의 존재와 마주함 → 소원이 드러남 → 보구 선택
   enterSanctum() {
-    this.save.sanctumReached = true; writeSave(this.save);
+    this.save.sanctumReached = true;
+    if (!this.trialW && this.player) { const c = this.save.deepCheckpoints = this.save.deepCheckpoints || {}; c[this.player.hero.id] = Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() }); } // 10-4를 깬 캐릭터 저장 → 로비에서 심층 입장 시 그대로
+    writeSave(this.save);
     SFX.stopMusic();
     this.overlay = { type: 'story', sanctum: true, lines: SANCTUM_LINES, i: 0, t: 0, done: () => { this.overlay = { type: 'treasure_pick', msg: null }; } };
   }

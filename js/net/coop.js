@@ -77,7 +77,7 @@ Object.assign(Game.prototype, {
     return out;
   },
   coopOnNet(m) {
-    if (!this.coop) { if (m.t === 'relay' && m.data && m.data.k === 'start' && this.mode === 'lobby' && !this.transition) this.coopGuestStart(m.from); return; }
+    if (!this.coop) { if (m.t === 'relay' && m.data && m.data.k === 'start' && this.mode === 'lobby' && !this.transition) this.coopGuestStart(m.from, !!m.data.deep); return; }
     if (m.t === 'players') {
       if (this.coop.host) { for (const id of [...this.remotes.keys()]) if (!Net.players.some((p) => p.id === id)) this.remotes.delete(id); }
       else if (!Net.players.some((p) => p.id === this.coop.hostId)) this.coopGuestEnd({ victory: false, hostLeft: true });
@@ -105,7 +105,7 @@ Object.assign(Game.prototype, {
   coopHostStart() {
     this.coop = { host: true, me: this.player, aim: null, snapT: 0, nid: 0, fx: [], lastTiles: null };
     this.remotes = new Map();
-    Net.raw({ t: 'start', on: true }); Net.relay({ k: 'start' });
+    Net.raw({ t: 'start', on: true }); Net.relay({ k: 'start', deep: !!this.runDeep });
     const E = this.effects, fx = this.coop.fx; this.coop.fxOrig = {}; // 연출을 기록해 참가자에게도 보냄
     for (const name of COOP.fx) { const orig = E[name]; this.coop.fxOrig[name] = orig; E[name] = function (...a) { if (fx.length < 90) fx.push([name, ...a.map((v) => (typeof v === 'number' ? r1(v) : v))]); return orig.apply(this, a); }; }
     this.coopSendMap();
@@ -120,7 +120,8 @@ Object.assign(Game.prototype, {
     if (d.loadout && d.loadout !== hero.startWeapon && this.data.weapons.get(d.loadout)) p.weapons.push(new WeaponInstance(this.weaponDef(d.loadout)));
     const tr = DATA_TREASURES.find((t) => t.id === d.treasure); if (tr) { p.treasure = tr; if (tr.apply) tr.apply(p); } // 보구는 각자 하나씩
     const L0 = jobLines(hero.id)[0]; if (L0) this.withPlayer(p, () => this.setJob(p, L0, 0));
-    if (this.runDeep) this.withPlayer(p, () => this.applyDeepKit(p)); // 심층 입장이면 동료도 시작 장비
+    if (this.runDeep && d.cp && typeof d.cp === 'object') { this.playerFromSnapshot(hero, d.cp, p); this.useCheckpoint(p, d.cp, tr); } // 심층: 동료가 10-4를 깬 그대로
+    else if (this.runDeep) this.withPlayer(p, () => this.applyDeepKit(p)); // 기록이 없으면 기본 심층 장비
     this.remotes.set(id, { id, p, vin: new VirtualInput(), aim: { x: p.x + 20, y: p.y }, warp: 0 });
     this.coopSendMap(id);
   },
@@ -223,13 +224,16 @@ Object.assign(Game.prototype, {
   },
 
   // ── 참가자
-  coopGuestStart(hostId) {
+  coopGuestStart(hostId, deep = false) {
     SFX.stopMusic(); this.overlay = null; this.cutscene = null; this.cinematic = null; this.slowMo = null; this.trialW = null;
     this.coop = { guest: true, hostId, loading: true, others: new Map(), enemies: new Map(), inT: 0, ev: [], warp: -1 };
     this.mode = 'dungeon'; this.gold = 0; this.kills = 0;
     this.player = this.makePlayer(0, 0);
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) this.player.treasure = tr;
-    Net.relay({ k: 'setup', hero: this.save.selected, treasure: this.save.treasureEquipped, loadout: this.save.loadout, jobLv: this.jobLevel(this.save.selected) }, hostId);
+    const cp = deep && this.deepCheckpoint(this.save.selected); // 심층: 내 직업으로 10-4를 깬 캐릭터가 있으면 그대로
+    if (cp) { this.player = this.playerFromSnapshot(this.player.hero, cp); this.useCheckpoint(this.player, cp, tr); }
+    Net.relay({ k: 'setup', hero: this.save.selected, treasure: this.save.treasureEquipped, loadout: this.save.loadout, jobLv: this.jobLevel(this.save.selected), cp: cp || null }, hostId);
+    if (cp) return;
     const lines = jobLines(this.player.hero.id); // 갈래 고르기 (방장에게 알림)
     if (lines.length > 1 && !branchesAtEvolve(this.player.hero.id)) this.overlay = { type: 'variant', lines, title: JOB_LINES[this.player.hero.id].title, onPick: (L) => { Net.relay({ k: 'variant', id: L.id }, hostId); this.setJob(this.player, L, 0); } };
     else if (lines[0]) this.setJob(this.player, lines[0], 0);
