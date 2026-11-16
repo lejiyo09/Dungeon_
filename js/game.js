@@ -178,6 +178,7 @@ class Game {
     tbl(20, 31, [[-22, 'f'], [22, 'dealer']], { gamble: true });
     tbl(10, 34, [[-22, 'b'], [22, 'a']], { line: GUILD_CHATTER[2] });
     { const t = new MerlinTable(24 * TILE, 34 * TILE + 8); this.props.push(t); } // 오른쪽 구석: 후드를 쓴 마법사
+    this.props.push(new StoryShelf(3 * TILE + 8, 30 * TILE)); // 왼쪽 벽: 이야기 기록 책장
     this.guild(); // 오늘의 퀘스트·의뢰·진열 준비
     const pc = this.map.tileCenter(17, 18);
     this.portals.push(new Portal(pc.x, pc.y, () => this.startRun(), '던전 입장'));
@@ -548,6 +549,17 @@ class Game {
       const list = DATA_TREASURES.filter((t) => !t.questOnly); // 시련으로만 얻는 보구는 제외
       if (!list.length || this.save.treasures.length) { if (input.wasPressed('Enter') || input.wasPressed('Mouse0')) this.pickTreasure(null); return; } // 첫 보구는 한 번만 (추가 획득 방법은 미정)
       if (input.wasPressed('Mouse0')) { const m = input.mouse, i = list.findIndex((_, i) => { const r = HUD.treasureRect(i, list.length); return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; }); if (i >= 0) this.pickTreasure(list[i]); }
+    } else if (o.type === 'archive') { // 이야기 기록: 고른 장면을 다시 재생
+      if (o.msg) o.msg.t -= STEP;
+      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
+      const m = input.mouse; let pickI = -1;
+      STORY_ARCHIVE.forEach((s, i) => { const r = HUD.guildRow(i); if (input.wasPressed('Digit' + (i + 1)) || (input.wasPressed('Mouse0') && m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h)) pickI = i; });
+      if (pickI < 0) return;
+      const S = STORY_ARCHIVE[pickI]; this.input.mouse.down = false;
+      if (!S.unlocked(this.save)) { o.msg = { text: '아직 보지 못한 이야기입니다', color: '#ff9a9a', t: 2 }; return; }
+      const back = () => { this.overlay = { type: 'archive', msg: null }; };
+      if (S.kind === 'cut') { this.overlay = null; this.playCutscene(S.lines(), { always: true, force: true, done: back }); }
+      else this.overlay = { type: 'story', sanctum: S.kind === 'sanctum', lines: S.lines(), i: 0, t: 0, done: back };
     } else if (o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble') { // 탐험가 길드 창들
       if (o.msg) o.msg.t -= STEP; if (o.roll > 0) { o.roll -= STEP; if (o.roll <= 0 && o.pending) { o.msg = { text: o.pending.text, color: o.pending.color, t: 2.5 }; o.result = o.pending; o.pending = null; } return; }
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }

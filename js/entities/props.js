@@ -568,3 +568,19 @@ class MerlinTable {
   }
   renderTop(ctx) { if (this.bubble && this.bubble.t > 0) { this.bubble.t -= 1 / 60; drawBubble(ctx, Math.round(this.x) + 22, Math.round(this.y) - 44, this.bubble.text); } } // 말풍선은 캐릭터 위에
 }
+
+// 왼쪽 벽의 책장: '이야기 기록' — 지금까지 본 프롤로그·컷신을 다시 보기
+class StoryShelf {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 26; }
+  label() { return '[E] 이야기 기록 — 다시 보기'; }
+  get labelColor() { return '#e0d0b0'; }
+  interact(game) { game.overlay = { type: 'archive', msg: null }; }
+  render(ctx) {
+    const x = Math.round(this.x), y = Math.round(this.y), W = 14, H = 40;
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - W / 2 - 1, y - H, W + 2, H + 6); ctx.fillStyle = '#5a3a20'; ctx.fillRect(x - W / 2, y - H + 1, W, H + 4);
+    const cols = ['#a04040', '#3a5a8a', '#4a7a3a', '#c89a40', '#6a4a8a', '#8a6a3a'];
+    for (let r = 0; r < 4; r++) { const yy = y - H + 3 + r * 11; ctx.fillStyle = '#3a2614'; ctx.fillRect(x - W / 2 + 1, yy + 8, W - 2, 2);
+      for (let i = 0; i < 4; i++) { ctx.fillStyle = cols[(r * 3 + i) % cols.length]; ctx.fillRect(x - W / 2 + 2 + i * 3, yy + 1 + (i % 2), 2, 7 - (i % 2)); } }
+    signText(ctx, '이야기 기록', x + 10, y + 12, '#e0d0b0');
+  }
+}

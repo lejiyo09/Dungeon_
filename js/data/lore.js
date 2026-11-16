@@ -81,5 +81,15 @@ const MERLIN_REWARD_LINES = [
   '멀린이 지팡이를 가볍게 두드리자, 발밑에 꽃잎이 흩날린다.',
   '「가든 오브 아발론. 꽃이 지기 전에 싸움을 끝내도록.」'
 ];
+// 탐험가 길드 '이야기 기록' 책장: 지금까지 본 이야기를 다시 보기 (unlocked: 볼 수 있는 조건)
+const STORY_ARCHIVE = [
+  { id: 'prologue', name: '프롤로그', kind: 'story', lines: () => PROLOGUE_LINES, unlocked: () => true },
+  { id: 'origin_arrival', name: '기원의 성역 도착', kind: 'cut', lines: () => ORIGIN_ARRIVAL_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('origin_arrival') },
+  { id: 'gatekeeper_intro', name: '무명의 문지기', kind: 'cut', lines: () => GATEKEEPER_INTRO_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gatekeeper_intro') },
+  { id: 'gatekeeper_fall', name: '열리는 문', kind: 'cut', lines: () => GATEKEEPER_FALL_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gatekeeper_fall') },
+  { id: 'sanctum', name: '성역 깊은 곳', kind: 'sanctum', lines: () => SANCTUM_LINES, unlocked: (sv) => !!sv.sanctumReached },
+  { id: 'merlin', name: '후드를 쓴 마법사', kind: 'cut', lines: () => MERLIN_REVEAL_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.revealed) },
+  { id: 'avalon', name: '아발론의 정원', kind: 'cut', lines: () => MERLIN_REWARD_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest === 2) }
+];
 const MERLIN_TRIAL = { gate: 1, deep: 2 }; // 시련: 무명의 문지기 다시 처치 1번 + 심층 보스 2마리 처치 [제안]
 const MERLIN_CHATTER = ['「꽃은 금방 시든다. 그래서 아름답지.」', '「탑 위에서 보면, 이 던전도 꽤 볼만하다네.」', '「왕은 잘 지내려나… 아니, 혼잣말일세.」'];

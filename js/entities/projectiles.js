@@ -737,6 +737,7 @@ class Trap {
     ctx.fillStyle = OUTLINE; ctx.fillRect(x - 8, y - w - 1, 16, w * 2 + 2); ctx.fillStyle = '#6a6a74'; ctx.fillRect(x - 7, y - 1, 14, 2); // 받침
     ctx.fillStyle = '#a8a8b4'; ctx.fillRect(x - 7, y - w, 14, 1); ctx.fillRect(x - 7, y + w - 1, 14, 1); // 양쪽 턱
     for (let i = -6; i <= 6; i += 3) { ctx.fillRect(x + i, y - w + 1, 1, 2); ctx.fillRect(x + i, y + w - 3, 1, 2); } // 톱니
-    ctx.fillStyle = '#c8a050'; ctx.fillRect(x - 1, y - 1, 2, 2); // 발판
+    ctx.fillStyle = this.def.status && this.def.status.type === 'freeze' ? '#bfefff' : '#c8a050'; ctx.fillRect(x - 1, y - 1, 2, 2); // 발판 (서리 덫은 얼음빛)
+    if (this.def.status && this.def.status.type === 'freeze') { ctx.strokeStyle = 'rgba(191,239,255,0.4)'; ctx.beginPath(); ctx.arc(x, y, this.D.radius, 0, TAU); ctx.stroke(); }
   }
 }

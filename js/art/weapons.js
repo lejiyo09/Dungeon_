@@ -110,7 +110,7 @@ Object.assign(WEAPON_SPRITE, {
   weapon_scatter_001: 'scatter', weapon_launcher_001: 'orbcannon', weapon_homing_001: 'missilepod', weapon_rocket_001: 'rocket',
   weapon_cluster_001: 'cluster', weapon_mine_001: 'mine', weapon_flame_001: 'flamer', weapon_acid_001: 'sprayer',
   weapon_wand_001: 'wand2', weapon_frost_001: 'froststaff', weapon_staff_001: 'starstaff', weapon_lightning_001: 'boltstaff',
-  weapon_firestaff_001: 'firestaff', weapon_inferno_001: 'infernostaff', weapon_holystaff_001: 'holystaff', weapon_beartrap_001: 'beartrap', weapon_shocktrap_001: 'shocktrap', weapon_windstaff_001: 'windstaff', weapon_void_001: 'voidstaff',
+  weapon_firestaff_001: 'firestaff', weapon_poisonfan_001: 'fanknives', weapon_icetrap_001: 'beartrap', weapon_twinaxe_001: 'spinaxe', weapon_lightdisc_001: 'chakram', weapon_meteorstaff_001: 'starstaff', weapon_thunderhammer_001: 'quakehammer', weapon_inferno_001: 'infernostaff', weapon_holystaff_001: 'holystaff', weapon_beartrap_001: 'beartrap', weapon_shocktrap_001: 'shocktrap', weapon_windstaff_001: 'windstaff', weapon_void_001: 'voidstaff',
   weapon_rapier_001: 'rapier', weapon_halberd_001: 'halberd',
   weapon_longbow_001: 'longbow', weapon_shortbow_001: 'shortbow', weapon_frostbow_001: 'frostbow', weapon_triplebow_001: 'triplebow',
   weapon_thunderbow_001: 'thunderbow', weapon_bubble_001: 'bubblegun', weapon_javelin_001: 'javelin', weapon_molotov_001: 'molotov',

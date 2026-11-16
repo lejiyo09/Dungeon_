@@ -395,5 +395,25 @@ const DATA_WEAPONS = [
     pierce: 0, knockback: 4, color: '#c04a1a', len: 14, bulletColor: '#ffb040', bulletSize: 3 },
   { id: 'weapon_holystaff_001', name: '성광의 지팡이', rarity: 'rare', type: 'gun', shape: 'staff',
     damage: 34, fireRate: 2.4, energyCost: 1.5, range: 380, projectileSpeed: 300, projectileCount: 1, spreadDeg: 1, homing: 2,
-    status: { type: 'blind', chance: 0.5, duration: 3 }, pierce: 1, knockback: 2, color: '#e0d0a0', len: 12, bulletColor: '#fff4c0', bulletSize: 2 }
+    status: { type: 'blind', chance: 0.5, duration: 3 }, pierce: 1, knockback: 2, color: '#e0d0a0', len: 12, bulletColor: '#fff4c0', bulletSize: 2 },
+  // ── 추가 무기 2차
+  { id: 'weapon_poisonfan_001', name: '독침 부채', rarity: 'uncommon', type: 'gun', shape: 'gun',
+    damage: 10, fireRate: 2.4, energyCost: 0.5, range: 240, projectileSpeed: 340, projectileCount: 4, spreadDeg: 0, fanDeg: 36,
+    status: { type: 'poison', chance: 0.5, duration: 3, dps: 6 }, pierce: 0, knockback: 1, arrow: true, color: '#5a8a4a', len: 8, bulletColor: '#9aff5a' },
+  { id: 'weapon_icetrap_001', name: '서리 덫', rarity: 'rare', type: 'gun', shape: 'gun',
+    damage: 50, fireRate: 1.2, energyCost: 2, range: 160, projectileSpeed: 0, projectileCount: 1, knockback: 0,
+    trap: { max: 4, life: 25, radius: 20, root: 1.4 }, status: { type: 'freeze', chance: 1, duration: 3, slow: 0.35 }, color: '#6a9ac8', len: 9, bulletColor: '#bfefff' },
+  { id: 'weapon_twinaxe_001', name: '쌍날 도끼', rarity: 'rare', type: 'melee', shape: 'hammer',
+    damage: 34, fireRate: 1.2, energyCost: 1, range: 34, arcDeg: 180, wave: { damage: 15, speed: 250, range: 150 }, nth: { every: 3, mult: 1.8 },
+    knockback: 8, shake: true, color: '#8a8a94', len: 13 },
+  { id: 'weapon_lightdisc_001', name: '빛의 원반', rarity: 'epic', type: 'gun', shape: 'gun',
+    damage: 40, fireRate: 1.6, energyCost: 1.5, range: 520, projectileSpeed: 320, projectileCount: 1, spreadDeg: 0,
+    ricochet: 5, spinSprite: true, status: { type: 'blind', chance: 0.6, duration: 3 }, pierce: 0, knockback: 3, color: '#e0d0a0', len: 8, bulletColor: '#fff4c0' },
+  { id: 'weapon_meteorstaff_001', name: '유성 지팡이', rarity: 'epic', type: 'gun', shape: 'staff',
+    damage: 19, fireRate: 0.9, energyCost: 3, range: 260, projectileSpeed: 0, projectileCount: 1,
+    meteor: { count: 5, spread: 30, r: 18, delay: 0.5, stagger: 0.08 }, status: { type: 'burn', chance: 0.5, duration: 2, dps: 6 },
+    knockback: 6, color: '#6a4a8a', len: 13, bulletColor: '#ffb040' },
+  { id: 'weapon_thunderhammer_001', name: '뇌명의 철퇴', rarity: 'legendary', type: 'melee', shape: 'hammer',
+    damage: 70, fireRate: 0.95, energyCost: 1.5, range: 38, arcDeg: 170, slam: { r: 40, damage: 38 }, deflect: true,
+    status: { type: 'shock', chance: 1, duration: 3 }, knockback: 14, shake: true, color: '#5a6a9a', len: 15 }
 ];
