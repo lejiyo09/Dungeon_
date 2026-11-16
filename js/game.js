@@ -46,10 +46,24 @@ class Game {
   makePlayer(x, y) {
     const hero = this.heroDef(this.save.selected);
     const p = new Player(x, y, hero, this.data.base);
+    const J = BALANCE.jobLevel, lv = this.jobLevel(hero.id); // 직업 레벨 보너스
+    if (lv) { p.maxHp += J.hp * lv; p.hp = p.maxHp; p.maxEnergy += J.energy * lv; p.energy = p.maxEnergy; p.stats.attackBonus += J.atk * lv; }
     p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
     const lo = this.save.loadout; // 무기고에서 장착한 시작 보조 무기
     if (lo && lo !== hero.startWeapon && this.data.weapons.get(lo) && this.save.armory.includes(lo)) p.weapons.push(new WeaponInstance(this.weaponDef(lo)));
     return p;
+  }
+  jobLevel(id) { return (this.save.jobLv && this.save.jobLv[id]) || 0; }
+  jobLevelCost(id) { const J = BALANCE.jobLevel, lv = this.jobLevel(id); return lv >= J.max ? null : J.base + J.perLevel * lv; }
+  levelUpJob(hero) {
+    const s = this.save, cost = this.jobLevelCost(hero.id), p = this.player;
+    if (cost === null) { this.effects.text(p.x, p.y - 18, '최고 레벨입니다', '#ffd84a'); return; }
+    if (s.bank < cost) { this.effects.text(p.x, p.y - 18, `${CUR.name}이 부족합니다`, '#ff7070'); SFX.play('deny'); return; }
+    s.bank -= cost; s.jobLv = s.jobLv || {}; s.jobLv[hero.id] = this.jobLevel(hero.id) + 1; writeSave(s);
+    const { x, y } = p; this.player = this.makePlayer(x, y);
+    const J = BALANCE.jobLevel, lv = s.jobLv[hero.id];
+    this.effects.ring(x, y, 30, '#7ad0ff'); this.effects.burst(x, y, '#7ad0ff', 18); SFX.play('buy');
+    this.showBanner(`${hero.name} Lv.${lv}`, `누적: 체력 +${J.hp * lv} · 공격력 +${Math.round(J.atk * lv * 1000) / 10}% · 에너지 +${J.energy * lv}`, '#7ad0ff');
   }
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
   resetWorldLists(map) {
@@ -90,7 +104,8 @@ class Game {
     const { x, y } = this.player;
     this.player = this.makePlayer(x, y);
     this.discover(hero.startWeapon);
-    this.showBanner(hero.name, `${hero.title} · 스킬: ${hero.skillName} — ${hero.skillDesc}` + (hero.passiveName ? ` · 패시브: ${hero.passiveName} (${hero.passiveDesc})` : ''));
+    const J = BALANCE.jobLevel; // 고른 뒤 같은 단상에서 E를 누르면 직업 레벨업 안내
+    this.showBanner(hero.name + (this.jobLevel(hero.id) ? ` Lv.${this.jobLevel(hero.id)}` : ''), `다시 E: 직업 레벨업 (레벨당 체력 +${J.hp} · 공격력 +${J.atk * 100}% · 에너지 +${J.energy}) · ${hero.title} · 스킬: ${hero.skillName} — ${hero.skillDesc}` + (hero.passiveName ? ` · 패시브: ${hero.passiveName} (${hero.passiveDesc})` : ''));
   }
 
   // ── 런 진행

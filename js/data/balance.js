@@ -26,6 +26,8 @@ const BALANCE = {
   rarityWeight: { common: 5, uncommon: 4, rare: 3, epic: 1.5, legendary: 0.1 }, epicPerWorld: 0.8, legendaryPerWorld: 0.06,
   // 로비 재화: 던전 골드와 별도. 런이 끝날 때 결과에 따라 지급 (캐릭터 해금·무기고에 사용)
   //  기존 골드 적립 속도와 비슷하게 맞춘 값 (조정 가능)
+  // 직업 레벨 (결정석으로 영구 소량 강화, 직업마다 따로): 레벨당 능력치, 레벨업 비용 = base + perLevel × (현재 레벨)
+  jobLevel: { max: 10, base: 50, perLevel: 30, hp: 3, atk: 0.015, energy: 3 },
   lobbyCurrency: { name: '결정석', color: '#7ad0ff', perStage: 15, perBoss: 40, victory: 80 },
   bossHealRatio: 0.5,         // 월드 보스 처치 시 최대 체력 대비 회복
   // 정예 몬스터: 2월드부터 등장, 확률 = base + perWorld × (월드-1)
@@ -42,7 +44,7 @@ const BALANCE = {
   // 보스 강화 배율 (전직의 방 상위자는 제외): 체력·공격력·공격 간격
   //  boss = 1~10필드 보스, bossDeep = 심층 보스 (보구를 가진 상태를 기준으로 더 강함)
   boss: { hp: 1.7, dmg: 1.25, cooldown: 0.85 },
-  bossDeep: { hp: 2.1, dmg: 1.35, cooldown: 0.8 },
+  bossDeep: { hp: 1.9, dmg: 1.3, cooldown: 0.8 },
   // 에너지가 모자랄 때 나가는 아주 약한 공격 (피해는 깊이에 따라 조금씩 커짐)
   weakAttack: { damage: 5, interval: 0.4 }
 };

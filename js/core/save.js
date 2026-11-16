@@ -8,7 +8,7 @@ function freeHeroes() { return DATA_HEROES.filter((h) => h.price === 0).map((h) 
 function defaultSave() {
   return { bank: 0, unlocked: freeHeroes(), selected: 'hero_swordsman', armory: [], loadout: null,
     discovered: DATA_HEROES.map((h) => h.startWeapon), clears: 0, bestStage: 0,
-    prologueSeen: false, sanctumReached: false, treasures: [], treasureEquipped: null, run: null };
+    prologueSeen: false, sanctumReached: false, treasures: [], treasureEquipped: null, run: null, jobLv: {} };
 }
 // 로그인한 계정의 저장 칸 (게스트는 저장하지 않음)
 function loadSave() {

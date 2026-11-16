@@ -230,12 +230,15 @@ class Pedestal {
   constructor(x, y, hero, row = 0) { this.x = x; this.y = y; this.hero = hero; this.row = row; this.radius = 18; this.seed = Math.random() * 3; this.t = 0; }
   label(game) {
     const s = game.save;
-    if (s.selected === this.hero.id) return null;
+    if (s.selected === this.hero.id) { // 고른 직업: 결정석으로 직업 레벨업
+      const cost = game.jobLevelCost(this.hero.id), lv = game.jobLevel(this.hero.id);
+      return cost === null ? `직업 레벨 최고 (Lv.${lv})` : `[E] 직업 레벨업 Lv.${lv}→${lv + 1} (${cost} ${CUR.name})`;
+    }
     if (s.unlocked.includes(this.hero.id)) return `[E] ${this.hero.name} 선택`;
     return `[E] 해금: ${this.hero.name} (${this.hero.price} ${CUR.name})`;
   }
   get labelColor() { return '#ffffff'; }
-  interact(game) { game.selectHero(this.hero); }
+  interact(game) { if (game.save.selected === this.hero.id) game.levelUpJob(this.hero); else game.selectHero(this.hero); }
   render(ctx, game) {
     const x = Math.round(this.x), y = Math.round(this.y), s = game.save;
     const unlocked = s.unlocked.includes(this.hero.id), selected = s.selected === this.hero.id;
@@ -250,7 +253,8 @@ class Pedestal {
       ctx.globalAlpha = 1;
     }
     const up = this.row ? 10 : 0; // 이웃 단상과 글자가 겹치지 않게 한 칸씩 위아래로 엇갈림
-    hudText(ctx, this.hero.name, x, y - 28 - up, selected ? '#ffd84a' : unlocked ? '#fff' : '#888', 'center', 8);
+    const jl = game.jobLevel(this.hero.id);
+    hudText(ctx, this.hero.name + (jl ? ` Lv.${jl}` : ''), x, y - 28 - up, selected ? '#ffd84a' : unlocked ? '#fff' : '#888', 'center', 8);
     if (!unlocked) hudText(ctx, `${this.hero.price} ${CUR.name}`, x, y + 11 + up, CUR.color, 'center', 8);
     else if (selected) hudText(ctx, '선택됨', x, y + 11 + up, '#ffd84a', 'center', 8);
   }

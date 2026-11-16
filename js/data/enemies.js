@@ -189,7 +189,7 @@ const DATA_ENEMIES = [
       { type: 'teleport', bullets: 16, color: '#ff8a3a' }],
     finalPatterns: [{ type: 'ringIn', name: '대화재', rings: 2, count: 40, gap: 6, speed: 70, interval: 1.1, color: '#ff6a2a' }] },
   { id: 'boss_void_eye', name: '심연의 눈', title: '모든 것을 지켜보는 자', sprite: 'boss_void', color: '#4a2a7a', phaseColors: ['#4a2a7a', '#6a2a9a', '#9a2aba'],
-    boss: true, aiType: 'boss', health: 1000, damage: 16, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.3, bulletSpeed: 125,
+    boss: true, aiType: 'boss', health: 1000, damage: 17, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.3, bulletSpeed: 125,
     rewardGold: 80, float: true, patterns: [
       { type: 'laser', beams: 1, spreadAng: 0, sweep: 1.2, duration: 1.6, width: 6, telegraph: 0.9, color: '#d070ff' },
       { type: 'teleport', bullets: 12, color: '#c8a0ff' },
@@ -199,7 +199,7 @@ const DATA_ENEMIES = [
       { type: 'spiral', duration: 2.4, arms: 4, interval: 0.08, spin: -2.0, color: '#b070ff' }],
     finalPatterns: [{ type: 'vortex', name: '사건의 지평선', duration: 4, pull: 46, arms: 3, interval: 0.1, spin: 2.4, color: '#e0a0ff' }] },
   { id: 'boss_sarcophagus', name: '석관 수호자', title: '모래에 잠든 왕', sprite: 'boss_sand', color: '#3a5a8a', phaseColors: ['#3a5a8a', '#2a4a9a', '#1a3aba'],
-    boss: true, aiType: 'boss', health: 950, damage: 16, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.3, bulletSpeed: 125,
+    boss: true, aiType: 'boss', health: 1020, damage: 16, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.3, bulletSpeed: 125,
     rewardGold: 90, float: true, patterns: [
       { type: 'radial', rings: 3, count: 20, color: '#ffd06a' },
       { type: 'zones', count: 6, radius: 26, delay: 1.0, bullets: 4, spreadAround: 100, stagger: 0.1, color: '#e0b060' },
@@ -209,7 +209,7 @@ const DATA_ENEMIES = [
       { type: 'teleport', bullets: 14, color: '#ffe0a0' }],
     finalPatterns: [{ type: 'grid', name: '모래 폭풍', spacing: 3, delay: 1.2, radius: 22, bullets: 0, color: '#e0b060' }] },
   { id: 'boss_clock_titan', name: '태엽 거신', title: '멈추지 않는 톱니', sprite: 'boss_clock', color: '#8a6a3a', phaseColors: ['#8a6a3a', '#9a5a2a', '#ba4a1a'],
-    boss: true, aiType: 'boss', health: 1150, damage: 17, moveSpeed: 38, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.25, bulletSpeed: 130,
+    boss: true, aiType: 'boss', health: 1050, damage: 16, moveSpeed: 38, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.25, bulletSpeed: 130,
     rewardGold: 110, patterns: [
       { type: 'charge', dashes: 3, speed: 340, color: '#ffe36b' },
       { type: 'laser', beams: 2, spreadAng: Math.PI, sweep: 1.2, duration: 1.8, width: 6, telegraph: 0.9, color: '#7affff' },
@@ -219,13 +219,13 @@ const DATA_ENEMIES = [
       { type: 'slam', radius: 50, chain: 2, color: '#ffb04a' }],
     finalPatterns: [{ type: 'ringIn', name: '과부하', rings: 2, count: 36, gap: 6, speed: 70, interval: 1.1, color: '#7affff' }] },
   { id: 'boss_toad_king', name: '독두꺼비 대왕', title: '썩은 늪의 주인', sprite: 'boss_toad', color: '#5a8a3a', phaseColors: ['#5a8a3a', '#6a9a2a', '#8aba1a'],
-    boss: true, aiType: 'boss', health: 1150, damage: 17, moveSpeed: 40, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.3, bulletSpeed: 125,
+    boss: true, aiType: 'boss', health: 1000, damage: 16, moveSpeed: 40, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.3, bulletSpeed: 125,
     rewardGold: 130, patterns: [
       { type: 'slam', radius: 48, color: '#9aff5a' },
       { type: 'zones', count: 6, radius: 26, delay: 0.9, bullets: 4, spreadAround: 100, stagger: 0.1, color: '#9aff5a' },
-      { type: 'radial', rings: 3, count: 20, color: '#c0ff7a' },
+      { type: 'radial', rings: 2, count: 20, color: '#c0ff7a' },
       { type: 'summon', enemyId: 'enemy_toad_001', count: 3 }],
-    phase2Patterns: [{ type: 'slam', radius: 54, chain: 3, color: '#9aff5a' },
+    phase2Patterns: [{ type: 'slam', radius: 54, chain: 2, color: '#9aff5a' },
       { type: 'aimed', volleys: 4, count: 6, spread: 0.14, color: '#c0ff7a' }],
     finalPatterns: [{ type: 'grid', name: '독 늪', spacing: 3, delay: 1.2, radius: 22, bullets: 0, color: '#9aff5a' }] },
   { id: 'boss_lich_king', name: '망자의 왕', title: '끝나지 않는 밤', sprite: 'boss_lich', color: '#2a3a4a', phaseColors: ['#2a3a4a', '#2a2a5a', '#3a1a5a'],
@@ -250,10 +250,10 @@ const DATA_ENEMIES = [
     finalPatterns: [{ type: 'laser', name: '수정 굴절', beams: 6, spreadAng: Math.PI / 3, sweep: 0.9, duration: 2.4, width: 6, telegraph: 1.0, color: '#ff7ad0' }] },
   // 제10 필드 보스. 정체·관계·대사는 미정(기획서 6.3) — 외형과 패턴은 호칭의 인상으로 만든 임시 디자인
   { id: 'boss_nameless_gatekeeper', name: '무명의 문지기', title: 'The Nameless Gatekeeper', sprite: 'boss_gatekeeper', color: '#2a2834', phaseColors: ['#2a2834', '#24222e', '#1a1824'],
-    boss: true, aiType: 'boss', health: 1550, damage: 21, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 140,
+    boss: true, aiType: 'boss', health: 1450, damage: 21, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 140,
     rewardGold: 260, patterns: [
       { type: 'laser', beams: 2, spreadAng: Math.PI, sweep: 1.0, duration: 2.0, width: 7, telegraph: 0.85, color: '#ffe9a0' },
-      { type: 'slam', radius: 52, color: '#ffe9a0' },
+      { type: 'slam', radius: 48, color: '#ffe9a0' },
       { type: 'aimed', volleys: 4, count: 7, spread: 0.13, color: '#fff4d0' },
       { type: 'zones', count: 8, radius: 28, delay: 0.85, bullets: 6, spreadAround: 110, stagger: 0.08, color: '#ffe9a0' }],
     phase2Patterns: [{ type: 'laser', beams: 4, spreadAng: Math.PI / 2, sweep: 0.9, duration: 2.4, width: 7, telegraph: 0.9, color: '#ffe9a0' },
@@ -273,7 +273,7 @@ const DATA_ENEMIES = [
       { type: 'radial', rings: 3, count: 26, color: '#b0fff0' }],
     finalPatterns: [{ type: 'vortex', name: '심연의 아가리', duration: 4, pull: 50, arms: 4, interval: 0.09, spin: 2.4, color: '#5affd8' }] },
   { id: 'boss_fallen_star', name: '떨어진 별', title: '빛을 잃어 가는 것', sprite: 'boss_star', color: '#4a5aa0', phaseColors: ['#4a5aa0', '#5a4ab0', '#7a3ac0'],
-    boss: true, aiType: 'boss', health: 1450, damage: 21, moveSpeed: 36, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 140,
+    boss: true, aiType: 'boss', health: 1450, damage: 19, moveSpeed: 36, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 140,
     rewardGold: 220, float: true, patterns: [
       { type: 'radial', rings: 3, count: 24, color: '#dff8ff' },
       { type: 'teleport', bullets: 16, color: '#9ad8ff' },
