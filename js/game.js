@@ -197,8 +197,9 @@ class Game {
   rollSpecialRoom() { // 일반 스테이지마다 chance 확률로 특수방 하나 (전직의 방은 진화할 단계가 남았을 때 더 자주)
     const SR = BALANCE.specialRooms; if (Math.random() >= SR.chance) return [];
     const p = this.player, canEvolve = p && p.line && p.rank < 2;
-    const pool = SR.pool.filter((t) => t !== 'evolve' || (canEvolve && this.worldIdx >= (SR.evolveFromWorld || 0)));
-    return [weightedPick(pool, (t) => (SR.weight && SR.weight[t]) || 1)];
+    const ER = canEvolve ? SR.evolveByRank[p.rank] : null, evolveOk = ER && this.worldIdx >= ER.fromWorld; // 진화 단계별로 나오는 필드·빈도가 다름
+    const pool = SR.pool.filter((t) => t !== 'evolve' || evolveOk);
+    return [weightedPick(pool, (t) => (t === 'evolve' ? ER.weight : (SR.weight && SR.weight[t]) || 1))];
   }
   // 특수방 소품 배치
   stockSpecialRooms(map) {
