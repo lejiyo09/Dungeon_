@@ -139,7 +139,7 @@ class HUD {
   }
   overlay(ctx, game) {
     const o = game.overlay;
-    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
@@ -149,10 +149,10 @@ class HUD {
       hudText(ctx, '원소 반응: 화상+빙결=열충격 · 화상+중독=독 연소 · 빙결+전격=감전 · 화상+전격=과부하 · 중독+전격=마비', VIEW_W / 2, 160, '#9ad8ff', 'center', 8);
       hudText(ctx, '실명+저주=일식 · 저주+중독=역병 · 화상+저주=지옥불 · 실명+전격=심판', VIEW_W / 2, 172, '#9ad8ff', 'center', 8);
       hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기   ·   L 포기하고 로비로' : 'Esc 이어하기   ·   P 프롤로그 다시 보기   ·   L 로그아웃', VIEW_W / 2, 190, '#999', 'center', 9);
-    } else if (o.type === 'codex' || o.type === 'armory') {
-      const sv = game.save, disc = new Set(sv.discovered), armory = o.type === 'armory';
+    } else if (o.type === 'codex' || o.type === 'armory' || o.type === 'trial_weapons') {
+      const sv = game.save, disc = new Set(sv.discovered), armory = o.type === 'armory', tw = o.type === 'trial_weapons';
       const m = game.input.mouse;
-      const title = armory ? `무기고  ·  보유 ${CUR.name} ${sv.bank}  ·  시작 보조 무기: ${sv.loadout ? game.data.weapons.get(sv.loadout).name : '없음'}`
+      const title = tw ? `롱고미니아드의 시련 — 들고 갈 무기 2개 (모두 +${RHONGO_TRIAL.kit.lv} 강화)   ·   ${o.picked.map((id, i) => `${i + 1}. ${game.data.weapons.get(id).name}`).join('   ') || '아직 고르지 않음'}` : armory ? `무기고  ·  보유 ${CUR.name} ${sv.bank}  ·  시작 보조 무기: ${sv.loadout ? game.data.weapons.get(sv.loadout).name : '없음'}`
         : `무기 도감  (${DATA_WEAPONS.filter((d) => disc.has(d.id)).length}/${DATA_WEAPONS.length})`;
       hudText(ctx, title, VIEW_W / 2, 7, '#ffd84a', 'center', 11);
       let hover = null;
@@ -166,21 +166,22 @@ class HUD {
       for (const c of weaponGrid(tab, page)) {
         const on = m.x >= c.x && m.x < c.x + c.w && m.y >= c.y && m.y < c.y + c.h;
         if (on) hover = c;
-        const owned = sv.armory.includes(c.d.id), eq = sv.loadout === c.d.id;
-        ctx.fillStyle = eq ? 'rgba(255,216,74,0.22)' : on && armory ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.06)';
+        const owned = sv.armory.includes(c.d.id), pk = tw ? o.picked.indexOf(c.d.id) : -1, eq = tw ? pk >= 0 : sv.loadout === c.d.id;
+        ctx.fillStyle = eq ? (tw ? 'rgba(191,230,255,0.25)' : 'rgba(255,216,74,0.22)') : on && (armory || tw) ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.06)';
         ctx.fillRect(c.x, c.y, c.w, c.h);
         if (!disc.has(c.d.id)) { hudText(ctx, '???', c.x + 8, c.y + 8, '#555', 'left', 9); continue; }
         drawWeaponCentered(ctx, c.d, c.x + 13, c.y + c.h / 2);
         hudText(ctx, c.d.name, c.x + 27, c.y + 2, RARITY_COLOR[c.d.rarity], 'left', 8);
-        if (armory) {
+        if (tw) hudText(ctx, pk >= 0 ? `${pk + 1}번 무기` : weaponTraits(c.d, 2), c.x + 27, c.y + 13, pk >= 0 ? '#bfe6ff' : '#c8b890', 'left', 7);
+        else if (armory) {
           const st = eq ? ['장착됨', '#ffd84a'] : owned ? ['보유', '#9fe89f'] : [`해금 ${ARMORY_PRICE[c.d.rarity]} ${CUR.name}`, sv.bank >= ARMORY_PRICE[c.d.rarity] ? '#fff' : '#888'];
           hudText(ctx, st[0], c.x + 27, c.y + 13, st[1], 'left', 7);
         } else hudText(ctx, weaponTraits(c.d, 2), c.x + 27, c.y + 13, '#c8b890', 'left', 7);
       }
       const info = o.msg && o.msg.t > 0 ? o.msg.text : hover && disc.has(hover.d.id) ? `${hover.d.name} — ${RARITY_NAME[hover.d.rarity]} · ${weaponStatLine(hover.d)} · ${weaponTraits(hover.d)}`
-        : armory ? '던전에서 발견한 무기를 해금해 시작 보조 무기로 장착할 수 있습니다' : '';
+        : tw ? '도감에서 발견한 무기 중에서 고를 수 있습니다' : armory ? '던전에서 발견한 무기를 해금해 시작 보조 무기로 장착할 수 있습니다' : '';
       hudText(ctx, info, VIEW_W / 2, VIEW_H - 26, o.msg && o.msg.t > 0 ? o.msg.color : '#ccc', 'center', 9);
-      hudText(ctx, `1~4 / 클릭: 탭 전환   ·   ${pages > 1 ? `A·D / 휠: 페이지 ${page + 1}/${pages}   ·   ` : ''}E / Esc: 닫기`, VIEW_W / 2, VIEW_H - 12, pages > 1 ? '#bbb' : '#888', 'center', 8);
+      hudText(ctx, `1~4 / 클릭: 탭 전환   ·   ${pages > 1 ? `A·D / 휠: 페이지 ${page + 1}/${pages}   ·   ` : ''}${tw ? (o.picked.length ? '클릭: 선택/해제   ·   Enter: 보스전 시작   ·   Esc: 로비로' : '클릭: 무기 선택 (최대 2개)   ·   Esc: 로비로') : 'E / Esc: 닫기'}`, VIEW_W / 2, VIEW_H - 12, pages > 1 ? '#bbb' : '#888', 'center', 8);
     } else if (o.type === 'archive') { // 이야기 기록
       const m = game.input.mouse; hudText(ctx, '이야기 기록 — 지금까지 본 이야기를 다시 봅니다', VIEW_W / 2, 12, '#e0d0b0', 'center', 11);
       STORY_ARCHIVE.forEach((S, i) => { const r = HUD.guildRow(i), ok = S.unlocked(game.save), on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
@@ -287,7 +288,7 @@ class HUD {
     } else if (o.type === 'trial_confirm') { // 롱고미니아드의 시련 도전 확인
       hudText(ctx, '롱고미니아드의 시련', VIEW_W / 2, 60, '#bfe6ff', 'center', 16);
       hudText(ctx, '창에 깃든 신령 — 신령 롱고미니아드와 1:1로 싸웁니다', VIEW_W / 2, 86, '#e8e0f0', 'center', 10);
-      hudText(ctx, '지금까지의 어떤 보스보다 강합니다. 최종 진화·영웅/전설 무기·축복을 받은 상태로 시작합니다', VIEW_W / 2, 104, '#aaa', 'center', 8);
+      hudText(ctx, '지금까지의 어떤 보스보다 강합니다. 최종 진화·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다', VIEW_W / 2, 104, '#aaa', 'center', 8);
       hudText(ctx, '지거나 그만둬도 잃는 것은 없고, 언제든 멀린에게 다시 도전할 수 있습니다', VIEW_W / 2, 118, '#aaa', 'center', 8);
       ['1  도전한다', '2  나중에'].forEach((t, i) => { const r = HUD.trialBtn(i), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
         ctx.fillStyle = on ? 'rgba(191,230,255,0.22)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = i ? '#777' : '#bfe6ff'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);

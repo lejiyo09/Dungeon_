@@ -155,12 +155,19 @@ class Game {
     const kit = () => { // 시련 장비: 최종 진화 + 영웅·전설 무기(강화) + 체력·버프
       if (p.line) this.setJob(p, p.line, 2); p.skillCooldown = 0;
       p.maxHp += K.hp + EVOLUTION.hp[0] + EVOLUTION.hp[1]; p.hp = p.maxHp; p.maxEnergy += EVOLUTION.energy[0] + EVOLUTION.energy[1]; p.energy = p.maxEnergy;
-      p.weapons = K.rarity.map((r) => new WeaponInstance(pick(DATA_WEAPONS.filter((d) => d.rarity === r && !d.questOnly)), K.lv)); p.slot = 0;
+      p.weapons = K.rarity.map((r) => new WeaponInstance(pick(DATA_WEAPONS.filter((d) => d.rarity === r && !d.questOnly)), K.lv)); p.slot = 0; // 기본값 (테스트 도구용)
       for (const b of shuffled(DATA_BUFFS).slice(0, K.buffs)) { b.apply(p); p.buffs.push(b.id); }
-      this.showBanner(RHONGO_TRIAL.W.name, '최종 진화 · 영웅/전설 무기 · 축복을 받은 상태로 싸웁니다', '#bfe6ff');
+      if (window.__toolMode) return;
+      this.overlay = { type: 'trial_weapons', tab: 0, page: 0, picked: [], msg: null }; this.input.mouse.down = false; // 보스전 전에 무기 2개 고르기
     };
     this.loadStage();
     this.askVariant(kit);
+  }
+  pickTrialWeapons(ids) { // 고른 무기 (도감에서 발견한 것 중 최대 2개, 모두 +강화)
+    const p = this.player, K = RHONGO_TRIAL.kit;
+    p.weapons = ids.map((id) => new WeaponInstance(this.data.weapons.get(id), K.lv)); p.slot = 0;
+    this.overlay = null; this.input.mouse.down = false;
+    this.showBanner(RHONGO_TRIAL.W.name, `최종 진화 · ${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv}) · 축복을 받은 상태로 싸웁니다`, '#bfe6ff');
   }
   endRhongoTrial(win) {
     const M = this.save.merlin; SFX.stopMusic();
@@ -504,7 +511,7 @@ class Game {
       else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
       else if (this.mode === 'lobby' && input.wasPressed('KeyP')) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => {} }; return; }
       else if (this.mode === 'dungeon' && input.wasPressed('KeyL')) { this.player.state = 'DEAD'; this.endRun(false); }
-    } else if (o.type === 'codex' || o.type === 'armory') {
+    } else if (o.type === 'codex' || o.type === 'armory' || o.type === 'trial_weapons') {
       const t0 = o.tab;
       ['Digit1', 'Digit2', 'Digit3', 'Digit4'].forEach((k, i) => { if (input.wasPressed(k)) o.tab = i; });
       if (input.wasPressed('Mouse0')) WEAPON_TABS.forEach((_, i) => { const r = tabRect(i), m = input.mouse; if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) o.tab = i; });
@@ -512,6 +519,20 @@ class Game {
       const pages = gridPages(o.tab || 0); // 페이지 넘기기
       if (input.wasPressed('KeyD') || input.wasPressed('ArrowRight') || input.wasPressed('WheelDown')) o.page = ((o.page || 0) + 1) % pages;
       if (input.wasPressed('KeyA') || input.wasPressed('ArrowLeft') || input.wasPressed('WheelUp')) o.page = ((o.page || 0) - 1 + pages) % pages;
+    }
+    if (o.type === 'trial_weapons') { // 시련 무기 고르기: 클릭으로 선택/해제 (최대 2개), Enter로 시작
+      if (o.msg) o.msg.t -= STEP;
+      if (input.wasPressed('Enter') && o.picked.length) { this.pickTrialWeapons(o.picked); return; }
+      if (input.wasPressed('Escape')) { this.overlay = null; this.transition = { t: 0, swapped: false, action: () => this.enterLobby() }; return; } // 그만두고 로비로
+      if (!input.wasPressed('Mouse0')) return;
+      const m = input.mouse, c = weaponGrid(o.tab || 0, o.page || 0).find((c) => m.x >= c.x && m.x < c.x + c.w && m.y >= c.y && m.y < c.y + c.h);
+      if (!c) return;
+      const id = c.d.id, i = o.picked.indexOf(id);
+      if (!this.save.discovered.includes(id)) o.msg = { text: '아직 발견하지 못한 무기입니다', color: '#ff9a9a', t: 2 };
+      else if (i >= 0) o.picked.splice(i, 1);
+      else if (o.picked.length >= 2) o.msg = { text: '무기는 2개까지 고를 수 있습니다 (고른 무기를 다시 누르면 해제)', color: '#ff9a9a', t: 2 };
+      else o.picked.push(id);
+      return;
     }
     if (o.type === 'codex') {
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) this.overlay = null;
