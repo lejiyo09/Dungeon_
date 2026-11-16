@@ -75,15 +75,15 @@ class Effects {
     this.part(x, y, 0, 0, { color: '#ffffff', life: 0.1, size: size * 0.9, size2: 0, add: true, shape: 'circle' });
   }
   // ── 보구 연출
-  excalibur(x, y, x1, y1, w, px, py) { // 금빛 검기: 휘두르는 빛의 검 → 앞으로 뻗는 빛줄기 → 남는 잔광
+  excalibur(x, y, x1, y1, w, px, py) { // 금빛 검기: 휘두르는 빛의 검 → 한 줄기 굵은 빛 → 가늘어지며 남는 잔광 (단순하지만 묵직하게)
     const L = Math.hypot(x1 - x, y1 - y) || 1, dx = (x1 - x) / L, dy = (y1 - y) / L;
-    this.push({ kind: 'excal', x, y, x1, y1, w, t: 0, life: 0.8, add: true, seed: Math.random() * 100 });
+    this.push({ kind: 'excal', x, y, x1, y1, w, t: 0, life: 1.15, add: true });
     this.push({ kind: 'excalSword', x: px, y: py - 3, ang: Math.atan2(dy, dx), t: 0, life: 0.5, add: false });
-    this.push({ kind: 'shock', x, y, r: 26, color: '#ffe9a0', t: 0, life: 0.35, add: true });
-    for (let d = 0; d < L; d += 5) { // 빛줄기가 지나간 자리에 늦게 피어나는 빛 알갱이
-      const s = (Math.random() - 0.5) * w * 2, px2 = x + dx * d - dy * s, py2 = y + dy * d + dx * s, lag = d / L * 0.1;
-      this.push(Object.assign({ kind: 'p', x: px2, y: py2, vx: dx * 30 + (Math.random() - 0.5) * 30, vy: dy * 30 - 20 - Math.random() * 30, t: -lag, life: 0.45 + Math.random() * 0.4,
-        size: 2, size2: 0, color: Math.random() < 0.5 ? '#fff4c0' : '#ffd84a', color2: '#c8a050', drag: 2, grav: 0, add: true, shape: Math.random() < 0.35 ? 'plus' : undefined }));
+    this.push({ kind: 'shock', x, y, r: 34, color: '#ffffff', t: 0, life: 0.3, add: true });                 // 손끝 충격파
+    this.push({ kind: 'shock', x: x1, y: y1, r: w * 2.6, color: '#ffe9a0', t: -0.06, life: 0.45, add: true }); // 끝에서 터지는 충격파
+    for (let d = 0; d < L; d += 22) { // 빛줄기를 따라 드문드문 떠오르는 금빛 알갱이 (잔광)
+      const s = (Math.random() - 0.5) * w * 1.6;
+      this.push({ kind: 'p', x: x + dx * d - dy * s, y: y + dy * d + dx * s, vx: 0, vy: -18 - Math.random() * 14, t: -0.25 - d / L * 0.15, life: 0.6, size: 2, size2: 0, color: '#fff4c0', color2: '#c8a050', drag: 1, grav: 0, add: true });
     }
   }
   solomonSeal(x, y, sc = 1) { // 솔로몬의 인장: 육각별 마법진이 펼쳐지고 빛기둥이 솟음
@@ -241,22 +241,28 @@ class Effects {
         ctx.fillStyle = fx.color || '#ffb040'; ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(13, 0); ctx.lineTo(0, 2); ctx.closePath(); ctx.fill();
         ctx.restore(); break;
       }
-      case 'excal': {
+      case 'excal': { // 0~0.07초 가는 섬광이 뻗음 → 0.4초까지 굵은 빛 (흐르는 빛줄기·지직이는 금빛 가장자리·초승달 검기) → 가늘어지며 사라짐
         if (fx.t < 0) break;
-        const p = fx.t / fx.life, reach = Math.min(1, p / 0.09), fade = p < 0.3 ? 1 : 1 - (p - 0.3) / 0.7;
-        const ang = Math.atan2(fx.y1 - fx.y, fx.x1 - fx.x), L = Math.hypot(fx.x1 - fx.x, fx.y1 - fx.y) * reach;
-        const W = fx.w * (p < 0.12 ? 0.5 + 4 * p : 1) * (0.25 + 0.75 * fade);
+        const t = fx.t, ang = Math.atan2(fx.y1 - fx.y, fx.x1 - fx.x), full = Math.hypot(fx.x1 - fx.x, fx.y1 - fx.y), L = full * Math.min(1, t / 0.07);
+        const hold = t < 0.4, k = hold ? 1 : Math.max(0, 1 - (t - 0.4) / 0.75);
+        const W = t < 0.07 ? 3 : hold ? fx.w * (1 + 0.08 * Math.sin(t * 60)) : fx.w * (0.15 + 0.85 * k * k);
         ctx.globalAlpha = 1; ctx.save(); ctx.translate(Math.round(fx.x), Math.round(fx.y)); ctx.rotate(ang);
-        const band = (hw, col) => { const h = Math.max(1, Math.round(hw)); ctx.fillStyle = col; ctx.fillRect(0, -h, L, h * 2); }; // 또렷한 픽셀 띠
-        band(W * 1.5, `rgba(200,140,40,${0.35 * fade})`); band(W, `rgba(255,200,70,${0.75 * fade})`); band(W * 0.55, `rgba(255,236,170,${fade})`); band(W * 0.22, `rgba(255,255,255,${fade})`);
-        for (let i = 0; i < 18; i++) { // 가장자리에서 튀는 빛 조각
-          const r = (Math.sin(fx.seed + i * 12.9898) * 43758.5453) % 1, rx = Math.abs(r) * L, side = i % 2 ? 1 : -1;
-          ctx.fillStyle = `rgba(255,244,192,${fade})`; ctx.fillRect(Math.round(rx), side * Math.round(W * (1.1 + Math.abs(r) * 0.8)), 2, 1);
+        const band = (hw, col) => { const h = Math.max(1, Math.round(hw)); ctx.fillStyle = col; ctx.fillRect(0, -h, L, h * 2); };
+        band(W * 2.1, `rgba(200,140,40,${0.2 * k})`); band(W * 1.4, `rgba(255,200,70,${0.55 * k})`); band(W * 0.85, `rgba(255,236,170,${0.95 * k})`); band(W * 0.38, `rgba(255,255,255,${k})`);
+        if (t >= 0.07) {
+          ctx.fillStyle = `rgba(255,255,255,${0.85 * k})`; // 안쪽을 흐르는 빛줄기 (칼끝 쪽으로)
+          for (let i = 0; i < 9; i++) { const off = ((i * 0.37 + t * 2.6) % 1) * L, yy = Math.round((((i * 7) % 9) / 9 - 0.5) * W * 1.4); ctx.fillRect(Math.round(off), yy, 26 + (i % 3) * 10, 1); }
+          ctx.strokeStyle = `rgba(255,216,74,${0.9 * k})`; ctx.lineWidth = 1; // 지직이는 금빛 가장자리
+          for (const sg of [-1, 1]) { ctx.beginPath(); for (let x = 0; x <= L; x += 8) { const yy = sg * (W * 1.45 + Math.sin(x * 0.7 + t * 50 + sg) * 2.5); x ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy); } ctx.stroke(); }
+          ctx.strokeStyle = `rgba(255,244,192,${0.95 * k})`; ctx.lineWidth = 2; // 앞으로 나아가는 초승달 검기 두 개
+          for (let i = 0; i < 2; i++) { const cx = ((t * 1.6 + i * 0.5) % 1) * L; ctx.beginPath(); ctx.arc(cx - W * 2, 0, W * 2.4, -0.9, 0.9); ctx.stroke(); }
         }
-        ctx.strokeStyle = `rgba(255,244,192,${0.9 * fade})`; ctx.lineWidth = 2;
-        for (let i = 0; i < 3; i++) { const cx = ((p * 1.8 + i / 3) % 1) * L; ctx.beginPath(); ctx.arc(cx - W * 2.2, 0, W * 2.5, -0.85, 0.85); ctx.stroke(); } // 흐르는 초승달 검기
-        if (reach < 1 || p < 0.2) { ctx.fillStyle = `rgba(255,255,255,${fade})`; ctx.beginPath(); ctx.arc(L, 0, W * 0.9, 0, TAU); ctx.fill(); } // 뻗어 나가는 머리
-        else { ctx.fillStyle = `rgba(255,230,140,${0.6 * fade})`; ctx.beginPath(); ctx.arc(L, 0, W * 0.8, 0, TAU); ctx.fill(); }
+        if (hold) { // 손끝: 십자 섬광 / 끝: 뾰족한 빛의 칼끝 + 별 모양 빛살
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(-W * 0.15, -W * 2.4, Math.max(2, W * 0.3), W * 4.8); ctx.fillRect(-W * 1.8, -1, W * 3.6, 2);
+          ctx.fillStyle = 'rgba(255,244,200,0.95)'; ctx.beginPath(); ctx.moveTo(L - 2, -W); ctx.lineTo(L + W * 1.8, 0); ctx.lineTo(L - 2, W); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,240,190,0.8)'; ctx.lineWidth = 1;
+          for (let i = 0; i < 8; i++) { const a = i / 8 * TAU + t * 3, r0 = W * 0.8, r1 = W * (i % 2 ? 2.2 : 3.4); ctx.beginPath(); ctx.moveTo(L + Math.cos(a) * r0, Math.sin(a) * r0); ctx.lineTo(L + Math.cos(a) * r1, Math.sin(a) * r1); ctx.stroke(); }
+        }
         ctx.restore(); ctx.lineWidth = 1; break;
       }
       case 'excalSword': { // 손에서 조준 방향으로 크게 휘둘러지는 빛의 검 (푸른 손잡이·금빛 날밑)

@@ -478,7 +478,7 @@ class Game {
     p.treasureCd = T.cooldown;
     this.effects.text(p.x, p.y - 24, T.name + '!', T.color, true); SFX.play(T.sfx || 'react', 0.3);
     this.cutin = { kind: 'treasure', name: T.name, sub: `${T.origin}의 보구`, color: T.color, T, start: performance.now() }; // 보구 컷인
-    this.effects.rays(p.x, p.y, T.color, 18, 100, 0.8); this.effects.rays(p.x, p.y, '#ffffff', 9, 60, 0.5); this.effects.goldBurst(p.x, p.y, 20);
+    if (T.use !== 'beam') { this.effects.rays(p.x, p.y, T.color, 18, 100, 0.8); this.effects.rays(p.x, p.y, '#ffffff', 9, 60, 0.5); this.effects.goldBurst(p.x, p.y, 20); } // 엑스칼리버는 빛줄기 하나에 집중
     if (T.use === 'chains') { // 게이트 오브 바빌론: 조준 지점(최대 사거리)에 원형 범위 → 황금 사슬로 묶음
       const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
       const cx = p.x + dx * k, cy = p.y + dy * k;
@@ -500,11 +500,8 @@ class Game {
         this.damageEnemy(e, { damage: dmg, mods: p.mods, knockback: 10 }, p.aim.x, p.aim.y);
       for (const b of this.enemyBullets) if (segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸
       this.hitTile(ex + p.aim.x * 3, ey + p.aim.y * 3);
-      this.effects.excalibur(sx, sy, ex, ey, T.width, p.x, p.y); this.effects.goldBurst(ex, ey, 24); this.effects.ring(ex, ey, 30, '#ffe9a0');
-      this.effects.impact(ex, ey, T.color, Math.atan2(p.aim.y, p.aim.x)); this.effects.goldBurst(sx, sy, 12);
-      for (let d = 30, i = 0; d < len; d += 44, i++) this.effects.skyBeam(sx + p.aim.x * d, sy + p.aim.y * d, i % 2 ? '#ffe9a0' : '#ffffff', 0.12 + i * 0.03, 4); // 검기를 따라 솟는 빛기둥
-      this.effects.rays(ex, ey, '#ffe9a0', 16, 70, 0.7); this.effects.ring(ex, ey, 54, '#ffffff');
-      this.addShake(0.4, 7); this.screenFlash = 0.3; this.flashColor = '255,236,170'; this.hitStop(0.08);
+      this.effects.excalibur(sx, sy, ex, ey, T.width, p.x, p.y); this.effects.goldBurst(ex, ey, 14); // 군더더기 없이 한 줄기 빛 + 끝의 충격
+      this.addShake(0.45, 8); this.screenFlash = 0.35; this.flashColor = '255,240,200'; this.hitStop(0.1);
     } else if (T.use === 'blessing') { // 솔로몬의 반지: 각종 버프
       p.solomon = T.duration; p.shield = p.maxShield; p.energy = p.maxEnergy; p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * T.heal)); p.skillCooldown = 0; this.effects.heal(p.x, p.y);
       this.effects.solomonSeal(p.x, p.y); this.effects.ring(p.x, p.y, 40, '#ffd84a'); this.effects.ring(p.x, p.y, 70, '#c8a0ff'); this.effects.solomonSeal(p.x, p.y, 1.8); this.addShake(0.2, 3);
