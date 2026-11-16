@@ -199,8 +199,8 @@ const AI_BEHAVIORS = {
         if (ctx.dist > 50) pathStep(e, def.moveSpeed * spd, dt, world);
         if (e.stateTime < def.attackCooldown * (e.cdMul || 1) / spd) break;
         let pat;
-        if (phase >= 3 && def.finalPatterns && e.finalCd <= 0) { // 궁극기: 규모를 키우고 피해 +20%, 끝나면 마무리 폭발
-          pat = boostUltimate(pick(def.finalPatterns)); e.finalCd = 9;
+        if (phase >= (def.ultFrom || 3) && def.finalPatterns && e.finalCd <= 0) { // 궁극기: 규모를 키우고 피해 +20%, 끝나면 마무리 폭발
+          pat = boostUltimate(pick(def.finalPatterns)); e.finalCd = def.ultCd || 9;
           e.ult = true; e.dmg0 = e.damage; e.damage = Math.round(e.damage * 1.2); if (world.onBossUltimate) world.onBossUltimate(e, pat);
         }
         else {
@@ -300,6 +300,14 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 롱고미니아드 (신령 롱고미니아드의 궁극기): 플레이어 자리로 빛의 창 → 빛의 탑이 끌어당기며 탄막 → 무너지며 대폭발 (반경 밖으로 피해야 함)
+  rhongo: {
+    begin(e, world) {
+      const r = e.room, p = world.player, x = clamp(p.x, r.x0 * TILE + 16, (r.x0 + r.w) * TILE - 16), y = clamp(p.y, r.y0 * TILE + 16, (r.y0 + r.h) * TILE - 16);
+      e.pd.tower = new BossRhongoTower(e, x, y, e.pat); world.zones.push(e.pd.tower);
+    },
+    update(e) { return !e.pd.tower.alive; }
+  },
   // 추격 낙하: 플레이어가 서 있던 자리에 차례로 떨어지는 장판 (멈추면 맞음)
   meteor: {
     update(e, dt, world) {

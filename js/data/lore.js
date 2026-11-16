@@ -67,7 +67,7 @@ const DATA_TREASURES = [
   { id: 'treasure_garden_of_avalon', name: '가든 오브 아발론', origin: '멀린', use: 'garden', cooldown: 66, sfx: 'solomon', icon: 'avalon', questOnly: true,
     duration: 12, atk: 0.35, guard: 0.3, regen: 4, slowK: 0.65, color: '#ffb0d8',
     desc: '방 한가운데 아발론의 탑을 소환하고 12초간 방을 꽃밭으로 — 꽃밭 안의 적은 느려지고 받는 피해 +20%, 나는 공격력 +35%·받는 피해 -30%·체력 초당 4 회복' },
-  // [사용자 결정] 아서왕의 창 롱고미니아드. 능력·수치·획득 방법(멀린의 두 번째 시련)은 Claude가 정한 [제안]
+  // [사용자 결정] 아서왕의 창 롱고미니아드. 얻는 법: 멀린의 두 번째 시련 → 신령 롱고미니아드 보스전 승리 [사용자 결정]. 능력·수치는 Claude가 정한 [제안]
   { id: 'treasure_rhongomyniad', name: '롱고미니아드', origin: '아서왕', use: 'spear', cooldown: 64, sfx: 'excal', icon: 'rhongo', questOnly: true,
     damage: 380, impact: 64, range: 240, radius: 100, duration: 5, tick: 0.5, tickDmg: 36, pull: 70, final: 320, color: '#bfe6ff',
     desc: '빛의 창을 조준 지점에 던져 꽂으면 5초간 거대한 빛의 탑이 솟아 주변 적을 끌어당기며 계속 피해, 마지막에 탑이 무너지며 큰 폭발' }
@@ -85,17 +85,26 @@ const MERLIN_REWARD_LINES = [
   '멀린이 지팡이를 가볍게 두드리자, 발밑에 꽃잎이 흩날린다.',
   '「가든 오브 아발론. 꽃이 지기 전에 싸움을 끝내도록.」'
 ];
-// 멀린의 두 번째 시련 → 롱고미니아드 (대사 [임시])
+// 멀린의 두 번째 시련 → 신령 롱고미니아드와의 보스전 (대사 [임시], 흐름은 [사용자 결정])
 const MERLIN_SPEAR_LINES = [
   '「아발론의 꽃은 마음에 들었나.」',
   '「…왕에게는 검 말고도 창이 하나 있었다. 세상의 끝을 붙들어 두는 빛의 창이지.」',
-  '「깊은 곳의 주인들을 더 쓰러뜨려 와라. 그 창을 들 자격이 있는지 보겠다.」'
+  '「그 창은 내가 줄 수 있는 것이 아니다. 창이 스스로 너를 인정해야 해.」',
+  '「창에 깃든 신령에게 보내 주겠다. 준비가 되지 않았다면 나중에 와도 좋다.」'
 ];
-const MERLIN_SPEAR_REWARD_LINES = [
-  '「충분하다. 왕도 너를 탓하지는 않겠지.」',
-  '멀린의 손끝에서 하얀 빛이 길게 뻗어 한 자루의 창이 된다.',
-  '「롱고미니아드. 던지면 탑이 서고, 탑이 서면 아무도 도망치지 못한다.」'
+const RHONGO_WIN_LINES = [
+  '빛의 창이 땅에 꽂힌 채, 금빛 머리의 기사가 천천히 무릎을 꿇는다.',
+  '「…좋다. 세상의 끝까지, 너와 함께 가 주지.」',
+  '기사의 모습이 빛으로 흩어지고, 한 자루의 창만이 남는다.'
 ];
+// 시련 설정 [제안]: 10필드 보스 단계의 강화 배율 + 따로 준비된 장비 (최종 진화 · 전설/영웅 무기 +3 · 체력 · 축복 4개)
+const RHONGO_TRIAL = {
+  world: 9,
+  W: { name: '롱고미니아드의 시련', boss: 'boss_rhongomyniad', trial: true, sanctum: false, deep: false, waves: 0, enemies: [['enemy_ghost_001', 1]],
+    palette: { style: 'sanctum', accent: '#bfe6ff', floor: ['#3e4458', '#41475b'], corridor: ['#2c3142', '#2e3344'], wall: '#4a5268', wallTop: '#5c647a',
+      wallFace: '#7e8aa4', faceLine: '#6c7892', deco: 'rgba(191,230,255,0.35)' } },
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+};
 // 탐험가 길드 '이야기 기록' 책장: 지금까지 본 이야기를 다시 보기 (unlocked: 볼 수 있는 조건)
 const STORY_ARCHIVE = [
   { id: 'prologue', name: '프롤로그', kind: 'story', lines: () => PROLOGUE_LINES, unlocked: () => true },
@@ -106,8 +115,7 @@ const STORY_ARCHIVE = [
   { id: 'merlin', name: '후드를 쓴 마법사', kind: 'cut', lines: () => MERLIN_REVEAL_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.revealed) },
   { id: 'avalon', name: '아발론의 정원', kind: 'cut', lines: () => MERLIN_REWARD_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 2) },
   { id: 'spear_trial', name: '왕의 창', kind: 'cut', lines: () => MERLIN_SPEAR_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 3) },
-  { id: 'rhongomyniad', name: '롱고미니아드', kind: 'cut', lines: () => MERLIN_SPEAR_REWARD_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 4) }
+  { id: 'rhongomyniad', name: '창의 인정', kind: 'cut', lines: () => RHONGO_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 4) }
 ];
 const MERLIN_TRIAL = { gate: 1, deep: 2 }; // 시련: 무명의 문지기 다시 처치 1번 + 심층 보스 2마리 처치 [제안]
-const MERLIN_TRIAL2 = { deep: 3 }; // 두 번째 시련: 심층 보스 3마리 더 처치 → 롱고미니아드 [제안]
 const MERLIN_CHATTER = ['「꽃은 금방 시든다. 그래서 아름답지.」', '「탑 위에서 보면, 이 던전도 꽤 볼만하다네.」', '「왕은 잘 지내려나… 아니, 혼잣말일세.」'];

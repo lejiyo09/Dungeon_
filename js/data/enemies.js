@@ -387,5 +387,21 @@ const DATA_ENEMIES = [
       { type: 'summon', enemyId: 'enemy_shardbat_001', count: 3 }],
     phase2Patterns: [{ type: 'meteor', count: 7, delay: 0.75, stagger: 0.25, radius: 28, bullets: 5, color: '#ffb0ff' },
       { type: 'zones', count: 8, radius: 26, delay: 0.85, bullets: 6, spreadAround: 120, stagger: 0.07, color: '#e0c8ff' }],
-    finalPatterns: [{ type: 'ringIn', name: '깨지는 거울', rings: 3, count: 44, gap: 5, speed: 78, interval: 0.95, color: '#ffb0ff' }] }
+    finalPatterns: [{ type: 'ringIn', name: '깨지는 거울', rings: 3, count: 44, gap: 5, speed: 78, interval: 0.95, color: '#ffb0ff' }] },
+  // [사용자 결정] 멀린의 두 번째 시련 보스: 금발·초록 눈·갑옷·망토, 궁극기는 보구 롱고미니아드, 지금까지의 보스 중 가장 어려움
+  //  수치·패턴은 Claude가 정한 값. 2페이즈부터 궁극기, 쿨타임 짧음 (ultFrom / ultCd)
+  { id: 'boss_rhongomyniad', name: '신령 롱고미니아드', title: '세상 끝에서 빛나는 창', sprite: 'boss_rhongo', color: '#2a4a9a', phaseColors: ['#2a4a9a', '#3a3aa8', '#5a2ab0'],
+    boss: true, aiType: 'boss', health: 4200, damage: 30, moveSpeed: 72, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.5, bulletSpeed: 165,
+    rewardGold: 0, ultFrom: 2, ultCd: 7, patterns: [
+      { type: 'charge', dashes: 4, speed: 520, color: '#bfe6ff' },
+      { type: 'aimed', volleys: 6, count: 9, spread: 0.11, color: '#ffffff' },
+      { type: 'lances', count: 24, delay: 0.55, speed: 380, color: '#bfe6ff' },
+      { type: 'laser', beams: 3, spreadAng: Math.PI * 2 / 3, sweep: 1.4, duration: 2.2, width: 8, telegraph: 0.6, color: '#ffe9a0' },
+      { type: 'zones', count: 10, radius: 30, delay: 0.7, bullets: 8, spreadAround: 120, stagger: 0.05, color: '#bfe6ff' }],
+    phase2Patterns: [{ type: 'slam', radius: 64, chain: 3, color: '#ffffff' },
+      { type: 'meteor', count: 12, delay: 0.6, stagger: 0.18, radius: 30, bullets: 7, color: '#bfe6ff' },
+      { type: 'spiral', duration: 3, arms: 7, interval: 0.06, spin: 2.6, color: '#ffe9a0' },
+      { type: 'ringOut', rings: 5, count: 32, gap: 4, speed: 150, interval: 0.4, color: '#bfe6ff' },
+      { type: 'grid', spacing: 3, delay: 0.9, radius: 22, bullets: 4, color: '#ffffff' }],
+    finalPatterns: [{ type: 'rhongo', name: '롱고미니아드', radius: 130, impact: 60, duration: 4.5, pull: 85, arms: 5, interval: 0.09, spin: 2.4, tick: 0.4, color: '#bfe6ff' }] }
 ];

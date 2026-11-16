@@ -36,7 +36,7 @@ class HUD {
       hudText(ctx, 'F/우클릭 스킬 · E 상호작용 · Esc 조작법', VIEW_W / 2, VIEW_H - 14, '#aaa', 'center', 8);
     } else {
       const W = game.W;
-      hudText(ctx, `${stageLabel(game.worldIdx, game.levelIdx)} ${W.name}   골드 ${game.gold}   처치 ${game.kills}`, VIEW_W / 2, 6, W.deep ? '#9ad8ff' : '#fff', 'center');
+      hudText(ctx, `${W.trial ? '' : stageLabel(game.worldIdx, game.levelIdx) + ' '}${W.name}   골드 ${game.gold}   처치 ${game.kills}`, VIEW_W / 2, 6, W.deep ? '#9ad8ff' : '#fff', 'center');
       this.minimap(ctx, game);
     }
 
@@ -139,7 +139,7 @@ class HUD {
   }
   overlay(ctx, game) {
     const o = game.overlay;
-    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
@@ -284,6 +284,15 @@ class HUD {
       hudText(ctx, `2  대가 — ${game.evolvePrice()}골드를 내고 바로 진화 (보유 ${game.gold})`, VIEW_W / 2, 160, game.gold >= game.evolvePrice() ? '#fff' : '#888', 'center', 10);
       if (o.msg) hudText(ctx, o.msg, VIEW_W / 2, 180, '#ff9a9a', 'center', 9);
       hudText(ctx, 'E / Esc: 닫기', VIEW_W / 2, VIEW_H - 16, '#888', 'center', 8);
+    } else if (o.type === 'trial_confirm') { // 롱고미니아드의 시련 도전 확인
+      hudText(ctx, '롱고미니아드의 시련', VIEW_W / 2, 60, '#bfe6ff', 'center', 16);
+      hudText(ctx, '창에 깃든 신령 — 신령 롱고미니아드와 1:1로 싸웁니다', VIEW_W / 2, 86, '#e8e0f0', 'center', 10);
+      hudText(ctx, '지금까지의 어떤 보스보다 강합니다. 최종 진화·영웅/전설 무기·축복을 받은 상태로 시작합니다', VIEW_W / 2, 104, '#aaa', 'center', 8);
+      hudText(ctx, '지거나 그만둬도 잃는 것은 없고, 언제든 멀린에게 다시 도전할 수 있습니다', VIEW_W / 2, 118, '#aaa', 'center', 8);
+      ['1  도전한다', '2  나중에'].forEach((t, i) => { const r = HUD.trialBtn(i), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        ctx.fillStyle = on ? 'rgba(191,230,255,0.22)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = i ? '#777' : '#bfe6ff'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        hudText(ctx, t, r.x + r.w / 2, r.y + 7, i ? '#ccc' : '#ffffff', 'center', 11); });
+      hudText(ctx, 'Enter: 도전   ·   Esc: 나중에', VIEW_W / 2, VIEW_H - 20, '#888', 'center', 8);
     } else if (o.type === 'resume') {
       const r = game.save.run, hero = r && game.data.heroes.get(r.hero), W = r && worldDef(r.worldIdx);
       hudText(ctx, '진행 중인 탐험이 있습니다', VIEW_W / 2, 70, '#7ad0ff', 'center', 16);
@@ -327,6 +336,10 @@ class HUD {
         if (eq) hudText(ctx, '장착됨', r.x + r.w / 2, r.y + r.h - 14, '#ffd84a', 'center', 8);
       });
       hudText(ctx, pick ? (list.length && !had ? '클릭: 선택' : 'Enter: 계속') : '클릭: 장착/해제   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 20, '#999', 'center', 9);
+    } else if (o.type === 'result' && o.trial) {
+      hudText(ctx, o.victory ? '롱고미니아드가 당신을 인정했습니다' : '시련 실패', VIEW_W / 2, 90, o.victory ? '#bfe6ff' : '#ff7070', 'center', 16);
+      hudText(ctx, o.victory ? '보구 롱고미니아드를 얻었습니다 — 로비의 보구 보관대에서 장착할 수 있습니다' : '잃은 것은 없습니다. 멀린에게 말을 걸면 다시 도전할 수 있습니다', VIEW_W / 2, 116, '#ddd', 'center', 9);
+      hudText(ctx, 'Enter: 로비로', VIEW_W / 2, 150, '#fff', 'center', 10);
     } else if (o.type === 'result') {
       hudText(ctx, o.victory ? '던전 정복!' : '사망했습니다', VIEW_W / 2, 70, o.victory ? '#ffd84a' : '#ff7070', 'center', 18);
       if (o.after) hudText(ctx, o.after, VIEW_W / 2, 92, '#ffe9a0', 'center', 10);
@@ -338,6 +351,7 @@ class HUD {
     }
   }
   // 보구 획득 알림: 오른쪽 아래에서 아이콘과 함께 미끄러져 들어와 6초 동안 표시
+  static trialBtn(i) { return { x: VIEW_W / 2 - 130 + i * 140, y: 140, w: 120, h: 26 }; }
   static guildTab(i) { return { x: 60 + i * 134, y: 22, w: 126, h: 16 }; }
   static guildRow(i) { return { x: 40, y: 46 + i * 28, w: VIEW_W - 80, h: 25 }; }
   static titleCell(i) { return { x: 40 + (i % 2) * 218, y: 46 + Math.floor(i / 2) * 30, w: 212, h: 27 }; }

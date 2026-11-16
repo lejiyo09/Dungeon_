@@ -791,6 +791,45 @@ class RhongoTower {
     ctx.restore();
   }
 }
+// 보스판 롱고미니아드: 같은 모양, 대상은 플레이어. 날아가는 동안 착탄 지점 예고 → 끌어당김·지속 피해·나선 탄막 → 붕괴 폭발
+class BossRhongoTower extends RhongoTower {
+  constructor(boss, tx, ty, P) {
+    super({ x: boss.x, y: boss.y + 6, mods: {} }, tx, ty, P); this.boss = boss; this.FLY = 0.75; this.end = this.FLY + P.duration; this.a = 0; this.timer = 0;
+  }
+  update(dt, world) {
+    const P = this.T, p = world.player, e = this.boss, alive = p.state !== 'DEAD', fx = world.effects; this.t += dt;
+    if (!e.alive) { this.alive = false; return; }
+    const inR = (r) => alive && Math.hypot(p.x - this.x, p.y - this.y) < r + p.half;
+    if (this.t < this.FLY) return;
+    if (!this.landed) { this.landed = true; this.next = P.tick;
+      if (inR(P.impact)) world.damagePlayer(Math.round(e.damage * 2.5));
+      fx.skyBeam(this.x, this.y, '#ffffff', 0, 18); fx.rays(this.x, this.y, P.color, 20, 120, 0.8); fx.ring(this.x, this.y, P.radius, P.color);
+      world.addShake(0.45, 7); world.screenFlash = 0.25; world.flashColor = '210,235,255'; SFX.play('excal'); }
+    if (this.t >= this.end) { this.alive = false; // 붕괴: 반경 안이면 치명적
+      if (inR(P.radius)) world.damagePlayer(Math.round(e.damage * 3.5));
+      for (let i = 0; i < 36; i++) world.enemyShoot(this.x, this.y, i * TAU / 36, e.def.bulletSpeed, e.damage, P.color, 4);
+      fx.rays(this.x, this.y, '#ffffff', 24, P.radius * 2, 0.9); fx.ring(this.x, this.y, P.radius, '#ffffff'); fx.ring(this.x, this.y, P.radius * 1.3, P.color);
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; fx.skyBeam(this.x + Math.cos(a) * P.radius * 0.6, this.y + Math.sin(a) * P.radius * 0.4, '#ffffff', i * 0.03, 6); }
+      world.addShake(0.6, 9); world.screenFlash = 0.35; world.flashColor = '220,240,255'; SFX.play('explode'); return; }
+    if (alive && p.state !== 'DASH') { const dx = this.x - p.x, dy = this.y - p.y, d = Math.hypot(dx, dy); if (d > 6 && d < P.radius * 1.8) moveAndCollide(p, dx / d * P.pull * dt, dy / d * P.pull * dt, world.map); }
+    this.next -= dt; if (this.next <= 0) { this.next += P.tick; if (inR(P.radius * 0.45)) world.damagePlayer(Math.round(e.damage * 0.6)); }
+    this.timer -= dt; this.a += P.spin * dt;
+    while (this.timer <= 0) { for (let i = 0; i < P.arms; i++) world.enemyShoot(this.x, this.y, this.a + i * TAU / P.arms, e.def.bulletSpeed * 0.7, e.damage, P.color, 3); this.timer += P.interval; }
+    if (Math.random() < 0.9) { const a = Math.random() * TAU, d = P.radius * (0.7 + Math.random() * 0.4);
+      fx.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.6, -Math.cos(a) * d * 1.6, -Math.sin(a) * d, { color: P.color, life: 0.5, size: 1.5, size2: 0, drag: 0, add: true }); }
+  }
+  render(ctx) {
+    if (!this.landed) { // 착탄 예고: 좁혀 드는 붉은 원 + 붕괴 범위
+      const k = this.t / this.FLY; ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.6);
+      ctx.globalAlpha = 0.25; ctx.fillStyle = '#ff4a5a'; ctx.beginPath(); ctx.arc(0, 0, this.T.impact, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 0.9; ctx.strokeStyle = '#ff6a6a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, this.T.impact * (1.6 - 0.6 * k), 0, TAU); ctx.stroke();
+      ctx.globalAlpha = 0.5; ctx.lineWidth = 1; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(0, 0, this.T.radius, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+      ctx.restore(); ctx.lineWidth = 1; return;
+    }
+    super.render(ctx);
+    const left = this.end - this.t; if (left < 1.2) { ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.6); ctx.globalAlpha = 0.5 + 0.4 * Math.sin(this.t * 30); ctx.strokeStyle = '#ff4a5a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, this.T.radius, 0, TAU); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; } // 붕괴 직전 경고
+  }
+}
 class Trap {
   constructor(x, y, def, mods) { this.x = x; this.y = y; this.def = def; this.D = def.trap; this.getMods = mods; this.t = 0; this.alive = true; this.snapT = -1; }
   update(dt, world) {

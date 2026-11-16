@@ -139,19 +139,34 @@ class Game {
       } else npc.bubble = { text: `시련: 문지기 ${M.gate || 0}/${MERLIN_TRIAL.gate} · 심층 보스 ${M.deep || 0}/${MERLIN_TRIAL.deep}`, t: 3 };
       return;
     }
-    if (M.quest === 2) { // 두 번째 시련: 롱고미니아드
-      this.playCutscene(MERLIN_SPEAR_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 3; M.deep2 = 0; writeSave(sv); this.showBanner('멀린의 두 번째 시련', `심층 보스 처치 (0/${MERLIN_TRIAL2.deep})`, '#bfe6ff'); } }); return;
+    if (M.quest === 2) { // 두 번째 시련: 롱고미니아드의 인정 → 보스전 (도전 여부 선택)
+      this.playCutscene(MERLIN_SPEAR_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 3; writeSave(sv); this.askRhongoTrial(); } }); return;
     }
-    if (M.quest === 3) {
-      if ((M.deep2 || 0) >= MERLIN_TRIAL2.deep) {
-        this.playCutscene(MERLIN_SPEAR_REWARD_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => {
-          M.quest = 4; const T = DATA_TREASURES.find((t) => t.id === 'treasure_rhongomyniad');
-          if (!sv.treasures.includes(T.id)) sv.treasures.push(T.id); writeSave(sv); this.treasureToast = { T, start: performance.now() };
-          this.effects.skyBeam(npc.x, npc.y, '#ffffff', 0, 10); this.effects.rays(npc.x, npc.y, '#bfe6ff', 16, 70, 1); this.effects.ring(npc.x, npc.y, 40, '#bfe6ff'); } });
-      } else npc.bubble = { text: `시련: 심층 보스 ${M.deep2 || 0}/${MERLIN_TRIAL2.deep}`, t: 3 };
-      return;
-    }
+    if (M.quest === 3) { this.askRhongoTrial(); return; }
     npc.bubble = { text: pick(MERLIN_CHATTER), t: 3 };
+  }
+  // ── 롱고미니아드의 시련: 따로 준비된 장비로 신령 롱고미니아드와 1:1 (진행 중인 탐험·보상·기록에는 영향 없음)
+  askRhongoTrial() { this.overlay = { type: 'trial_confirm' }; this.input.mouse.down = false; }
+  startRhongoTrial() {
+    this.mode = 'dungeon'; this.trialW = Object.assign({}, worldDef(RHONGO_TRIAL.world), RHONGO_TRIAL.W);
+    this.worldIdx = RHONGO_TRIAL.world; this.levelIdx = STAGES_PER_WORLD - 1; this.gold = 0; this.kills = 0;
+    const p = this.player = this.makePlayer(0, 0), K = RHONGO_TRIAL.kit;
+    const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) { p.treasure = tr; if (tr.apply) tr.apply(p); }
+    const kit = () => { // 시련 장비: 최종 진화 + 영웅·전설 무기(강화) + 체력·버프
+      if (p.line) this.setJob(p, p.line, 2); p.skillCooldown = 0;
+      p.maxHp += K.hp + EVOLUTION.hp[0] + EVOLUTION.hp[1]; p.hp = p.maxHp; p.maxEnergy += EVOLUTION.energy[0] + EVOLUTION.energy[1]; p.energy = p.maxEnergy;
+      p.weapons = K.rarity.map((r) => new WeaponInstance(pick(DATA_WEAPONS.filter((d) => d.rarity === r && !d.questOnly)), K.lv)); p.slot = 0;
+      for (const b of shuffled(DATA_BUFFS).slice(0, K.buffs)) { b.apply(p); p.buffs.push(b.id); }
+      this.showBanner(RHONGO_TRIAL.W.name, '최종 진화 · 영웅/전설 무기 · 축복을 받은 상태로 싸웁니다', '#bfe6ff');
+    };
+    this.loadStage();
+    this.askVariant(kit);
+  }
+  endRhongoTrial(win) {
+    const M = this.save.merlin; SFX.stopMusic();
+    if (win) { M.quest = 4; const T = DATA_TREASURES.find((t) => t.id === 'treasure_rhongomyniad'); if (!this.save.treasures.includes(T.id)) this.save.treasures.push(T.id); this.treasureToast = { T, start: performance.now() }; }
+    this.guildEvent('runs'); writeSave(this.save);
+    this.overlay = { type: 'result', victory: win, stages: 0, bosses: 0, reward: 0, trial: true };
   }
   titleUnlocked(T) { return T.test(this.save.stats || {}, this.save); }
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
@@ -165,7 +180,7 @@ class Game {
 
   // ── 로비
   enterLobby() {
-    SFX.stopMusic(); this.cinematic = null; this.slowMo = null;
+    SFX.stopMusic(); this.cinematic = null; this.slowMo = null; this.trialW = null;
     this.mode = 'lobby'; this.overlay = null;
     this.worldIdx = 0; this.levelIdx = 0;
     this.resetWorldLists(buildLobby());
@@ -213,7 +228,7 @@ class Game {
 
   // ── 런 진행
   startRun() {
-    this.mode = 'dungeon';
+    this.mode = 'dungeon'; this.trialW = null;
     this.worldIdx = 0; this.levelIdx = 0; this.gold = 0; this.kills = 0;
     this.player = this.makePlayer(0, 0);
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); // 로비에서 고른 보구 (사망해도 영구 보유)
@@ -268,14 +283,15 @@ class Game {
     this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90]));
     this.showBanner(SANCTUM_AFTER, '심층으로 내려가거나, 여기서 돌아갈 수 있습니다', '#9ad8ff');
   }
-  get W() { return worldDef(this.worldIdx); }
+  get W() { return this.trialW || worldDef(this.worldIdx); }
   get stageIndex() { return this.worldIdx * STAGES_PER_WORLD + this.levelIdx; }
   get isBossStage() { return this.levelIdx === STAGES_PER_WORLD - 1; }
   get scale() { const S = BALANCE.stageScale, k = this.mode === 'lobby' ? 0 : this.stageIndex, i = k > S.taperFrom ? S.taperFrom + (k - S.taperFrom) * S.taper : k; return { hp: 1 + BALANCE.stageScale.hp * i, dmg: 1 + BALANCE.stageScale.dmg * i, deep: this.mode !== 'lobby' && !!this.W.deep }; }
   loadStage() {
     const W = this.W;
-    if (W.deep) this.save.bestDeep = Math.max(this.save.bestDeep || 0, W.depth); // 가장 깊이 내려간 심층
-    const map = this.isBossStage
+    if (W.deep && !W.trial) this.save.bestDeep = Math.max(this.save.bestDeep || 0, W.depth); // 가장 깊이 내려간 심층
+    const map = W.trial ? generateDungeon({ roomCount: 2, specials: ['boss'], waves: 0, palette: W.palette }) // 시련: 시작 방 + 보스 방
+      : this.isBossStage
       ? generateDungeon({ roomCount: 4, specials: ['boss'], waves: W.waves, palette: W.palette })
       : generateDungeon({ roomCount: Math.min(15, 9 + this.worldIdx), specials: ['exit', 'treasure', 'shop'].concat(this.rollSpecialRoom()), waves: W.waves, palette: W.palette }); // 특수방 하나
     this.resetWorldLists(map);
@@ -288,11 +304,12 @@ class Game {
     this.stockSpecialRooms(map);
     const ex = map.roomOf('exit');
     if (ex) { const c = map.tileCenter(ex.cx, ex.cy); this.portals.push(new Portal(c.x, c.y, () => this.advanceStage(), '다음 스테이지')); }
-    this.save.bestStage = Math.max(this.save.bestStage, this.stageIndex + 1);
-    this.save.run = this.snapshotRun(); writeSave(this.save); // 이어하기용: 이 스테이지 시작 지점을 저장
+    if (!W.trial) { this.save.bestStage = Math.max(this.save.bestStage, this.stageIndex + 1);
+      this.save.run = this.snapshotRun(); writeSave(this.save); } // 시련은 이어하기·기록에 남기지 않음 // 이어하기용: 이 스테이지 시작 지점을 저장
     if (W.sanctum) this.decorateSanctum(map);
     this.snapCamera();
     if (W.sanctum && this.levelIdx === 0) this.playCutscene(ORIGIN_ARRIVAL_LINES, { id: 'origin_arrival', focus: null });
+    if (W.trial) { this.showBanner(W.name, '롱고미니아드가 기다리고 있습니다', '#bfe6ff'); return; }
     this.showBanner(`${stageLabel(this.worldIdx, this.levelIdx)}  ${W.name}`, this.isBossStage ? '보스가 기다리고 있습니다' : W.deep && this.levelIdx === 0 ? `심층 ${W.depth}번째 필드 — 던전은 더 깊은 곳으로 이어진다` : '출구 포탈을 찾으세요', W.deep ? '#9ad8ff' : undefined);
   }
   advanceStage() {
@@ -350,6 +367,7 @@ class Game {
     });
   }
   endRun(victory) {
+    if (this.trialW) { this.endRhongoTrial(victory); return; }
     this.guildEvent('runs');
     SFX.stopMusic(); this.save.run = null; writeSave(this.save);
     SFX.play(victory ? 'victory' : 'hurt');
@@ -360,7 +378,7 @@ class Game {
     if (victory) { this.save.clears++; writeSave(this.save); }
   }
   finishResult() {
-    this.save.bank += this.overlay.reward; writeSave(this.save);
+    if (!this.overlay.trial) { this.save.bank += this.overlay.reward; writeSave(this.save); }
     this.overlay = null;
     this.transition = { t: 0, swapped: false, action: () => this.enterLobby() };
   }
@@ -547,6 +565,10 @@ class Game {
         if (this.gold < price) { o.msg = `골드가 부족합니다 (${price}골드 필요)`; SFX.play('deny'); }
         else { this.gold -= price; o.npc.gone = true; this.overlay = null; this.evolve(o.npc.hybrid, o.npc.branch); }
       }
+    } else if (o.type === 'trial_confirm') { // 롱고미니아드의 시련: 도전 / 나중에
+      const m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h, click = input.wasPressed('Mouse0');
+      if (input.wasPressed('Enter') || input.wasPressed('Digit1') || (click && hit(HUD.trialBtn(0)))) { this.overlay = null; this.input.mouse.down = false; this.transition = { t: 0, swapped: false, action: () => this.startRhongoTrial() }; }
+      else if (input.wasPressed('Escape') || input.wasPressed('Digit2') || input.wasPressed('KeyE') || (click && hit(HUD.trialBtn(1)))) { this.overlay = null; this.input.mouse.down = false; const mt = this.props.find((x) => x instanceof MerlinTable); if (mt) mt.bubble = { text: '「준비가 되면 다시 오게.」', t: 3 }; }
     } else if (o.type === 'resume') {
       if (input.wasPressed('Enter')) { this.overlay = null; this.transition = { t: 0, swapped: false, action: () => this.resumeRun() }; }
       else if (input.wasPressed('KeyN')) { this.overlay = null; this.save.run = null; writeSave(this.save); this.transition = { t: 0, swapped: false, action: () => this.startRun() }; }
@@ -1064,7 +1086,7 @@ class Game {
       const id = this.W.boss, c = this.map.tileCenter(r.cx, r.cy - 3);
       const boss = this.spawnEnemy(id, c.x, c.y, r);
       boss.setState('INTRO'); boss.jumpH = 160; boss.phase = 1;
-      this.cinematic = { t: 0, boss, landed: false, roared: false, grand: !!this.W.sanctum };
+      this.cinematic = { t: 0, boss, landed: false, roared: false, grand: !!(this.W.sanctum || this.W.trial) };
       if (this.W.sanctum && this.sanctumGate) this.playCutscene(GATEKEEPER_INTRO_LINES, { id: 'gatekeeper_intro', focus: { x: this.sanctumGate.x, y: this.sanctumGate.y - 20 } });
       this.banner = null; this.input.mouse.down = false;
       SFX.play('door');
@@ -1147,6 +1169,9 @@ class Game {
     if (P.hero.roomHeal && P.state !== 'DEAD' && r.type === 'combat') { P.hp = Math.min(P.maxHp, P.hp + P.hero.roomHeal); this.effects.heal(P.x, P.y); this.effects.text(P.x, P.y - 20, '+' + P.hero.roomHeal, '#7aff7a'); }
     this.map.setDoors(r, false);
     const c0 = this.map.tileCenter(r.cx, r.cy), c = this.freeSpot(r, c0.x, c0.y, 8);
+    if (r.type === 'boss' && this.trialW) { // 시련 승리: 인정을 받고 로비로
+      this.playCutscene(RHONGO_WIN_LINES, { always: true, force: true, done: () => this.endRhongoTrial(true) }); return;
+    }
     if (r.type === 'boss') {
       for (let i = 0; i < 12; i++) this.pickups.push(new Pickup('coin', c.x, c.y));
       for (let i = 0; i < 8; i++) this.pickups.push(new Pickup('energy', c.x, c.y, { value: 10 }));
@@ -1532,7 +1557,7 @@ class Game {
     enemy.rewardGiven = true;
     this.kills++;
     if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) { this.guildEvent('kills', 1, enemy.def.id); if (enemy.elite) this.guildEvent('elites'); if (enemy.def.boss) this.guildEvent('bosses', 1, enemy.def.id);
-      const M = this.save.merlin; if (M && M.quest === 1 && enemy.def.boss) { if (enemy.def.id === 'boss_nameless_gatekeeper') M.gate = Math.min(MERLIN_TRIAL.gate, (M.gate || 0) + 1); if (this.W.deep) M.deep = Math.min(MERLIN_TRIAL.deep, (M.deep || 0) + 1); } if (M && M.quest === 3 && enemy.def.boss && this.W.deep) M.deep2 = Math.min(MERLIN_TRIAL2.deep, (M.deep2 || 0) + 1); } // 멀린의 시련 // 길드 퀘스트·토벌·칭호 집계
+      const M = this.save.merlin; if (M && M.quest === 1 && enemy.def.boss) { if (enemy.def.id === 'boss_nameless_gatekeeper') M.gate = Math.min(MERLIN_TRIAL.gate, (M.gate || 0) + 1); if (this.W.deep) M.deep = Math.min(MERLIN_TRIAL.deep, (M.deep || 0) + 1); } } // 멀린의 시련 // 길드 퀘스트·토벌·칭호 집계
     const p = this.player;
     if (p.vampire > 0 && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.vampire);
     if (p.rage > 0 && p.rageVamp && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.rageVamp);
