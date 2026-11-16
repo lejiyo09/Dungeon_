@@ -117,6 +117,12 @@ Object.assign(WPIX, {
   bronzesword: { auto: true, p: [2, 2], rows: ['..yy..........', 'gggyacccccccc.', '..yyaaaaaaaaaa', '..yy..........'] },
   flametwin: { auto: true, p: [1, 2], rows: ['..n..cccco.', 'ggnnaaaaaao', '..n........', '...cccco...', 'ggnaaaaao..'] },
   abyssblade: { auto: true, p: [3, 2], rows: ['..nn..............', '.n..n.cccccccccc..', 'ggnonnaaaaaaaaaaao', '.n..n.bbbbbbbbbb..', '..nn..............'] },
+  emberwand: { auto: true, p: [3, 1], rows: ['.........r.', 'ddddddddroo', '.........r.'] },
+  shortspear: { auto: true, p: [3, 1], rows: ['...........mm.', 'dddddddddddmmm', '...........mm.'] },
+  burstpistol: { auto: true, p: [2, 3], rows: ['.ccccccc..', '.aaaaaaanm', '.bbnbbbb..', '.gg.n.....', '.gg.......'] },
+  icicle: { auto: true, p: [3, 2], rows: ['..........o..', '.........ooo.', 'aaaaaaaaaowwo', '.........ooo.', '..........o..'] },
+  moonscythe: { auto: true, p: [1, 3], rows: ['.........ccc.', '...........cc', '............c', 'ddddddddddddm', '.............'] },
+  stickybomb: { auto: true, p: [3, 3], rows: ['...nnnnnnn...', '.aaaaaaaaaaoo', 'aacccccccaaoo', '.aaaaaaaaaaoo', '...gg........', '...gg........'] },
   headshot: { auto: true, p: [5, 3], rows: ['.....nnnnnnn........', '.....nooooon........', 'bbbbaaaaaaaaaaaaaaaan', 'bb...aanbb..........', '.....gg.............', '.....gg.............'] }
 });
 
@@ -153,6 +159,7 @@ Object.assign(WEAPON_SPRITE, {
   weapon_curseorb_001: 'curseorb', weapon_stormglaive_001: 'stormglaive', weapon_starfall_001: 'starfall', weapon_aurora_001: 'aurora',
   weapon_dragonslayer_001: 'dragonslayer', weapon_skyrail_001: 'skyrail', weapon_firestorm_001: 'firestorm', weapon_chainscepter_001: 'chainscepter', weapon_sawlauncher_001: 'sawlauncher',
   weapon_earthbreaker_001: 'earthbreaker', weapon_bronzesword_001: 'bronzesword', weapon_flametwin_001: 'flametwin', weapon_abyssblade_001: 'abyssblade',
+  weapon_emberwand_001: 'emberwand', weapon_shortspear_001: 'shortspear', weapon_burstpistol_001: 'burstpistol', weapon_icicle_001: 'icicle', weapon_moonscythe_001: 'moonscythe', weapon_stickybomb_001: 'stickybomb',
   weapon_kitchenknife_001: 'kitchenknife', weapon_pickaxe_001: 'pickaxe', weapon_icegreatsword_001: 'greatsword', weapon_steelxbow_001: 'repeatxbow', weapon_quakehammer_001: 'quakehammer'
 });
 

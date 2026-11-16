@@ -463,5 +463,23 @@ const DATA_WEAPONS = [
     damage: 16, fireRate: 3.4, energyCost: 0.2, range: 34, arcDeg: 160, knockback: 3, status: { type: 'burn', chance: 0.4, duration: 2, dps: 6 }, color: '#c8502a', len: 11 },
   { id: 'weapon_abyssblade_001', name: '심연의 검', rarity: 'epic', type: 'melee', shape: 'sword',
     damage: 34, fireRate: 1.5, energyCost: 0.6, range: 46, arcDeg: 150, knockback: 6, status: { type: 'curse', chance: 0.4, duration: 3 },
-    wave: { damage: 16, speed: 360, range: 200 }, color: '#4a2a6a', len: 16 }
+    wave: { damage: 16, speed: 360, range: 200 }, color: '#4a2a6a', len: 16 },
+  // ── 고급 3
+  { id: 'weapon_emberwand_001', name: '불씨 지팡이', rarity: 'uncommon', type: 'gun', shape: 'staff',
+    damage: 19, fireRate: 3, energyCost: 0.7, range: 340, projectileSpeed: 360, projectileCount: 1, spreadDeg: 3,
+    status: { type: 'burn', chance: 0.4, duration: 2, dps: 5 }, pierce: 0, knockback: 2, color: '#6a4a30', len: 12, bulletColor: '#ffb04a', bulletSize: 2 },
+  { id: 'weapon_shortspear_001', name: '단창', rarity: 'uncommon', type: 'melee', shape: 'spear',
+    damage: 40, fireRate: 1.8, energyCost: 0, range: 50, arcDeg: 30, lunge: 18, knockback: 6, color: '#8a6a40', len: 15 },
+  { id: 'weapon_burstpistol_001', name: '3점사 권총', rarity: 'uncommon', type: 'gun', shape: 'gun',
+    damage: 12, fireRate: 1.7, energyCost: 0.6, range: 340, projectileSpeed: 520, projectileCount: 1, spreadDeg: 3, burst: { count: 3, interval: 0.07 },
+    pierce: 0, knockback: 2, color: '#4a4a5a', len: 10, bulletColor: '#ffe08a', bulletSize: 1 },
+  // ── 희귀 3
+  { id: 'weapon_icicle_001', name: '얼음 송곳 지팡이', rarity: 'rare', type: 'gun', shape: 'staff',
+    damage: 21, fireRate: 2.2, energyCost: 1, range: 360, projectileSpeed: 420, projectileCount: 3, spreadDeg: 0, fanDeg: 20,
+    status: { type: 'freeze', chance: 0.3, duration: 1.4, slow: 0.5 }, pierce: 0, knockback: 2, color: '#5a7a9a', len: 13, bulletColor: '#bfefff', bulletSize: 2 },
+  { id: 'weapon_moonscythe_001', name: '초승달 낫', rarity: 'rare', type: 'melee', shape: 'sword',
+    damage: 35, fireRate: 1.6, energyCost: 0.3, range: 42, arcDeg: 200, lifesteal: 0.3, knockback: 5, color: '#8a8aa8', len: 14 },
+  { id: 'weapon_stickybomb_001', name: '점착 폭탄 발사기', rarity: 'rare', type: 'gun', shape: 'launcher',
+    damage: 36, fireRate: 1.4, energyCost: 1.5, range: 320, projectileSpeed: 300, projectileCount: 1, spreadDeg: 2, explodeRadius: 30,
+    pierce: 0, knockback: 6, color: '#5a6a3a', len: 13, bulletColor: '#c8ff70', bulletSize: 3 }
 ];
