@@ -139,7 +139,8 @@ class HUD {
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
-      hudText(ctx, 'E 상호작용 · Q/휠 무기 교체 · R 보구 · M 소리 켜기/끄기', VIEW_W / 2, 134, '#ccc', 'center', 9);
+      const hasTr = (game.save.treasures || []).length > 0 || !!game.player.treasure; // 보구를 얻기 전에는 R 안내를 숨김
+      hudText(ctx, `E 상호작용 · Q/휠 무기 교체 · ${hasTr ? 'R 보구 · ' : ''}M 소리 켜기/끄기`, VIEW_W / 2, 134, '#ccc', 'center', 9);
       hudText(ctx, '원소 반응: 빙결+화상=열충격 · 중독+화상=독 연소 · 빙결+번개=감전', VIEW_W / 2, 148, '#9ad8ff', 'center', 8);
       hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기   ·   L 포기하고 로비로' : 'Esc 이어하기   ·   P 프롤로그 다시 보기   ·   L 로그아웃', VIEW_W / 2, 164, '#999', 'center', 9);
     } else if (o.type === 'codex' || o.type === 'armory') {
