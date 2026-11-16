@@ -190,9 +190,9 @@ const DATA_WEAPONS = [
     damage: 51, fireRate: 1.8, energyCost: 2, range: 280, projectileSpeed: 240, projectileCount: 1, spreadDeg: 3, pierce: 0,
     trail: { every: 0.08, puddle: { r: 12, life: 2.5, tick: 0.35, dmg: 15, status: { type: 'burn', chance: 0.5, duration: 2, dps: 6 }, color: '#ff6a2a' } },
     knockback: 2, color: '#5a3a3a', len: 12, bulletColor: '#ffa040', bulletSize: 3 },
-  { id: 'weapon_turretgun_001', name: '포탑 설치기', rarity: 'rare', type: 'gun', shape: 'gun',
+  { id: 'weapon_turretgun_001', name: '포탑 설치기', rarity: 'epic', type: 'gun', shape: 'gun',
     damage: 11, fireRate: 0.6, energyCost: 3.5, range: 240, projectileSpeed: 0, projectileCount: 1,
-    deploy: { max: 2, life: 12, rate: 0.25 }, knockback: 1, color: '#c08a30', len: 9, bulletColor: '#ffe36b' },
+    deploy: { max: 2, life: 12, rate: 0.225 }, knockback: 1, color: '#c08a30', len: 9, bulletColor: '#ffe36b' },
   // ── 기본형 무기 3
   { id: 'weapon_dartgun_001', name: '다트총', rarity: 'common', type: 'gun', shape: 'gun',
     damage: 19, fireRate: 2.6, energyCost: 0, range: 280, projectileSpeed: 420, projectileCount: 1, spreadDeg: 4,
