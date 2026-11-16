@@ -66,7 +66,7 @@ class Game {
     this.effects.ring(x, y, 30, '#7ad0ff'); this.effects.burst(x, y, '#7ad0ff', 18); SFX.play('buy');
     return [`${hero.name} Lv.${s.jobLv[hero.id]} 달성!`, '#7ad0ff'];
   }
-  // ── 모험가 길드 (제안): 일일·주간 퀘스트, 토벌 의뢰, 칭호, 거래상 보급품, 결정석 도박
+  // ── 탐험가 길드 (제안): 일일·주간 퀘스트, 토벌 의뢰, 칭호, 거래상 보급품, 결정석 도박
   guild() {
     const sv = this.save, G = sv.guild = sv.guild || {}, day = guildDayKey(), week = guildWeekKey();
     sv.stats = sv.stats || {};
@@ -125,6 +125,22 @@ class Game {
     const win = Math.round(bet * res[1]); sv.bank += win; if (res[1] > 1) { this.guildEvent('gambleWins'); SFX.play('victory'); } else SFX.play('deny');
     writeSave(sv); return { text: res[1] ? `${res[2]}! ${CUR.name} +${win}` : `${res[2]}… ${CUR.name} -${bet}`, color: res[1] > 1 ? '#ffd84a' : '#ff9a9a', mult: res[1] };
   }
+  // 멀린: 보구가 없으면 '…'만, 보구를 얻은 뒤 처음 말을 걸면 정체가 드러나며 시련을 줌 → 시련을 마치면 가든 오브 아발론
+  talkMerlin(npc) {
+    const sv = this.save, M = sv.merlin = sv.merlin || { quest: 0, gate: 0, deep: 0 };
+    if (!(sv.treasures || []).length) { npc.bubble = { text: '…', t: 2 }; return; }
+    if (!M.revealed) { this.playCutscene(MERLIN_REVEAL_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.revealed = true; M.quest = 1; writeSave(sv); this.showBanner('멀린의 시련', `무명의 문지기 다시 쓰러뜨리기 (${M.gate}/${MERLIN_TRIAL.gate}) · 심층 보스 처치 (${M.deep}/${MERLIN_TRIAL.deep})`, '#ffb0d8'); } }); return; }
+    if (M.quest === 1) {
+      if ((M.gate || 0) >= MERLIN_TRIAL.gate && (M.deep || 0) >= MERLIN_TRIAL.deep) {
+        this.playCutscene(MERLIN_REWARD_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => {
+          M.quest = 2; const T = DATA_TREASURES.find((t) => t.id === 'treasure_garden_of_avalon');
+          if (!sv.treasures.includes(T.id)) sv.treasures.push(T.id); writeSave(sv); this.treasureToast = { T, start: performance.now() };
+          this.effects.rays(npc.x, npc.y, '#ffb0d8', 16, 70, 1); for (let i = 0; i < 24; i++) this.effects.part(npc.x + randInt(-30, 30), npc.y + randInt(-10, 10), randInt(-10, 10), -30 - Math.random() * 30, { color: i % 2 ? '#ffb0d8' : '#ffffff', life: 1.2, size: 2, size2: 0, drag: 1, add: true }); } });
+      } else npc.bubble = { text: `시련: 문지기 ${M.gate || 0}/${MERLIN_TRIAL.gate} · 심층 보스 ${M.deep || 0}/${MERLIN_TRIAL.deep}`, t: 3 };
+      return;
+    }
+    npc.bubble = { text: pick(MERLIN_CHATTER), t: 3 };
+  }
   titleUnlocked(T) { return T.test(this.save.stats || {}, this.save); }
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
   resetWorldLists(map) {
@@ -149,7 +165,7 @@ class Game {
     if (this.save.sanctumReached) { const tv = this.map.tileCenter(25, 16); this.props.push(new TreasureVault(tv.x, tv.y)); }
     const dm = this.map.tileCenter(28, 12);
     this.enemies.push(new Enemy(dm.x, dm.y, this.data.enemies.get('dummy_001'), { hp: 1, dmg: 1 }, this.map.startRoom));
-    // 모험가 길드 (아래쪽)
+    // 탐험가 길드 (아래쪽)
     const gp = (tx, ty) => this.map.tileCenter(tx, ty);
     this.props.push(new GuildCounter(27 * TILE, 23 * TILE, 29 * TILE, 35 * TILE)); // 오른쪽 벽을 따라 세로로 긴 접수대
     { const c = gp(26, 27); this.props.push(new GuildClerk(c.x, c.y, 'quest', 'reception', 29.6 * TILE)); }  // 퀘스트·칭호 접수원 (카펫 끝)
@@ -161,6 +177,7 @@ class Game {
     tbl(20, 26, [[-22, 'd'], [22, 'e']], { line: GUILD_CHATTER[1] });
     tbl(20, 31, [[-22, 'f'], [22, 'dealer']], { gamble: true });
     tbl(10, 34, [[-22, 'b'], [22, 'a']], { line: GUILD_CHATTER[2] });
+    { const t = new MerlinTable(24 * TILE, 34 * TILE + 8); this.props.push(t); } // 오른쪽 구석: 후드를 쓴 마법사
     this.guild(); // 오늘의 퀘스트·의뢰·진열 준비
     const pc = this.map.tileCenter(17, 18);
     this.portals.push(new Portal(pc.x, pc.y, () => this.startRun(), '던전 입장'));
@@ -528,10 +545,10 @@ class Game {
       else if (next && o.t > 0.35) { o.i++; o.t = 0; }
       if (o.i >= o.lines.length) { this.overlay = null; this.input.mouse.down = false; o.done(); }
     } else if (o.type === 'treasure_pick') {
-      const list = DATA_TREASURES;
+      const list = DATA_TREASURES.filter((t) => !t.questOnly); // 시련으로만 얻는 보구는 제외
       if (!list.length || this.save.treasures.length) { if (input.wasPressed('Enter') || input.wasPressed('Mouse0')) this.pickTreasure(null); return; } // 첫 보구는 한 번만 (추가 획득 방법은 미정)
       if (input.wasPressed('Mouse0')) { const m = input.mouse, i = list.findIndex((_, i) => { const r = HUD.treasureRect(i, list.length); return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; }); if (i >= 0) this.pickTreasure(list[i]); }
-    } else if (o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble') { // 모험가 길드 창들
+    } else if (o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble') { // 탐험가 길드 창들
       if (o.msg) o.msg.t -= STEP; if (o.roll > 0) { o.roll -= STEP; if (o.roll <= 0 && o.pending) { o.msg = { text: o.pending.text, color: o.pending.color, t: 2.5 }; o.result = o.pending; o.pending = null; } return; }
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
       const m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h, say = (res) => { o.msg = { text: res[0], color: res[1], t: 2.2 }; this.input.mouse.down = false; };
@@ -592,6 +609,12 @@ class Game {
     } else if (T.use === 'beam') { // 엑스칼리버: 검을 들어 빛기둥을 세우고(0.6초) → 조준 방향으로 내려찍음 → 끝에서 폭발
       this.zones.push(new ExcaliburRaise(p, T, () => this.excaliburStrike(p, T)));
       SFX.play('skill');
+    } else if (T.use === 'garden') { // 가든 오브 아발론: 방 한가운데 탑 + 방 전체 꽃밭
+      const r = this.map.roomAtPoint(p.x, p.y), c = r ? this.map.tileCenter(r.cx, r.cy) : { x: p.x, y: p.y };
+      this.zones = this.zones.filter((z) => !(z instanceof AvalonGarden));
+      this.zones.push(new AvalonGarden(c.x, c.y, r, T, p));
+      this.effects.skyBeam(c.x, c.y, '#ffd8ec', 0, 18); this.effects.rays(c.x, c.y, '#ffb0d8', 20, 140, 1); this.effects.ring(c.x, c.y, 80, '#ffffff');
+      this.addShake(0.25, 4); this.screenFlash = 0.18; this.flashColor = '255,200,230';
     } else if (T.use === 'blessing') { // 솔로몬의 반지: 각종 버프
       p.solomon = T.duration; p.shield = p.maxShield; p.energy = p.maxEnergy; p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * T.heal)); p.skillCooldown = 0; this.effects.heal(p.x, p.y);
       this.effects.solomonSeal(p.x, p.y); this.effects.ring(p.x, p.y, 40, '#ffd84a'); this.effects.ring(p.x, p.y, 70, '#c8a0ff'); this.effects.solomonSeal(p.x, p.y, 1.8); this.addShake(0.2, 3);
@@ -1433,7 +1456,8 @@ class Game {
     if (enemy.rewardGiven) return;
     enemy.rewardGiven = true;
     this.kills++;
-    if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) { this.guildEvent('kills', 1, enemy.def.id); if (enemy.elite) this.guildEvent('elites'); if (enemy.def.boss) this.guildEvent('bosses', 1, enemy.def.id); } // 길드 퀘스트·토벌·칭호 집계
+    if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) { this.guildEvent('kills', 1, enemy.def.id); if (enemy.elite) this.guildEvent('elites'); if (enemy.def.boss) this.guildEvent('bosses', 1, enemy.def.id);
+      const M = this.save.merlin; if (M && M.quest === 1 && enemy.def.boss) { if (enemy.def.id === 'boss_nameless_gatekeeper') M.gate = Math.min(MERLIN_TRIAL.gate, (M.gate || 0) + 1); if (this.W.deep) M.deep = Math.min(MERLIN_TRIAL.deep, (M.deep || 0) + 1); } } // 멀린의 시련 // 길드 퀘스트·토벌·칭호 집계
     const p = this.player;
     if (p.vampire > 0 && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.vampire);
     if (p.rage > 0 && p.rageVamp && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.rageVamp);

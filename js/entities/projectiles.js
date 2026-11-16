@@ -673,3 +673,41 @@ function shadowSprite(hero) {
     g.drawImage(img, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(70,40,120,0.75)'; g.fillRect(0, 0, c.width, c.height); return c; };
   s = { n: make(base.n), f: make(base.f), w: base.w, h: base.h }; spriteCache.set(key, s); return s;
 }
+
+// 가든 오브 아발론: 방 한가운데 하얀 탑이 솟고 방 바닥이 꽃밭으로 — 안의 적은 느려지고 약해지며, 나는 강해지고 회복
+class AvalonGarden {
+  constructor(x, y, room, T, owner) {
+    this.x = x; this.y = y; this.room = room; this.T = T; this.owner = owner; this.t = 0; this.life = T.duration; this.alive = true; this.heal = 0;
+    const b = this.bounds = room ? { x0: room.x0 * TILE, y0: room.y0 * TILE, x1: (room.x0 + room.w) * TILE, y1: (room.y0 + room.h) * TILE } : { x0: x - 130, y0: y - 90, x1: x + 130, y1: y + 90 };
+    this.flowers = []; const n = Math.min(260, Math.round((b.x1 - b.x0) * (b.y1 - b.y0) / 220));
+    for (let i = 0; i < n; i++) this.flowers.push({ x: b.x0 + 4 + Math.random() * (b.x1 - b.x0 - 8), y: b.y0 + 6 + Math.random() * (b.y1 - b.y0 - 10), c: pick(['#ffb0d8', '#ffffff', '#ffe9a0', '#d8b8ff', '#ff8ac0']), d: Math.hypot(0, 0) });
+    for (const f of this.flowers) f.d = Math.hypot(f.x - x, f.y - y); // 탑에서 가까운 꽃부터 피어남
+  }
+  inside(o) { const b = this.bounds; return o.x >= b.x0 && o.x <= b.x1 && o.y >= b.y0 && o.y <= b.y1; }
+  update(dt, world) {
+    this.t += dt; if (this.t >= this.life) { this.alive = false; return; }
+    const p = this.owner, T = this.T;
+    if (p.state !== 'DEAD' && this.inside(p)) { p.avalonT = 0.3; p.avalonAtk = T.atk; p.avalonGuard = T.guard; this.heal += T.regen * dt; if (this.heal >= 1) { const n = Math.floor(this.heal); this.heal -= n; p.hp = Math.min(p.maxHp, p.hp + n); } }
+    for (const e of world.enemies) if (e.targetable && this.inside(e)) { e.slow = Math.max(e.slow, 0.4); e.slowK = e.def.boss ? Math.max(0.85, e.slowK || 1) : Math.min(e.slowK || 1, T.slowK); e.curse = Math.max(e.curse || 0, 0.4); }
+    if (Math.random() < 0.6) { const b = this.bounds; world.effects.part(b.x0 + Math.random() * (b.x1 - b.x0), b.y0 + Math.random() * (b.y1 - b.y0), 12 + Math.random() * 10, -6 - Math.random() * 8, { color: pick(['#ffb0d8', '#ffffff', '#ffd8ec']), life: 1.6, size: 1.5, size2: 0.5, drag: 0.2 }); } // 흩날리는 꽃잎
+  }
+  render(ctx) { // 바닥의 꽃밭
+    const grow = Math.min(1, this.t / 0.9), fade = Math.min(1, (this.life - this.t) / 1), reach = grow * 400;
+    ctx.save(); ctx.globalAlpha = 0.18 * fade; ctx.fillStyle = '#ffd8ec'; const b = this.bounds; ctx.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); ctx.globalAlpha = fade;
+    for (const f of this.flowers) { if (f.d > reach) continue; const x = Math.round(f.x), y = Math.round(f.y); ctx.fillStyle = '#4a8a4a'; ctx.fillRect(x, y + 1, 1, 2); ctx.fillStyle = f.c; ctx.fillRect(x - 1, y, 3, 1); ctx.fillRect(x, y - 1, 1, 3); ctx.fillStyle = '#ffe9a0'; ctx.fillRect(x, y, 1, 1); }
+    ctx.restore();
+  }
+  renderTop(ctx) { // 한가운데의 아발론의 탑 (솟아오름)
+    const rise = Math.min(1, this.t / 0.6), fade = Math.min(1, (this.life - this.t) / 1), x = Math.round(this.x), y = Math.round(this.y), H = Math.round(64 * rise);
+    ctx.save(); ctx.globalAlpha = fade;
+    ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(x, y + 4, 16, 5, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 10, y - H, 20, H + 4); ctx.fillStyle = '#e8e4f0'; ctx.fillRect(x - 9, y - H + 1, 18, H + 2); ctx.fillStyle = '#c8c4d8'; ctx.fillRect(x + 3, y - H + 1, 6, H + 2); // 흰 돌탑
+    for (let yy = y - H + 8; yy < y; yy += 10) { ctx.fillStyle = '#b8b4c8'; ctx.fillRect(x - 9, yy, 18, 1); }
+    if (rise >= 1) { ctx.fillStyle = OUTLINE; ctx.fillRect(x - 3, y - H + 18, 6, 9); ctx.fillStyle = '#ffd8ec'; ctx.fillRect(x - 2, y - H + 19, 4, 7); } // 창
+    ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.moveTo(x - 13, y - H + 1); ctx.lineTo(x, y - H - 16); ctx.lineTo(x + 13, y - H + 1); ctx.closePath(); ctx.fill(); // 지붕
+    ctx.fillStyle = '#8a6ab0'; ctx.beginPath(); ctx.moveTo(x - 11, y - H); ctx.lineTo(x, y - H - 14); ctx.lineTo(x + 11, y - H); ctx.closePath(); ctx.fill();
+    ctx.globalCompositeOperation = 'lighter'; const gl = 0.5 + 0.3 * Math.sin(this.t * 4); ctx.globalAlpha = fade * gl; ctx.fillStyle = '#ffd8ec'; ctx.beginPath(); ctx.arc(x, y - H - 18, 6, 0, TAU); ctx.fill(); // 꼭대기의 빛
+    for (let i = 0; i < 4; i++) { const a = this.t * 1.5 + i * TAU / 4; ctx.fillRect(Math.round(x + Math.cos(a) * 16) - 1, Math.round(y - H * 0.6 + Math.sin(a) * 5) - 1, 3, 3); } // 탑을 도는 꽃빛
+    ctx.restore();
+  }
+}

@@ -181,11 +181,11 @@ class HUD {
         : armory ? '던전에서 발견한 무기를 해금해 시작 보조 무기로 장착할 수 있습니다' : '';
       hudText(ctx, info, VIEW_W / 2, VIEW_H - 26, o.msg && o.msg.t > 0 ? o.msg.color : '#ccc', 'center', 9);
       hudText(ctx, `1~4 / 클릭: 탭 전환   ·   ${pages > 1 ? `A·D / 휠: 페이지 ${page + 1}/${pages}   ·   ` : ''}E / Esc: 닫기`, VIEW_W / 2, VIEW_H - 12, pages > 1 ? '#bbb' : '#888', 'center', 8);
-    } else if (o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble') { // 모험가 길드 창들
+    } else if (o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble') { // 탐험가 길드 창들
       const sv = game.save, G = game.guild(), m = game.input.mouse, on = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
       const box = (r, hl, border) => { ctx.fillStyle = hl ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (border) { ctx.strokeStyle = border; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); } };
       const bar = (x, y, w, k, col) => { ctx.fillStyle = '#2a2638'; ctx.fillRect(x, y, w, 4); ctx.fillStyle = col; ctx.fillRect(x, y, Math.round(w * Math.min(1, k)), 4); };
-      const head = { guild: '모험가 길드 접수처', hunt: '토벌 게시판', trade: '거래상 — 탐험 보급품', gamble: '결정석 도박' }[o.type];
+      const head = { guild: '탐험가 길드 접수처', hunt: '토벌 게시판', trade: '거래상 — 탐험 보급품', gamble: '결정석 도박' }[o.type];
       hudText(ctx, `${head}  ·  보유 ${CUR.name} ${sv.bank}`, VIEW_W / 2, 6, '#ffd84a', 'center', 11);
       if (o.type === 'guild') {
         ['일일 퀘스트', '주간 퀘스트', '칭호'].forEach((t, i) => { const r = HUD.guildTab(i); box(r, o.tab === i, o.tab === i ? '#ffd84a' : null); hudText(ctx, `${i + 1} ${t}`, r.x + r.w / 2, r.y + 4, o.tab === i ? '#ffd84a' : '#aaa', 'center', 9); });
@@ -301,7 +301,7 @@ class HUD {
       hudText(ctx, `${Math.min(o.i + 1, o.lines.length)} / ${o.lines.length}    클릭 · Enter: 다음    Esc: 건너뛰기`, VIEW_W / 2, VIEW_H - 16, '#6a6080', 'center', 8);
     } else if (o.type === 'treasure_pick' || o.type === 'treasures') {
       const pick = o.type === 'treasure_pick', sv = game.save;
-      const list = pick ? DATA_TREASURES : DATA_TREASURES.filter((t) => sv.treasures.includes(t.id));
+      const list = pick ? DATA_TREASURES.filter((t) => !t.questOnly) : DATA_TREASURES.filter((t) => sv.treasures.includes(t.id));
       hudText(ctx, pick ? '보구 선택' : '보구 보관대', VIEW_W / 2, 30, '#ffe9a0', 'center', 16);
       hudText(ctx, pick ? '하나를 골라 영원히 간직합니다. 사망해도 사라지지 않습니다.' : '보유한 보구 중 하나를 골라 탐험에 들고 갑니다 (다시 누르면 해제)', VIEW_W / 2, 54, '#bbb', 'center', 9);
       const had = pick && sv.treasures.length > 0 && !o.picked;

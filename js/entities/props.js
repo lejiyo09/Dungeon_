@@ -448,7 +448,7 @@ class LightPillar {
   }
 }
 
-// ── 모험가 길드 (로비 아래쪽) ─ 제안 단계의 임시 디자인
+// ── 탐험가 길드 (로비 아래쪽) ─ 제안 단계의 임시 디자인
 const GUILD_NPC_LOOK = { // 길드 사람들 외형 (기존 캐릭터 그림에 다른 옷색)
   reception: { id: 'npc_reception', look: { sprite: 'priest', body: '#3a5a8a', accent: '#ffd84a' } },
   trader: { id: 'npc_trader', look: { sprite: 'engineer', body: '#7a5a3a', accent: '#c8a050' } },
@@ -459,7 +459,8 @@ const GUILD_NPC_LOOK = { // 길드 사람들 외형 (기존 캐릭터 그림에 
   d: { id: 'npc_d', look: { sprite: 'gunslinger', body: '#5a4a6a', accent: '#8a6a3a' } },
   e: { id: 'npc_e', look: { sprite: 'druid', body: '#5a6a3a', accent: '#8a6a3a' } },
   f: { id: 'npc_f', look: { sprite: 'priest', body: '#8a6a7a', accent: '#c8a050' } },
-  clerk2: { id: 'npc_clerk2', look: { sprite: 'priest', body: '#5a7a4a', accent: '#ffd84a' } }
+  clerk2: { id: 'npc_clerk2', look: { sprite: 'priest', body: '#5a7a4a', accent: '#ffd84a' } },
+  merlin: { id: 'npc_merlin', look: { sprite: 'assassin', body: '#ecebf6', accent: '#b8a0e0' } } // 흰 로브·후드
 };
 const npcDraw = (ctx, key, x, y, face, game) => drawHero(ctx, GUILD_NPC_LOOK[key], x, y + Math.round(Math.sin((game ? game.time : 0) * 2 + x) * 0.6), face, 0, false);
 const signText = (ctx, text, x, y, color) => { ctx.font = 'bold 8px monospace'; const w = Math.ceil(ctx.measureText(text).width) + 8; ctx.fillStyle = '#3a2614'; ctx.fillRect(x - w / 2, y - 6, w, 11); ctx.fillStyle = '#c89a40'; ctx.fillRect(x - w / 2, y - 6, w, 1); hudText(ctx, text, x, y - 5, color || '#ffe9a0', 'center', 8); };
@@ -481,7 +482,7 @@ class GuildCounter {
     // 상판 위 소품: 서류 더미·잉크병·종·장부·결정석 저울
     const items = [[10, '#e8dcc0', 8, 6], [34, '#2a2a3a', 3, 4], [58, '#ffd84a', 4, 3], [90, '#7a2a2a', 9, 6], [122, '#e8dcc0', 7, 5], [150, '#7ad0ff', 4, 4], [176, '#e8dcc0', 6, 6]];
     for (const [dy, col, iw, ih] of items) if (y0 + dy + ih < y1 - 4) { ctx.fillStyle = OUTLINE; ctx.fillRect(x0 + 8 - 1, y0 + dy - 1, iw + 2, ih + 2); ctx.fillStyle = col; ctx.fillRect(x0 + 8, y0 + dy, iw, ih); }
-    signText(ctx, '모험가 길드 접수처', x0 + w / 2, y0 - 12);
+    signText(ctx, '탐험가 길드 접수처', x0 + w / 2, y0 - 12);
   }
 }
 // 접수원 (접수대 뒤에 서 있음, 접수대 앞에서 말을 걺): kind = 'quest'(퀘스트·칭호) / 'trade'(보급품)
@@ -533,5 +534,26 @@ class GuildTable {
     ctx.fillStyle = this.gamble ? '#3a8a4a' : '#a06a3a'; ctx.beginPath(); ctx.ellipse(x - 2, y - 2, 10, 3, 0, 0, TAU); ctx.fill();
     if (this.gamble) { ctx.fillStyle = CUR.color; for (let i = 0; i < 3; i++) { const a = game.time * 1.5 + i * 2.1; ctx.fillRect(Math.round(x + Math.cos(a) * 8) - 1, Math.round(y + Math.sin(a) * 3) - 2, 3, 3); } signText(ctx, '결정석 도박', x, y + 14, CUR.color); }
     else { ctx.fillStyle = '#e8dcc0'; ctx.fillRect(x - 6, y - 3, 3, 4); ctx.fillRect(x + 4, y - 2, 3, 4); ctx.fillStyle = '#c89a40'; ctx.fillRect(x - 6, y - 3, 3, 1); ctx.fillRect(x + 4, y - 2, 3, 1); } // 술잔
+  }
+}
+
+// 오른쪽 구석의 탁자: 후드를 쓴 백발의 젊은 마법사 (멀린). 보구가 없으면 말풍선에 '…'만
+class MerlinTable {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 30; this.bubble = null; }
+  label(game) { const M = game.save.merlin; return M && M.revealed ? '[E] 멀린' : '[E] 후드를 쓴 마법사'; }
+  get labelColor() { return '#ffb0d8'; }
+  interact(game) { game.talkMerlin(this); }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), mx = x + 22;
+    ctx.fillStyle = OUTLINE; ctx.fillRect(mx - 6, y - 2, 12, 9); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(mx - 5, y - 1, 10, 7); ctx.fillStyle = '#5a3a20'; ctx.fillRect(mx - 5, y - 8, 10, 7); // 의자
+    ctx.fillStyle = OUTLINE; ctx.fillRect(mx + 7, y - 26, 3, 30); ctx.fillStyle = '#8a6a4a'; ctx.fillRect(mx + 8, y - 25, 1, 28); ctx.fillStyle = '#ffb0d8'; ctx.fillRect(mx + 6, y - 29, 5, 4); ctx.fillStyle = '#ffffff'; ctx.fillRect(mx + 8, y - 28, 1, 1); // 꽃 달린 지팡이
+    npcDraw(ctx, 'merlin', mx, y - 6, -1, game);
+    ctx.fillStyle = '#f4f2ff'; ctx.fillRect(mx - 4, y - 14, 2, 5); ctx.fillRect(mx + 2, y - 14, 2, 4); // 후드 밖으로 흘러나온 흰 머리카락
+    ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.ellipse(x, y + 1, 17, 8, 0, 0, TAU); ctx.fill(); ctx.fillStyle = '#5a4a6a'; ctx.beginPath(); ctx.ellipse(x, y, 16, 7, 0, 0, TAU); ctx.fill(); // 보랏빛 천을 덮은 탁자
+    ctx.fillStyle = '#ffb0d8'; ctx.fillRect(x - 3, y - 3, 2, 2); ctx.fillStyle = '#ffffff'; ctx.fillRect(x + 2, y - 2, 2, 2); ctx.fillStyle = '#e8dcc0'; ctx.fillRect(x - 9, y - 2, 4, 3); // 꽃잎·찻잔
+    if (this.bubble && this.bubble.t > 0) { this.bubble.t -= 1 / 60; // 말풍선
+      ctx.font = 'bold 8px monospace'; const tw = Math.ceil(ctx.measureText(this.bubble.text).width) + 10, bx = mx - tw / 2, by = y - 64;
+      ctx.fillStyle = OUTLINE; ctx.fillRect(bx - 1, by - 1, tw + 2, 15); ctx.fillStyle = '#ffffff'; ctx.fillRect(bx, by, tw, 13); ctx.fillRect(mx - 2, by + 13, 4, 3); ctx.fillStyle = OUTLINE; ctx.fillRect(mx - 1, by + 16, 2, 1);
+      hudText(ctx, this.bubble.text, mx, by + 2, '#3a3048', 'center', 8); }
   }
 }
