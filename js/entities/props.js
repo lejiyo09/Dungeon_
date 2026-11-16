@@ -463,6 +463,17 @@ const GUILD_NPC_LOOK = { // 길드 사람들 외형 (기존 캐릭터 그림에 
   merlin: { id: 'npc_merlin', look: { sprite: 'merlin', body: '#3a3460', accent: '#b8a0e0' } } // 어두운 후드·로브 + 흰 머리
 };
 const npcDraw = (ctx, key, x, y, face, game) => drawHero(ctx, GUILD_NPC_LOOK[key], x, y + Math.round(Math.sin((game ? game.time : 0) * 2 + x) * 0.6), face, 0, false);
+// 말풍선: (x, y) = 말하는 사람 머리 위. 긴 문장은 두 줄로 나눔
+function drawBubble(ctx, x, y, text) {
+  ctx.font = 'bold 8px monospace';
+  let lines = [text];
+  if (ctx.measureText(text).width > 170) { const mid = Math.floor(text.length / 2), sp = text.lastIndexOf(' ', mid + 6); const k = sp > 4 ? sp : mid; lines = [text.slice(0, k).trim(), text.slice(k).trim()]; }
+  const tw = Math.ceil(Math.max(...lines.map((l) => ctx.measureText(l).width))) + 10, th = lines.length * 10 + 4, by = Math.round(y - th - 4);
+  const bx = Math.round(clamp(x - tw / 2, 3 * TILE + 2, 31 * TILE - 2 - tw)); // 길드 벽 안쪽에 머물게 (꼬리는 말하는 사람 위)
+  ctx.fillStyle = OUTLINE; ctx.fillRect(bx - 1, by - 1, tw + 2, th + 2); ctx.fillStyle = '#ffffff'; ctx.fillRect(bx, by, tw, th);
+  ctx.fillRect(x - 2, by + th, 4, 3); ctx.fillStyle = OUTLINE; ctx.fillRect(x - 1, by + th + 3, 2, 1); // 꼬리
+  lines.forEach((l, i) => hudText(ctx, l, bx + tw / 2, by + 2 + i * 10, '#3a3048', 'center', 8));
+}
 const signText = (ctx, text, x, y, color) => { ctx.font = 'bold 8px monospace'; const w = Math.ceil(ctx.measureText(text).width) + 8; ctx.fillStyle = '#3a2614'; ctx.fillRect(x - w / 2, y - 6, w, 11); ctx.fillStyle = '#c89a40'; ctx.fillRect(x - w / 2, y - 6, w, 1); hudText(ctx, text, x, y - 5, color || '#ffe9a0', 'center', 8); };
 
 // ── 길드 새 배치: 오른쪽 벽의 세로 접수대 · 벽에 붙은 게시판 · 탁자와 앉은 사람들
@@ -523,7 +534,10 @@ class GuildTable {
   constructor(x, y, seats, o = {}) { this.x = x; this.y = y; this.seats = seats; this.gamble = !!o.gamble; this.line = o.line; this.radius = 30; }
   label() { return this.gamble ? '[E] 결정석 도박 탁자' : `[E] ${this.line[0]}에게 말 걸기`; }
   get labelColor() { return this.gamble ? CUR.color : '#e0d0b0'; }
-  interact(game) { if (this.gamble) game.overlay = { type: 'gamble', msg: null, roll: 0 }; else game.showBanner(this.line[0], this.line[1], '#e0d0b0'); }
+  interact(game) {
+    if (this.gamble) { game.overlay = { type: 'gamble', msg: null, roll: 0 }; return; }
+    const who = this.seats.filter(([, k]) => k); this.bubble = { text: this.line[1], t: 3.5, dx: pick(who)[0] }; // 앉은 사람 중 한 명이 말함
+  }
   render(ctx, game) {
     const x = Math.round(this.x), y = Math.round(this.y);
     const seat = (sx, key, face) => { ctx.fillStyle = OUTLINE; ctx.fillRect(sx - 6, y - 2, 12, 9); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(sx - 5, y - 1, 10, 7); ctx.fillStyle = '#5a3a20'; ctx.fillRect(sx - 5, y - 8, 10, 7); // 의자 등받이·좌석
@@ -535,6 +549,7 @@ class GuildTable {
     if (this.gamble) { ctx.fillStyle = CUR.color; for (let i = 0; i < 3; i++) { const a = game.time * 1.5 + i * 2.1; ctx.fillRect(Math.round(x + Math.cos(a) * 8) - 1, Math.round(y + Math.sin(a) * 3) - 2, 3, 3); } signText(ctx, '결정석 도박', x, y + 14, CUR.color); }
     else { ctx.fillStyle = '#e8dcc0'; ctx.fillRect(x - 6, y - 3, 3, 4); ctx.fillRect(x + 4, y - 2, 3, 4); ctx.fillStyle = '#c89a40'; ctx.fillRect(x - 6, y - 3, 3, 1); ctx.fillRect(x + 4, y - 2, 3, 1); } // 술잔
   }
+  renderTop(ctx) { if (this.bubble && this.bubble.t > 0) { this.bubble.t -= 1 / 60; drawBubble(ctx, Math.round(this.x) + this.bubble.dx, Math.round(this.y) - 30, this.bubble.text); } } // 말풍선은 캐릭터 위에
 }
 
 // 오른쪽 구석의 탁자: 후드를 쓴 백발의 젊은 마법사 (멀린). 보구가 없으면 말풍선에 '…'만
@@ -550,9 +565,6 @@ class MerlinTable {
     npcDraw(ctx, 'merlin', mx, y - 6, -1, game);
     ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.ellipse(x, y + 1, 17, 8, 0, 0, TAU); ctx.fill(); ctx.fillStyle = '#5a4a6a'; ctx.beginPath(); ctx.ellipse(x, y, 16, 7, 0, 0, TAU); ctx.fill(); // 보랏빛 천을 덮은 탁자
     ctx.fillStyle = '#ffb0d8'; ctx.fillRect(x - 3, y - 3, 2, 2); ctx.fillStyle = '#ffffff'; ctx.fillRect(x + 2, y - 2, 2, 2); ctx.fillStyle = '#e8dcc0'; ctx.fillRect(x - 9, y - 2, 4, 3); // 꽃잎·찻잔
-    if (this.bubble && this.bubble.t > 0) { this.bubble.t -= 1 / 60; // 말풍선
-      ctx.font = 'bold 8px monospace'; const tw = Math.ceil(ctx.measureText(this.bubble.text).width) + 10, bx = mx - tw / 2, by = y - 64;
-      ctx.fillStyle = OUTLINE; ctx.fillRect(bx - 1, by - 1, tw + 2, 15); ctx.fillStyle = '#ffffff'; ctx.fillRect(bx, by, tw, 13); ctx.fillRect(mx - 2, by + 13, 4, 3); ctx.fillStyle = OUTLINE; ctx.fillRect(mx - 1, by + 16, 2, 1);
-      hudText(ctx, this.bubble.text, mx, by + 2, '#3a3048', 'center', 8); }
   }
+  renderTop(ctx) { if (this.bubble && this.bubble.t > 0) { this.bubble.t -= 1 / 60; drawBubble(ctx, Math.round(this.x) + 22, Math.round(this.y) - 44, this.bubble.text); } } // 말풍선은 캐릭터 위에
 }

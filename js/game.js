@@ -1556,6 +1556,7 @@ class Game {
     for (const a of actors) a.render(ctx);
     for (const pr of this.projectiles) pr.render(ctx);
     for (const z of this.zones) if (z.renderTop) z.renderTop(ctx);
+    for (const o of this.props) if (o.renderTop) o.renderTop(ctx, this); // 말풍선 등
     const w = this.player.weapon;
     if (w && w.beamActive && w.beamEnd) {
       const b = w.beamEnd;
