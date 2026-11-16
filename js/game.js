@@ -220,6 +220,17 @@ class Game {
         drawSprite(ctx, spr, P.x, P.y + 7, { flip: P.face < 0 }); hudText(ctx, name, Math.round(P.x), Math.round(P.y) - 20, '#7affc0', 'center', 7); } }); }
     return out;
   }
+  // ── 랭킹판: 탐험이 끝나면 기록을 보냄 (계정이 있을 때만, 관리자 계정·시련 제외)
+  runScoreRow(victory, o = {}) {
+    const W = this.W, stage = o.stage ?? this.stageIndex + 1;
+    return { name: this.profile ? this.profile.name : '', hero: this.save.selected, stage, label: o.label || stageLabel(this.worldIdx, this.levelIdx), deep: o.deep ?? (W && W.deep ? W.depth : 0), kills: o.kills ?? this.kills, victory: !!victory,
+      partySize: o.partySize || (this.coop && this.coop.host ? this.partyCount() : 1), partyNames: o.partyNames || (this.coop && this.coop.host ? Net.players.map((p) => p.name) : null) };
+  }
+  submitRunScore(victory, o) { if (!this.profile || this.admin || this.trialW) return; Net.submitScore(this.runScoreRow(victory, o)); }
+  openRanking() {
+    const o = this.overlay = { type: 'rank', tab: 0, data: null, err: null, loading: true }; this.input.mouse.down = false;
+    Net.fetchScores().then((d) => { o.data = d; o.loading = false; }).catch((e) => { o.err = e.message; o.loading = false; });
+  }
   titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
   resetWorldLists(map) {
@@ -241,6 +252,7 @@ class Game {
     DATA_HEROES.forEach((h, i) => { const c = this.map.tileCenter(6 + i * 3, 8); this.props.push(new Pedestal(c.x, c.y, h, i % 2)); });
     const cb = this.map.tileCenter(5, 12); this.props.push(new CodexBoard(cb.x, cb.y));
     { const ms = this.map.tileCenter(28, 16); this.props.push(new MultiStone(ms.x, ms.y)); } // 멀티 플레이 석판
+    { const rb = this.map.tileCenter(5, 16); this.props.push(new RankBoard(rb.x, rb.y)); } // 명예의 전당
     const ar = this.map.tileCenter(9, 16); this.props.push(new Armory(ar.x, ar.y));
     if (this.save.sanctumReached) { const tv = this.map.tileCenter(25, 16); this.props.push(new TreasureVault(tv.x, tv.y)); }
     const dm = this.map.tileCenter(28, 12);
@@ -443,6 +455,7 @@ class Game {
   endRun(victory) {
     if (this.trialW) { this.endRhongoTrial(victory); return; }
     if (this.coop && this.coop.guest) { this.coopGuestEnd({ victory: false, quit: true }); return; }
+    this.submitRunScore(victory); // 랭킹판에 기록
     if (this.coop && this.coop.host) this.coopHostEnd(victory);
     this.guildEvent('runs');
     SFX.stopMusic(); this.save.run = null; this.save.runReviveUsed = false; writeSave(this.save);
@@ -515,12 +528,12 @@ class Game {
       input.endStep(); return;
     }
     if (this.overlay) { this.updateOverlay(input); input.endStep(); if (!(this.coop && this.coop.host) || !this.overlay) return; input = NULL_INPUT; } // 멀티 방장: 창을 열어도 다른 사람 때문에 세계는 계속 돌아감 (내 캐릭터만 멈춤)
-    if (this.cutscene) { this.screenFlash = Math.max(0, this.screenFlash - dt); this.shake = Math.max(0, (this.shake || 0) - dt); this.updateCutscene(dt, input); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } // 컷신 중에는 세계가 멈춤 (번쩍임·흔들림은 가라앉음)
+    if (this.cutscene) { if (this.coop && this.coop.host) this.coopHostSend(dt); this.screenFlash = Math.max(0, this.screenFlash - dt); this.shake = Math.max(0, (this.shake || 0) - dt); this.updateCutscene(dt, input); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } // 컷신 중에는 세계가 멈춤 (번쩍임·흔들림은 가라앉음)
     if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; input.endStep(); return; }
     if (this.admin && input.wasPressed('Backquote')) { this.overlay = { type: 'admin', msg: null }; input.endStep(); return; }
     if (this.hitStopT > 0) { this.hitStopT -= dt; return; }
     this.screenFlash = Math.max(0, this.screenFlash - dt);
-    if (this.cinematic) { this.updateCinematic(dt); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; }
+    if (this.cinematic) { this.updateCinematic(dt); if (this.coop && this.coop.host) this.coopHostSend(dt); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; }
     if (this.slowMo) dt = this.updateSlowMo(dt); // 보스 처치 슬로우모션: 시뮬레이션 시간이 느려짐
 
     const p = this.player;
@@ -651,7 +664,7 @@ class Game {
         this.overlay = null;
         this.input.mouse.down = false;
         this.showBanner(b.name, b.desc, '#ffd84a');
-        o.after();
+        if (o.after) o.after();
       }
     } else if (o.type === 'revive') {
       const click = input.wasPressed('Mouse0'), m = input.mouse;
@@ -700,6 +713,10 @@ class Game {
       const pickN = (n) => input.wasPressed('Digit' + n) || (input.wasPressed('Mouse0') && (() => { const r = HUD.adminRow(n - 1), m = input.mouse; return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; })());
       if (!Net.inRoom) { if (pickN(1)) Net.create(name, hero); else if (pickN(2)) { o.mode = 'code'; o.code = ''; Net.error = null; } }
       else if (pickN(1)) Net.leave();
+    } else if (o.type === 'rank') { // 명예의 전당
+      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
+      ['Digit1', 'Digit2', 'Digit3', 'Digit4'].forEach((k, i) => { if (input.wasPressed(k)) o.tab = i; });
+      if (input.wasPressed('Mouse0')) for (let i = 0; i < 4; i++) { const r = HUD.rankTab(i), m = input.mouse; if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) o.tab = i; }
     } else if (o.type === 'details') { // 상세 정보: 1~3 / 클릭 탭, Esc·I 뒤로
       if (input.wasPressed('Escape') || input.wasPressed('KeyI')) { this.overlay = { type: 'pause' }; return; }
       ['Digit1', 'Digit2', 'Digit3'].forEach((k, i) => { if (input.wasPressed(k)) o.tab = i; });
@@ -922,7 +939,7 @@ class Game {
         patterns: [{ type: 'aimed', volleys: 3, count: 5, spread: 0.15, color: col }, { type: 'radial', rings: 2, count: 18, color: col }, { type: 'charge', dashes: 2, speed: 340, color: '#ffffff' }],
         phase2Patterns: [{ type: 'spiral', duration: 2.2, arms: 3 + next, interval: 0.09, spin: 1.8, color: col }, { type: 'slam', radius: 46, chain: next, color: col }] });
     }
-    npc.gone = true; r.trial = next; r.hybrid = hy || null; r.branch = npc.branch || null; r.state = 'active'; this.activeRoom = r; r.wavesLeft = 0;
+    npc.gone = true; r.trial = next; r.trialPlayer = p; r.hybrid = hy || null; // 시련을 시작한 사람이 진화 (멀티) r.branch = npc.branch || null; r.state = 'active'; this.activeRoom = r; r.wavesLeft = 0;
     this.map.setDoors(r, true); this.enemyBullets.length = 0;
     const c = this.map.tileCenter(r.cx, r.cy - 1), m = this.spawnEnemy(key, c.x, c.y, r); m.phase = 1;
     this.showBanner(`${trialName}의 시련`, hy ? `${hy.el.name}의 마도사 상위자를 쓰러뜨리면 ${trialName}(으)로 진화합니다` : '상위자를 쓰러뜨리면 진화합니다', '#ffd84a'); SFX.play('boss');
@@ -1375,10 +1392,10 @@ class Game {
       };
       const owned = new Set(this.player.buffs);
       const options = shuffled(DATA_BUFFS.filter((b) => !owned.has(b.id) || b.id === 'buff_atk' || b.id === 'buff_hp')).slice(0, 3);
-      if (this.coop && this.coop.host) for (const R of this.remotes.values()) { const b = pick(DATA_BUFFS); b.apply(R.p); R.p.buffs.push(b.id); if (R.p.state !== 'DEAD') R.p.hp = Math.min(R.p.maxHp, R.p.hp + Math.round(R.p.maxHp * BALANCE.bossHealRatio)); Net.relay({ k: 'msg', text: `보스 보상: ${b.name} — ${b.desc}` }, R.id); } // 멀티: 동료는 무작위 축복 + 회복
+      if (this.coop && this.coop.host) for (const R of this.remotes.values()) { if (R.p.state !== 'DEAD') R.p.hp = Math.min(R.p.maxHp, R.p.hp + Math.round(R.p.maxHp * BALANCE.bossHealRatio)); const ow = new Set(R.p.buffs); R.overlay = { type: 'buff', options: shuffled(DATA_BUFFS.filter((b) => !ow.has(b.id) || b.id === 'buff_atk' || b.id === 'buff_hp')).slice(0, 3), after: null }; this.coopSendOverlay(R); } // 멀티: 동료도 각자 축복을 고름 + 회복
       this.overlay = { type: 'buff', options, after };
     } else {
-      if (r.trial) { r.trial = 0; this.evolve(r.hybrid, r.branch); r.hybrid = null; r.branch = null; return; } // 상위자를 쓰러뜨림 → 진화 (혼합 전직 포함)
+      if (r.trial) { r.trial = 0; const tp = r.trialPlayer || this.player; this.withPlayer(tp, () => this.evolve(r.hybrid, r.branch)); this.coopNotifyEvolve(tp); r.hybrid = null; r.branch = null; r.trialPlayer = null; return; } // 상위자를 쓰러뜨림 → 진화 (혼합 전직 포함)
       if (r.challenge) { // 도전 성공: 희귀 이상 무기 + 골드
         r.challenge = false; this.props.push(new Chest(c.x, c.y - 10, 'challenge'));
         for (let i = 0; i < 8; i++) this.pickups.push(new Pickup('coin', c.x, c.y));
@@ -1561,6 +1578,7 @@ class Game {
     if (o.id && (this.save.scenesSeen || []).includes(o.id) && !o.always) { if (o.done) o.done(); return; } // 처음 한 번만
     if (window.__toolMode && !o.force) { if (o.done) o.done(); return; } // 테스트 도구는 건너뜀
     this.cutscene = { lines, i: 0, t: 0, lt: 0, focus: o.focus || null, id: o.id, done: o.done };
+    if (this.coop && this.coop.host) Net.relay({ k: 'cut', lines, focus: o.focus ? { x: Math.round(o.focus.x), y: Math.round(o.focus.y) } : null }); // 멀티: 동료도 같은 컷신
     this.input.mouse.down = false;
   }
   updateCutscene(dt, input) {

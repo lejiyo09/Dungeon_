@@ -27,10 +27,65 @@ const LIMIT = {
 };
 const fileCache = new Map(); // 경로 → { mtime, etag, raw, gz } : 같은 파일을 매번 읽고 압축하지 않게
 
+// ── 랭킹판 (성적): 메모리 + 파일, GH_TOKEN이 있으면 GitHub 저장소의 별도 브랜치에도 저장 (Render 무료 서버는 재시작하면 파일이 사라짐)
+//  분야: stage(최고 도달) · kills(한 판 처치) · deep(심층 깊이) · coop(멀티 최고 도달, 파티 이름)
+const SCORE_FILE = path.join(__dirname, 'scores.json');
+const SCORE_KEEP = 30;
+const GH = { token: process.env.GH_TOKEN || '', repo: process.env.GH_REPO || '', branch: process.env.GH_BRANCH || 'scores', file: 'scores.json', sha: null };
+let scores = { stage: [], kills: [], deep: [], coop: [] }, scoresDirty = false;
+try { scores = Object.assign(scores, JSON.parse(fs.readFileSync(SCORE_FILE, 'utf8'))); } catch (e) { /* 처음 */ }
+const ghApi = async (p, opt = {}) => { const r = await fetch('https://api.github.com/repos/' + GH.repo + p, Object.assign({}, opt, { headers: { Authorization: 'Bearer ' + GH.token, Accept: 'application/vnd.github+json', 'User-Agent': 'project-dungeon-server' } })); return r; };
+async function ghLoad() {
+  if (!GH.token || !GH.repo) return;
+  try { const r = await ghApi('/contents/' + GH.file + '?ref=' + GH.branch);
+    if (r.ok) { const j = await r.json(); GH.sha = j.sha; const remote = JSON.parse(Buffer.from(j.content, 'base64').toString('utf8')); for (const k of Object.keys(scores)) for (const row of remote[k] || []) addScoreRow(k, row, true); console.log('scores loaded from GitHub'); }
+  } catch (e) { console.log('GitHub load failed', e.message); }
+}
+async function ghSave() {
+  if (!GH.token || !GH.repo || !scoresDirty) return; scoresDirty = false;
+  try {
+    let r = await ghApi('/git/ref/heads/' + GH.branch);
+    if (r.status === 404) { const main = await (await ghApi('/git/ref/heads/main')).json(); await ghApi('/git/refs', { method: 'POST', body: JSON.stringify({ ref: 'refs/heads/' + GH.branch, sha: main.object.sha }) }); }
+    r = await ghApi('/contents/' + GH.file, { method: 'PUT', body: JSON.stringify({ message: 'scores update', branch: GH.branch, sha: GH.sha || undefined, content: Buffer.from(JSON.stringify(scores)).toString('base64') }) });
+    if (r.ok) GH.sha = (await r.json()).content.sha; else { if (r.status === 409 || r.status === 422) GH.sha = null; scoresDirty = true; console.log('GitHub save failed', r.status); }
+  } catch (e) { scoresDirty = true; console.log('GitHub save failed', e.message); }
+}
+const SCORE_SORT = { stage: (a, b) => b.stage - a.stage || b.kills - a.kills, kills: (a, b) => b.kills - a.kills || b.stage - a.stage, deep: (a, b) => b.deep - a.deep || b.stage - a.stage, coop: (a, b) => b.stage - a.stage || b.kills - a.kills };
+const SCORE_VAL = { stage: (r) => r.stage, kills: (r) => r.kills, deep: (r) => r.deep, coop: (r) => r.stage };
+function addScoreRow(cat, row, quiet) {
+  const list = scores[cat], key = cat === 'coop' ? row.party : row.name, i = list.findIndex((x) => (cat === 'coop' ? x.party : x.name) === key);
+  if (i >= 0) { if (SCORE_SORT[cat](row, list[i]) >= 0) return false; list.splice(i, 1); } // 같은 이름(파티)은 최고 기록만
+  list.push(row); list.sort(SCORE_SORT[cat]); list.length = Math.min(list.length, SCORE_KEEP);
+  if (!quiet) scoresDirty = true; return true;
+}
+const scoreIpAt = new Map();
+function submitScore(ip, b) {
+  const name = String(b.name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12); if (!name || name === '게스트') return '이름이 필요합니다';
+  const now = Date.now(), key = ip + '|' + name; if (now - (scoreIpAt.get(key) || 0) < 15000) return '잠시 뒤에 다시 보내 주세요'; // 너무 자주 보내기 막기 (같은 집에서 함께 해도 사람마다 따로)
+  if (scoreIpAt.size > 5000) scoreIpAt.clear();
+  const n = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
+  const row = { name, hero: String(b.hero || '').slice(0, 32), stage: n(b.stage, 400), label: String(b.label || '').slice(0, 16), deep: n(b.deep, 300), kills: n(b.kills, 50000), party: n(b.partySize, 4) || 1, victory: !!b.victory, at: now };
+  scoreIpAt.set(key, now);
+  addScoreRow('stage', row); addScoreRow('kills', row); if (row.deep > 0) addScoreRow('deep', row);
+  if (row.party > 1 && Array.isArray(b.partyNames)) { const names = b.partyNames.map((x) => String(x).replace(/[\u0000-\u001f<>]/g, '').slice(0, 12)).filter(Boolean).slice(0, 4); if (names.length > 1) addScoreRow('coop', Object.assign({}, row, { party: names.join(' · ') })); }
+  return null;
+}
+setInterval(() => { if (scoresDirty) { try { fs.writeFileSync(SCORE_FILE, JSON.stringify(scores)); } catch (e) { /* 무시 */ } ghSave(); } }, 30000);
+ghLoad();
+
 // ── 정적 파일
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent((req.url || '/').split('?')[0]);
   if (p === '/health') { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('ok ' + rooms.size + ' rooms'); return; }
+  if (p === '/api/scores') { // 랭킹판
+    const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
+    if (req.method === 'OPTIONS') { res.writeHead(204, cors); res.end(); return; }
+    if (req.method === 'GET') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' }, cors)); res.end(JSON.stringify(Object.assign({ persist: !!(GH.token && GH.repo) }, scores))); return; }
+    if (req.method === 'POST') { let body = ''; req.on('data', (c) => { body += c; if (body.length > 4000) req.destroy(); });
+      req.on('end', () => { let b = {}; try { b = JSON.parse(body); } catch (e) { /* 무시 */ } const err = submitScore(req.headers['x-forwarded-for'] ? String(req.headers['x-forwarded-for']).split(',')[0].trim() : req.socket.remoteAddress, b);
+        res.writeHead(err ? 429 : 200, Object.assign({ 'Content-Type': 'application/json' }, cors)); res.end(JSON.stringify({ ok: !err, error: err })); }); return; }
+    res.writeHead(405, cors); res.end(); return;
+  }
   if (p.endsWith('/')) p += 'index.html';
   const file = path.normalize(path.join(ROOT, p));
   const rel = path.relative(ROOT, file);

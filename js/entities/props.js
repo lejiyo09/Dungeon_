@@ -275,6 +275,22 @@ class MultiStone {
     ctx.fillRect(x - 1, y - 7, 2, 2); ctx.globalAlpha = 1;
   }
 }
+// 로비: 명예의 전당 (성적 랭킹판)
+class RankBoard {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 22; }
+  label() { return '[E] 명예의 전당 (랭킹)'; }
+  get labelColor() { return '#ffd84a'; }
+  interact(game) { game.openRanking(); }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 12, y + 6, 24, 3);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 12, y - 16, 24, 21); ctx.fillStyle = '#5a3a20'; ctx.fillRect(x - 11, y - 15, 22, 19); ctx.fillStyle = '#2a2034'; ctx.fillRect(x - 9, y - 13, 18, 15);
+    ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 2, y - 11, 4, 4); ctx.fillRect(x - 3, y - 12, 1, 2); ctx.fillRect(x + 2, y - 12, 1, 2); ctx.fillRect(x - 1, y - 7, 2, 2); ctx.fillRect(x - 2, y - 5, 4, 1); // 트로피
+    ctx.fillStyle = '#c8c8d0'; ctx.fillRect(x - 7, y - 3, 14, 1); ctx.fillStyle = '#a07040'; ctx.fillRect(x - 7, y - 1, 10, 1);
+    ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 3); ctx.fillStyle = '#fff4c0'; ctx.fillRect(x + 1, y - 12, 1, 1); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#5a3a20'; ctx.fillRect(x - 10, y + 5, 2, 5); ctx.fillRect(x + 8, y + 5, 2, 5);
+  }
+}
 class CodexBoard {
   constructor(x, y) { this.x = x; this.y = y; this.radius = 22; }
   label() { return '[E] 무기 도감'; }

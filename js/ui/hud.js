@@ -141,7 +141,7 @@ class HUD {
   }
   overlay(ctx, game) {
     const o = game.overlay;
-    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'hero_info' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'hero_info' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' || o.type === 'rank' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
@@ -360,6 +360,25 @@ class HUD {
         hudText(ctx, `${Net.players.length} / ${NET_CONFIG.maxPlayers}명`, VIEW_W / 2, 104 + 4 * 16 + 4, '#888', 'center', 8);
       }
       hudText(ctx, '숫자 키 / 클릭 · E / Esc 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
+    } else if (o.type === 'rank') { // 명예의 전당
+      const T = (s, x, y, c = '#e8e0f0', a = 'left', z = 8) => hudText(ctx, s, x, y, c, a, z), tabs = ['최고 도달', '한 판 처치', '심층 깊이', '멀티 파티'], keys = ['stage', 'kills', 'deep', 'coop'];
+      T('🏆 명예의 전당', VIEW_W / 2, 6, '#ffd84a', 'center', 11);
+      tabs.forEach((t, i) => { const r = HUD.rankTab(i), on = o.tab === i; ctx.fillStyle = on ? 'rgba(255,216,74,0.25)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); T(`${i + 1} ${t}`, r.x + r.w / 2, r.y + 4, on ? '#ffd84a' : '#aaa', 'center', 9); });
+      if (o.loading) T('불러오는 중…', VIEW_W / 2, 120, '#aaa', 'center', 10);
+      else if (o.err) T(o.err, VIEW_W / 2, 120, '#ff9a9a', 'center', 9);
+      else {
+        const list = (o.data && o.data[keys[o.tab]]) || [], me = game.profile && game.profile.name;
+        T('순위', 30, 44, '#ffd84a'); T(o.tab === 3 ? '파티' : '이름', 62, 44, '#ffd84a'); if (o.tab !== 3) T('직업', 200, 44, '#ffd84a');
+        T(o.tab === 1 ? '처치' : o.tab === 2 ? '심층' : '도달', 330, 44, '#ffd84a', 'right'); T('기록', VIEW_W - 30, 44, '#ffd84a', 'right');
+        if (!list.length) T('아직 기록이 없습니다. 탐험을 마치면 이름이 올라갑니다!', VIEW_W / 2, 120, '#888', 'center', 9);
+        list.slice(0, 15).forEach((r, i) => { const y = 58 + i * 13, mine = o.tab === 3 ? (me && r.party.includes(me)) : r.name === me, col = i === 0 ? '#ffd84a' : i === 1 ? '#d8dce8' : i === 2 ? '#d89a5a' : mine ? '#7affc0' : '#e8e0f0';
+          if (mine) { ctx.fillStyle = 'rgba(122,255,192,0.1)'; ctx.fillRect(24, y - 2, VIEW_W - 48, 12); }
+          T(String(i + 1), 34, y, col); T(o.tab === 3 ? r.party : r.name, 62, y, col); if (o.tab !== 3) { const h = game.data.heroes.get(r.hero); T(h ? h.name : '', 200, y, '#c8b890', 'left', 7); }
+          T(o.tab === 1 ? String(r.kills) : o.tab === 2 ? '심층 ' + r.deep : r.label || String(r.stage), 330, y, col, 'right');
+          T(`${r.label || ''}${r.victory ? ' · 귀환' : ''} · 처치 ${r.kills}`, VIEW_W - 30, y, '#888', 'right', 7); });
+        if (o.data && !o.data.persist) T('※ 서버가 다시 시작되면 기록이 지워질 수 있어요 (영구 저장 설정 전)', VIEW_W / 2, VIEW_H - 26, '#886a6a', 'center', 7);
+      }
+      T('1~4 / 클릭: 분야   ·   E / Esc: 닫기   ·   계정으로 탐험을 마치면 자동으로 기록', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
     } else if (o.type === 'details') { // 상세 정보 (수치는 설정값에서 바로 읽음)
       const m = game.input.mouse, T = (s, x, y, c = '#e8e0f0', a = 'left', z = 8) => hudText(ctx, s, x, y, c, a, z), pct = (v) => (Math.round(v * 1000) / 10) + '%';
       ['특수방 확률', '무기 강화', '원소 반응'].forEach((t, i) => { const r = HUD.guildTab(i), on = o.tab === i; ctx.fillStyle = on ? 'rgba(255,216,74,0.25)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); T(`${i + 1} ${t}`, r.x + r.w / 2, r.y + 4, on ? '#ffd84a' : '#aaa', 'center', 9); });
@@ -503,6 +522,7 @@ class HUD {
     rows.forEach((r, i) => hudText(ctx, r, x + pad, 24 + i * lh, '#e8e0f0', 'left', 8));
     btn();
   }
+  static rankTab(i) { return { x: 40 + i * 110, y: 22, w: 104, h: 16 }; }
   static trialBtn(i) { return { x: VIEW_W / 2 - 130 + i * 140, y: 140, w: 120, h: 26 }; }
   static guildTab(i) { return { x: 60 + i * 134, y: 22, w: 126, h: 16 }; }
   static adminRow(i) { return { x: 60, y: 32 + i * 24, w: VIEW_W - 120, h: 21 }; }

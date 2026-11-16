@@ -60,5 +60,12 @@ const Net = {
     }
     for (const fn of this.handlers) fn(m);
   },
+  httpBase() { // 랭킹판 API 주소 (게임을 연 주소, 또는 NET_CONFIG.server에서)
+    if (NET_CONFIG.server) return NET_CONFIG.server.replace(/^ws/, 'http').replace(/\/ws$/, '');
+    if (/^https?:$/.test(location.protocol) && !/claude/.test(location.hostname)) return location.origin;
+    return null;
+  },
+  async fetchScores() { const b = this.httpBase(); if (!b) throw new Error('랭킹판은 서버 주소(Render)에서 열었을 때만 볼 수 있어요'); const r = await fetch(b + '/api/scores', { cache: 'no-store' }); if (!r.ok) throw new Error('랭킹을 불러오지 못했습니다'); return r.json(); },
+  submitScore(row) { const b = this.httpBase(); if (!b) return; fetch(b + '/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(row) }).catch(() => {}); },
   nameOf(id) { const p = this.players.find((q) => q.id === id); return p ? p.name : '?'; }
 };
