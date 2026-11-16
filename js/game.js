@@ -229,7 +229,7 @@ class Game {
   submitRunScore(victory, o) { if (!this.profile || this.admin || this.trialW) return; Net.submitScore(this.runScoreRow(victory, o)); }
   openRanking() {
     const o = this.overlay = { type: 'rank', tab: 0, data: null, err: null, loading: true }; this.input.mouse.down = false;
-    Net.fetchScores().then((d) => { o.data = d; o.loading = false; }).catch((e) => { o.err = e.message; o.loading = false; });
+    Net.syncScores().then((d) => { o.data = d; o.loading = false; }).catch((e) => { o.err = e.message; o.loading = false; }); // 서버가 초기화됐으면 이 브라우저의 사본으로 복구
   }
   titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
@@ -482,6 +482,7 @@ class Game {
     this.admin = profile && profile.admin ? { god: false, nocd: false } : null; if (this.admin) this.applyAdmin();
     this.locked = false; this.enterLobby();
     if (this.save.run) this.overlay = { type: 'resume' };
+    if (Net.httpBase()) Net.syncScores().catch(() => {}); // 접속할 때마다 랭킹 사본 확인·복구 (서버 재시작 대비)
     this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', this.admin ? '관리자 계정 — 모든 것이 해금됨 · ` 키: 관리자 메뉴' : profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다', '#ffd84a');
   }
   logout() {

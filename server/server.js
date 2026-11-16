@@ -70,6 +70,20 @@ function submitScore(ip, b) {
   if (row.party > 1 && Array.isArray(b.partyNames)) { const names = b.partyNames.map((x) => String(x).replace(/[\u0000-\u001f<>]/g, '').slice(0, 12)).filter(Boolean).slice(0, 4); if (names.length > 1) addScoreRow('coop', Object.assign({}, row, { party: names.join(' · ') })); }
   return null;
 }
+// 복구: 서버가 다시 시작돼 기록이 비었을 때, 랭킹을 본 적 있는 브라우저가 가진 사본으로 다시 채움
+const restoreIpAt = new Map();
+function restoreScores(ip, b) {
+  const now = Date.now(); if (now - (restoreIpAt.get(ip) || 0) < 60000) return 0; restoreIpAt.set(ip, now); if (restoreIpAt.size > 5000) restoreIpAt.clear();
+  const clean = (s, n) => String(s || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, n), num = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
+  let added = 0;
+  for (const cat of ['stage', 'kills', 'deep', 'coop']) for (const r of (Array.isArray(b[cat]) ? b[cat] : []).slice(0, SCORE_KEEP)) {
+    const name = clean(r.name, 12); if (!name || name === '게스트') continue;
+    const row = { name, hero: clean(r.hero, 32), stage: num(r.stage, 400), label: clean(r.label, 16), deep: num(r.deep, 300), kills: num(r.kills, 50000), party: cat === 'coop' ? clean(r.party, 60) : num(r.party, 4) || 1, victory: !!r.victory, at: Math.min(now, num(r.at, now)) };
+    if (cat === 'coop' && !row.party) continue; if (cat === 'deep' && !row.deep) continue;
+    if (addScoreRow(cat, row)) added++;
+  }
+  return added;
+}
 setInterval(() => { if (scoresDirty) { try { fs.writeFileSync(SCORE_FILE, JSON.stringify(scores)); } catch (e) { /* 무시 */ } ghSave(); } }, 30000);
 ghLoad();
 
@@ -85,6 +99,13 @@ const server = http.createServer((req, res) => {
       req.on('end', () => { let b = {}; try { b = JSON.parse(body); } catch (e) { /* 무시 */ } const err = submitScore(req.headers['x-forwarded-for'] ? String(req.headers['x-forwarded-for']).split(',')[0].trim() : req.socket.remoteAddress, b);
         res.writeHead(err ? 429 : 200, Object.assign({ 'Content-Type': 'application/json' }, cors)); res.end(JSON.stringify({ ok: !err, error: err })); }); return; }
     res.writeHead(405, cors); res.end(); return;
+  }
+  if (p === '/api/scores/restore' && (req.method === 'POST' || req.method === 'OPTIONS')) {
+    const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
+    if (req.method === 'OPTIONS') { res.writeHead(204, cors); res.end(); return; }
+    let body = ''; req.on('data', (c) => { body += c; if (body.length > 60000) req.destroy(); });
+    req.on('end', () => { let b = {}; try { b = JSON.parse(body); } catch (e) { /* 무시 */ } const ip = req.headers['x-forwarded-for'] ? String(req.headers['x-forwarded-for']).split(',')[0].trim() : req.socket.remoteAddress;
+      const n = restoreScores(ip, b); res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, cors)); res.end(JSON.stringify({ ok: true, added: n })); }); return;
   }
   if (p.endsWith('/')) p += 'index.html';
   const file = path.normalize(path.join(ROOT, p));

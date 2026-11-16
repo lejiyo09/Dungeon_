@@ -42,6 +42,7 @@
 - 로비 왼쪽 '명예의 전당' 게시판 → 분야 4개: 최고 도달 · 한 판 처치 · 심층 깊이 · 멀티 파티
 - 계정으로 탐험을 마치면 자동 기록 (관리자 계정·게스트·롱고미니아드 시련 제외), 이름(파티)마다 최고 기록만, 분야별 상위 30
 - 서버 주소(Render)에서 열었을 때만 보임 (`/api/scores`)
+- **자동 복구**: 랭킹을 본 적 있는 브라우저가 기록 사본을 갖고 있다가, 서버가 다시 시작돼 비어 있으면 접속·랭킹 열기 때 다시 채워 넣음 (토큰 없이도 동작, 아무도 사본이 없으면 복구 불가)
 - **영구 저장**: Render 무료 서버는 다시 시작하면 파일이 지워짐 → Render 서비스의 Environment에 `GH_TOKEN`(GitHub 토큰)을 넣으면 이 저장소의 `scores` 브랜치에 30초마다 저장하고, 서버가 켜질 때 다시 불러옴
   - 토큰 만들기: GitHub → Settings → Developer settings → Fine-grained tokens → 이 저장소만 선택, Repository permissions의 **Contents: Read and write**
   - `scores` 브랜치는 Render 자동 배포(main)에 영향 없음

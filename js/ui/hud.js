@@ -376,7 +376,7 @@ class HUD {
           T(String(i + 1), 34, y, col); T(o.tab === 3 ? r.party : r.name, 62, y, col); if (o.tab !== 3) { const h = game.data.heroes.get(r.hero); T(h ? h.name : '', 200, y, '#c8b890', 'left', 7); }
           T(o.tab === 1 ? String(r.kills) : o.tab === 2 ? '심층 ' + r.deep : r.label || String(r.stage), 330, y, col, 'right');
           T(`${r.label || ''}${r.victory ? ' · 귀환' : ''} · 처치 ${r.kills}`, VIEW_W - 30, y, '#888', 'right', 7); });
-        if (o.data && !o.data.persist) T('※ 서버가 다시 시작되면 기록이 지워질 수 있어요 (영구 저장 설정 전)', VIEW_W / 2, VIEW_H - 26, '#886a6a', 'center', 7);
+        if (o.data && o.data.restored) T('서버가 다시 시작되어 비어 있던 기록을 이 기기의 사본으로 복구했어요', VIEW_W / 2, VIEW_H - 26, '#7affc0', 'center', 7);
       }
       T('1~4 / 클릭: 분야   ·   E / Esc: 닫기   ·   계정으로 탐험을 마치면 자동으로 기록', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
     } else if (o.type === 'details') { // 상세 정보 (수치는 설정값에서 바로 읽음)
