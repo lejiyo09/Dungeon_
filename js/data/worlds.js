@@ -81,7 +81,15 @@ const DEEP_WORLDS = [
   { id: 'deep_ember', name: '잿불 성채', boss: 'boss_ash_king', waves: 2, deep: true,
     enemies: [['enemy_emberimp_001', 4], ['enemy_ashhound_001', 3], ['enemy_cinderpriest_001', 2], ['enemy_brazier_001', 2]],
     palette: { style: 'ember', accent: '#ff8a3a', floor: ['#2e2422', '#312624'], corridor: ['#211a18', '#231b19'], wall: '#3e302c', wallTop: '#4c3a34',
-      wallFace: '#6e544a', faceLine: '#5e463e', deco: 'rgba(255,138,58,0.35)' } }
+      wallFace: '#6e544a', faceLine: '#5e463e', deco: 'rgba(255,138,58,0.35)' } },
+  { id: 'deep_library', name: '잠긴 서고', boss: 'boss_sealed_tome', waves: 2, deep: true,
+    enemies: [['enemy_bookmite_001', 4], ['enemy_inkblob_001', 2], ['enemy_libghost_001', 2], ['enemy_candle_001', 2]],
+    palette: { style: 'library', accent: '#9a7aff', floor: ['#2e2622', '#312824'], corridor: ['#221c19', '#241e1a'], wall: '#3e2e28', wallTop: '#4c3a32',
+      wallFace: '#6a5040', faceLine: '#5a4436', deco: 'rgba(154,122,255,0.35)' } },
+  { id: 'deep_bloodmoon', name: '붉은 달의 들판', boss: 'boss_moon_hunter', waves: 2, deep: true,
+    enemies: [['enemy_redwolf_001', 3], ['enemy_bloodbat_001', 4], ['enemy_moonmaiden_001', 2], ['enemy_bloodobelisk_001', 2]],
+    palette: { style: 'bloodmoon', accent: '#ff5a6a', floor: ['#2a1a1e', '#2d1c20'], corridor: ['#1e1215', '#201316'], wall: '#3a2228', wallTop: '#482a32',
+      wallFace: '#6a3a44', faceLine: '#5a3038', deco: 'rgba(255,90,106,0.35)' } }
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {

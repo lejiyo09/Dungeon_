@@ -296,6 +296,41 @@ Object.assign(PIX, {
     robe(P, 'y'); P.ell(7, 5, 3, 3, 'a'); P.rect(6, 5, 3, 2, 'k'); P.px(6, 5, 'e'); P.px(8, 5, 'e');
     P.line(12, 3, 12, 13, 'b'); P.ell(12, 2, 1.5, 2, 'y'); P.px(12, 1, 'w');                                     // 불붙은 지팡이
   } },
+  // ── 심층: 잠긴 서고
+  bookmite: { tint: '#c8b890', w: 16, h: 16, pal: { w: '#f4ecd8', e: '#2a2a4a', r: '#8a3a3a' }, proc: (P) => {
+    P.rect(3, 6, 10, 7, 'a'); P.rect(3, 6, 10, 1, 'r'); P.rect(4, 7, 8, 5, 'w'); P.line(8, 7, 8, 11, 'c');   // 펼쳐진 책 몸
+    P.px(6, 9, 'e'); P.px(10, 9, 'e'); for (const x of [3, 6, 10, 13]) P.line(x, 13, x - 1, 15, 'b');     // 눈·다리
+  } },
+  inkblob: { tint: '#2a2a4a', w: 16, h: 16, pal: { w: '#ffffff', e: '#9a7aff' }, proc: (P) => {
+    P.ell(8, 10, 6, 5, 'a'); P.ell(8, 7, 4, 3, 'a'); P.ell(6, 6, 1.5, 1, 'c'); P.px(6, 9, 'e'); P.px(10, 9, 'e'); // 잉크 몸·눈
+    P.ell(2, 14, 1.5, 1, 'a'); P.ell(14, 13, 1, 1, 'a'); P.px(7, 12, 'b'); P.px(9, 12, 'b');             // 튄 잉크
+  } },
+  libghost: { tint: '#8a9ab8', w: 16, h: 16, pal: { w: '#ffffff', e: '#9a7aff', y: '#c8b890' }, proc: (P) => {
+    P.ell(7, 6, 4, 4, 'a'); P.rect(3, 6, 9, 7, 'a'); P.tri(3, 13, 12, 13, 7, 15, 'a');                       // 유령 몸
+    P.px(5, 6, 'k'); P.px(9, 6, 'k'); P.rect(5, 5, 2, 1, 'w'); P.rect(8, 5, 2, 1, 'w');                       // 안경
+    P.rect(11, 8, 4, 5, 'y'); P.line(13, 8, 13, 12, 'e');                                                    // 든 책
+  } },
+  candle: { tint: '#a88a50', w: 16, h: 16, pal: { w: '#f4ecd8', y: '#ffd890', r: '#ff8a3a' }, proc: (P) => {
+    P.rect(4, 13, 8, 3, 'b'); P.rect(7, 8, 2, 5, 'a'); P.rect(3, 8, 10, 1, 'a');                             // 받침·가지
+    for (const x of [3, 8, 12]) { P.rect(x, 4, 1, 4, 'w'); P.px(x, 3, 'r'); P.px(x, 2, 'y'); }               // 초 세 자루
+  } },
+  // ── 심층: 붉은 달의 들판
+  redwolf: { tint: '#8a3a3a', w: 16, h: 16, pal: { e: '#ffe94a', w: '#f4ecd8' }, proc: (P) => {
+    P.ell(7, 10, 5, 3, 'a'); P.ell(12, 8, 3, 2.5, 'a'); P.tri(11, 6, 12, 3, 13, 6, 'b'); P.tri(13, 6, 14, 3, 15, 7, 'b'); // 몸·머리·귀
+    P.rect(3, 12, 2, 3, 'b'); P.rect(9, 12, 2, 3, 'b'); P.px(13, 8, 'e'); P.px(15, 10, 'w'); P.line(2, 9, 0, 6, 'b'); // 다리·눈·이빨·꼬리
+  } },
+  bloodbat: { tint: '#a02a3a', w: 16, h: 16, pal: { w: '#ffffff', e: '#ffe94a' }, proc: (P) => {
+    P.tri(0, 5, 6, 8, 2, 12, 'b'); P.tri(15, 5, 10, 8, 13, 12, 'b'); P.ell(8, 8, 3, 3, 'a'); P.tri(6, 6, 7, 3, 8, 6, 'a'); P.tri(8, 6, 9, 3, 10, 6, 'a');
+    P.px(7, 8, 'e'); P.px(9, 8, 'e'); P.px(7, 10, 'w'); P.px(9, 10, 'w');
+  } },
+  moonmaiden: { tint: '#4a2a4a', w: 16, h: 16, pal: { w: '#f4ecd8', r: '#ff5a6a' }, proc: (P) => {
+    robe(P, 'r'); P.ell(7, 5, 3, 3, 'w'); P.rect(4, 3, 7, 2, 'a'); P.px(6, 6, 'k'); P.px(8, 6, 'k');         // 흰 가면·머리
+    P.ell(13, 3, 2, 2, 'r'); P.px(14, 2, 'a'); P.line(12, 6, 12, 13, 'b');                                   // 붉은 초승달 지팡이
+  } },
+  bloodobelisk: { tint: '#4a2a30', w: 16, h: 16, pal: { r: '#ff5a6a', w: '#ffb0b8' }, proc: (P) => {
+    P.rect(4, 13, 8, 3, 'b'); P.tri(5, 13, 11, 13, 8, 1, 'a'); P.tri(8, 1, 8, 13, 5, 13, 'c');               // 받침·오벨리스크
+    P.line(8, 5, 8, 10, 'r'); P.px(8, 4, 'w'); P.px(2, 8, 'r'); P.px(14, 10, 'r');
+  } },
   brazier: { tint: '#6a5a50', w: 16, h: 16, pal: { y: '#ffb04a', r: '#ff6a2a', w: '#ffe94a' }, proc: (P) => {
     P.rect(4, 13, 8, 3, 'b'); P.rect(6, 9, 4, 4, 'a'); P.rect(3, 7, 10, 3, 'a'); P.rect(3, 7, 10, 1, 'c');        // 받침·화로
     P.tri(4, 7, 12, 7, 8, 1, 'r'); P.tri(6, 7, 10, 7, 8, 3, 'y'); P.px(8, 5, 'w');                               // 불꽃
