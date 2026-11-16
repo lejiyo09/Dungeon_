@@ -439,5 +439,29 @@ const DATA_WEAPONS = [
     status: { type: 'blind', chance: 1, duration: 3 }, chain: { count: 3, range: 90, falloff: 0.75 }, pierce: 3, knockback: 8, color: '#3a4270', len: 13, bulletColor: '#dff8ff', bulletSize: 2 },
   { id: 'weapon_aurora_001', name: '오로라 소총', rarity: 'legendary', type: 'gun', shape: 'gun',
     damage: 18, fireRate: 5, energyCost: 0.5, range: 480, projectileSpeed: 820, projectileCount: 1, spreadDeg: 2, pierce: 2, bounce: 1,
-    status: { type: 'freeze', chance: 0.3, duration: 1.4, slow: 0.5 }, mark: { mult: 1.15, dur: 2 }, knockback: 3, color: '#3a5a7a', len: 16, bulletColor: '#9affe0', bulletSize: 2 }
+    status: { type: 'freeze', chance: 0.3, duration: 1.4, slow: 0.5 }, mark: { mult: 1.15, dur: 2 }, knockback: 3, color: '#3a5a7a', len: 16, bulletColor: '#9affe0', bulletSize: 2 },
+  // ── 한 방이 강한 전설
+  { id: 'weapon_dragonslayer_001', name: '용살자의 대검', rarity: 'legendary', type: 'melee', shape: 'sword',
+    damage: 175, fireRate: 0.75, energyCost: 0, range: 54, arcDeg: 100, knockback: 16, execute: 0.25, shake: true, color: '#8a8a9a', len: 20 },
+  { id: 'weapon_skyrail_001', name: '천공 레일건', rarity: 'legendary', type: 'charge', shape: 'gun',
+    damage: 320, fireRate: 0.9, energyCost: 3, chargeTime: 1.0, range: 800, projectileSpeed: 1600, pierce: 0, critBonus: 0.25, knockback: 14, color: '#4a5a8a', len: 18, bulletColor: '#bfe6ff', bulletSize: 2 },
+  // ── 여러 명을 공격하기 좋은 영웅
+  { id: 'weapon_firestorm_001', name: '화염 폭풍 지팡이', rarity: 'epic', type: 'gun', shape: 'staff',
+    damage: 36, fireRate: 1.6, energyCost: 1.6, range: 360, projectileSpeed: 320, projectileCount: 1, spreadDeg: 2, explodeRadius: 40,
+    status: { type: 'burn', chance: 0.7, duration: 2.5, dps: 8 }, knockback: 5, color: '#8a3a2a', len: 14, bulletColor: '#ff8a3a', bulletSize: 3 },
+  { id: 'weapon_chainscepter_001', name: '연쇄 번개 홀', rarity: 'epic', type: 'gun', shape: 'staff',
+    damage: 34, fireRate: 2, energyCost: 1.3, range: 380, projectileSpeed: 520, projectileCount: 1, spreadDeg: 2, chain: { count: 5, range: 90, falloff: 0.8 },
+    status: { type: 'shock', chance: 0.5, duration: 2.5 }, knockback: 2, color: '#4a5a8a', len: 14, bulletColor: '#dff4ff', bulletSize: 2 },
+  { id: 'weapon_sawlauncher_001', name: '회전 톱날 발사기', rarity: 'epic', type: 'gun', shape: 'gun',
+    damage: 27, fireRate: 2.5, energyCost: 1, range: 360, projectileSpeed: 380, projectileCount: 1, spreadDeg: 3, pierce: 2, ricochet: 4, knockback: 3, color: '#6a6a7a', len: 13, bulletColor: '#d8dce8', bulletSize: 3 },
+  { id: 'weapon_earthbreaker_001', name: '대지 분쇄 망치', rarity: 'epic', type: 'melee', shape: 'hammer',
+    damage: 38, fireRate: 1, energyCost: 0.6, range: 44, arcDeg: 220, slam: { r: 60, damage: 30 }, knockback: 12, shake: true, color: '#6a5a40', len: 15 },
+  // ── 검
+  { id: 'weapon_bronzesword_001', name: '청동 장검', rarity: 'uncommon', type: 'melee', shape: 'sword',
+    damage: 25, fireRate: 2, energyCost: 0, range: 40, arcDeg: 130, knockback: 5, color: '#c8904a', len: 14 },
+  { id: 'weapon_flametwin_001', name: '불꽃 쌍검', rarity: 'rare', type: 'melee', shape: 'sword',
+    damage: 16, fireRate: 3.4, energyCost: 0.2, range: 34, arcDeg: 160, knockback: 3, status: { type: 'burn', chance: 0.4, duration: 2, dps: 6 }, color: '#c8502a', len: 11 },
+  { id: 'weapon_abyssblade_001', name: '심연의 검', rarity: 'epic', type: 'melee', shape: 'sword',
+    damage: 34, fireRate: 1.5, energyCost: 0.6, range: 46, arcDeg: 150, knockback: 6, status: { type: 'curse', chance: 0.4, duration: 3 },
+    wave: { damage: 16, speed: 360, range: 200 }, color: '#4a2a6a', len: 16 }
 ];

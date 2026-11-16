@@ -108,6 +108,15 @@ Object.assign(WPIX, {
   stormglaive: { auto: true, p: [4, 2], rows: ['................cc.', '..............ccaa.', 'ddddddddddddddaaaao', '...............aa..', '................o..'] },
   starfall: { auto: true, p: [3, 3], rows: ['.........o.', '........ao.', '.aaaaaaaaa.', 'nnnnnnnnnnw', '.aa.....ao.', '..a......o.'] },
   aurora: { auto: true, p: [4, 3], rows: ['....ooccccccccc..', 'bbbaaaaaaaaaaaaoo', 'bb..aannnbbbbb.ow', '....gg.nn........', '....gg...........'] },
+  dragonslayer: { auto: true, p: [3, 3], rows: ['....mm.................', '...mmmmcccccccccccccccc.', 'gggmmmmaaaaaaaaaaaaaaaaw', '...mmmmbbbbbbbbbbbbbbbb.', '....mm.................'] },
+  skyrail: { auto: true, p: [5, 3], rows: ['.....nnnnnnnnnnnnnnnnn.', 'bbbbbaaaaaaaaaaaaaaaaoo', 'bb...ooooooooooooooooow', '.....nnnnnnnnnnnnnnnnn.', '.....gg................', '.....gg................'] },
+  firestorm: { auto: true, p: [3, 2], rows: ['..........r.oo.', '.........roooor', 'dddddddddrooowo', '.........roooor', '..........r.oo.'] },
+  chainscepter: { auto: true, p: [3, 2], rows: ['...........o.o', '..........y.o.', 'aaaaaaaaaayowo', '..........y.o.', '...........o.o'] },
+  sawlauncher: { auto: true, p: [2, 4], rows: ['.......mmm..', '..aaaamcccm.', '.aaaaamcwcm.', '.abbbbmcccm.', '..gg...mmm..', '..gg........'] },
+  earthbreaker: { auto: true, p: [1, 2], rows: ['........aaaaa', '........acyca', 'dddddddyacyca', '........acyca', '........aaaaa'] },
+  bronzesword: { auto: true, p: [2, 2], rows: ['..yy..........', 'gggyacccccccc.', '..yyaaaaaaaaaa', '..yy..........'] },
+  flametwin: { auto: true, p: [1, 2], rows: ['..n..cccco.', 'ggnnaaaaaao', '..n........', '...cccco...', 'ggnaaaaao..'] },
+  abyssblade: { auto: true, p: [3, 2], rows: ['..nn..............', '.n..n.cccccccccc..', 'ggnonnaaaaaaaaaaao', '.n..n.bbbbbbbbbb..', '..nn..............'] },
   headshot: { auto: true, p: [5, 3], rows: ['.....nnnnnnn........', '.....nooooon........', 'bbbbaaaaaaaaaaaaaaaan', 'bb...aanbb..........', '.....gg.............', '.....gg.............'] }
 });
 
@@ -142,6 +151,8 @@ Object.assign(WEAPON_SPRITE, {
   weapon_crystalstaff_001: 'crystalstaff', weapon_thunderjavelin_001: 'javelin', weapon_goldrevolver_001: 'revolver',
   weapon_nailgun_001: 'nailgun', weapon_ironmallet_001: 'mallet', weapon_sparkpistol_001: 'sparkpistol', weapon_kusarigama_001: 'kusarigama', weapon_blastbow_001: 'blastbow',
   weapon_curseorb_001: 'curseorb', weapon_stormglaive_001: 'stormglaive', weapon_starfall_001: 'starfall', weapon_aurora_001: 'aurora',
+  weapon_dragonslayer_001: 'dragonslayer', weapon_skyrail_001: 'skyrail', weapon_firestorm_001: 'firestorm', weapon_chainscepter_001: 'chainscepter', weapon_sawlauncher_001: 'sawlauncher',
+  weapon_earthbreaker_001: 'earthbreaker', weapon_bronzesword_001: 'bronzesword', weapon_flametwin_001: 'flametwin', weapon_abyssblade_001: 'abyssblade',
   weapon_kitchenknife_001: 'kitchenknife', weapon_pickaxe_001: 'pickaxe', weapon_icegreatsword_001: 'greatsword', weapon_steelxbow_001: 'repeatxbow', weapon_quakehammer_001: 'quakehammer'
 });
 
