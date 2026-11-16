@@ -109,11 +109,11 @@ class Effects {
 
   rays(x, y, color, n = 12, len = 60, life = 0.6) { this.push({ kind: 'rays', x, y, color, n, len, rot: Math.random() * TAU, t: 0, life, add: true }); } // 방사형 빛살
   skyBeam(x, y, color, delay = 0, w = 5) { this.push({ kind: 'beamline', x, y: y - 130, x1: x, y1: y, w, color, t: -delay, life: 0.35, add: true }); } // 하늘에서 내리꽂는 빛줄기 (delay초 뒤)
-  // 원소 반응: 반응마다 다른 문양(가산 혼합) + 테두리 있는 큰 이름표
+  // 원소 반응: 반응마다 다른 문양(가산 혼합) + 작은 이름표
   reaction(x, y, kind, label, color) {
     const seed = Math.random() * 1000;
     this.push({ kind: 'react', type: kind, x, y, color, seed, t: 0, life: kind === 'plague' ? 0.7 : 0.6, add: true });
-    this.push({ kind: 'rlabel', x, y: y - 24, str: label, color, t: 0, life: 1.0 });
+    this.push({ kind: 'rlabel', x, y: y - 16, str: label, color, t: 0, life: 1.0 });
     this.ring(x, y, 24, color); this.burst(x, y, color, 8);
   }
   update(dt) {
@@ -198,14 +198,13 @@ class Effects {
         else { const r = Math.max(1, Math.round(s)); ctx.fillRect(x - (r >> 1), y - (r >> 1), r, r); }
         break;
       }
-      case 'rlabel': { // 반응 이름표: 튀어나왔다가 천천히 떠오름
-        const pop = 1 + 0.6 * Math.max(0, 1 - fx.t / 0.1), sz = Math.round(11 * pop);
+      case 'rlabel': { // 반응 이름표: 작은 글씨로 살짝 튀어나왔다가 떠오름 (배경 없음, 1px 그림자로만 구분)
+        const pop = 1 + 0.25 * Math.max(0, 1 - fx.t / 0.1), sz = Math.round(7 * pop);
         ctx.globalAlpha = Math.min(1, k * 2.5);
         ctx.font = `bold ${sz}px monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        const w = ctx.measureText(fx.str).width + 8, h = sz + 4;
-        ctx.fillStyle = 'rgba(10,8,18,0.85)'; ctx.fillRect(Math.round(x - w / 2), Math.round(y - h / 2), Math.round(w), h);
-        ctx.strokeStyle = fx.color; ctx.lineWidth = 1; ctx.strokeRect(Math.round(x - w / 2) + 0.5, Math.round(y - h / 2) + 0.5, Math.round(w) - 1, h - 1);
-        ctx.fillStyle = fx.color; ctx.fillText(fx.str, x, y + 1); ctx.textBaseline = 'alphabetic'; break;
+        const tx = Math.round(x), ty = Math.round(y);
+        ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillText(fx.str, tx + 1, ty + 1);
+        ctx.fillStyle = fx.color; ctx.fillText(fx.str, tx, ty); ctx.textBaseline = 'alphabetic'; break;
       }
       case 'react': this.drawReaction(ctx, fx, k, x, y); break;
       case 'rays': { // 빛살: 길어지며 돌다가 사라짐
