@@ -21,11 +21,11 @@ const BALANCE = {
   shopInflate: 0.06,
   shopPrice: { common: 20, uncommon: 35, rare: 55, epic: 85, legendary: 130, hp: 15, energy: 12 },
   // 로비 무기고 해금 가격
-  armoryPrice: { common: 30, uncommon: 60, rare: 120, epic: 220, legendary: 400 },
+  armoryPrice: { common: 80, uncommon: 160, rare: 320, epic: 600, legendary: 1100 },
   // 무기 드롭 가중치 (영웅은 월드마다 +epicPerWorld, 전설은 +legendaryPerWorld)
   rarityWeight: { common: 5, uncommon: 4, rare: 3, epic: 1.5, legendary: 0.1 }, epicPerWorld: 0.8, legendaryPerWorld: 0.06,
   // 상자·상점 무기 등급 확률(%) — 필드별 [고급, 희귀, 영웅, 전설]. 낮은 층에서는 높은 등급이 드묾 (마지막 줄은 그 뒤 모든 필드)
-  rarityByWorld: [[80, 18, 2, 0], [70, 26, 4, 0], [60, 32, 7.7, 0.3], [52, 36, 11.5, 0.5], [45, 38, 16, 1], [40, 38, 20.5, 1.5], [35, 37, 26, 2], [30, 36, 31, 3], [26, 35, 35, 4], [24, 34, 38, 4]],
+  rarityByWorld: [[84, 15, 1, 0], [76, 22, 2, 0], [68, 28, 3.8, 0.2], [60, 33, 6.6, 0.4], [54, 37, 8.4, 0.6], [48, 40, 11, 1], [43, 42, 13.5, 1.5], [38, 44, 16, 2], [34, 45, 18.5, 2.5], [30, 46, 21, 3]],
   // 로비 재화: 던전 골드와 별도. 런이 끝날 때 결과에 따라 지급 (캐릭터 해금·무기고에 사용)
   //  기존 골드 적립 속도와 비슷하게 맞춘 값 (조정 가능)
   // 직업 레벨 (결정석으로 영구 소량 강화, 직업마다 따로): 레벨당 능력치, 레벨업 비용 = base + perLevel × (현재 레벨)
