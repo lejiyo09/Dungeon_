@@ -830,6 +830,56 @@ class BossRhongoTower extends RhongoTower {
     const left = this.end - this.t; if (left < 1.2) { ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.6); ctx.globalAlpha = 0.5 + 0.4 * Math.sin(this.t * 30); ctx.strokeStyle = '#ff4a5a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, this.T.radius, 0, TAU); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; } // 붕괴 직전 경고
   }
 }
+// 게이볼그: 대상을 끝까지 쫓아가는 붉은 창 (벽 무시, 빗나가지 않음). 대상이 없으면 조준 방향으로 날아가 끝에서 터짐
+class GaeBolgThrow {
+  constructor(owner, tgt, T, aim) {
+    this.owner = owner; this.tgt = tgt; this.T = T; this.x = owner.x; this.y = owner.y - 6; this.alive = true; this.t = 0; this.trail = [];
+    const a = Math.atan2(aim.y - this.y, aim.x - this.x); this.ang = a; this.free = { x: this.x + Math.cos(a) * 260, y: this.y + Math.sin(a) * 260 };
+    this.vx = Math.cos(a) * 200; this.vy = Math.sin(a) * 200 - 120; // 살짝 위로 던졌다가 휘어 꽂힘
+  }
+  update(dt, world) {
+    this.t += dt; const tg = this.tgt && this.tgt.alive ? this.tgt : null, tx = tg ? tg.x : this.free.x, ty = tg ? tg.y : this.free.y;
+    const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy) || 1, sp = 420 + this.t * 900, k = Math.min(1, dt * (6 + this.t * 20));
+    this.vx += (dx / d * sp - this.vx) * k; this.vy += (dy / d * sp - this.vy) * k; this.ang = Math.atan2(this.vy, this.vx);
+    this.trail.push({ x: this.x, y: this.y }); if (this.trail.length > 10) this.trail.shift();
+    this.x += this.vx * dt; this.y += this.vy * dt;
+    if (Math.random() < 0.8) world.effects.part(this.x, this.y, 0, 0, { color: '#ff4a5a', life: 0.3, size: 2, size2: 0, drag: 1, add: true });
+    if (d < 10 || this.t > 1.6) { this.alive = false; world.gaeBolgHit(this.owner, tg ? tg.x : this.x, tg ? tg.y : this.y, tg, this.T); }
+  }
+  render() {}
+  renderTop(ctx) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    this.trail.forEach((p, i) => { ctx.fillStyle = `rgba(255,70,90,${i / this.trail.length * 0.5})`; ctx.fillRect(Math.round(p.x) - 1, Math.round(p.y) - 1, 3, 3); });
+    ctx.globalCompositeOperation = 'source-over'; ctx.translate(Math.round(this.x), Math.round(this.y)); ctx.rotate(this.ang);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(-16, -2, 24, 4); ctx.fillStyle = '#8a1a2a'; ctx.fillRect(-15, -1, 20, 2);              // 붉은 창대
+    ctx.fillStyle = '#ff4a5a'; ctx.beginPath(); ctx.moveTo(5, -4); ctx.lineTo(13, 0); ctx.lineTo(5, 4); ctx.fill();           // 창날
+    ctx.fillStyle = '#ffb0b8'; ctx.fillRect(1, -3, 2, 1); ctx.fillRect(1, 2, 2, 1); ctx.fillRect(-4, -3, 2, 1); ctx.fillRect(-4, 2, 2, 1); // 거꾸로 난 가시
+    ctx.restore();
+  }
+}
+// 게이볼그 가시 폭발: 꿰뚫린 자리에서 사방으로 뻗는 붉은 가시
+class ThornBurst {
+  constructor(x, y, T) { this.x = x; this.y = y; this.T = T; this.t = 0; this.life = 0.55; this.alive = true; this.spikes = Array.from({ length: 24 }, (_, i) => ({ a: i / 24 * TAU + Math.random() * 0.2, l: T.thornR * (0.6 + Math.random() * 0.4) })); }
+  update(dt) { this.t += dt; if (this.t >= this.life) this.alive = false; }
+  render(ctx) {
+    const g = Math.min(1, this.t / 0.12), k = Math.min(1, (this.life - this.t) / 0.25);
+    ctx.save(); ctx.globalAlpha = k;
+    for (const s of this.spikes) { const L = s.l * g, ex = this.x + Math.cos(s.a) * L, ey = this.y + Math.sin(s.a) * L * 0.7, nx = -Math.sin(s.a) * 2, ny = Math.cos(s.a) * 2;
+      ctx.fillStyle = '#5a0a14'; ctx.beginPath(); ctx.moveTo(this.x + nx, this.y + ny); ctx.lineTo(ex, ey); ctx.lineTo(this.x - nx, this.y - ny); ctx.fill();
+      ctx.fillStyle = '#ff4a5a'; ctx.beginPath(); ctx.moveTo(this.x + nx * 0.4, this.y + ny * 0.4); ctx.lineTo(ex, ey); ctx.lineTo(this.x - nx * 0.4, this.y - ny * 0.4); ctx.fill(); }
+    ctx.restore();
+  }
+}
+// 출혈: 맞은 적들에게 일정 시간 지속 피해
+class BleedTicker {
+  constructor(list, T, hpScale) { this.list = list; this.T = T; this.left = T.bleed; this.next = 0.5; this.dmg = T.bleedDps * 0.5 * hpScale; this.alive = true; this.x = 0; this.y = 0; }
+  update(dt, world) {
+    this.left -= dt; this.next -= dt; if (this.left <= 0) { this.alive = false; return; }
+    for (const e of this.list) if (e.alive && Math.random() < 0.3) world.effects.part(e.x + randInt(-4, 4), e.y - 2, 0, 20, { color: '#c0202a', life: 0.4, size: 1.5, size2: 0, drag: 1 });
+    if (this.next <= 0) { this.next += 0.5; for (const e of this.list) if (e.alive) world.dotDamage(e, this.dmg, '#ff4a5a'); }
+  }
+  render() {}
+}
 class Trap {
   constructor(x, y, def, mods) { this.x = x; this.y = y; this.def = def; this.D = def.trap; this.getMods = mods; this.t = 0; this.alive = true; this.snapT = -1; }
   update(dt, world) {

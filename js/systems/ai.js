@@ -568,7 +568,8 @@ function updateEnemy(e, dt, world) {
   e.stateTime += sdt;
   const p = world.player;
   const dx = p.x - e.x, dy = p.y - e.y;
-  const ctx = { dx, dy, dist: Math.hypot(dx, dy) || 0.001, playerAlive: p.state !== 'DEAD' };
+  const hidden = p.hadesT > 0 && (!e.def.boss || p.hadesT > p.treasure.duration - p.treasure.bossDur); // 하데스의 투구: 적이 나를 못 찾음 (보스는 처음 몇 초만)
+  const ctx = { dx, dy, dist: Math.hypot(dx, dy) || 0.001, playerAlive: p.state !== 'DEAD' && !hidden };
   if (!(e.state === 'ATTACK' && e.def.aiType === 'charger')) e.face = dx < 0 ? -1 : 1;
   e.attackCd = Math.max(0, e.attackCd - sdt * (e.blind > 0 ? (e.def.boss ? 0.8 : 0.55) : 1)); // 실명: 공격 준비가 느려짐
   const behavior = AI_BEHAVIORS[e.def.aiType];

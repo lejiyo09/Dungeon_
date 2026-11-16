@@ -698,7 +698,7 @@ class Game {
     p.treasureCd = T.cooldown;
     this.effects.text(p.x, p.y - 24, T.name + '!', T.color, true); SFX.play(T.sfx || 'react', 0.3);
     this.cutin = { kind: 'treasure', name: T.name, sub: `${T.origin}의 보구`, color: T.color, T, start: performance.now() }; // 보구 컷인
-    if (T.use !== 'beam' && T.use !== 'spear') { this.effects.rays(p.x, p.y, T.color, 18, 100, 0.8); this.effects.rays(p.x, p.y, '#ffffff', 9, 60, 0.5); this.effects.goldBurst(p.x, p.y, 20); } // 엑스칼리버는 빛줄기 하나에 집중
+    if (T.use !== 'beam' && T.use !== 'spear' && T.use !== 'thorn' && T.use !== 'invis') { this.effects.rays(p.x, p.y, T.color, 18, 100, 0.8); this.effects.rays(p.x, p.y, '#ffffff', 9, 60, 0.5); this.effects.goldBurst(p.x, p.y, 20); } // 엑스칼리버는 빛줄기 하나에 집중
     if (T.use === 'chains') { // 게이트 오브 바빌론: 조준 지점(최대 사거리)에 원형 범위 → 황금 사슬로 묶음
       const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
       const cx = p.x + dx * k, cy = p.y + dy * k;
@@ -719,6 +719,15 @@ class Game {
       const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
       this.zones.push(new RhongoTower(p, p.x + dx * k, p.y + dy * k, T));
       this.effects.rays(p.x, p.y, '#bfe6ff', 12, 60, 0.5); SFX.play('skill');
+    } else if (T.use === 'invis') { // 하데스의 투구: 모습을 감춤
+      p.hadesT = T.duration;
+      for (let i = 0; i < 26; i++) { const a = Math.random() * TAU, s = 20 + Math.random() * 50; this.effects.part(p.x, p.y - 4, Math.cos(a) * s, Math.sin(a) * s * 0.6 - 10, { color: i % 2 ? '#3a3a4a' : '#9aa8c8', life: 0.7, size: 2.5, size2: 0, drag: 2 }); }
+      this.effects.ring(p.x, p.y, 26, '#9aa8c8'); this.screenFlash = 0.12; this.flashColor = '60,60,80';
+      for (const e of this.enemies) if (e.alive && (e.state === 'CHASE' || e.state === 'TELEGRAPH') && !e.def.boss) e.setState('IDLE'); // 하던 공격을 놓침
+    } else if (T.use === 'thorn') { // 게이볼그: 가장 강한 적에게 절대 빗나가지 않는 창
+      const cand = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 420);
+      const tgt = cand.find((e) => e.def.boss) || cand.sort((a, b) => b.hp - a.hp)[0] || null;
+      this.zones.push(new GaeBolgThrow(p, tgt, T, this.mouseWorld())); SFX.play('skill');
     } else if (T.use === 'garden') { // 가든 오브 아발론: 방 한가운데 탑 + 방 전체 꽃밭
       const r = this.map.roomAtPoint(p.x, p.y), c = r ? this.map.tileCenter(r.cx, r.cy) : { x: p.x, y: p.y };
       this.zones = this.zones.filter((z) => !(z instanceof AvalonGarden));
@@ -750,6 +759,15 @@ class Game {
     this.effects.rays(ex, ey, '#fff4c0', 22, T.blast * 2.2, 0.8); this.effects.ring(ex, ey, T.blast, '#ffffff'); this.effects.ring(ex, ey, T.blast * 1.6, '#ffd84a');
     for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.effects.explosion(ex + Math.cos(a) * T.blast * 0.55, ey + Math.sin(a) * T.blast * 0.4, 14 + (i % 3) * 4, '#ffd84a'); }
     this.effects.skyBeam(ex, ey, '#ffffff', 0, 16); this.effects.goldBurst(ex, ey, 30); SFX.play('explode');
+  }
+  // 게이볼그가 꿰뚫음 (GaeBolgThrow가 호출): 큰 피해 + 주변으로 가시 폭발 + 출혈
+  gaeBolgHit(p, x, y, tgt, T) {
+    const src = (d) => ({ damage: d * this.scale.hp, mods: Object.assign({}, p.mods, { critChance: 0 }), knockback: 6 }), bled = [];
+    if (tgt && tgt.targetable) { this.damageEnemy(tgt, src(T.damage), 0, 0); bled.push(tgt); }
+    for (const e of this.enemies) if (e !== tgt && e.targetable && Math.hypot(e.x - x, e.y - y) < T.thornR + e.radius) { this.damageEnemy(e, src(T.thornDmg), e.x - x, e.y - y); bled.push(e); }
+    this.zones.push(new ThornBurst(x, y, T)); this.zones.push(new BleedTicker(bled, T, this.scale.hp));
+    this.effects.rays(x, y, '#ff4a5a', 24, T.thornR, 0.7); this.effects.ring(x, y, T.thornR, '#ff8a8a'); this.effects.burst(x, y, '#ff4a5a', 26);
+    this.addShake(0.4, 7); this.screenFlash = 0.22; this.flashColor = '255,60,80'; this.hitStop(0.1); SFX.play('explode');
   }
   // ── 직업 계열·진화
   skillDmg(base) { return base * (1 + (this.scale.hp - 1) * 0.5); } // 스킬 피해: 깊이 내려갈수록 조금씩 커짐
@@ -1626,6 +1644,10 @@ class Game {
     SFX.play(enemy.def.boss ? 'explode' : 'kill', 0.04);
     if (enemy.def.boss) this.hitStop(0.3); else if (Math.random() < 0.35) this.hitStop(0.025);
     if (enemy.def.aiType === 'exploder') this.enemyExplode(enemy);
+    if (enemy.def.boss && this.mode === 'dungeon' && this.W.deep && !this.trialW && !enemy.def.master && Math.random() < HERO_TREASURE_DROP) { // 심층 보스: 낮은 확률로 영웅의 보구
+      const left = DATA_TREASURES.filter((t) => t.heroDrop && !this.save.treasures.includes(t.id));
+      if (left.length) { const T = pick(left); this.save.treasures.push(T.id); writeSave(this.save); this.treasureToast = { T, start: performance.now() }; }
+    }
     if (enemy.def.boss) {
       this.addShake(0.4, 6); this.enemyBullets.length = 0; this.hazards.length = 0;
       enemy.laser = null; SFX.stopMusic();

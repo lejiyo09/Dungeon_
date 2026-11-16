@@ -53,6 +53,7 @@ const GATEKEEPER_FALL_LINES = [
 //  [사용자 결정] 무기·스킬과 별개인 제3의 도구, R키로 사용. 로비 '보구 보관대'에서 보유한 보구 중 1개를 골라 런에 들고 감
 //  [사용자 결정] 목록·능력은 아래 3종. 쿨타임·수치는 Claude가 정한 값(조정 가능)
 //  기원의 성역에서 처음 받는 보구는 이 3종 중 하나를 직접 고름. 추가 보구 획득 방법은 미정
+//  [사용자 결정] 보구는 신의 것이면 안 됨 — 주인은 최대 반신, 보통은 인간 (영웅의 도구)
 const DATA_TREASURES = [
   { id: 'treasure_gate_of_babylon', name: '게이트 오브 바빌론', origin: '길가메시', use: 'chains', cooldown: 60, sfx: 'gate', icon: 'gate',
     radius: 92, range: 200, duration: 6, damage: 280, weak: 1.7, color: '#ffd84a',
@@ -70,8 +71,16 @@ const DATA_TREASURES = [
   // [사용자 결정] 아서왕의 창 롱고미니아드. 얻는 법: 멀린의 두 번째 시련 → 신령 롱고미니아드 보스전 승리 [사용자 결정]. 능력·수치는 Claude가 정한 [제안]
   { id: 'treasure_rhongomyniad', name: '롱고미니아드', origin: '아서왕', use: 'spear', cooldown: 64, sfx: 'excal', icon: 'rhongo', questOnly: true,
     damage: 380, impact: 64, range: 240, radius: 100, duration: 5, tick: 0.5, tickDmg: 36, pull: 70, final: 320, color: '#bfe6ff',
-    desc: '빛의 창을 조준 지점에 던져 꽂으면 5초간 거대한 빛의 탑이 솟아 주변 적을 끌어당기며 계속 피해, 마지막에 탑이 무너지며 큰 폭발' }
+    desc: '빛의 창을 조준 지점에 던져 꽂으면 5초간 거대한 빛의 탑이 솟아 주변 적을 끌어당기며 계속 피해, 마지막에 탑이 무너지며 큰 폭발' },
+  // [사용자 결정] 페르세우스(반신)의 하데스의 투구 · 쿠 훌린(반신)의 게이볼그. 능력·수치·획득 방법(심층 보스 처치 시 낮은 확률)은 Claude가 정한 [제안]
+  { id: 'treasure_helm_of_hades', name: '하데스의 투구', origin: '페르세우스', use: 'invis', cooldown: 62, sfx: 'solomon', icon: 'helm', questOnly: true, heroDrop: true,
+    duration: 6, bossDur: 3, atk: 0.5, speed: 0.2, color: '#9aa8c8',
+    desc: '6초간 모습을 감춰 적이 나를 찾지 못함(보스는 처음 3초만), 그동안 공격력 +50%·이동 속도 +20%' },
+  { id: 'treasure_gae_bolg', name: '게이볼그', origin: '쿠 훌린', use: 'thorn', cooldown: 63, sfx: 'excal', icon: 'gaebolg', questOnly: true, heroDrop: true,
+    damage: 650, thornR: 110, thornDmg: 110, bleed: 5, bleedDps: 40, color: '#ff4a5a',
+    desc: '가장 강한 적(보스 우선)에게 절대 빗나가지 않는 창을 던져 큰 피해, 꿰뚫린 자리에서 가시가 터져 주변 적을 찌르고, 맞은 적은 5초간 출혈' }
 ];
+const HERO_TREASURE_DROP = 0.1; // 심층 보스를 쓰러뜨리면 아직 없는 영웅의 보구(heroDrop) 하나를 얻을 확률 [제안]
 // 탐험가 길드 구석의 마법사 (멀린) — 대사는 모두 [임시] 연출 문구. 정체(아서왕의 궁정 마법사 멀린)와 보구는 [사용자 결정]
 const MERLIN_REVEAL_LINES = [
   '후드 아래에서 하얀 머리카락이 흘러내린다.',
