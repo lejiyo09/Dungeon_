@@ -24,7 +24,12 @@ const JOB_LINES = {
       skills: [
         { id: 'cleave', name: '대지 가르기', desc: '전방 일직선으로 땅을 가르는 충격파', cd: 7 },
         { id: 'cleave3', name: '삼연 가르기', desc: '부채꼴로 충격파 세 줄', cd: 7 },
-        { id: 'quake', name: '대지 붕괴', desc: '1초간 힘을 모아(이동 불가) 주변 전체를 내려침', cd: 10 }] }
+        { id: 'quake', name: '대지 붕괴', desc: '1초간 힘을 모아(이동 불가) 주변 전체를 내려침', cd: 10 }] },
+    spear: { name: '창술사', desc: '나무 창 · 길게 찌르고 돌진하는 근접 전투', startWeapon: 'weapon_woodspear_001', ranks: ['창술사', '창의 달인', '천공의 창'], color: '#c8d8f0',
+      skills: [
+        { id: 'charge', name: '돌진 찌르기', desc: '조준 방향으로 돌진하며 지나간 적을 꿰뚫음 (잠깐 무적)', cd: 5 },
+        { id: 'triplethrust', name: '연환창', desc: '전방으로 길게 세 번 찔러 일직선의 적을 꿰뚫음', cd: 6 },
+        { id: 'skyspear', name: '천공 투창', desc: '거대한 창을 던져 일직선의 적을 모두 꿰뚫고, 떨어진 자리에서 폭발', cd: 11 }] }
   },
   hero_mage: {
     title: '속성 선택',

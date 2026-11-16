@@ -603,6 +603,22 @@ class Game {
         this.zones.push(new Strike(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r * 0.7, 0.35 + i * 0.05, 20, { damage: D(30), mods: p.mods, knockback: 3 }, '#fff4c0', true)); } break; }
       case 'cleave': line(A, 130, 12, 45); this.addShake(0.2, 4); SFX.play('heavy'); break;
       case 'cleave3': for (const da of [-0.38, 0, 0.38]) line(A + da, 140, 12, 60); this.addShake(0.25, 5); SFX.play('heavy'); break;
+      // 창술사
+      case 'charge': { // 돌진 찌르기: 앞으로 돌진하며 지나간 적을 꿰뚫음
+        const sx = p.x, sy = p.y; moveAndCollide(p, p.aim.x * 80, p.aim.y * 80, this.map); p.blinkInv = 0.3;
+        for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, p.x + p.aim.x * 20, p.y + p.aim.y * 20, e.x, e.y, e.radius + 8) >= 0) this.damageEnemy(e, { damage: D(55), mods: p.mods, knockback: 8 }, p.aim.x, p.aim.y);
+        this.effects.beamline(sx, sy, p.x + p.aim.x * 20, p.y + p.aim.y * 20, 4, '#c8d8f0'); this.effects.dust(sx, sy + 4); SFX.play('melee'); break; }
+      case 'triplethrust': for (let i = 0; i < 3; i++) { const da = (i - 1) * 0.12; // 세 번 찌르기 (약간씩 다른 각도)
+          const a = A + da, L = 120, wt = sweepWall(p.x, p.y, p.x + Math.cos(a) * L, p.y + Math.sin(a) * L, this.map, 3), LL = wt < 0 ? L : wt * L, x1 = p.x + Math.cos(a) * LL, y1 = p.y + Math.sin(a) * LL;
+          for (const e of this.enemies) if (e.targetable && segmentCircleHit(p.x, p.y, x1, y1, e.x, e.y, e.radius + 6) >= 0) this.damageEnemy(e, { damage: D(42), mods: p.mods, knockback: 5 }, Math.cos(a), Math.sin(a));
+          this.effects.beamline(p.x, p.y, x1, y1, 3, i === 1 ? '#ffffff' : '#c8d8f0'); }
+        p.swing = { t: 0, dur: 0.15, ang: A, arc: 0.3, thrust: true }; this.addShake(0.1, 2); SFX.play('melee'); break;
+      case 'skyspear': { // 천공 투창: 거대한 창이 꿰뚫고 날아가 끝에서 폭발
+        const a = A, L = 300, wt = sweepWall(p.x, p.y, p.x + Math.cos(a) * L, p.y + Math.sin(a) * L, this.map, 3), LL = wt < 0 ? L : wt * L, x1 = p.x + Math.cos(a) * LL, y1 = p.y + Math.sin(a) * LL;
+        for (const e of this.enemies) if (e.targetable && segmentCircleHit(p.x, p.y, x1, y1, e.x, e.y, e.radius + 10) >= 0) this.damageEnemy(e, { damage: D(170), mods: p.mods, knockback: 10 }, Math.cos(a), Math.sin(a));
+        this.effects.beamline(p.x, p.y, x1, y1, 9, '#c8d8f0'); this.effects.beamline(p.x, p.y, x1, y1, 3, '#ffffff');
+        this.zones.push(new Strike(x1, y1, 0.25, 54, { damage: D(120), mods: p.mods, knockback: 12 }, '#c8d8f0', false));
+        this.addShake(0.3, 5); this.hitStop(0.05); SFX.play('heavy'); break; }
       case 'quake': this.zones.push(new SkillCast(p, p.x, p.y, { r: 140, time: 1, color: '#e0b070' }, () => {
         this.explodeAt(p.x, p.y, 140, { color: '#e0b070', hurtEnemies: true, src: { damage: D(150), mods: p.mods, knockback: 16 } });
         for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.effects.explosion(p.x + Math.cos(a) * 80, p.y + Math.sin(a) * 50, 16, '#c8a070'); }
