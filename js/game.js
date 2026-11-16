@@ -139,6 +139,18 @@ class Game {
       } else npc.bubble = { text: `시련: 문지기 ${M.gate || 0}/${MERLIN_TRIAL.gate} · 심층 보스 ${M.deep || 0}/${MERLIN_TRIAL.deep}`, t: 3 };
       return;
     }
+    if (M.quest === 2) { // 두 번째 시련: 롱고미니아드
+      this.playCutscene(MERLIN_SPEAR_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 3; M.deep2 = 0; writeSave(sv); this.showBanner('멀린의 두 번째 시련', `심층 보스 처치 (0/${MERLIN_TRIAL2.deep})`, '#bfe6ff'); } }); return;
+    }
+    if (M.quest === 3) {
+      if ((M.deep2 || 0) >= MERLIN_TRIAL2.deep) {
+        this.playCutscene(MERLIN_SPEAR_REWARD_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => {
+          M.quest = 4; const T = DATA_TREASURES.find((t) => t.id === 'treasure_rhongomyniad');
+          if (!sv.treasures.includes(T.id)) sv.treasures.push(T.id); writeSave(sv); this.treasureToast = { T, start: performance.now() };
+          this.effects.skyBeam(npc.x, npc.y, '#ffffff', 0, 10); this.effects.rays(npc.x, npc.y, '#bfe6ff', 16, 70, 1); this.effects.ring(npc.x, npc.y, 40, '#bfe6ff'); } });
+      } else npc.bubble = { text: `시련: 심층 보스 ${M.deep2 || 0}/${MERLIN_TRIAL2.deep}`, t: 3 };
+      return;
+    }
     npc.bubble = { text: pick(MERLIN_CHATTER), t: 3 };
   }
   titleUnlocked(T) { return T.test(this.save.stats || {}, this.save); }
@@ -604,7 +616,7 @@ class Game {
     p.treasureCd = T.cooldown;
     this.effects.text(p.x, p.y - 24, T.name + '!', T.color, true); SFX.play(T.sfx || 'react', 0.3);
     this.cutin = { kind: 'treasure', name: T.name, sub: `${T.origin}의 보구`, color: T.color, T, start: performance.now() }; // 보구 컷인
-    if (T.use !== 'beam') { this.effects.rays(p.x, p.y, T.color, 18, 100, 0.8); this.effects.rays(p.x, p.y, '#ffffff', 9, 60, 0.5); this.effects.goldBurst(p.x, p.y, 20); } // 엑스칼리버는 빛줄기 하나에 집중
+    if (T.use !== 'beam' && T.use !== 'spear') { this.effects.rays(p.x, p.y, T.color, 18, 100, 0.8); this.effects.rays(p.x, p.y, '#ffffff', 9, 60, 0.5); this.effects.goldBurst(p.x, p.y, 20); } // 엑스칼리버는 빛줄기 하나에 집중
     if (T.use === 'chains') { // 게이트 오브 바빌론: 조준 지점(최대 사거리)에 원형 범위 → 황금 사슬로 묶음
       const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
       const cx = p.x + dx * k, cy = p.y + dy * k;
@@ -621,6 +633,10 @@ class Game {
     } else if (T.use === 'beam') { // 엑스칼리버: 검을 들어 빛기둥을 세우고(0.6초) → 조준 방향으로 내려찍음 → 끝에서 폭발
       this.zones.push(new ExcaliburRaise(p, T, () => this.excaliburStrike(p, T)));
       SFX.play('skill');
+    } else if (T.use === 'spear') { // 롱고미니아드: 조준 지점(최대 사거리, 벽 무시)에 빛의 창을 던짐 → 빛의 탑
+      const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
+      this.zones.push(new RhongoTower(p, p.x + dx * k, p.y + dy * k, T));
+      this.effects.rays(p.x, p.y, '#bfe6ff', 12, 60, 0.5); SFX.play('skill');
     } else if (T.use === 'garden') { // 가든 오브 아발론: 방 한가운데 탑 + 방 전체 꽃밭
       const r = this.map.roomAtPoint(p.x, p.y), c = r ? this.map.tileCenter(r.cx, r.cy) : { x: p.x, y: p.y };
       this.zones = this.zones.filter((z) => !(z instanceof AvalonGarden));
@@ -1516,7 +1532,7 @@ class Game {
     enemy.rewardGiven = true;
     this.kills++;
     if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) { this.guildEvent('kills', 1, enemy.def.id); if (enemy.elite) this.guildEvent('elites'); if (enemy.def.boss) this.guildEvent('bosses', 1, enemy.def.id);
-      const M = this.save.merlin; if (M && M.quest === 1 && enemy.def.boss) { if (enemy.def.id === 'boss_nameless_gatekeeper') M.gate = Math.min(MERLIN_TRIAL.gate, (M.gate || 0) + 1); if (this.W.deep) M.deep = Math.min(MERLIN_TRIAL.deep, (M.deep || 0) + 1); } } // 멀린의 시련 // 길드 퀘스트·토벌·칭호 집계
+      const M = this.save.merlin; if (M && M.quest === 1 && enemy.def.boss) { if (enemy.def.id === 'boss_nameless_gatekeeper') M.gate = Math.min(MERLIN_TRIAL.gate, (M.gate || 0) + 1); if (this.W.deep) M.deep = Math.min(MERLIN_TRIAL.deep, (M.deep || 0) + 1); } if (M && M.quest === 3 && enemy.def.boss && this.W.deep) M.deep2 = Math.min(MERLIN_TRIAL2.deep, (M.deep2 || 0) + 1); } // 멀린의 시련 // 길드 퀘스트·토벌·칭호 집계
     const p = this.player;
     if (p.vampire > 0 && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.vampire);
     if (p.rage > 0 && p.rageVamp && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.rageVamp);

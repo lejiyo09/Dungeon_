@@ -718,6 +718,79 @@ class AvalonGarden {
 }
 
 // 덫: 바닥에 놓여 있다가 적이 밟으면 덥석 물어 피해 + 묶음(보스는 절반). 번개 덫은 주변으로 연쇄 번개
+// 롱고미니아드: 빛의 창이 날아가 꽂힘(착탄 피해) → 빛의 탑이 서서 주변 적을 끌어당기며 지속 피해 → 무너지며 대폭발
+class RhongoTower {
+  constructor(owner, tx, ty, T) {
+    this.owner = owner; this.T = T; this.sx = owner.x; this.sy = owner.y - 6; this.x = tx; this.y = ty; this.t = 0; this.alive = true;
+    this.FLY = 0.22; this.next = 0; this.landed = false; this.ang = Math.atan2(ty - this.sy, tx - this.sx);
+    this.end = this.FLY + T.duration;
+  }
+  src(world, dmg, kb) { return { damage: dmg * world.scale.hp, mods: Object.assign({}, this.owner.mods, { critChance: 0 }), knockback: kb }; }
+  update(dt, world) {
+    const T = this.T, fx = world.effects; this.t += dt;
+    if (this.t < this.FLY) { const k = this.t / this.FLY; fx.part(this.sx + (this.x - this.sx) * k, this.sy + (this.y - this.sy) * k, 0, 0, { color: '#bfe6ff', life: 0.25, size: 2, size2: 0, drag: 1, add: true }); return; }
+    if (!this.landed) { // 착탄
+      this.landed = true;
+      for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < T.impact + e.radius) world.damageEnemy(e, this.src(world, T.damage, 12), e.x - this.x, e.y - this.y);
+      fx.skyBeam(this.x, this.y, '#ffffff', 0, 18); fx.rays(this.x, this.y, '#bfe6ff', 20, 120, 0.8); fx.ring(this.x, this.y, T.impact, '#ffffff'); fx.ring(this.x, this.y, T.radius, '#7ac8ff');
+      for (let i = 0; i < 30; i++) { const a = Math.random() * TAU, s = 60 + Math.random() * 90; fx.part(this.x, this.y, Math.cos(a) * s, Math.sin(a) * s * 0.6, { color: i % 2 ? '#bfe6ff' : '#ffffff', life: 0.6, size: 2, size2: 0, drag: 3, add: true }); }
+      world.addShake(0.4, 7); world.screenFlash = 0.25; world.flashColor = '210,235,255'; world.hitStop(0.08); SFX.play('excal');
+      this.next = T.tick;
+    }
+    if (this.t >= this.end) { // 탑 붕괴 → 대폭발
+      this.alive = false;
+      world.explodeAt(this.x, this.y, T.radius, { color: '#bfe6ff', hurtEnemies: true, src: this.src(world, T.final, 16) });
+      fx.rays(this.x, this.y, '#ffffff', 24, T.radius * 2, 0.9); fx.ring(this.x, this.y, T.radius * 1.4, '#bfe6ff');
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; fx.skyBeam(this.x + Math.cos(a) * T.radius * 0.6, this.y + Math.sin(a) * T.radius * 0.4, i % 2 ? '#bfe6ff' : '#ffffff', i * 0.03, 6); }
+      world.addShake(0.45, 8); world.screenFlash = 0.3; world.flashColor = '220,240,255'; SFX.play('explode');
+      return;
+    }
+    for (const e of world.enemies) { // 끌어당김 (보스는 약하게)
+      if (!e.targetable || (e.def.knockbackResist || 0) >= 1) continue;
+      const dx = this.x - e.x, dy = this.y - e.y, d = Math.hypot(dx, dy);
+      if (d < T.radius + 30 && d > 6) { const f = T.pull * dt * (e.def.boss ? 0.3 : 1); moveAndCollide(e, dx / d * f, dy / d * f, world.map); }
+    }
+    this.next -= dt;
+    if (this.next <= 0) { this.next += T.tick;
+      for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < T.radius + e.radius) world.damageEnemy(e, this.src(world, T.tickDmg, 0), 0, 0, { quiet: true });
+      fx.ring(this.x, this.y, T.radius * 0.5, '#bfe6ff'); }
+    if (Math.random() < 0.9) { const a = Math.random() * TAU, d = T.radius * (0.6 + Math.random() * 0.5); // 빨려 드는 빛 + 탑을 타고 오르는 빛
+      fx.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.6, -Math.cos(a) * d * 1.6, -Math.sin(a) * d, { color: '#bfe6ff', life: 0.5, size: 1.5, size2: 0, drag: 0, add: true }); }
+    if (Math.random() < 0.6) fx.part(this.x + randInt(-5, 5), this.y - Math.random() * 20, 0, -120 - Math.random() * 60, { color: '#ffffff', life: 0.8, size: 1.5, size2: 0, drag: 0, add: true });
+  }
+  render(ctx) { // 바닥 문양
+    if (!this.landed) return;
+    const T = this.T, lt = this.t - this.FLY, k = Math.min(1, lt / 0.2, (this.end - this.t) / 0.3), rot = lt * 1.5;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(this.x, this.y); ctx.scale(1, 0.6);
+    ctx.globalAlpha = 0.16 * k; ctx.fillStyle = '#7ac8ff'; ctx.beginPath(); ctx.arc(0, 0, T.radius, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.85 * k; ctx.strokeStyle = '#bfe6ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, T.radius, 0, TAU); ctx.stroke();
+    ctx.lineWidth = 1; ctx.strokeStyle = '#ffffff';
+    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(0, 0, T.radius * (0.35 + i * 0.2), -rot * (i % 2 ? -1 : 1) + i, -rot * (i % 2 ? -1 : 1) + i + 3.6); ctx.stroke(); } // 안쪽으로 감기는 고리
+    for (let i = 0; i < 12; i++) { const a = rot + i * TAU / 12; ctx.fillStyle = i % 3 ? '#7ac8ff' : '#ffffff'; ctx.fillRect(Math.cos(a) * T.radius * 0.9 - 1, Math.sin(a) * T.radius * 0.9 - 1, 3, 3); }
+    ctx.restore(); ctx.lineWidth = 1;
+  }
+  renderTop(ctx) {
+    const T = this.T;
+    if (!this.landed) { // 날아가는 창
+      const k = this.t / this.FLY, x = this.sx + (this.x - this.sx) * k, y = this.sy + (this.y - this.sy) * k;
+      ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(this.ang); ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(150,210,255,0.35)'; ctx.fillRect(-40, -3, 40, 6); ctx.fillStyle = 'rgba(220,240,255,0.7)'; ctx.fillRect(-30, -1, 30, 2);
+      ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#e8f4ff'; ctx.fillRect(-14, -1, 18, 2); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(4, -3); ctx.lineTo(12, 0); ctx.lineTo(4, 3); ctx.fill();
+      ctx.restore(); return;
+    }
+    const lt = this.t - this.FLY, grow = Math.min(1, lt / 0.25), k = Math.min(1, (this.end - this.t) / 0.3), H = 190 * grow, x = Math.round(this.x), y = Math.round(this.y);
+    const pulse = 1 + 0.12 * Math.sin(lt * 14);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = k;
+    const col = (hw, c) => { const w = Math.max(1, Math.round(hw * pulse)); ctx.fillStyle = c; ctx.fillRect(x - w, y - H, w * 2, H); };
+    col(16, 'rgba(90,160,255,0.18)'); col(10, 'rgba(150,210,255,0.4)'); col(5, 'rgba(220,240,255,0.85)'); col(2, '#ffffff'); // 빛의 탑
+    for (let i = 0; i < 4; i++) { const yy = y - ((i * 0.27 + lt * 0.9) % 1) * H, rr = 14 + 6 * Math.sin(lt * 3 + i); // 탑을 타고 오르는 고리
+      ctx.strokeStyle = `rgba(200,235,255,${0.7 * k})`; ctx.beginPath(); ctx.ellipse(x, Math.round(yy), rr, rr * 0.35, 0, 0, TAU); ctx.stroke(); }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 2, y - 30, 4, 28); ctx.fillStyle = '#e8f4ff'; ctx.fillRect(x - 1, y - 30, 2, 26); // 바닥에 꽂힌 창 자루
+    ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 3, y - 31, 6, 2); ctx.fillStyle = '#7ac8ff'; ctx.fillRect(x - 1, y - 35, 2, 4);
+    ctx.restore();
+  }
+}
 class Trap {
   constructor(x, y, def, mods) { this.x = x; this.y = y; this.def = def; this.D = def.trap; this.getMods = mods; this.t = 0; this.alive = true; this.snapT = -1; }
   update(dt, world) {
