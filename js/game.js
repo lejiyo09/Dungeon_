@@ -442,8 +442,7 @@ class Game {
     const m = this.map, inflate = 1 + BALANCE.shopInflate * this.stageIndex;
     const mc = m.tileCenter(room.cx, room.y0 + 1); this.props.push(new Merchant(mc.x, mc.y));
     this.props.push(new UpgradeAnvil(mc.x + 40, mc.y + 4, 1, 0)); // 상점 강화대
-    const owned = new Set(this.player.weapons.map((w) => w.def.id));
-    const w1 = this.randomWeaponDef(), w2 = this.randomWeaponDef(0, [w1.id]); // 상점도 상자와 같은 등급 확률
+    const w1 = this.randomWeaponDef(0, [], true), w2 = this.randomWeaponDef(0, [w1.id], true); // 상점은 영웅·전설 확률을 소폭 높임
     const items = [['weapon', w1], ['weapon', w2 !== w1 ? w2 : null], ['hp'], ['energy']].filter(([k, d]) => k !== 'weapon' || d);
     items.forEach(([kind, def], i) => {
       const c = m.tileCenter(room.cx - 4 + i * 3 - (i >= 2 ? 0 : 0), room.cy + 1);
@@ -1451,12 +1450,16 @@ class Game {
     }
     return best;
   }
-  randomWeaponDef(minRank = 0, exclude = []) { // minRank: 0 고급 이상(기본) / 2 희귀 이상 / 3 영웅 이상
+  randomWeaponDef(minRank = 0, exclude = [], shopBias = false) { // minRank: 0 고급 이상 / 2 희귀 이상 / 3 영웅 이상
     const owned = new Set(this.player.weapons.map((w) => w.def.id).concat(exclude)), RANK = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
-    const pool = DATA_WEAPONS.filter((d) => d.rarity !== 'common' && RANK.indexOf(d.rarity) >= minRank && !owned.has(d.id));
-    if (!pool.length) return pick(DATA_WEAPONS);
-    // 등급을 먼저 고르고(필드별 확률표) 그 등급 안에서 무작위 — 등급마다 무기 수가 달라도 확률이 그대로
-    const T = BALANCE.rarityByWorld, row = T[Math.min(this.worldIdx, T.length - 1)], rars = ['uncommon', 'rare', 'epic', 'legendary'];
+    const eligible = DATA_WEAPONS.filter((d) => d.rarity !== 'common' && RANK.indexOf(d.rarity) >= minRank);
+    let pool = eligible.filter((d) => !owned.has(d.id));
+    if (!pool.length) pool = eligible; // 같은 등급 후보가 모두 보유 중이어도 등급 조건은 유지
+    if (!pool.length) return null;
+    // 상점 전용 보정: 고급 -0.35%p, 희귀 -0.25%p를 영웅 +0.5%p / 전설 +0.1%p로 이동
+    const T = BALANCE.rarityByWorld, baseRow = T[Math.min(this.worldIdx, T.length - 1)], row = baseRow.slice();
+    if (shopBias) { row[0] = Math.max(0, row[0] - 0.35); row[1] = Math.max(0, row[1] - 0.25); row[2] += 0.5; row[3] += 0.1; }
+    const rars = ['uncommon', 'rare', 'epic', 'legendary'];
     const avail = rars.map((r, i) => ({ r, w: pool.some((d) => d.rarity === r) ? row[i] : 0 })).filter((x) => x.w > 0);
     const rar = avail.length ? weightedPick(avail, (x) => x.w).r : pool[0].rarity;
     return pick(pool.filter((d) => d.rarity === rar));

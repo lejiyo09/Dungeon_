@@ -165,16 +165,20 @@ class Forge {
 }
 // 피의 제단: 최대 체력 20%를 바치면 영웅 이상 무기 (한 번)
 class BloodAltar {
-  constructor(x, y) { this.x = x; this.y = y; this.used = false; this.radius = 20; }
+  constructor(x, y) { this.x = x; this.y = y; this.used = false; this.radius = 28; }
   label(game) { return this.used ? null : `[E] 피의 제단: 최대 체력 -${Math.round(game.player.maxHp * BALANCE.specialRooms.bloodCost)} → 영웅 이상 무기`; }
   get labelColor() { return '#ff5a5a'; }
   interact(game) {
     const p = game.player; if (this.used) return;
     const cost = Math.round(p.maxHp * BALANCE.specialRooms.bloodCost);
     if (p.maxHp - cost < 40) { game.effects.text(p.x, p.y - 18, '체력이 너무 적습니다', '#ff7070'); SFX.play('deny'); return; }
+    const reward = game.randomWeaponDef(3); // 중복 후보가 남지 않아도 영웅·전설 등급을 유지
+    if (!reward) { game.effects.text(p.x, p.y - 18, '제단이 응답하지 않습니다', '#ff7070'); SFX.play('deny'); return; }
     this.used = true; p.maxHp -= cost; p.hp = Math.min(p.hp, p.maxHp);
-    game.pickups.push(new Pickup('weapon', this.x, this.y + 16, { def: game.randomWeaponDef(3), still: true }));
-    game.effects.text(p.x, p.y - 20, `최대 체력 -${cost}`, '#ff5a5a', true); game.effects.burst(this.x, this.y - 8, '#ff3a3a', 18); game.addShake(0.15, 3); SFX.play('hurt');
+    game.giveWeapon(reward); // 바닥 드롭을 다시 줍게 하지 않고 즉시 지급
+    game.effects.text(p.x, p.y - 20, `최대 체력 -${cost}`, '#ff5a5a', true);
+    game.effects.text(this.x, this.y - 20, reward.name, RARITY_COLOR[reward.rarity], true);
+    game.effects.burst(this.x, this.y - 8, '#ff3a3a', 18); game.addShake(0.15, 3); SFX.play('hurt');
   }
   render(ctx, game) {
     const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0;

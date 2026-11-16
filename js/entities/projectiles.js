@@ -316,12 +316,29 @@ class Puddle {
 
 // 전투 드론: 플레이어 주위를 따라다니며 가장 가까운 적을 사격
 class Drone {
-  constructor(owner, def, idx) { this.owner = owner; this.def = def; this.idx = idx; this.x = owner.x; this.y = owner.y - 16; this.life = def.summon.life; this.cd = 0.3; this.ang = 0; this.t = 0; this.alive = true; }
+  constructor(owner, def, idx) { this.owner = owner; this.def = def; this.idx = idx; this.x = owner.x; this.y = owner.y - 16; this.half = 5; this.life = def.summon.life; this.cd = 0.3; this.ang = 0; this.t = 0; this.alive = true; }
   update(dt, world) {
     this.t += dt; this.life -= dt; this.cd -= dt;
     if (this.life <= 0 || this.owner.state === 'DEAD') { this.alive = false; world.effects.burst(this.x, this.y, '#aabbcc', 6); return; }
-    const a = this.t * 1.6 + this.idx * Math.PI, tx = this.owner.x + Math.cos(a) * 22, ty = this.owner.y - 14 + Math.sin(a) * 10;
-    const k = 1 - Math.exp(-8 * dt); this.x += (tx - this.x) * k; this.y += (ty - this.y) * k;
+    const map = world.map, a = this.t * 1.6 + this.idx * Math.PI, margin = this.half + 2;
+    const minX = TILE + margin, maxX = map.width * TILE - TILE - margin;
+    const minY = TILE + margin, maxY = map.height * TILE - TILE - margin;
+    // 플레이어 주위를 도는 네 위치 중 벽·맵 밖에 걸리지 않는 위치를 선택
+    let target = null;
+    for (const ang of [a, a + Math.PI / 2, a - Math.PI / 2, a + Math.PI]) {
+      const tx = Math.max(minX, Math.min(maxX, this.owner.x + Math.cos(ang) * 22));
+      const ty = Math.max(minY, Math.min(maxY, this.owner.y - 14 + Math.sin(ang) * 10));
+      if (!overlapsSolid(tx, ty, this.half, map)) { target = { x: tx, y: ty }; break; }
+    }
+    if (!target) target = { x: this.owner.x, y: this.owner.y };
+    // 이전 프레임의 위치가 벽 안이나 플레이어에게서 너무 멀리 이탈했다면 안전한 위치로 복귀
+    if (overlapsSolid(this.x, this.y, this.half, map) || Math.hypot(this.x - this.owner.x, this.y - this.owner.y) > 50) {
+      this.x = this.owner.x; this.y = this.owner.y;
+    }
+    const k = 1 - Math.exp(-8 * dt);
+    moveAndCollide(this, (target.x - this.x) * k, (target.y - this.y) * k, map);
+    // 맵 경계·벽을 넘어가지 못하게 최종 위치도 검증
+    if (overlapsSolid(this.x, this.y, this.half, map)) { this.x = this.owner.x; this.y = this.owner.y; }
     let best = null, bd = this.def.range;
     for (const e of world.enemies) { if (!e.targetable) continue; const d = Math.hypot(e.x - this.x, e.y - this.y); if (d < bd && hasLineOfSight(this, e, world.map)) { bd = d; best = e; } }
     if (!best) return;
