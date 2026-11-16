@@ -142,7 +142,7 @@ class Game {
     if (M.quest === 2) { // 두 번째 시련: 롱고미니아드의 인정 → 보스전 (도전 여부 선택)
       this.playCutscene(MERLIN_SPEAR_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 3; writeSave(sv); this.askRhongoTrial(); } }); return;
     }
-    if (M.quest === 3) { this.askRhongoTrial(); return; }
+    if (M.quest === 3 || this.admin) { this.askRhongoTrial(); return; } // 관리자는 시련을 마친 뒤에도 언제든 다시 도전
     npc.bubble = { text: pick(MERLIN_CHATTER), t: 3 };
   }
   // ── 롱고미니아드의 시련: 따로 준비된 장비로 신령 롱고미니아드와 1:1 (진행 중인 탐험·보상·기록에는 영향 없음)
@@ -197,7 +197,7 @@ class Game {
       { name: '이 필드의 보스 스테이지로', ok: d && !this.trialW && !this.isBossStage, run: () => { this.levelIdx = STAGES_PER_WORLD - 1; this.loadStage(); } },
       { name: `다음 필드로 (${stageLabel(this.worldIdx + 1, 0)})`, ok: d && !this.trialW, run: () => { this.worldIdx++; this.levelIdx = 0; this.loadStage(); } },
       { name: '결정석 999,999로 채우기', run: () => { this.save.bank = 999999; writeSave(this.save); } },
-      { name: '롱고미니아드의 시련 바로 시작', ok: !d, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startRhongoTrial() }; } }
+      { name: '롱고미니아드의 시련 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startRhongoTrial() }; } }
     ];
   }
   titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
