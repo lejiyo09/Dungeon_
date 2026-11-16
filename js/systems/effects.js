@@ -108,6 +108,8 @@ class Effects {
     else if (type === 'poison') this.part(x + randInt(-5, 5), y + randInt(-2, 4), randInt(-3, 3), -20, { color: '#9aff5a', life: 0.55, size: 1.5, size2: 3, drag: 1, shape: 'ring' });
   }
 
+  rays(x, y, color, n = 12, len = 60, life = 0.6) { this.push({ kind: 'rays', x, y, color, n, len, rot: Math.random() * TAU, t: 0, life, add: true }); } // 방사형 빛살
+  skyBeam(x, y, color, delay = 0, w = 5) { this.push({ kind: 'beamline', x, y: y - 130, x1: x, y1: y, w, color, t: -delay, life: 0.35, add: true }); } // 하늘에서 내리꽂는 빛줄기 (delay초 뒤)
   // 원소 반응: 반응마다 다른 문양(가산 혼합) + 테두리 있는 큰 이름표
   reaction(x, y, kind, label, color) {
     const seed = Math.random() * 1000;
@@ -207,6 +209,11 @@ class Effects {
         ctx.fillStyle = fx.color; ctx.fillText(fx.str, x, y + 1); ctx.textBaseline = 'alphabetic'; break;
       }
       case 'react': this.drawReaction(ctx, fx, k, x, y); break;
+      case 'rays': { // 빛살: 길어지며 돌다가 사라짐
+        const g = 1 - k, L = fx.len * (0.4 + 0.6 * Math.min(1, g * 3)); ctx.strokeStyle = fx.color;
+        for (let i = 0; i < fx.n; i++) { const a = fx.rot + i / fx.n * TAU + g * 0.6, w = i % 2 ? 1 : 2; ctx.lineWidth = w;
+          ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * 6, y + Math.sin(a) * 6 * 0.8); ctx.lineTo(x + Math.cos(a) * L, y + Math.sin(a) * L * 0.8); ctx.stroke(); }
+        ctx.lineWidth = 1; break; }
       case 'text': {
         const pop = 1 + (fx.big ? 0.8 : 0.3) * Math.max(0, 1 - fx.t / 0.12);
         ctx.font = `bold ${Math.round((fx.big ? 12 : 9) * pop)}px monospace`;

@@ -328,6 +328,7 @@ class Game {
       } else if (p.moving) { this.effects.dust(p.x, p.y + 6); this.fxT = 0.22; }
     }
     if (p.state !== 'DEAD' && p.hp < p.maxHp * 0.3) { this.heartT -= dt; if (this.heartT <= 0) { SFX.play('heart'); this.heartT = 0.9; } }
+    if (input.wasPressed('Mouse0') && this.minimapClick(input.mouse)) input.mouse.down = false; // 미니맵: 이미 간 방으로 이동 (그 클릭은 공격하지 않음)
     this.weaponSystem.update(p, dt, input);
     if (p.state !== 'DEAD' && (input.wasPressed('KeyF') || input.wasPressed('Mouse2'))) this.useSkill();
     if (p.state !== 'DEAD' && input.wasPressed('KeyR')) this.useTreasure();
@@ -472,6 +473,8 @@ class Game {
     if (p.treasureCd > 0) { this.effects.text(p.x, p.y - 18, `${T.name} ${Math.ceil(p.treasureCd)}초`, '#999'); return; }
     p.treasureCd = T.cooldown;
     this.effects.text(p.x, p.y - 24, T.name + '!', T.color, true); SFX.play(T.sfx || 'react', 0.3);
+    this.cutin = { kind: 'treasure', name: T.name, sub: `${T.origin}의 보구`, color: T.color, T, start: performance.now() }; // 보구 컷인
+    this.effects.rays(p.x, p.y, T.color, 18, 100, 0.8); this.effects.rays(p.x, p.y, '#ffffff', 9, 60, 0.5); this.effects.goldBurst(p.x, p.y, 20);
     if (T.use === 'chains') { // 게이트 오브 바빌론: 조준 지점(최대 사거리)에 원형 범위 → 황금 사슬로 묶음
       const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
       const cx = p.x + dx * k, cy = p.y + dy * k;
@@ -481,6 +484,8 @@ class Game {
         this.damageEnemy(e, { damage: T.damage * this.scale.hp, mods: p.mods, knockback: 0, mark: { mult: T.weak, dur: T.duration } }, 0, 0); } // 묶으며 큰 피해 + 받는 피해 증가
       this.zones.push(new ChainCircle(cx, cy, T, caught));
       for (const e of caught) this.effects.goldBurst(e.x, e.y, 10);
+      for (let i = 0; i < 12; i++) { const a = Math.random() * TAU, d = Math.sqrt(Math.random()) * T.radius; this.effects.skyBeam(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.7, i % 2 ? '#ffd84a' : '#fff4c0', i * 0.04, 3); } // 하늘에서 쏟아지는 황금 창
+      this.effects.rays(cx, cy, '#ffd84a', 16, T.radius + 20, 0.7);
       this.effects.ring(cx, cy, T.radius, '#ffd84a'); this.effects.ring(cx, cy, T.radius * 0.6, '#fff4c0');
       this.addShake(0.25, 4); this.screenFlash = 0.08; this.flashColor = '255,216,74'; this.hitStop(0.05);
     } else if (T.use === 'beam') { // 엑스칼리버: 벽까지 일직선, 스테이지가 깊을수록 피해도 커짐
@@ -493,11 +498,15 @@ class Game {
       this.hitTile(ex + p.aim.x * 3, ey + p.aim.y * 3);
       this.effects.excalibur(sx, sy, ex, ey, T.width, p.x, p.y); this.effects.goldBurst(ex, ey, 24); this.effects.ring(ex, ey, 30, '#ffe9a0');
       this.effects.impact(ex, ey, T.color, Math.atan2(p.aim.y, p.aim.x)); this.effects.goldBurst(sx, sy, 12);
+      for (let d = 30, i = 0; d < len; d += 44, i++) this.effects.skyBeam(sx + p.aim.x * d, sy + p.aim.y * d, i % 2 ? '#ffe9a0' : '#ffffff', 0.12 + i * 0.03, 4); // 검기를 따라 솟는 빛기둥
+      this.effects.rays(ex, ey, '#ffe9a0', 16, 70, 0.7); this.effects.ring(ex, ey, 54, '#ffffff');
       this.addShake(0.4, 7); this.screenFlash = 0.3; this.flashColor = '255,236,170'; this.hitStop(0.08);
     } else if (T.use === 'blessing') { // 솔로몬의 반지: 각종 버프
       p.solomon = T.duration; p.shield = p.maxShield; p.energy = p.maxEnergy; p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * T.heal)); p.skillCooldown = 0; this.effects.heal(p.x, p.y);
       this.effects.solomonSeal(p.x, p.y); this.effects.ring(p.x, p.y, 40, '#ffd84a'); this.effects.ring(p.x, p.y, 70, '#c8a0ff'); this.effects.solomonSeal(p.x, p.y, 1.8); this.addShake(0.2, 3);
       this.screenFlash = 0.12; this.flashColor = '210,180,255';
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; this.effects.skyBeam(p.x + Math.cos(a) * 46, p.y + Math.sin(a) * 34, i % 2 ? '#c8a0ff' : '#ffd84a', 0.1 + i * 0.05, 4); } // 육각형으로 내리는 빛기둥
+      for (let i = 0; i < 30; i++) this.effects.part(p.x + randInt(-30, 30), p.y + randInt(-10, 14), randInt(-8, 8), -40 - Math.random() * 60, { color: i % 2 ? '#c8a0ff' : '#ffd84a', life: 1, size: 2, size2: 0, drag: 1, add: true });
     }
   }
   // ── 직업 계열·진화
@@ -565,6 +574,7 @@ class Game {
     if (p.skillCooldown > 0) return;
     p.skillCooldown = p.skillCdMax;
     SFX.play('skill');
+    if (p.rank === 2) this.ultimateFx(p); // 최종 진화 스킬은 컷인과 함께
     const D = (b) => this.skillDmg(b), mw = this.mouseWorld(), A = Math.atan2(p.aim.y, p.aim.x);
     const at = (range) => { const dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, range / d); return { x: p.x + dx * k, y: p.y + dy * k }; }; // 조준 지점 (사거리 제한)
     const nova = (r, dmg, o = {}) => { // 자기 주변 범위 피해
@@ -826,6 +836,33 @@ class Game {
     return this.freeSpot(r, nearX ?? map.tileCenter(r.cx, r.cy).x, nearY ?? map.tileCenter(r.cx, r.cy).y, half);
   }
   // (x,y)에서 가장 가까운, 방 안의 비어 있는 타일 중심 (엄폐물 위에 물건이 생기지 않도록)
+  // 미니맵에서 마우스가 가리키는, 이동 가능한 방 (전투 중이 아니고, 이미 가 봤고, 싸움이 끝났거나 전투가 없는 방)
+  minimapTarget(m) {
+    if (this.mode !== 'dungeon' || this.activeRoom || this.overlay || this.cinematic || !this.map || !this.player || this.player.state === 'DEAD') return null;
+    const { cw, ch, ox, oy } = HUD.minimapLayout(), gx = Math.floor((m.x - ox) / cw), gy = Math.floor((m.y - oy) / ch);
+    if (m.x < ox || m.y < oy || gx < 0 || gy < 0 || gx >= GRID_W || gy >= GRID_H) return null;
+    const r = this.map.rooms.find((q) => q.gx === gx && q.gy === gy), cur = this.map.roomAtPoint(this.player.x, this.player.y);
+    if (!r || r === cur || !r.visited || r.state === 'active') return null;
+    if (r.state !== 'cleared' && ['combat', 'boss', 'challenge'].includes(r.type)) return null;
+    return r;
+  }
+  minimapClick(m) {
+    const r = this.minimapTarget(m); if (!r) return false;
+    const p = this.player, c0 = this.map.tileCenter(r.cx, r.cy), c = this.freeSpot(r, c0.x, c0.y + 16, 6);
+    this.effects.burst(p.x, p.y, '#7ad0ff', 14); this.effects.ring(p.x, p.y, 20, '#7ad0ff');
+    p.x = c.x; p.y = c.y; this.snapCamera();
+    this.effects.burst(p.x, p.y, '#7ad0ff', 16); this.effects.ring(p.x, p.y, 24, '#ffffff'); this.effects.rays(p.x, p.y, '#7ad0ff', 10, 34, 0.4); SFX.play('dash');
+    return true;
+  }
+  // 최종 진화 스킬 연출: 컷인 + 빛살 + 고리
+  ultimateFx(p) {
+    const color = (p.hybrid && p.hybrid.color) || (p.line && p.line.color) || '#ffd84a';
+    this.cutin = { kind: 'skill', name: p.skillName, sub: p.hybrid ? p.hybrid.title : p.line.ranks[2], color, hero: p.hero, start: performance.now() };
+    this.effects.rays(p.x, p.y, color, 14, 70); this.effects.rays(p.x, p.y, '#ffffff', 7, 44, 0.4);
+    this.effects.ring(p.x, p.y, 34, color); this.effects.ring(p.x, p.y, 56, '#ffffff'); this.effects.burst(p.x, p.y, color, 24);
+    for (let i = 0; i < 18; i++) this.effects.part(p.x + randInt(-14, 14), p.y + randInt(-4, 8), randInt(-10, 10), -50 - Math.random() * 50, { color, life: 0.8, size: 2, size2: 0, drag: 1, add: true });
+    this.screenFlash = Math.max(this.screenFlash || 0, 0.1); this.flashColor = hexToRgbStr(color); this.addShake(0.15, 3); this.hitStop(0.05);
+  }
   freeSpot(r, x, y, half = 6) {
     const map = this.map, tx0 = Math.floor(x / TILE), ty0 = Math.floor(y / TILE);
     for (let rad = 0; rad < Math.max(r.w, r.h); rad++)
@@ -1308,6 +1345,7 @@ class Game {
     ctx.setTransform(R, 0, 0, R, 0, 0);
     this.renderScreenFx(ctx, cx, cy);
     this.hud.render(ctx, this);
+    if (this.cutin && !this.overlay) HUD.cutin(ctx, this); else if (this.overlay) this.cutin = null; // 최종 스킬·보구 컷인
     if (this.treasureToast) HUD.treasureToast(ctx, this); // 보구 획득 알림 (결과 화면 위에도 보임)
 
     const mx = Math.round(this.input.mouse.x), my = Math.round(this.input.mouse.y);

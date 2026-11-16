@@ -6,6 +6,7 @@
 // ════════════════════════════════════════════
 const OUTLINE = '#14101c';
 function hexRgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map((c) => c + c).join(''); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function hexToRgbStr(hex) { const h = hex.replace('#', ''), n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h.slice(0, 6), 16); return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`; } // '#ffd84a' → '255,216,74' (화면 번쩍임용)
 function shade(hex, k) {
   const f = (v) => clamp(Math.round(k < 1 ? v * k : v + (255 - v) * (k - 1)), 0, 255);
   const [r, g, b] = hexRgb(hex); return `rgb(${f(r)},${f(g)},${f(b)})`;

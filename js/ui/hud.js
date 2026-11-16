@@ -112,9 +112,9 @@ class HUD {
       ctx.globalAlpha = 1;
     }
   }
+  static minimapLayout() { const cw = 11, ch = 9; return { cw, ch, ox: VIEW_W - GRID_W * cw - 6, oy: 6 }; }
   minimap(ctx, game) {
-    const map = game.map, cw = 11, ch = 9;
-    const ox = VIEW_W - GRID_W * cw - 6, oy = 6;
+    const map = game.map, { cw, ch, ox, oy } = HUD.minimapLayout();
     ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(ox - 3, oy - 3, GRID_W * cw + 6, GRID_H * ch + 6);
     const known = (r) => r.visited || map.edges.some(([a, b]) => (a === r && b.visited) || (b === r && a.visited));
     ctx.fillStyle = '#777';
@@ -132,6 +132,9 @@ class HUD {
       ctx.fillRect(x, y, cw - 2, ch - 2);
       if (r === cur) { ctx.strokeStyle = '#fff'; ctx.strokeRect(x - 0.5, y - 0.5, cw - 1, ch - 1); }
     }
+    const hov = game.minimapTarget(game.input.mouse); // 이미 간 방: 클릭하면 이동
+    if (hov) { const x = ox + hov.gx * cw + 1, y = oy + hov.gy * ch + 1; ctx.strokeStyle = '#ffd84a'; ctx.strokeRect(x - 1.5, y - 1.5, cw + 1, ch + 1);
+      hudText(ctx, '클릭: 이동', ox + GRID_W * cw / 2, oy + GRID_H * ch + 4, '#ffd84a', 'center', 7); }
   }
   overlay(ctx, game) {
     const o = game.overlay;
@@ -286,6 +289,28 @@ class HUD {
   // 보구 획득 알림: 오른쪽 아래에서 아이콘과 함께 미끄러져 들어와 6초 동안 표시
   static jobRowRect(i) { return { x: 36, y: 36 + i * 27, w: VIEW_W - 72, h: 24 }; }
   static variantRect(i, n) { const cols = Math.min(3, n), w = 156, h = 58, gap = 8, rows = Math.ceil(n / cols), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % cols) * (w + gap), y: 66 + Math.floor(i / cols) * (h + gap) + (rows === 1 ? 30 : 0), w, h }; }
+  // 최종 진화 스킬·보구 사용 컷인: 화면을 가로지르는 띠 + 아이콘/캐릭터 + 이름 (약 1초)
+  static cutin(ctx, game) {
+    const o = game.cutin, t = (performance.now() - o.start) / 1000, D = o.kind === 'treasure' ? 1.1 : 0.85;
+    if (t > D) { game.cutin = null; return; }
+    const tr = o.kind === 'treasure', inK = Math.min(1, t / 0.18), outK = Math.min(1, (D - t) / 0.25), k = Math.min(inK, outK), ease = 1 - Math.pow(1 - inK, 3);
+    const cy = tr ? VIEW_H / 2 - 6 : 70, h = tr ? 64 : 40, slide = (1 - ease) * -VIEW_W * 0.6 + t * 18;
+    ctx.save();
+    if (tr) { ctx.fillStyle = `rgba(0,0,0,${0.45 * k})`; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
+    ctx.globalAlpha = k;
+    const g = ctx.createLinearGradient(0, 0, VIEW_W, 0); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.25, o.color); g.addColorStop(0.75, o.color); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalAlpha = k * 0.35; ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(slide, cy - h / 2 + 8); ctx.lineTo(VIEW_W + slide, cy - h / 2 - 8); ctx.lineTo(VIEW_W + slide, cy + h / 2 - 8); ctx.lineTo(slide, cy + h / 2 + 8); ctx.fill();
+    ctx.globalAlpha = k; ctx.fillStyle = o.color; ctx.fillRect(0, cy - h / 2 - 1, VIEW_W, 1); ctx.fillRect(0, cy + h / 2, VIEW_W, 1);
+    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = '#ffffff'; // 빠르게 지나가는 빛줄기
+    for (let i = 0; i < 7; i++) { const yy = cy - h / 2 + 4 + ((i * 37) % (h - 8)), xx = ((t * (500 + i * 90) + i * 140) % (VIEW_W + 120)) - 60; ctx.globalAlpha = k * 0.5; ctx.fillRect(xx, yy, 40 + i * 6, 1); }
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k;
+    const ix = VIEW_W / 2 - (tr ? 120 : 96) + (1 - ease) * -60;
+    if (tr && o.T) drawTreasureIcon(ctx, o.T, ix, cy, 2);
+    else if (o.hero) drawSprite(ctx, heroSprite(o.hero, 0), ix, cy + 20, { scale: 2 });
+    hudText(ctx, o.name, VIEW_W / 2 + 14 - (1 - ease) * 40, cy - (tr ? 16 : 11), '#ffffff', 'center', tr ? 22 : 16);
+    if (o.sub) hudText(ctx, o.sub, VIEW_W / 2 + 14, cy + (tr ? 12 : 9), o.color, 'center', tr ? 10 : 8);
+    ctx.restore();
+  }
   static treasureToast(ctx, game) {
     const o = game.treasureToast, t = (performance.now() - o.start) / 1000, D = 6;
     if (t > D) { game.treasureToast = null; return; }
