@@ -34,7 +34,7 @@ class HUD {
       const ttl = game.save.title && GUILD_TITLES.find((t) => t.id === game.save.title); // 장착한 길드 칭호
       hudText(ctx, `${ttl ? '「' + ttl.name + '」 ' : ''}${game.profile ? game.profile.name : '게스트'}   ·   보유 ${CUR.name} ${game.save.bank}`, VIEW_W / 2, 6, '#ffd84a', 'center');
       hudText(ctx, 'F/우클릭 스킬 · E 상호작용 · Esc 조작법', VIEW_W / 2, VIEW_H - 14, '#aaa', 'center', 8);
-      this.notice(ctx);
+      this.notice(ctx, game);
     } else {
       const W = game.W;
       hudText(ctx, `${W.trial ? '' : stageLabel(game.worldIdx, game.levelIdx) + ' '}${W.name}   골드 ${game.gold}   처치 ${game.kills}`, VIEW_W / 2, 6, W.deep ? '#9ad8ff' : '#fff', 'center');
@@ -363,9 +363,14 @@ class HUD {
   }
   // 보구 획득 알림: 오른쪽 아래에서 아이콘과 함께 미끄러져 들어와 6초 동안 표시
   // 로비 공지 창 (오른쪽 위): js/data/notice.js의 글을 창 너비에 맞춰 줄바꿈
-  notice(ctx) {
+  static noticeBtn() { return { x: VIEW_W - 4 - 16, y: 6, w: 13, h: 11 }; } // 공지 접기/펼치기 버튼
+  notice(ctx, game) {
     if (typeof NOTICE === 'undefined' || !NOTICE.lines || !NOTICE.lines.length) return;
-    const w = 150, x = VIEW_W - w - 4, pad = 6, lh = 11, maxW = w - pad * 2;
+    const w = 150, x = VIEW_W - w - 4, pad = 6, lh = 11, maxW = w - pad * 2, folded = !!game.save.noticeFolded;
+    const btn = (() => { const r = HUD.noticeBtn(), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+      return () => { ctx.fillStyle = on ? 'rgba(255,216,74,0.35)' : 'rgba(255,255,255,0.1)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = '#7a6040'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        ctx.fillStyle = '#ffd84a'; ctx.fillRect(r.x + 3, r.y + 5, r.w - 6, 1); if (folded) ctx.fillRect(r.x + 6, r.y + 2, 1, r.h - 4); }; })(); // - / +
+    if (folded) { ctx.fillStyle = 'rgba(10,8,18,0.72)'; ctx.fillRect(x, 4, w, 16); ctx.strokeStyle = '#7a6040'; ctx.strokeRect(x + 0.5, 4.5, w - 1, 15); hudText(ctx, NOTICE.title || '공지', x + pad, 7, '#ffd84a', 'left', 9); btn(); return; }
     ctx.font = "bold 8px 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif";
     const rows = []; // 각 줄 앞에 '· ', 넘치는 부분은 들여써서 다음 줄로 (글자 단위라 띄어쓰기가 없어도 넘치지 않음)
     for (const line of NOTICE.lines) {
@@ -376,9 +381,10 @@ class HUD {
     const h = 22 + rows.length * lh;
     ctx.fillStyle = 'rgba(10,8,18,0.72)'; ctx.fillRect(x, 4, w, h); ctx.strokeStyle = '#7a6040'; ctx.strokeRect(x + 0.5, 4.5, w - 1, h - 1);
     hudText(ctx, NOTICE.title || '공지', x + pad, 8, '#ffd84a', 'left', 9);
-    if (NOTICE.date) hudText(ctx, NOTICE.date, x + w - pad, 9, '#8878a0', 'right', 7);
+    if (NOTICE.date) hudText(ctx, NOTICE.date, x + w - pad - 16, 9, '#8878a0', 'right', 7);
     ctx.fillStyle = 'rgba(255,216,74,0.3)'; ctx.fillRect(x + pad, 20, w - pad * 2, 1);
     rows.forEach((r, i) => hudText(ctx, r, x + pad, 24 + i * lh, '#e8e0f0', 'left', 8));
+    btn();
   }
   static trialBtn(i) { return { x: VIEW_W / 2 - 130 + i * 140, y: 140, w: 120, h: 26 }; }
   static guildTab(i) { return { x: 60 + i * 134, y: 22, w: 126, h: 16 }; }
