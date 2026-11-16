@@ -319,6 +319,7 @@ const WEAPON_TABS = [
   { name: '활·특수', test: (d) => d.type === 'charge' || d.type === 'beam' }
 ];
 function tabRect(i) { const w = 90, gap = 6, total = w * 4 + gap * 3; return { x: (VIEW_W - total) / 2 + i * (w + gap), y: 22, w, h: 14 }; }
+function pageBtn(i) { return { x: 452 + i * 28, y: 22, w: 24, h: 14 }; } // 도감류 페이지 넘김 버튼 (◀ ▶)
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 const GRID_PER_PAGE = 40;
 function tabWeapons(tab) { return DATA_WEAPONS.filter(WEAPON_TABS[tab].test).sort((a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity)); }

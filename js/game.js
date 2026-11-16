@@ -545,8 +545,9 @@ class Game {
       if (input.wasPressed('Mouse0')) WEAPON_TABS.forEach((_, i) => { const r = tabRect(i), m = input.mouse; if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) o.tab = i; });
       if (o.tab !== t0) o.page = 0;
       const pages = gridPages(o.tab || 0); // 페이지 넘기기
-      if (input.wasPressed('KeyD') || input.wasPressed('ArrowRight') || input.wasPressed('WheelDown')) o.page = ((o.page || 0) + 1) % pages;
-      if (input.wasPressed('KeyA') || input.wasPressed('ArrowLeft') || input.wasPressed('WheelUp')) o.page = ((o.page || 0) - 1 + pages) % pages;
+      const m = input.mouse, onBtn = (i) => { const r = pageBtn(i); return input.wasPressed('Mouse0') && m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; };
+      if (input.wasPressed('KeyD') || input.wasPressed('ArrowRight') || input.wasPressed('WheelPageDown') || (pages > 1 && onBtn(1))) o.page = Math.min(pages - 1, (o.page || 0) + 1); // 끝에서 멈춤 (처음으로 되돌아가지 않음)
+      if (input.wasPressed('KeyA') || input.wasPressed('ArrowLeft') || input.wasPressed('WheelPageUp') || (pages > 1 && onBtn(0))) o.page = Math.max(0, (o.page || 0) - 1);
     }
     if (o.type === 'trial_weapons') { // 시련 무기 고르기: 클릭으로 선택/해제 (최대 2개), Enter로 시작
       if (o.msg) o.msg.t -= STEP;

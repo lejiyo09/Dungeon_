@@ -25,7 +25,16 @@ class InputManager {
       if (e.button === 2) this.pressed.add('Mouse2');
     });
     window.addEventListener('mouseup', (e) => { if (e.button === 0) this.mouse.down = false; });
-    canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.pressed.add('Wheel'); this.pressed.add(e.deltaY < 0 ? 'WheelUp' : 'WheelDown'); }, { passive: false });
+    this.wheelAcc = 0; this.wheelT = 0;
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault(); this.pressed.add('Wheel'); this.pressed.add(e.deltaY < 0 ? 'WheelUp' : 'WheelDown');
+      // 페이지 넘김용: 트랙패드처럼 잘게 여러 번 오는 휠을 모아서 한 칸씩 (한 번 넘기면 잠시 쉼)
+      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 300 : 1), now = performance.now();
+      if (Math.sign(dy) !== Math.sign(this.wheelAcc)) this.wheelAcc = 0;
+      this.wheelAcc += dy;
+      if (now - this.wheelT > 280 && Math.abs(this.wheelAcc) >= 50) { this.pressed.add(this.wheelAcc > 0 ? 'WheelPageDown' : 'WheelPageUp'); this.wheelAcc = 0; this.wheelT = now; }
+      else if (now - this.wheelT <= 280) this.wheelAcc = 0;
+    }, { passive: false });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
   updatePointer(e) {
