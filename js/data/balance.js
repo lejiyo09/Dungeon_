@@ -36,8 +36,8 @@ const BALANCE = {
   elite: { fromWorld: 1, base: 0.08, perWorld: 0.03, hp: 2.2, dmg: 1.2, gold: 3 },
   // 특수방: 일반 스테이지마다 하나씩 무작위 (가격은 상점처럼 스테이지마다 오름)
   specialRooms: { chance: 0.5, weight: {},
-    // 전직의 방: 진화 단계별로 나오기 시작하는 필드(0부터)와 다른 특수방 대비 가중치 → 2차(최종) 진화는 대략 8필드쯤 (모의 실험: 중앙값 8필드, 절반이 7~9필드)
-    evolveByRank: [{ fromWorld: 1, weight: 2.3 }, { fromWorld: 6, weight: 8.3 }],
+    // 전직의 방: 진화 단계별로 나오기 시작하는 필드(0부터)와 다른 특수방 대비 가중치. [사용자 결정] 필드 제한 없음 (1필드부터 1·2차 모두 나올 수 있음)
+    evolveByRank: [{ fromWorld: 0, weight: 2.3 }, { fromWorld: 0, weight: 8.3 }],
     pool: ['fountain', 'altar', 'gamble', 'challenge', 'forge', 'blood', 'rack', 'smithy', 'evolve'], fountainHeal: 0.4, altarPrice: 60, gamblePrice: 25,
     forgePrice: 50, forgeUpChance: 0.3, bloodCost: 0.2,
     challenge: { waves: 3, extra: 2, hp: 1.3, dmg: 1.15 } }, // 도전방: 웨이브 수, 웨이브당 추가 몬스터, 정예 위에 더 곱하는 체력·공격력
