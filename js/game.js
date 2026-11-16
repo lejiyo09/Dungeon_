@@ -503,11 +503,10 @@ class Game {
       for (let i = 0; i < 30; i++) this.effects.part(p.x + randInt(-30, 30), p.y + randInt(-10, 14), randInt(-8, 8), -40 - Math.random() * 60, { color: i % 2 ? '#c8a0ff' : '#ffd84a', life: 1, size: 2, size2: 0, drag: 1, add: true });
     }
   }
-  // 엑스칼리버 내려찍기 (ExcaliburRaise가 빛기둥을 세운 뒤 호출): 벽까지 일직선 피해 → 끝에서 폭발. 스테이지가 깊을수록 피해도 커짐
+  // 엑스칼리버 내려찍기 (ExcaliburRaise가 빛기둥을 세운 뒤 호출): 빛기둥 길이만큼 일직선 피해(벽 관통) → 끝에서 폭발. 스테이지가 깊을수록 피해도 커짐
   excaliburStrike(p, T) {
     if (p.state === 'DEAD') return;
-    const sx = p.x + p.aim.x * 8, sy = p.y + p.aim.y * 8, L = T.range;
-    const wt = sweepWall(sx, sy, sx + p.aim.x * L, sy + p.aim.y * L, this.map, 3), len = wt < 0 ? L : wt * L;
+    const sx = p.x + p.aim.x * 8, sy = p.y + p.aim.y * 8, len = T.range; // 빛기둥 길이 그대로 내려꽂힘 (벽에 막히지 않음)
     const ex = sx + p.aim.x * len, ey = sy + p.aim.y * len, dmg = T.damage * this.scale.hp;
     for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, ex, ey, e.x, e.y, e.radius + T.width) >= 0)
       this.damageEnemy(e, { damage: dmg, mods: p.mods, knockback: 10 }, p.aim.x, p.aim.y);

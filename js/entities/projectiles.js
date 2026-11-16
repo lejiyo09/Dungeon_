@@ -549,10 +549,11 @@ class ExcaliburRaise {
   renderTop(ctx) { // 캐릭터 위에 그림: 들어 올린 검 + 빛기둥 → 내려찍는 동안 기둥이 조준 방향으로 회전
     const p = this.owner, t = this.t, hx = Math.round(p.x), hy = Math.round(p.y - 8), aim = Math.atan2(p.aim.y, p.aim.x);
     let ang = -Math.PI / 2, len, w;
-    if (t < this.RAISE) { const k = Math.min(1, t / (this.RAISE * 0.7)); len = 20 + 260 * k * k; w = 3 + 9 * k; }
+    const RL = this.T.range; // 기둥 길이 = 실제 사거리
+    if (t < this.RAISE) { const k = Math.min(1, t / (this.RAISE * 0.7)); len = 20 + (RL - 20) * k * k; w = 3 + 9 * k; }
     else { const k = Math.min(1, (t - this.RAISE) / this.SWING); let end = aim; // 바라보는 쪽으로 휘둘러 내림 (오른쪽이면 시계 방향, 왼쪽이면 반대)
       if (Math.cos(aim) >= 0) { while (end < -Math.PI / 2) end += TAU; while (end > Math.PI * 1.5) end -= TAU; } else { while (end > -Math.PI / 2) end -= TAU; while (end < -Math.PI * 2.5) end += TAU; }
-      ang = -Math.PI / 2 + (end + Math.PI / 2) * k * k; len = 280; w = 12; }
+      ang = -Math.PI / 2 + (end + Math.PI / 2) * k * k; len = RL; w = 12; }
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(hx, hy); ctx.rotate(ang);
     const band = (hw, col) => { const h = Math.max(1, Math.round(hw)); ctx.fillStyle = col; ctx.fillRect(10, -h, len, h * 2); };
     band(w * 1.9, 'rgba(200,140,40,0.25)'); band(w * 1.2, 'rgba(255,200,70,0.6)'); band(w * 0.7, 'rgba(255,236,170,0.95)'); band(w * 0.3, '#ffffff');
