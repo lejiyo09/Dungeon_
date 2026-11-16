@@ -379,5 +379,21 @@ const DATA_WEAPONS = [
     focus: 1.2, color: '#c0c8d8', len: 11, bulletColor: '#ff5ac8' },
   { id: 'weapon_judgment_001', name: '심판의 광선', rarity: 'legendary', type: 'beam', shape: 'gun',
     damage: 5.4, tickRate: 0.07, energyPerSec: 4, range: 300, pierce: 0, knockback: 0,
-    status: { type: 'burn', chance: 0.3, duration: 2, dps: 10 }, focus: 1, color: '#e0c060', len: 13, bulletColor: '#fff0a0' }
+    status: { type: 'burn', chance: 0.3, duration: 2, dps: 10 }, focus: 1, color: '#e0c060', len: 13, bulletColor: '#fff0a0' },
+  // ── 덫·속성 무기 (추가)
+  { id: 'weapon_beartrap_001', name: '사냥꾼의 덫', rarity: 'uncommon', type: 'gun', shape: 'gun',
+    damage: 42, fireRate: 1.2, energyCost: 1.5, range: 150, projectileSpeed: 0, projectileCount: 1, knockback: 0,
+    trap: { max: 4, life: 25, radius: 15, root: 1.8 }, color: '#8a8a94', len: 9, bulletColor: '#c8c8d0' },
+  { id: 'weapon_shocktrap_001', name: '번개 덫 상자', rarity: 'epic', type: 'gun', shape: 'gun',
+    damage: 58, fireRate: 1.3, energyCost: 2.5, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0,
+    trap: { max: 5, life: 25, radius: 18, root: 1.2, chain: { count: 3, range: 80, falloff: 0.7 } },
+    status: { type: 'shock', chance: 1, duration: 3 }, color: '#4a5a8a', len: 9, bulletColor: '#fff27a' },
+  { id: 'weapon_inferno_001', name: '겁화의 홀', rarity: 'legendary', type: 'gun', shape: 'staff',
+    damage: 32, fireRate: 2.2, energyCost: 3, range: 380, projectileSpeed: 280, projectileCount: 1, spreadDeg: 1,
+    explodeRadius: 26, status: { type: 'burn', chance: 1, duration: 3, dps: 10 },
+    puddle: { r: 22, life: 2, tick: 0.35, dmg: 5, status: { type: 'burn', chance: 0.6, duration: 2, dps: 10 }, color: '#ff6a2a' },
+    pierce: 0, knockback: 4, color: '#c04a1a', len: 14, bulletColor: '#ffb040', bulletSize: 3 },
+  { id: 'weapon_holystaff_001', name: '성광의 지팡이', rarity: 'rare', type: 'gun', shape: 'staff',
+    damage: 34, fireRate: 2.4, energyCost: 1.5, range: 380, projectileSpeed: 300, projectileCount: 1, spreadDeg: 1, homing: 2,
+    status: { type: 'blind', chance: 0.5, duration: 3 }, pierce: 1, knockback: 2, color: '#e0d0a0', len: 12, bulletColor: '#fff4c0', bulletSize: 2 }
 ];

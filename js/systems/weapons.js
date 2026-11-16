@@ -96,6 +96,15 @@ class WeaponSystem {
       }
       SFX.play(M.arrow ? 'bow' : 'magic'); player.recoil = 0.6; return;
     }
+    if (w.def.trap) { // 덫 깔기: 조준 지점(사거리 안)에 덫을 던져 놓음, 최대 수를 넘으면 가장 오래된 덫이 사라짐
+      const D = w.def.trap, mine = this.world.zones.filter((z) => z instanceof Trap && z.def === w.def && z.alive);
+      while (mine.length >= D.max) mine.shift().alive = false;
+      const mw = this.world.mouseWorld(), dx = mw.x - player.x, dy = mw.y - player.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, w.def.range / d);
+      let tx = player.x + dx * k, ty = player.y + dy * k; const st = sweepWall(player.x, player.y, tx, ty, this.world.map);
+      if (st >= 0) { tx = player.x + (tx - player.x) * Math.max(0, st - 0.05); ty = player.y + (ty - player.y) * Math.max(0, st - 0.05); } // 벽 앞에 떨어짐
+      const t = new Trap(tx, ty, w.def, () => weaponMods(player, w)); this.world.zones.push(t);
+      this.world.effects.dust(tx, ty); SFX.play('crate'); player.recoil = 0.5; return;
+    }
     if (w.def.deploy) { // 포탑 설치: 최대 수를 넘으면 가장 오래된 포탑이 사라짐
       const D = w.def.deploy, mine = this.world.allies.filter((a) => a instanceof Turret && a.def === w.def);
       while (mine.length >= D.max) mine.shift().alive = false;

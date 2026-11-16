@@ -711,3 +711,32 @@ class AvalonGarden {
     ctx.restore();
   }
 }
+
+// 덫: 바닥에 놓여 있다가 적이 밟으면 덥석 물어 피해 + 묶음(보스는 절반). 번개 덫은 주변으로 연쇄 번개
+class Trap {
+  constructor(x, y, def, mods) { this.x = x; this.y = y; this.def = def; this.D = def.trap; this.getMods = mods; this.t = 0; this.alive = true; this.snapT = -1; }
+  update(dt, world) {
+    this.t += dt;
+    if (this.snapT >= 0) { this.snapT += dt; if (this.snapT > 0.4) this.alive = false; return; }
+    if (this.t >= this.D.life) { this.alive = false; return; }
+    if (this.t < 0.25) return; // 놓자마자는 무장 안 됨
+    const hit = world.enemies.find((e) => e.targetable && !e.def.float && Math.hypot(e.x - this.x, e.y - this.y) < this.D.radius + e.radius);
+    if (!hit) return;
+    this.snapT = 0; const mods = this.getMods(), src = { damage: this.def.damage, mods, knockback: 0, status: this.def.status || null, chain: this.D.chain || null };
+    world.damageEnemy(hit, src, 0, 0);
+    for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < this.D.radius + e.radius) { if (e !== hit) world.damageEnemy(e, Object.assign({}, src, { chain: null, damage: src.damage * 0.5 }), 0, 0); if (e.alive) e.stunT = Math.max(e.stunT || 0, e.def.boss ? this.D.root * 0.5 : this.D.root); }
+    world.effects.ring(this.x, this.y, this.D.radius + 6, this.D.chain ? '#fff27a' : '#ffffff'); world.effects.burst(this.x, this.y, this.D.chain ? '#fff27a' : '#c8c8d0', 10); world.addShake(0.08, 2); SFX.play(this.D.chain ? 'react' : 'heavy', 0.05);
+  }
+  render(ctx) { // 톱니 달린 덫 (물면 닫힘). 번개 덫은 금속 상자 + 코일
+    const x = Math.round(this.x), y = Math.round(this.y), closed = this.snapT >= 0, blink = this.D.life - this.t < 3 && Math.floor(this.t * 6) % 2 === 0;
+    if (blink) return;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(x, y + 2, this.D.radius * 0.7, 3, 0, 0, TAU); ctx.fill();
+    if (this.D.chain) { ctx.fillStyle = OUTLINE; ctx.fillRect(x - 6, y - 4, 12, 8); ctx.fillStyle = '#4a5a8a'; ctx.fillRect(x - 5, y - 3, 10, 6); ctx.fillStyle = '#fff27a'; ctx.fillRect(x - 1, y - 7, 2, 3); if (Math.floor(this.t * 8) % 3 === 0) { ctx.fillRect(x - 4, y - 8, 1, 2); ctx.fillRect(x + 3, y - 9, 1, 2); }
+      ctx.strokeStyle = 'rgba(255,242,122,0.35)'; ctx.beginPath(); ctx.arc(x, y, this.D.radius, 0, TAU); ctx.stroke(); return; }
+    const w = closed ? 3 : 7;
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 8, y - w - 1, 16, w * 2 + 2); ctx.fillStyle = '#6a6a74'; ctx.fillRect(x - 7, y - 1, 14, 2); // 받침
+    ctx.fillStyle = '#a8a8b4'; ctx.fillRect(x - 7, y - w, 14, 1); ctx.fillRect(x - 7, y + w - 1, 14, 1); // 양쪽 턱
+    for (let i = -6; i <= 6; i += 3) { ctx.fillRect(x + i, y - w + 1, 1, 2); ctx.fillRect(x + i, y + w - 3, 1, 2); } // 톱니
+    ctx.fillStyle = '#c8a050'; ctx.fillRect(x - 1, y - 1, 2, 2); // 발판
+  }
+}
