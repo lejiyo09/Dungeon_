@@ -66,6 +66,66 @@ class Game {
     this.effects.ring(x, y, 30, '#7ad0ff'); this.effects.burst(x, y, '#7ad0ff', 18); SFX.play('buy');
     return [`${hero.name} Lv.${s.jobLv[hero.id]} 달성!`, '#7ad0ff'];
   }
+  // ── 모험가 길드 (제안): 일일·주간 퀘스트, 토벌 의뢰, 칭호, 거래상 보급품, 결정석 도박
+  guild() {
+    const sv = this.save, G = sv.guild = sv.guild || {}, day = guildDayKey(), week = guildWeekKey();
+    sv.stats = sv.stats || {};
+    const roll = (key, kind) => { const r = guildSeedRand(key + kind), pool = GUILD_QUESTS.slice(), out = [];
+      while (out.length < 3 && pool.length) { const q = pool.splice(Math.floor(r() * pool.length), 1)[0], [n, reward] = q[kind]; out.push({ stat: q.stat, name: q.name.replace('{n}', n.toLocaleString()), n, reward, prog: 0, claimed: false }); }
+      return out; };
+    if (G.day !== day) { G.day = day; G.daily = roll(day, 'daily'); G.offers = this.rollHunts(day); G.stock = this.rollSupplies(day); G.bought = []; }
+    if (G.week !== week) { G.week = week; G.weekly = roll(week, 'weekly'); }
+    G.active = G.active || [];
+    return G;
+  }
+  rollHunts(day) { // 가 본 필드 안에서 보스 토벌 2개 + 몬스터 처치 2개
+    const r = guildSeedRand(day + 'hunt'), maxW = Math.max(0, Math.min(DATA_WORLDS.length - 1, Math.floor(((this.save.bestStage || 1) - 1) / STAGES_PER_WORLD))), H = GUILD_HUNT, out = [];
+    for (let i = 0; i < 2; i++) { const w = Math.floor(r() * (maxW + 1)), W = DATA_WORLDS[w], bd = this.data.enemies.get(W.boss);
+      out.push({ id: 'h' + i, kind: 'boss', target: W.boss, name: `${bd.name} 토벌`, where: W.name, n: 1, reward: H.bossReward[0] + H.bossReward[1] * w }); }
+    for (let i = 0; i < 2; i++) { const w = Math.floor(r() * (maxW + 1)), W = DATA_WORLDS[w], id = W.enemies[Math.floor(r() * W.enemies.length)][0], ed = this.data.enemies.get(id), n = H.mobCount[0] + Math.floor(r() * (H.mobCount[1] - H.mobCount[0]));
+      out.push({ id: 'h' + (i + 2), kind: 'mob', target: id, name: `${ed.name} ${n}마리 처치`, where: W.name, n, reward: H.mobReward + 3 * w }); }
+    return out;
+  }
+  rollSupplies(day) { const r = guildSeedRand(day + 'shop'), pool = GUILD_SUPPLIES.map((x) => x.id), out = []; while (out.length < 3) out.push(pool.splice(Math.floor(r() * pool.length), 1)[0]); return out; }
+  guildEvent(stat, amt = 1, target) { // 게임 중 행동 → 평생 기록 · 퀘스트 · 토벌 진행
+    const sv = this.save; if (!sv) return;
+    sv.stats = sv.stats || {}; sv.stats[stat] = (sv.stats[stat] || 0) + amt;
+    const G = sv.guild; if (!G) return;
+    for (const q of (G.daily || []).concat(G.weekly || [])) if (q.stat === stat && !q.claimed) q.prog = Math.min(q.n, q.prog + amt);
+    if (target) for (const h of G.active || []) if (!h.done && ((h.kind === 'boss' && stat === 'bosses') || (h.kind === 'mob' && stat === 'kills')) && h.target === target) { h.prog = Math.min(h.n, (h.prog || 0) + 1); if (h.prog >= h.n) { h.done = true; if (this.mode === 'dungeon') this.effects.text(this.player.x, this.player.y - 28, `토벌 완료: ${h.name}`, '#ffd84a', true); } }
+  }
+  guildPay(n, what) { this.save.bank += n; writeSave(this.save); SFX.play('buy'); return [`${what} — ${CUR.name} +${n}`, CUR.color]; }
+  claimQuest(q) { if (q.claimed) return ['이미 받은 보상입니다', '#888']; if (q.prog < q.n) return ['아직 완료하지 않았습니다', '#ff9a9a']; q.claimed = true; this.guildEvent('quests'); return this.guildPay(q.reward, '퀘스트 완료'); }
+  acceptHunt(o) {
+    const G = this.guild(); if (G.active.some((h) => h.id === o.id && h.day === G.day)) return ['이미 수락한 의뢰입니다', '#888'];
+    if (G.active.filter((h) => !h.claimed).length >= GUILD_HUNT.maxActive) return [`의뢰는 동시에 ${GUILD_HUNT.maxActive}개까지 수락할 수 있습니다`, '#ff9a9a'];
+    G.active.push(Object.assign({}, o, { day: G.day, prog: 0, done: false, claimed: false })); writeSave(this.save); SFX.play('ui'); return [`수락: ${o.name}`, '#9fe89f'];
+  }
+  claimHunt(h) { if (!h.done) return ['아직 토벌하지 못했습니다', '#ff9a9a']; h.claimed = true; const G = this.guild(); G.active = G.active.filter((x) => x !== h); this.guildEvent('hunts'); return this.guildPay(h.reward, '토벌 완료'); }
+  buySupply(id) {
+    const G = this.guild(), S = GUILD_SUPPLIES.find((x) => x.id === id), sv = this.save;
+    if (G.bought.includes(id)) return ['오늘은 이미 샀습니다', '#888']; if (sv.bank < S.price) { SFX.play('deny'); return [`${CUR.name}이 부족합니다`, '#ff9a9a']; }
+    sv.bank -= S.price; G.bought.push(id); sv.supplies = (sv.supplies || []).concat([id]); this.guildEvent('trades'); writeSave(sv); SFX.play('buy'); return [`${S.name} 구매 — 다음 탐험에 적용됩니다`, '#9fe89f'];
+  }
+  applySupplies() {
+    const sv = this.save, list = sv.supplies || [], p = this.player; if (!list.length) return;
+    for (const id of list) {
+      if (id === 's_bless') pick(DATA_BUFFS).apply(p);
+      else if (id === 's_whet' && p.weapons[0]) p.weapons[0].lv = Math.min(BALANCE.upgrade.maxLevel, (p.weapons[0].lv || 0) + 1);
+      else if (id === 's_purse') this.gold += 80;
+      else if (id === 's_mana') { p.maxEnergy += 60; p.energy = p.maxEnergy; }
+      else if (id === 's_amulet') { p.maxHp += 30; p.hp = p.maxHp; }
+    }
+    sv.supplies = []; writeSave(sv);
+  }
+  gamble(bet) {
+    const sv = this.save; if (sv.bank < bet) { SFX.play('deny'); return { text: `${CUR.name}이 부족합니다`, color: '#ff9a9a' }; }
+    sv.bank -= bet; let r = Math.random(), res = GUILD_GAMBLE.outcomes[0];
+    for (const o of GUILD_GAMBLE.outcomes) { if (r < o[0]) { res = o; break; } r -= o[0]; }
+    const win = Math.round(bet * res[1]); sv.bank += win; if (res[1] > 1) { this.guildEvent('gambleWins'); SFX.play('victory'); } else SFX.play('deny');
+    writeSave(sv); return { text: res[1] ? `${res[2]}! ${CUR.name} +${win}` : `${res[2]}… ${CUR.name} -${bet}`, color: res[1] > 1 ? '#ffd84a' : '#ff9a9a', mult: res[1] };
+  }
+  titleUnlocked(T) { return T.test(this.save.stats || {}, this.save); }
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
   resetWorldLists(map) {
     this.map = map;
@@ -89,6 +149,14 @@ class Game {
     if (this.save.sanctumReached) { const tv = this.map.tileCenter(25, 16); this.props.push(new TreasureVault(tv.x, tv.y)); }
     const dm = this.map.tileCenter(28, 12);
     this.enemies.push(new Enemy(dm.x, dm.y, this.data.enemies.get('dummy_001'), { hp: 1, dmg: 1 }, this.map.startRoom));
+    // 모험가 길드 (아래쪽)
+    const gp = (tx, ty) => this.map.tileCenter(tx, ty);
+    { const c = gp(8, 25); this.props.push(new GuildDesk(c.x, c.y)); }
+    { const c = gp(26, 25); this.props.push(new HuntBoard(c.x, c.y)); }
+    { const c = gp(8, 32); this.props.push(new GuildTrader(c.x, c.y)); }
+    { const c = gp(26, 32); this.props.push(new GambleTable(c.x, c.y)); }
+    [[12, 28, 'a', 1], [22, 27, 'b', -1], [17, 33, 'c', 1], [12, 34, 'd', -1], [22, 33, 'a', -1]].forEach(([tx, ty, k, f], i) => { const c = gp(tx, ty); this.props.push(new GuildNpc(c.x, c.y, k, GUILD_CHATTER[i % GUILD_CHATTER.length], f)); });
+    this.guild(); // 오늘의 퀘스트·의뢰·진열 준비
     const pc = this.map.tileCenter(17, 18);
     this.portals.push(new Portal(pc.x, pc.y, () => this.startRun(), '던전 입장'));
     this.snapCamera();
@@ -115,6 +183,7 @@ class Game {
     this.player = this.makePlayer(0, 0);
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); // 로비에서 고른 보구 (사망해도 영구 보유)
     if (tr) { this.player.treasure = tr; if (tr.apply) tr.apply(this.player); }
+    this.guild(); this.applySupplies(); // 길드 퀘스트 준비 · 거래상에서 산 보급품
     this.loadStage();
     if (!this.save.prologueSeen) this.showPrologue(() => this.askVariant()); else this.askVariant();
   }
@@ -192,6 +261,7 @@ class Game {
     this.showBanner(`${stageLabel(this.worldIdx, this.levelIdx)}  ${W.name}`, this.isBossStage ? '보스가 기다리고 있습니다' : W.deep && this.levelIdx === 0 ? `심층 ${W.depth}번째 필드 — 던전은 더 깊은 곳으로 이어진다` : '출구 포탈을 찾으세요', W.deep ? '#9ad8ff' : undefined);
   }
   advanceStage() {
+    this.guildEvent('stages');
     this.levelIdx++;
     if (this.levelIdx >= STAGES_PER_WORLD) { this.levelIdx = 0; this.worldIdx++; }
     this.loadStage();
@@ -245,6 +315,7 @@ class Game {
     });
   }
   endRun(victory) {
+    this.guildEvent('runs');
     SFX.stopMusic(); this.save.run = null; writeSave(this.save);
     SFX.play(victory ? 'victory' : 'hurt');
     // 로비 재화: 클리어한 스테이지 수 · 쓰러뜨린 필드 보스 수 · 승리 보너스 (던전 골드는 런과 함께 사라짐)
@@ -455,6 +526,27 @@ class Game {
       const list = DATA_TREASURES;
       if (!list.length || this.save.treasures.length) { if (input.wasPressed('Enter') || input.wasPressed('Mouse0')) this.pickTreasure(null); return; } // 첫 보구는 한 번만 (추가 획득 방법은 미정)
       if (input.wasPressed('Mouse0')) { const m = input.mouse, i = list.findIndex((_, i) => { const r = HUD.treasureRect(i, list.length); return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; }); if (i >= 0) this.pickTreasure(list[i]); }
+    } else if (o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble') { // 모험가 길드 창들
+      if (o.msg) o.msg.t -= STEP; if (o.roll > 0) { o.roll -= STEP; if (o.roll <= 0 && o.pending) { o.msg = { text: o.pending.text, color: o.pending.color, t: 2.5 }; o.result = o.pending; o.pending = null; } return; }
+      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
+      const m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h, say = (res) => { o.msg = { text: res[0], color: res[1], t: 2.2 }; this.input.mouse.down = false; };
+      const G = this.guild(), click = input.wasPressed('Mouse0');
+      if (o.type === 'guild') {
+        ['Digit1', 'Digit2', 'Digit3'].forEach((k, i) => { if (input.wasPressed(k)) o.tab = i; });
+        if (click) for (let i = 0; i < 3; i++) if (hit(HUD.guildTab(i))) { o.tab = i; return; }
+        if (!click) return;
+        if (o.tab < 2) { const list = o.tab ? G.weekly : G.daily; list.forEach((q, i) => { if (hit(HUD.guildRow(i))) say(this.claimQuest(q)); }); }
+        else GUILD_TITLES.forEach((T, i) => { if (hit(HUD.titleCell(i))) { if (!this.titleUnlocked(T)) say(['아직 얻지 못한 칭호입니다', '#ff9a9a']); else { this.save.title = this.save.title === T.id ? null : T.id; writeSave(this.save); say([this.save.title ? `칭호 장착: ${T.name}` : '칭호 해제', '#ffd84a']); } } });
+      } else if (o.type === 'hunt') {
+        if (!click) return;
+        G.offers.forEach((h, i) => { if (hit(HUD.guildRow(i))) say(this.acceptHunt(h)); });
+        G.active.forEach((h, i) => { if (hit(HUD.guildRow(5 + i))) say(this.claimHunt(h)); });
+      } else if (o.type === 'trade') {
+        if (click) G.stock.forEach((id, i) => { if (hit(HUD.guildRow(i))) say(this.buySupply(id)); });
+      } else if (o.type === 'gamble') {
+        let bet = null; GUILD_GAMBLE.bets.forEach((b, i) => { if (input.wasPressed('Digit' + (i + 1)) || (click && hit(HUD.betRect(i)))) bet = b; });
+        if (bet !== null) { if (this.save.bank < bet) say([`${CUR.name}이 부족합니다`, '#ff9a9a']); else { o.pending = this.gamble(bet); o.roll = 0.9; o.msg = null; o.result = null; SFX.play('ui'); } }
+      }
     } else if (o.type === 'joblevel') { // 직업 레벨 창: 숫자 키 / 클릭으로 레벨업
       if (o.msg) o.msg.t -= STEP;
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
@@ -584,7 +676,7 @@ class Game {
     const p = this.player;
     if (p.castLock > 0) return;
     if (p.skillCooldown > 0) return;
-    p.skillCooldown = p.skillCdMax;
+    p.skillCooldown = p.skillCdMax; this.guildEvent('skills');
     SFX.play('skill');
     if (p.rank === 2) this.ultimateFx(p); // 최종 진화 스킬은 컷인과 함께
     const D = (b) => this.skillDmg(b), mw = this.mouseWorld(), A = Math.atan2(p.aim.y, p.aim.x);
@@ -1077,7 +1169,7 @@ class Game {
   }
   collect(pk) {
     const p = this.player;
-    if (pk.kind === 'coin') { this.gold += pk.value; SFX.play('coin', 0.05); this.effects.sparkle(p.x, p.y - 4, '#ffd84a'); }
+    if (pk.kind === 'coin') { this.gold += pk.value; this.guildEvent('gold', pk.value); SFX.play('coin', 0.05); this.effects.sparkle(p.x, p.y - 4, '#ffd84a'); }
     else if (pk.kind === 'energy') { p.energy = Math.min(p.maxEnergy, p.energy + pk.value); SFX.play('energy', 0.05); this.effects.sparkle(p.x, p.y - 4, '#8ab8ff'); }
     else if (pk.kind === 'hp') { p.hp = Math.min(p.maxHp, p.hp + pk.value); this.effects.text(p.x, p.y - 16, '+' + pk.value, '#7be36b'); this.effects.heal(p.x, p.y); SFX.play('heal'); }
   }
@@ -1242,7 +1334,7 @@ class Game {
       }
   }
   // 원소 반응
-  triggerReaction(e, type, mods) { // 반응 피해는 적 체력과 같은 비율로 깊이에 따라 커짐 → 어느 층에서든 비슷한 몫
+  triggerReaction(e, type, mods) { this.guildEvent('reactions'); // 반응 피해는 적 체력과 같은 비율로 깊이에 따라 커짐 → 어느 층에서든 비슷한 몫
     const atk = (1 + (mods ? mods.attackBonus : 0)) * this.scale.hp * (1 + 0.05 * this.worldIdx), quiet = { damage: 0, mods: { attackBonus: 0, critChance: 0, critMultiplier: 1 }, knockback: 0 };
     if (type === 'thermal') { // 열충격: 큰 단일 피해, 빙결·화상 해제
       e.slow = 0; e.burn = 0;
@@ -1336,6 +1428,7 @@ class Game {
     if (enemy.rewardGiven) return;
     enemy.rewardGiven = true;
     this.kills++;
+    if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) { this.guildEvent('kills', 1, enemy.def.id); if (enemy.elite) this.guildEvent('elites'); if (enemy.def.boss) this.guildEvent('bosses', 1, enemy.def.id); } // 길드 퀘스트·토벌·칭호 집계
     const p = this.player;
     if (p.vampire > 0 && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.vampire);
     if (p.rage > 0 && p.rageVamp && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.rageVamp);

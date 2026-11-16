@@ -447,3 +447,84 @@ class LightPillar {
     if (Math.random() < 0.05) game.effects.part(x + randInt(-8, 8), y, 0, -14 - Math.random() * 10, { color: '#fff4c0', life: 1.6, size: 1.2, size2: 0, drag: 0.3, add: true });
   }
 }
+
+// ── 모험가 길드 (로비 아래쪽) ─ 제안 단계의 임시 디자인
+const GUILD_NPC_LOOK = { // 길드 사람들 외형 (기존 캐릭터 그림에 다른 옷색)
+  reception: { id: 'npc_reception', look: { sprite: 'priest', body: '#3a5a8a', accent: '#ffd84a' } },
+  trader: { id: 'npc_trader', look: { sprite: 'engineer', body: '#7a5a3a', accent: '#c8a050' } },
+  dealer: { id: 'npc_dealer', look: { sprite: 'assassin', body: '#5a2a4a', accent: '#ffd84a' } },
+  a: { id: 'npc_a', look: { sprite: 'knight', body: '#4a6a4a', accent: '#a0c070' } },
+  b: { id: 'npc_b', look: { sprite: 'wizard', body: '#3a7a8a', accent: '#2a4a5a' } },
+  c: { id: 'npc_c', look: { sprite: 'berserker', body: '#6a4a3a', accent: '#8a2a2a' } },
+  d: { id: 'npc_d', look: { sprite: 'gunslinger', body: '#5a4a6a', accent: '#8a6a3a' } }
+};
+const npcDraw = (ctx, key, x, y, face, game) => drawHero(ctx, GUILD_NPC_LOOK[key], x, y + Math.round(Math.sin((game ? game.time : 0) * 2 + x) * 0.6), face, 0, false);
+const signText = (ctx, text, x, y, color) => { ctx.font = 'bold 8px monospace'; const w = Math.ceil(ctx.measureText(text).width) + 8; ctx.fillStyle = '#3a2614'; ctx.fillRect(x - w / 2, y - 6, w, 11); ctx.fillStyle = '#c89a40'; ctx.fillRect(x - w / 2, y - 6, w, 1); hudText(ctx, text, x, y - 5, color || '#ffe9a0', 'center', 8); };
+// 접수대 + 접수원: 일일·주간 퀘스트, 칭호
+class GuildDesk {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 30; }
+  label(game) { const G = game.guild(), ready = (G.daily || []).concat(G.weekly || []).filter((q) => q.prog >= q.n && !q.claimed).length; return `[E] 접수원 — 퀘스트 · 칭호${ready ? `  (보상 ${ready}개)` : ''}`; }
+  get labelColor() { return '#ffd84a'; }
+  interact(game) { game.overlay = { type: 'guild', tab: 0, msg: null }; }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y);
+    npcDraw(ctx, 'reception', x, y - 12, 1, game);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 42, y - 6, 84, 16); ctx.fillStyle = '#7a4a2a'; ctx.fillRect(x - 41, y - 5, 82, 14); ctx.fillStyle = '#9a6a3a'; ctx.fillRect(x - 41, y - 5, 82, 3); // 카운터
+    ctx.fillStyle = '#e8dcc0'; ctx.fillRect(x - 30, y - 8, 10, 4); ctx.fillRect(x + 18, y - 9, 6, 5); ctx.fillStyle = '#c89a40'; ctx.fillRect(x + 26, y - 10, 3, 6); // 서류·잉크
+    const G = game.guild(), ready = (G.daily || []).concat(G.weekly || []).some((q) => q.prog >= q.n && !q.claimed);
+    if (ready && Math.floor(game.time * 3) % 2 === 0) hudText(ctx, '!', x, y - 40, '#ffd84a', 'center', 12);
+    signText(ctx, '접수처', x, y + 18);
+  }
+}
+// 토벌 게시판
+class HuntBoard {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 26; }
+  label(game) { const G = game.guild(), done = G.active.filter((h) => h.done && !h.claimed).length; return `[E] 토벌 게시판${done ? `  (완료 ${done}개)` : ''}`; }
+  get labelColor() { return '#ff9a6a'; }
+  interact(game) { game.overlay = { type: 'hunt', msg: null }; }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 24, y - 30, 48, 30); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(x - 23, y - 29, 46, 28); ctx.fillStyle = '#4a3218'; ctx.fillRect(x - 20, y, 3, 8); ctx.fillRect(x + 17, y, 3, 8);
+    const G = game.guild(); (G.offers || []).forEach((o, i) => { const px = x - 19 + (i % 2) * 20, py = y - 26 + Math.floor(i / 2) * 13; const taken = G.active.some((h) => h.id === o.id && h.day === G.day);
+      ctx.fillStyle = taken ? '#a89880' : '#e8dcc0'; ctx.fillRect(px, py, 16, 11); ctx.fillStyle = o.kind === 'boss' ? '#c04040' : '#4a6a3a'; ctx.fillRect(px + 2, py + 2, 12, 2); ctx.fillStyle = '#5a4a3a'; ctx.fillRect(px + 2, py + 6, 9, 1); ctx.fillRect(px + 2, py + 8, 11, 1); });
+    signText(ctx, '토벌 의뢰', x, y + 14, '#ffb08a');
+  }
+}
+// 거래상: 다음 탐험 보급품
+class GuildTrader {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 26; }
+  label() { return '[E] 거래상 — 탐험 보급품'; }
+  get labelColor() { return '#9fe89f'; }
+  interact(game) { game.overlay = { type: 'trade', msg: null }; }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y);
+    ctx.fillStyle = '#8a3a3a'; ctx.fillRect(x - 26, y - 34, 52, 6); for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? '#e8dcc0' : '#8a3a3a'; ctx.fillRect(x - 26 + i * 9, y - 28, 9, 4); } // 차양
+    ctx.fillStyle = '#4a3218'; ctx.fillRect(x - 25, y - 28, 2, 26); ctx.fillRect(x + 23, y - 28, 2, 26);
+    npcDraw(ctx, 'trader', x, y - 12, 1, game);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 24, y - 4, 48, 12); ctx.fillStyle = '#7a5a3a'; ctx.fillRect(x - 23, y - 3, 46, 10);
+    ctx.fillStyle = '#c84040'; ctx.fillRect(x - 18, y - 7, 5, 4); ctx.fillStyle = '#4a8ac8'; ctx.fillRect(x - 8, y - 7, 4, 4); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x + 6, y - 6, 6, 3); // 물건들
+    signText(ctx, '거래상', x, y + 16, '#b0f0b0');
+  }
+}
+// 결정석 도박 탁자
+class GambleTable {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 26; }
+  label() { return `[E] 결정석 도박`; }
+  get labelColor() { return CUR.color; }
+  interact(game) { game.overlay = { type: 'gamble', msg: null, roll: 0 }; }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y);
+    npcDraw(ctx, 'dealer', x, y - 14, -1, game);
+    ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.ellipse(x, y, 26, 10, 0, 0, TAU); ctx.fill(); ctx.fillStyle = '#2a6a3a'; ctx.beginPath(); ctx.ellipse(x, y, 25, 9, 0, 0, TAU); ctx.fill(); // 초록 탁자
+    ctx.fillStyle = '#7ad0ff'; for (let i = 0; i < 3; i++) { const a = game.time * 1.5 + i * 2.1; ctx.fillRect(Math.round(x + Math.cos(a) * 12) - 1, Math.round(y + Math.sin(a) * 4) - 2, 3, 3); } // 도는 결정석
+    signText(ctx, '결정석 도박', x, y + 16, CUR.color);
+  }
+}
+// 길드 사람들 (꾸밈 · 말 걸기)
+class GuildNpc {
+  constructor(x, y, key, line, face) { this.x = x; this.y = y; this.key = key; this.line = line; this.face = face; this.radius = 16; }
+  label() { return `[E] ${this.line[0]}`; }
+  get labelColor() { return '#e0d0b0'; }
+  interact(game) { game.showBanner(this.line[0], this.line[1], '#e0d0b0'); }
+  render(ctx, game) { npcDraw(ctx, this.key, Math.round(this.x), Math.round(this.y), this.face, game); }
+}

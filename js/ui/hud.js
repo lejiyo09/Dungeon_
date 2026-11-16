@@ -31,7 +31,8 @@ class HUD {
     });
 
     if (game.mode === 'lobby') {
-      hudText(ctx, `${game.profile ? game.profile.name : '게스트'}   ·   보유 ${CUR.name} ${game.save.bank}`, VIEW_W / 2, 6, '#ffd84a', 'center');
+      const ttl = game.save.title && GUILD_TITLES.find((t) => t.id === game.save.title); // 장착한 길드 칭호
+      hudText(ctx, `${ttl ? '「' + ttl.name + '」 ' : ''}${game.profile ? game.profile.name : '게스트'}   ·   보유 ${CUR.name} ${game.save.bank}`, VIEW_W / 2, 6, '#ffd84a', 'center');
       hudText(ctx, 'F/우클릭 스킬 · E 상호작용 · Esc 조작법', VIEW_W / 2, VIEW_H - 14, '#aaa', 'center', 8);
     } else {
       const W = game.W;
@@ -138,7 +139,7 @@ class HUD {
   }
   overlay(ctx, game) {
     const o = game.overlay;
-    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
@@ -180,6 +181,49 @@ class HUD {
         : armory ? '던전에서 발견한 무기를 해금해 시작 보조 무기로 장착할 수 있습니다' : '';
       hudText(ctx, info, VIEW_W / 2, VIEW_H - 26, o.msg && o.msg.t > 0 ? o.msg.color : '#ccc', 'center', 9);
       hudText(ctx, `1~4 / 클릭: 탭 전환   ·   ${pages > 1 ? `A·D / 휠: 페이지 ${page + 1}/${pages}   ·   ` : ''}E / Esc: 닫기`, VIEW_W / 2, VIEW_H - 12, pages > 1 ? '#bbb' : '#888', 'center', 8);
+    } else if (o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble') { // 모험가 길드 창들
+      const sv = game.save, G = game.guild(), m = game.input.mouse, on = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+      const box = (r, hl, border) => { ctx.fillStyle = hl ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (border) { ctx.strokeStyle = border; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); } };
+      const bar = (x, y, w, k, col) => { ctx.fillStyle = '#2a2638'; ctx.fillRect(x, y, w, 4); ctx.fillStyle = col; ctx.fillRect(x, y, Math.round(w * Math.min(1, k)), 4); };
+      const head = { guild: '모험가 길드 접수처', hunt: '토벌 게시판', trade: '거래상 — 탐험 보급품', gamble: '결정석 도박' }[o.type];
+      hudText(ctx, `${head}  ·  보유 ${CUR.name} ${sv.bank}`, VIEW_W / 2, 6, '#ffd84a', 'center', 11);
+      if (o.type === 'guild') {
+        ['일일 퀘스트', '주간 퀘스트', '칭호'].forEach((t, i) => { const r = HUD.guildTab(i); box(r, o.tab === i, o.tab === i ? '#ffd84a' : null); hudText(ctx, `${i + 1} ${t}`, r.x + r.w / 2, r.y + 4, o.tab === i ? '#ffd84a' : '#aaa', 'center', 9); });
+        if (o.tab < 2) {
+          (o.tab ? G.weekly : G.daily).forEach((q, i) => { const r = HUD.guildRow(i), ok = q.prog >= q.n; box(r, on(r), q.claimed ? '#555' : ok ? '#ffd84a' : null);
+            hudText(ctx, q.name, r.x + 8, r.y + 4, q.claimed ? '#777' : '#fff', 'left', 9); bar(r.x + 8, r.y + 18, 220, q.prog / q.n, ok ? '#ffd84a' : '#7ad0ff');
+            hudText(ctx, `${q.prog.toLocaleString()} / ${q.n.toLocaleString()}`, r.x + 236, r.y + 14, '#aaa', 'left', 8);
+            hudText(ctx, q.claimed ? '받음' : ok ? `받기  ${CUR.name} +${q.reward}` : `보상 ${CUR.name} ${q.reward}`, r.x + r.w - 8, r.y + 9, q.claimed ? '#666' : ok ? '#ffd84a' : CUR.color, 'right', 9); });
+          hudText(ctx, o.tab ? '주간 퀘스트는 매주 월요일에 바뀝니다' : '일일 퀘스트는 매일 바뀝니다', VIEW_W / 2, 152, '#777', 'center', 8);
+        } else GUILD_TITLES.forEach((T, i) => { const r = HUD.titleCell(i), got = game.titleUnlocked(T), eq = sv.title === T.id; box(r, on(r) && got, eq ? '#ffd84a' : got ? '#7a6a40' : null);
+          hudText(ctx, (eq ? '★ ' : '') + T.name, r.x + 6, r.y + 3, got ? (eq ? '#ffd84a' : '#fff') : '#666', 'left', 9); hudText(ctx, T.desc, r.x + 6, r.y + 15, got ? '#aaa' : '#555', 'left', 7); });
+      } else if (o.type === 'hunt') {
+        hudText(ctx, `오늘의 의뢰 (클릭: 수락, 동시에 ${GUILD_HUNT.maxActive}개까지)`, 40, 36, '#ffb08a', 'left', 8);
+        G.offers.forEach((h, i) => { const r = HUD.guildRow(i), taken = G.active.some((a) => a.id === h.id && a.day === G.day); box(r, on(r) && !taken, h.kind === 'boss' ? '#a04040' : '#4a6a3a');
+          hudText(ctx, (h.kind === 'boss' ? '[보스] ' : '[처치] ') + h.name, r.x + 8, r.y + 4, taken ? '#777' : '#fff', 'left', 9); hudText(ctx, h.where, r.x + 8, r.y + 15, '#888', 'left', 7);
+          hudText(ctx, taken ? '수락함' : `보상 ${CUR.name} ${h.reward}`, r.x + r.w - 8, r.y + 9, taken ? '#777' : CUR.color, 'right', 9); });
+        hudText(ctx, '수락한 의뢰 (완료하면 클릭해서 보상)', 40, HUD.guildRow(5).y - 12, '#ffb08a', 'left', 8);
+        if (!G.active.length) hudText(ctx, '수락한 의뢰가 없습니다', VIEW_W / 2, HUD.guildRow(5).y + 6, '#666', 'center', 9);
+        G.active.forEach((h, i) => { const r = HUD.guildRow(5 + i); box(r, on(r), h.done ? '#ffd84a' : null); hudText(ctx, h.name, r.x + 8, r.y + 4, '#fff', 'left', 9);
+          bar(r.x + 8, r.y + 18, 220, (h.prog || 0) / h.n, h.done ? '#ffd84a' : '#ff9a6a'); hudText(ctx, h.done ? `받기  ${CUR.name} +${h.reward}` : `${h.prog || 0} / ${h.n}`, r.x + r.w - 8, r.y + 9, h.done ? '#ffd84a' : '#aaa', 'right', 9); });
+      } else if (o.type === 'trade') {
+        hudText(ctx, '"오늘 들어온 물건이야. 하나씩만 팔지." — 사면 다음 탐험을 시작할 때 적용', VIEW_W / 2, 36, '#b0f0b0', 'center', 8);
+        G.stock.forEach((id, i) => { const S = GUILD_SUPPLIES.find((x) => x.id === id), r = HUD.guildRow(i), got = G.bought.includes(id); box(r, on(r) && !got, got ? '#555' : '#4a7a4a');
+          hudText(ctx, S.name, r.x + 8, r.y + 4, got ? '#777' : '#fff', 'left', 9); hudText(ctx, S.desc, r.x + 8, r.y + 15, got ? '#555' : '#aaa', 'left', 7);
+          hudText(ctx, got ? '구매함' : `${S.price} ${CUR.name}`, r.x + r.w - 8, r.y + 9, got ? '#666' : sv.bank >= S.price ? CUR.color : '#866', 'right', 9); });
+        const pend = (sv.supplies || []).map((id) => GUILD_SUPPLIES.find((x) => x.id === id).name);
+        hudText(ctx, pend.length ? `다음 탐험에 적용: ${pend.join(', ')}` : '준비된 보급품 없음', VIEW_W / 2, 150, pend.length ? '#9fe89f' : '#666', 'center', 8);
+      } else if (o.type === 'gamble') {
+        hudText(ctx, '판돈을 고르세요 — 꽝 60% · 2배 30% · 3배 8% · 5배 2%', VIEW_W / 2, 36, '#aaa', 'center', 8);
+        const cx = VIEW_W / 2, cy = 100;
+        for (let i = 0; i < 3; i++) { const spin = o.roll > 0, a = (spin ? game.time * 18 : 0) + i * 2.1, x = cx + (i - 1) * 46, y = cy + (spin ? Math.sin(a) * 6 : 0); // 결정석 세 개
+          ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.moveTo(x, y - 16); ctx.lineTo(x + 11, y); ctx.lineTo(x, y + 16); ctx.lineTo(x - 11, y); ctx.closePath(); ctx.fill();
+          const lit = !spin && o.result && o.result.mult > 1; ctx.fillStyle = lit ? '#ffd84a' : !spin && o.result ? '#5a6a7a' : CUR.color; ctx.beginPath(); ctx.moveTo(x, y - 14); ctx.lineTo(x + 9, y); ctx.lineTo(x, y + 14); ctx.lineTo(x - 9, y); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillRect(x - 3, y - 8, 2, 7); }
+        GUILD_GAMBLE.bets.forEach((b, i) => { const r = HUD.betRect(i); box(r, on(r), sv.bank >= b ? CUR.color : '#555'); hudText(ctx, `${i + 1}  ${b} ${CUR.name}`, r.x + r.w / 2, r.y + 6, sv.bank >= b ? '#fff' : '#666', 'center', 10); });
+      }
+      if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 28, o.msg.color, 'center', 10);
+      hudText(ctx, 'E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
     } else if (o.type === 'joblevel') { // 직업 레벨 창
       const sv = game.save, J = BALANCE.jobLevel, m = game.input.mouse;
       hudText(ctx, `직업 레벨  ·  보유 ${CUR.name} ${sv.bank}`, VIEW_W / 2, 7, '#7ad0ff', 'center', 11);
@@ -287,6 +331,10 @@ class HUD {
     }
   }
   // 보구 획득 알림: 오른쪽 아래에서 아이콘과 함께 미끄러져 들어와 6초 동안 표시
+  static guildTab(i) { return { x: 60 + i * 134, y: 22, w: 126, h: 16 }; }
+  static guildRow(i) { return { x: 40, y: 46 + i * 28, w: VIEW_W - 80, h: 25 }; }
+  static titleCell(i) { return { x: 40 + (i % 2) * 218, y: 46 + Math.floor(i / 2) * 30, w: 212, h: 27 }; }
+  static betRect(i) { return { x: VIEW_W / 2 - 150 + i * 104, y: 150, w: 92, h: 22 }; }
   static jobRowRect(i) { return { x: 36, y: 36 + i * 27, w: VIEW_W - 72, h: 24 }; }
   static variantRect(i, n) { const cols = Math.min(3, n), w = 156, h = 58, gap = 8, rows = Math.ceil(n / cols), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % cols) * (w + gap), y: 66 + Math.floor(i / cols) * (h + gap) + (rows === 1 ? 30 : 0), w, h }; }
   // 컷신: 위아래 검은 띠 + 아래 띠에 한 자씩 나오는 대사
