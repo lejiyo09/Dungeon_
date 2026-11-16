@@ -460,7 +460,7 @@ const GUILD_NPC_LOOK = { // 길드 사람들 외형 (기존 캐릭터 그림에 
   e: { id: 'npc_e', look: { sprite: 'druid', body: '#5a6a3a', accent: '#8a6a3a' } },
   f: { id: 'npc_f', look: { sprite: 'priest', body: '#8a6a7a', accent: '#c8a050' } },
   clerk2: { id: 'npc_clerk2', look: { sprite: 'priest', body: '#5a7a4a', accent: '#ffd84a' } },
-  merlin: { id: 'npc_merlin', look: { sprite: 'assassin', body: '#ecebf6', accent: '#b8a0e0' } } // 흰 로브·후드
+  merlin: { id: 'npc_merlin', look: { sprite: 'merlin', body: '#3a3460', accent: '#b8a0e0' } } // 어두운 후드·로브 + 흰 머리
 };
 const npcDraw = (ctx, key, x, y, face, game) => drawHero(ctx, GUILD_NPC_LOOK[key], x, y + Math.round(Math.sin((game ? game.time : 0) * 2 + x) * 0.6), face, 0, false);
 const signText = (ctx, text, x, y, color) => { ctx.font = 'bold 8px monospace'; const w = Math.ceil(ctx.measureText(text).width) + 8; ctx.fillStyle = '#3a2614'; ctx.fillRect(x - w / 2, y - 6, w, 11); ctx.fillStyle = '#c89a40'; ctx.fillRect(x - w / 2, y - 6, w, 1); hudText(ctx, text, x, y - 5, color || '#ffe9a0', 'center', 8); };
@@ -548,7 +548,6 @@ class MerlinTable {
     ctx.fillStyle = OUTLINE; ctx.fillRect(mx - 6, y - 2, 12, 9); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(mx - 5, y - 1, 10, 7); ctx.fillStyle = '#5a3a20'; ctx.fillRect(mx - 5, y - 8, 10, 7); // 의자
     ctx.fillStyle = OUTLINE; ctx.fillRect(mx + 7, y - 26, 3, 30); ctx.fillStyle = '#8a6a4a'; ctx.fillRect(mx + 8, y - 25, 1, 28); ctx.fillStyle = '#ffb0d8'; ctx.fillRect(mx + 6, y - 29, 5, 4); ctx.fillStyle = '#ffffff'; ctx.fillRect(mx + 8, y - 28, 1, 1); // 꽃 달린 지팡이
     npcDraw(ctx, 'merlin', mx, y - 6, -1, game);
-    ctx.fillStyle = '#f4f2ff'; ctx.fillRect(mx - 4, y - 14, 2, 5); ctx.fillRect(mx + 2, y - 14, 2, 4); // 후드 밖으로 흘러나온 흰 머리카락
     ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.ellipse(x, y + 1, 17, 8, 0, 0, TAU); ctx.fill(); ctx.fillStyle = '#5a4a6a'; ctx.beginPath(); ctx.ellipse(x, y, 16, 7, 0, 0, TAU); ctx.fill(); // 보랏빛 천을 덮은 탁자
     ctx.fillStyle = '#ffb0d8'; ctx.fillRect(x - 3, y - 3, 2, 2); ctx.fillStyle = '#ffffff'; ctx.fillRect(x + 2, y - 2, 2, 2); ctx.fillStyle = '#e8dcc0'; ctx.fillRect(x - 9, y - 2, 4, 3); // 꽃잎·찻잔
     if (this.bubble && this.bubble.t > 0) { this.bubble.t -= 1 / 60; // 말풍선
