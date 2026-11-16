@@ -385,7 +385,7 @@ class HUD {
     const o = game.cutin, t = (performance.now() - o.start) / 1000, D = o.kind === 'treasure' ? 1.1 : 0.85;
     if (t > D) { game.cutin = null; return; }
     const tr = o.kind === 'treasure', inK = Math.min(1, t / 0.18), outK = Math.min(1, (D - t) / 0.25), k = Math.min(inK, outK), ease = 1 - Math.pow(1 - inK, 3);
-    const cy = tr ? 68 : 56, h = tr ? 30 : 22, slide = (1 - ease) * -VIEW_W * 0.6 + t * 18;
+    const cy = tr ? 58 : 56, h = tr ? 30 : 22, slide = (1 - ease) * -VIEW_W * 0.6 + t * 18;
     ctx.save();
     if (tr) { ctx.fillStyle = `rgba(0,0,0,${0.15 * k})`; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
     ctx.globalAlpha = k;
