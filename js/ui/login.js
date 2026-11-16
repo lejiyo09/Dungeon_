@@ -38,6 +38,7 @@ const LoginUI = {
       <div class="lg-note">계정은 이 브라우저에만 저장됩니다. 다른 기기와는 공유되지 않아요.</div></div>`;
   },
   renderList(msg) {
+    Auth.fixAdmin();
     const list = Auth.list().sort((a, b) => b.last - a.last), last = list[0];
     const rows = list.slice(1).map((p) => `<div class="lg-row"><button class="lg-prof" data-id="${p.id}"><span class="lg-name"><b>${this.esc(p.name)}</b>${p.admin ? ' 👑' : ''}${p.pinHash ? ' 🔒' : ''}</span>
       <span class="lg-sum">${this.sumLine(p)} · ${this.ago(p.last)}</span></button><button class="lg-del" data-del="${p.id}" title="계정 삭제">✕</button></div>`).join('');
@@ -56,7 +57,7 @@ const LoginUI = {
     this.root.querySelectorAll('.lg-del').forEach((b) => b.onclick = () => this.askDelete(list.find((p) => p.id === b.dataset.del)));
     this.root.querySelector('#lg-new').onclick = () => this.renderNew();
     this.root.querySelector('#lg-guest').onclick = () => this.enter(null);
-    const adm = this.root.querySelector('#lg-admin'); if (adm) adm.onclick = () => this.enter(Auth.admin());
+    const adm = this.root.querySelector('#lg-admin'); if (adm) adm.onclick = () => this.renderPin({ name: '관리자 계정' }, '로그인', async (pin) => { if (await Auth.verifyAdminPin(pin)) this.enter(Auth.admin()); else return 'PIN이 맞지 않습니다'; });
     const first = this.root.querySelector(last ? '#lg-cont' : '#lg-new'); if (first) first.focus();
     this.setKeys(null); // Enter는 포커스된 버튼(기본: 계속하기)이 처리
   },
@@ -119,7 +120,7 @@ const LoginUI = {
     name.focus();
   },
   enter(p) {
-    Auth.setAuto(p && this.auto ? p : null);
+    Auth.setAuto(p && this.auto && !p.admin ? p : null); // 관리자는 자동 로그인 안 됨
     this.hide(); SFX.unlock(); SFX.play('clear'); this.game.login(p);
   }
 };

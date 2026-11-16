@@ -36,10 +36,17 @@ const Auth = {
     all.push(p); this.saveList(all);
     return p;
   },
-  // 관리자 계정: 모든 것이 해금된 테스트용 계정 (이 기기에 하나, 계정 수 제한에 포함되지 않음)
+  // 관리자 계정: 모든 것이 해금된 테스트용 계정 (이 기기에 하나, 계정 수 제한에 포함되지 않음). PIN은 정해진 값 (해시로만 보관)
+  ADMIN_SALT: 'pd_admin', ADMIN_HASH: '68ca352031af3e2ddab7b98a30d199906b193ae680b4893bf5f17f50e9af7df1',
+  async verifyAdminPin(pin) { return (await this.hashPin(pin || '', this.ADMIN_SALT)) === this.ADMIN_HASH; },
+  fixAdmin() { // 예전에 PIN 없이 만든 관리자 계정에도 PIN을 걺
+    const all = this.list(), p = all.find((x) => x.admin);
+    if (p && (p.pinHash !== this.ADMIN_HASH || p.salt !== this.ADMIN_SALT)) { p.salt = this.ADMIN_SALT; p.pinHash = this.ADMIN_HASH; this.saveList(all); }
+    if (p && this.getAuto() && this.getAuto().id === p.id) this.setAuto(null); // 관리자는 자동 로그인 안 됨
+  },
   admin() {
     const all = this.list(); let p = all.find((x) => x.admin);
-    if (!p) { p = { id: 'p_admin', name: '관리자', admin: true, salt: '', pinHash: null, created: Date.now(), last: Date.now() }; all.push(p); this.saveList(all); }
+    if (!p) { p = { id: 'p_admin', name: '관리자', admin: true, salt: this.ADMIN_SALT, pinHash: this.ADMIN_HASH, created: Date.now(), last: Date.now() }; all.push(p); this.saveList(all); }
     return p;
   },
   async verify(p, pin) { return !p.pinHash || (await this.hashPin(pin || '', p.salt)) === p.pinHash; },
