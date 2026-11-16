@@ -140,7 +140,7 @@ class HUD {
   }
   overlay(ctx, game) {
     const o = game.overlay;
-    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
@@ -149,7 +149,8 @@ class HUD {
       hudText(ctx, '상태이상: 화상(불) · 빙결(얼음) · 중독(자연) · 전격(번개) · 실명(빛) · 저주(어둠)', VIEW_W / 2, 148, '#c8c0d8', 'center', 8);
       hudText(ctx, '원소 반응: 화상+빙결=열충격 · 화상+중독=독 연소 · 빙결+전격=감전 · 화상+전격=과부하 · 중독+전격=마비', VIEW_W / 2, 160, '#9ad8ff', 'center', 8);
       hudText(ctx, '실명+저주=일식 · 저주+중독=역병 · 화상+저주=지옥불 · 실명+전격=심판', VIEW_W / 2, 172, '#9ad8ff', 'center', 8);
-      hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기   ·   L 포기하고 로비로' : 'Esc 이어하기   ·   P 프롤로그 다시 보기   ·   L 로그아웃', VIEW_W / 2, 190, '#999', 'center', 9);
+      hudText(ctx, 'I  상세 정보 (특수방 확률 · 무기 강화 · 원소 반응 효과)', VIEW_W / 2, 190, '#ffd84a', 'center', 9);
+      hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기   ·   L 포기하고 로비로' : 'Esc 이어하기   ·   P 프롤로그 다시 보기   ·   L 로그아웃', VIEW_W / 2, 206, '#999', 'center', 9);
     } else if (o.type === 'codex' || o.type === 'armory' || o.type === 'trial_weapons') {
       const sv = game.save, disc = new Set(sv.discovered), armory = o.type === 'armory', tw = o.type === 'trial_weapons';
       const m = game.input.mouse;
@@ -295,6 +296,42 @@ class HUD {
         hudText(ctx, `${i + 1}  ${a.name}`, r.x + 10, r.y + 5, ok ? (/\[켜짐\]/.test(a.name) ? '#9fe89f' : '#fff') : '#555', 'left', 10); });
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 28, o.msg.color, 'center', 10);
       hudText(ctx, '숫자 키 / 클릭: 실행   ·   ` / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
+    } else if (o.type === 'details') { // 상세 정보 (수치는 설정값에서 바로 읽음)
+      const m = game.input.mouse, T = (s, x, y, c = '#e8e0f0', a = 'left', z = 8) => hudText(ctx, s, x, y, c, a, z), pct = (v) => (Math.round(v * 1000) / 10) + '%';
+      ['특수방 확률', '무기 강화', '원소 반응'].forEach((t, i) => { const r = HUD.guildTab(i), on = o.tab === i; ctx.fillStyle = on ? 'rgba(255,216,74,0.25)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); T(`${i + 1} ${t}`, r.x + r.w / 2, r.y + 4, on ? '#ffd84a' : '#aaa', 'center', 9); });
+      T('상세 정보', VIEW_W / 2, 6, '#ffd84a', 'center', 11);
+      if (o.tab === 0) {
+        const SR = BALANCE.specialRooms, ER = SR.evolveByRank, others = SR.pool.filter((t) => t !== 'evolve'), w = (t) => (SR.weight && SR.weight[t]) || 1;
+        const NAME = { fountain: ['회복의 샘', '체력 40%·에너지·보호막 회복'], altar: ['축복의 제단', '골드를 내고 버프 1개'], gamble: ['행운의 기계', '골드를 걸고 뽑기 (꽝·골드·물약·에너지·무기)'],
+          challenge: ['도전의 방', '강화된 정예 3웨이브 → 희귀 이상 무기'], forge: ['제련소', '골드를 내고 든 무기를 같은 등급 이상으로 바꿈 (' + pct(SR.forgeUpChance) + ' 등급 상승)'],
+          blood: ['피의 제단', '최대 체력 ' + pct(SR.bloodCost) + '를 바치고 영웅 이상 무기'], rack: ['무기 진열대', '무기 3개 중 1개'], smithy: ['강화소', '싸고 성공률 높은 강화'], evolve: ['전직의 방', '상위자와 대결하거나 골드를 내고 진화'] };
+        T(`보스가 아닌 스테이지마다 ${pct(SR.chance)} 확률로 특수방 1개 (보물방·상점·출구는 항상 따로 있음)`, 40, 44, '#c8c0d8');
+        const tot = (e) => others.reduce((s, t) => s + w(t), 0) + e;
+        T('방', 40, 58, '#ffd84a'); T('하는 일', 120, 58, '#ffd84a'); T('가중치', 330, 58, '#ffd84a', 'right'); T('1차 전 / 2차 전 / 최종 후', VIEW_W - 40, 58, '#ffd84a', 'right');
+        SR.pool.forEach((t, i) => { const y = 72 + i * 14, ev = t === 'evolve', [n, d] = NAME[t] || [t, ''];
+          const p = (e, isEv) => SR.chance * (isEv ? e : w(t)) / tot(e);
+          T(n, 40, y, ev ? '#fff4a0' : '#fff'); T(d, 120, y, '#bbb', 'left', 7); T(ev ? `${ER[0].weight} / ${ER[1].weight}` : String(w(t)), 330, y, '#ddd', 'right');
+          T(ev ? `${pct(p(ER[0].weight, true))} / ${pct(p(ER[1].weight, true))} / 없음` : `${pct(p(ER[0].weight))} / ${pct(p(ER[1].weight))} / ${pct(SR.chance * w(t) / tot(0))}`, VIEW_W - 40, y, '#9ad8ff', 'right'); });
+        T('오른쪽 확률 = 한 스테이지에서 그 방이 나올 확률 (진화 단계에 따라 달라짐)', 40, 72 + SR.pool.length * 14 + 4, '#888', 'left', 7);
+      } else if (o.tab === 1) {
+        const U = BALANCE.upgrade, R = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+        T(`최대 +${U.maxLevel}강 · 한 단계마다 피해 +${pct(U.perLevel)} · 실패해도 단계는 내려가지 않음 · 강화는 그 판에서만 유지`, 40, 44, '#c8c0d8');
+        T('단계', 40, 62, '#ffd84a'); T('성공 확률 (모루)', 150, 62, '#ffd84a', 'center'); T('성공 확률 (강화소)', 260, 62, '#ffd84a', 'center'); T('누적 피해', 360, 62, '#ffd84a', 'center');
+        U.chance.forEach((c, i) => { const y = 76 + i * 14; T(`+${i} → +${i + 1}`, 40, y); T(pct(c), 150, y, '#9fe89f', 'center'); T(pct(Math.min(1, c + U.forgeRoomBonus)), 260, y, '#9ad8ff', 'center'); T('+' + pct(U.perLevel * (i + 1)), 360, y, '#ffd8a0', 'center'); });
+        const y0 = 76 + U.chance.length * 14 + 8;
+        T(`비용 = ${U.base} × 다음 단계 × 등급 배율 × 스테이지 물가(스테이지마다 +${pct(BALANCE.shopInflate)})`, 40, y0, '#c8c0d8');
+        T('등급 배율: ' + R.map((r) => `${RARITY_NAME[r]} ×${U.rarityMult[r]}`).join(' · '), 40, y0 + 14, '#c8c0d8');
+        T(`강화소(특수방): 비용 ${pct(1 - U.forgeRoomDiscount)} 할인 · 성공 확률 +${pct(U.forgeRoomBonus)}`, 40, y0 + 28, '#9ad8ff');
+      } else {
+        T('상태이상: 화상(불) · 빙결(얼음) · 중독(자연) · 전격(번개) · 실명(빛) · 저주(어둠) — 서로 다른 둘이 겹치면 반응', 40, 44, '#c8c0d8');
+        const RX = [['열충격', '화상 + 빙결', '큰 단일 피해, 두 상태 해제'], ['독 연소', '화상 + 중독', '주변 폭발 피해'], ['감전', '빙결 + 전격', '피해 + 주변 3명에게 번개'],
+          ['과부하', '화상 + 전격', '큰 폭발로 밀쳐냄'], ['마비', '중독 + 전격', '피해 + 잠깐 완전히 멈춤 (보스는 크게 느려짐)'], ['일식', '실명 + 저주', '큰 단일 피해, 두 상태 해제'],
+          ['역병', '저주 + 중독', '주변 적에게 중독이 번짐'], ['지옥불', '화상 + 저주', '검은 불꽃 폭발 + 주변에 화상'], ['심판', '실명 + 전격', '하늘에서 번개 기둥, 큰 단일 피해']];
+        T('반응', 40, 62, '#ffd84a'); T('조합', 110, 62, '#ffd84a'); T('효과', 210, 62, '#ffd84a');
+        RX.forEach(([n, c, e], i) => { const y = 76 + i * 15; T(n, 40, y, '#9ad8ff'); T(c, 110, y, '#ddd'); T(e, 210, y, '#bbb'); });
+        T('반응 피해는 깊이 내려갈수록 적 체력에 맞춰 커짐 · 같은 적에게는 0.8초에 한 번만 반응', 40, 76 + RX.length * 15 + 4, '#888', 'left', 7);
+      }
+      T('1~3 / 클릭: 탭   ·   I / Esc: 뒤로', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
     } else if (o.type === 'trial_confirm') { // 롱고미니아드의 시련 도전 확인
       hudText(ctx, '롱고미니아드의 시련', VIEW_W / 2, 60, '#bfe6ff', 'center', 16);
       hudText(ctx, '창에 깃든 신령 — 신령 롱고미니아드와 1:1로 싸웁니다', VIEW_W / 2, 86, '#e8e0f0', 'center', 10);

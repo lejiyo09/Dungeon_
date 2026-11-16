@@ -538,6 +538,7 @@ class Game {
     const o = this.overlay;
     if (o.type === 'pause') {
       if (input.wasPressed('Escape')) this.overlay = null;
+      else if (input.wasPressed('KeyI')) { this.overlay = { type: 'details', tab: 0 }; return; } // 상세 정보
       else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
       else if (this.mode === 'lobby' && input.wasPressed('KeyP')) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => {} }; return; }
       else if (this.mode === 'dungeon' && input.wasPressed('KeyL')) { this.player.state = 'DEAD'; this.endRun(false); }
@@ -625,6 +626,10 @@ class Game {
       if (k < 0) return; const a = acts[k]; this.input.mouse.down = false;
       if ('ok' in a && !a.ok) { o.msg = { text: '지금은 쓸 수 없습니다', color: '#ff9a9a', t: 1.5 }; return; }
       const closes = /스테이지로|필드로|시련|진화/.test(a.name); a.run(); if (closes) this.overlay = null; else o.msg = { text: a.name.replace(/ \[.*\]/, '') + ' — 완료', color: '#ffd84a', t: 1.5 };
+    } else if (o.type === 'details') { // 상세 정보: 1~3 / 클릭 탭, Esc·I 뒤로
+      if (input.wasPressed('Escape') || input.wasPressed('KeyI')) { this.overlay = { type: 'pause' }; return; }
+      ['Digit1', 'Digit2', 'Digit3'].forEach((k, i) => { if (input.wasPressed(k)) o.tab = i; });
+      if (input.wasPressed('Mouse0')) for (let i = 0; i < 3; i++) { const r = HUD.guildTab(i), m = input.mouse; if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) o.tab = i; }
     } else if (o.type === 'trial_confirm') { // 롱고미니아드의 시련: 도전 / 나중에
       const m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h, click = input.wasPressed('Mouse0');
       if (input.wasPressed('Enter') || input.wasPressed('Digit1') || (click && hit(HUD.trialBtn(0)))) { this.overlay = null; this.input.mouse.down = false; this.transition = { t: 0, swapped: false, action: () => this.startRhongoTrial() }; }
