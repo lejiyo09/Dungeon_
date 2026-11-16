@@ -68,7 +68,7 @@ function submitScore(ip, b) {
   const n = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
   const row = { name, hero: String(b.hero || '').slice(0, 32), stage: n(b.stage, 400), label: String(b.label || '').slice(0, 16), deep: n(b.deep, 300), kills: n(b.kills, 50000), party: n(b.partySize, 4) || 1, victory: !!b.victory, at: now };
   scoreIpAt.set(key, now);
-  addScoreRow('stage', row); addScoreRow('kills', row); if (row.deep > 0) addScoreRow('deep', row);
+  if (row.stage > 0) addScoreRow('stage', row); if (row.kills > 0) addScoreRow('kills', row); if (row.deep > 0) addScoreRow('deep', row); // 지난 기록 올리기는 처치 수가 없을 수 있음
   if (row.party > 1 && Array.isArray(b.partyNames)) { const names = b.partyNames.map((x) => String(x).replace(/[\u0000-\u001f<>]/g, '').slice(0, 12)).filter(Boolean).slice(0, 4); if (names.length > 1) addScoreRow('coop', Object.assign({}, row, { party: names.join(' · ') })); }
   return null;
 }

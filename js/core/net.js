@@ -6,7 +6,7 @@
 //  · 게임 계산은 방장 브라우저가 맡을 예정 (2단계). 지금은 위치·외형만 주고받음
 // ════════════════════════════════════════════
 const NET_CONFIG = {
-  server: '', // 예: 'wss://project-dungeon.onrender.com/ws' (비워 두면 게임이 열린 주소의 /ws 로 연결)
+  server: 'wss://project-dungeon.onrender.com/ws', // Render 서버 (아티팩트 등 다른 주소에서 열어도 이 서버로 연결·랭킹 기록)
   maxPlayers: 4,
   sendHz: 10, // 위치를 보내는 최대 횟수 (초당) — 가만히 있으면 2초에 한 번만 보냄 (데이터 절약)
   idleSend: 2
@@ -14,9 +14,8 @@ const NET_CONFIG = {
 const Net = {
   ws: null, status: 'off', id: null, code: null, players: [], peers: new Map(), error: null, ping: null, handlers: [],
   url() {
-    if (NET_CONFIG.server) return NET_CONFIG.server;
-    if (/^https?:$/.test(location.protocol) && !/claude/.test(location.hostname)) return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
-    return null;
+    if (/^https?:$/.test(location.protocol) && !/claude/.test(location.hostname)) return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws'; // 게임을 서버 주소에서 열었으면 그 서버
+    return NET_CONFIG.server || null; // 아티팩트 등 다른 곳에서 열었으면 Render 서버
   },
   get inRoom() { return !!this.code; },
   get isHost() { const me = this.players.find((p) => p.id === this.id); return !!(me && me.host); },
@@ -61,9 +60,8 @@ const Net = {
     for (const fn of this.handlers) fn(m);
   },
   httpBase() { // 랭킹판 API 주소 (게임을 연 주소, 또는 NET_CONFIG.server에서)
-    if (NET_CONFIG.server) return NET_CONFIG.server.replace(/^ws/, 'http').replace(/\/ws$/, '');
     if (/^https?:$/.test(location.protocol) && !/claude/.test(location.hostname)) return location.origin;
-    return null;
+    return NET_CONFIG.server ? NET_CONFIG.server.replace(/^ws/, 'http').replace(/\/ws$/, '') : null;
   },
   async fetchScores() { const b = this.httpBase(); if (!b) throw new Error('랭킹판은 서버 주소(Render)에서 열었을 때만 볼 수 있어요'); const r = await fetch(b + '/api/scores', { cache: 'no-store' }); if (!r.ok) throw new Error('랭킹을 불러오지 못했습니다'); return r.json(); },
   // 랭킹 사본: 본 적 있는 기록을 이 브라우저에 보관 → 서버가 비어 있으면 다시 채워 넣음 (서버 재시작 대비)

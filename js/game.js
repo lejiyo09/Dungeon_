@@ -226,7 +226,12 @@ class Game {
     return { name: this.profile ? this.profile.name : '', hero: this.save.selected, stage, label: o.label || stageLabel(this.worldIdx, this.levelIdx), deep: o.deep ?? (W && W.deep ? W.depth : 0), kills: o.kills ?? this.kills, victory: !!victory,
       partySize: o.partySize || (this.coop && this.coop.host ? this.partyCount() : 1), partyNames: o.partyNames || (this.coop && this.coop.host ? Net.players.map((p) => p.name) : null) };
   }
-  submitRunScore(victory, o) { if (!this.profile || this.admin || this.trialW) return; Net.submitScore(this.runScoreRow(victory, o)); }
+  submitRunScore(victory, o) { if (!this.profile || this.admin || this.trialW) return; if (!o) { this.save.bestKills = Math.max(this.save.bestKills || 0, this.kills); writeSave(this.save); } Net.submitScore(this.runScoreRow(victory, o)); }
+  backfillScore() { // 지금까지의 최고 도달·심층·한 판 처치 (계정마다 한 번)
+    const s = this.save; if (!this.profile || this.admin || s.scoreBackfill || !Net.httpBase() || !(s.bestStage > 0)) return;
+    const n = s.bestStage; s.scoreBackfill = 1; writeSave(s);
+    Net.submitScore({ name: this.profile.name, hero: s.selected, stage: n, label: stageLabel(Math.floor((n - 1) / STAGES_PER_WORLD), (n - 1) % STAGES_PER_WORLD), deep: s.bestDeep || 0, kills: s.bestKills || 0, victory: (s.clears || 0) > 0, partySize: 1 });
+  }
   openRanking() {
     const o = this.overlay = { type: 'rank', tab: 0, data: null, err: null, loading: true }; this.input.mouse.down = false;
     Net.syncScores().then((d) => { o.data = d; o.loading = false; }).catch((e) => { o.err = e.message; o.loading = false; }); // 서버가 초기화됐으면 이 브라우저의 사본으로 복구
@@ -483,6 +488,7 @@ class Game {
     this.locked = false; this.enterLobby();
     if (this.save.run) this.overlay = { type: 'resume' };
     if (Net.httpBase()) Net.syncScores().catch(() => {}); // 접속할 때마다 랭킹 사본 확인·복구 (서버 재시작 대비)
+    this.backfillScore(); // 랭킹판이 생기기 전의 내 최고 기록도 한 번 올림
     this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', this.admin ? '관리자 계정 — 모든 것이 해금됨 · ` 키: 관리자 메뉴' : profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다', '#ffd84a');
   }
   logout() {
