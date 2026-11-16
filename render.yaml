@@ -1,5 +1,6 @@
 # Render 배포 설정 (Blueprint): 게임 파일과 멀티 서버를 한 주소에서 제공
 #  Render 대시보드 → New → Blueprint → 이 저장소 선택 → Apply
+#  이후로는 GitHub main에 올라온 업데이트가 자동으로 배포됨 (Blueprint 동기화 + 커밋마다 자동 배포)
 services:
   - type: web
     name: project-dungeon
@@ -8,3 +9,5 @@ services:
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
+    branch: main
+    autoDeployTrigger: commit # main에 새 커밋이 올라오면 자동으로 다시 배포

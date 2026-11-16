@@ -31,6 +31,7 @@
 1. https://render.com 에 GitHub 계정으로 가입
 2. 대시보드 → **New → Blueprint** → 이 저장소 선택 → **Apply** (`render.yaml`을 읽어 자동 설정)
 3. 몇 분 뒤 `https://project-dungeon.onrender.com` 같은 주소가 생김 → **그 주소로 게임을 열면 멀티가 바로 됨**
+- 이후 업데이트는 **GitHub main에 올라오면 Render가 자동으로 다시 배포** (`render.yaml`의 `autoDeployTrigger: commit`)
 - 무료 요금제는 15분 동안 아무도 안 쓰면 잠들고, 다시 깨어나는 데 30초~1분 걸림
 - 아티팩트 페이지 등 다른 곳에서 열 때는 `js/core/net.js`의 `NET_CONFIG.server`에 `wss://(Render 주소)/ws` 를 적어야 함 (그 페이지가 외부 연결을 막으면 안 될 수 있음)
 
