@@ -230,15 +230,15 @@ class Pedestal {
   constructor(x, y, hero, row = 0) { this.x = x; this.y = y; this.hero = hero; this.row = row; this.radius = 18; this.seed = Math.random() * 3; this.t = 0; }
   label(game) {
     const s = game.save;
-    if (s.selected === this.hero.id) { // 고른 직업: 결정석으로 직업 레벨업
-      const cost = game.jobLevelCost(this.hero.id), lv = game.jobLevel(this.hero.id);
-      return `[E] 직업 레벨 (Lv.${lv}${cost === null ? ' 최고' : ''})`;
-    }
+    if (s.selected === this.hero.id) return '[E] 상세 정보';
     if (s.unlocked.includes(this.hero.id)) return `[E] ${this.hero.name} 선택`;
     return `[E] 해금: ${this.hero.name} (${this.hero.price} ${CUR.name})`;
   }
   get labelColor() { return '#ffffff'; }
-  interact(game) { if (game.save.selected === this.hero.id) game.overlay = { type: 'joblevel', msg: null }; else game.selectHero(this.hero); }
+  interact(game) {
+    if (game.save.selected === this.hero.id) game.overlay = { type: 'hero_info', heroId: this.hero.id, branchIndex: 0 };
+    else game.selectHero(this.hero);
+  }
   render(ctx, game) {
     const x = Math.round(this.x), y = Math.round(this.y), s = game.save;
     const unlocked = s.unlocked.includes(this.hero.id), selected = s.selected === this.hero.id;

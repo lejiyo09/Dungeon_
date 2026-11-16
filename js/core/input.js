@@ -26,8 +26,10 @@ class InputManager {
       if (e.button === 2) this.pressed.add('Mouse2');
     });
     window.addEventListener('mouseup', (e) => { if (e.button === 0) this.mouse.down = false; });
+    // 휠: window에서 캡처 (캔버스 밖으로 살짝 나가도 놓치지 않게), 수평 스크롤은 무시, 로그인 화면 목록 스크롤은 그대로
     this.wheelAcc = 0; this.wheelT = 0;
-    canvas.addEventListener('wheel', (e) => {
+    window.addEventListener('wheel', (e) => {
+      if (!e.deltaY || (e.target && e.target.closest && e.target.closest('#login'))) return;
       e.preventDefault(); this.pressed.add('Wheel'); this.pressed.add(e.deltaY < 0 ? 'WheelUp' : 'WheelDown');
       // 페이지 넘김용: 트랙패드처럼 잘게 여러 번 오는 휠을 모아서 한 칸씩 (한 번 넘기면 잠시 쉼)
       const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 300 : 1), now = performance.now();
@@ -35,7 +37,7 @@ class InputManager {
       this.wheelAcc += dy;
       if (now - this.wheelT > 280 && Math.abs(this.wheelAcc) >= 50) { this.pressed.add(this.wheelAcc > 0 ? 'WheelPageDown' : 'WheelPageUp'); this.wheelAcc = 0; this.wheelT = now; }
       else if (now - this.wheelT <= 280) this.wheelAcc = 0;
-    }, { passive: false });
+    }, { passive: false, capture: true });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
   updatePointer(e) {

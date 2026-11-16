@@ -141,7 +141,7 @@ class HUD {
   }
   overlay(ctx, game) {
     const o = game.overlay;
-    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'hero_info' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
@@ -237,6 +237,44 @@ class HUD {
       }
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 28, o.msg.color, 'center', 10);
       hudText(ctx, 'E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
+    } else if (o.type === 'hero_info') { // 캐릭터 상세 정보
+      const hero = game.data.heroes.get(o.heroId) || game.player.hero;
+      const lines = jobLines(hero.id);
+      const idx = clamp(o.branchIndex || 0, 0, Math.max(0, lines.length - 1));
+      const line = lines[idx] || null;
+      hudText(ctx, `${hero.name} — ${hero.title}`, VIEW_W / 2, 7, '#ffd84a', 'center', 12);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(16, 23, VIEW_W - 32, 38);
+      ctx.strokeStyle = '#665b78'; ctx.strokeRect(16.5, 23.5, VIEW_W - 33, 37);
+      hudText(ctx, `고유 패시브 · ${hero.passiveName || '없음'}`, 25, 27, '#9fe89f', 'left', 9);
+      hudWrap(ctx, hero.passiveDesc || '별도 패시브 없음', VIEW_W / 2, 40, VIEW_W - 54, '#ddd', 8, 10);
+      hudText(ctx, `기본 능력치  체력 ${hero.maxHp} · 보호막 ${hero.maxShield} · 에너지 ${hero.maxEnergy} · 이동 속도 ${hero.moveSpeed}`, VIEW_W / 2, 63, '#aaa', 'center', 7);
+
+      hudText(ctx, '직업 계열 — 번호 또는 클릭으로 선택해 상세 확인', 18, 76, '#ffd84a', 'left', 8);
+      lines.forEach((L, i) => {
+        const r = HUD.heroBranchRect(i, lines.length);
+        const m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        const active = i === idx;
+        ctx.fillStyle = active ? 'rgba(255,216,74,0.16)' : on ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
+        ctx.fillRect(r.x, r.y, r.w, r.h);
+        ctx.strokeStyle = active ? (L.color || '#ffd84a') : '#51475f';
+        ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        hudText(ctx, `${i + 1}. ${L.name}`, r.x + 5, r.y + 2, active ? (L.color || '#ffd84a') : '#eee', 'left', 8);
+        hudText(ctx, L.desc, r.x + 5, r.y + 12, '#c8c0d8', 'left', 6);
+        hudText(ctx, L.ranks.join(' → '), r.x + 5, r.y + 20, '#888', 'left', 6);
+      });
+
+      ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(16, 177, VIEW_W - 32, 85);
+      ctx.strokeStyle = line ? (line.color || '#665b78') : '#665b78';
+      ctx.strokeRect(16.5, 177.5, VIEW_W - 33, 84);
+      if (line) {
+        hudText(ctx, `계열 상세 · ${line.name} — ${line.desc}`, VIEW_W / 2, 181, line.color || '#ffd84a', 'center', 8);
+        line.skills.forEach((sk, i) => {
+          const stage = ['기본', '1차 진화', '2차 진화'][i] || `단계 ${i + 1}`;
+          hudText(ctx, `${stage} · ${line.ranks[i]} · ${sk.name} (쿨타임 ${sk.cd}초) — ${sk.desc}`, 24, 198 + i * 19, '#ddd', 'left', 6.5);
+        });
+      }
+      hudText(ctx, '숫자 키 / 클릭: 계열 선택   ·   J: 직업 레벨   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
     } else if (o.type === 'joblevel') { // 직업 레벨 창
       const sv = game.save, J = BALANCE.jobLevel, m = game.input.mouse;
       hudText(ctx, `직업 레벨  ·  보유 ${CUR.name} ${sv.bank}`, VIEW_W / 2, 7, '#7ad0ff', 'center', 11);
@@ -257,7 +295,7 @@ class HUD {
         ctx.globalAlpha = 1;
       });
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 26, o.msg.color, 'center', 9);
-      hudText(ctx, '숫자 키 / 클릭: 레벨업   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
+      hudText(ctx, o.returnToHeroInfo ? '숫자 키 / 클릭: 레벨업   ·   E / Esc: 상세 정보로' : '숫자 키 / 클릭: 레벨업   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
     } else if (o.type === 'buff') {
       hudText(ctx, '보스 처치! 축복을 하나 고르세요', VIEW_W / 2, 50, '#ffd84a', 'center', 14);
       o.options.forEach((b, i) => {
@@ -410,6 +448,22 @@ class HUD {
         if (eq) hudText(ctx, '장착됨', r.x + r.w / 2, r.y + r.h - 14, '#ffd84a', 'center', 8);
       });
       hudText(ctx, pick ? (list.length && !had ? '클릭: 선택' : 'Enter: 계속') : '클릭: 장착/해제   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 20, '#999', 'center', 9);
+    } else if (o.type === 'revive') {
+      const cost = 200, bank = game.save.bank, canRevive = bank >= cost;
+      hudText(ctx, '쓰러졌습니다', VIEW_W / 2, 65, '#ff7070', 'center', 17);
+      hudText(ctx, '결정석 200개를 사용하면 이번 탐험에서 한 번 부활할 수 있습니다.', VIEW_W / 2, 96, '#ddd', 'center', 9);
+      hudText(ctx, `보유 결정석: ${bank}개`, VIEW_W / 2, 116, canRevive ? '#7ad0ff' : '#ff9a9a', 'center', 10);
+      const reviveRect = HUD.reviveRect(0), leaveRect = HUD.reviveRect(1);
+      ctx.fillStyle = canRevive ? 'rgba(90,150,210,0.24)' : 'rgba(90,90,90,0.12)';
+      ctx.fillRect(reviveRect.x, reviveRect.y, reviveRect.w, reviveRect.h);
+      ctx.strokeStyle = canRevive ? '#7ad0ff' : '#555'; ctx.strokeRect(reviveRect.x + 0.5, reviveRect.y + 0.5, reviveRect.w - 1, reviveRect.h - 1);
+      ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(leaveRect.x, leaveRect.y, leaveRect.w, leaveRect.h);
+      ctx.strokeStyle = '#888'; ctx.strokeRect(leaveRect.x + 0.5, leaveRect.y + 0.5, leaveRect.w - 1, leaveRect.h - 1);
+      hudText(ctx, '1  부활하기 · 200', reviveRect.x + reviveRect.w / 2, reviveRect.y + 9, canRevive ? '#bfe6ff' : '#777', 'center', 9);
+      hudText(ctx, '2  포기하고 로비로', leaveRect.x + leaveRect.w / 2, leaveRect.y + 9, '#ddd', 'center', 9);
+      if (o.msg) hudText(ctx, o.msg, VIEW_W / 2, 201, '#ff9a9a', 'center', 8);
+      else if (!canRevive) hudText(ctx, '결정석이 부족해 부활할 수 없습니다.', VIEW_W / 2, 201, '#ff9a9a', 'center', 8);
+      hudText(ctx, '1 / 클릭: 부활   ·   2 / Enter / Esc: 탐험 종료', VIEW_W / 2, VIEW_H - 18, '#888', 'center', 8);
     } else if (o.type === 'result' && o.trial) {
       hudText(ctx, o.victory ? '롱고미니아드가 당신을 인정했습니다' : '시련 실패', VIEW_W / 2, 90, o.victory ? '#bfe6ff' : '#ff7070', 'center', 16);
       hudText(ctx, o.victory ? '보구 롱고미니아드를 얻었습니다 — 로비의 보구 보관대에서 장착할 수 있습니다' : '잃은 것은 없습니다. 멀린에게 말을 걸면 다시 도전할 수 있습니다', VIEW_W / 2, 116, '#ddd', 'center', 9);
@@ -455,7 +509,9 @@ class HUD {
   static guildRow(i) { return { x: 40, y: 46 + i * 28, w: VIEW_W - 80, h: 25 }; }
   static titleCell(i) { return { x: 40 + (i % 2) * 218, y: 46 + Math.floor(i / 2) * 30, w: 212, h: 27 }; }
   static betRect(i) { return { x: VIEW_W / 2 - 150 + i * 104, y: 150, w: 92, h: 22 }; }
+  static reviveRect(i) { return { x: VIEW_W / 2 - 154 + i * 160, y: 151, w: 148, h: 30 }; }
   static jobRowRect(i) { return { x: 36, y: 36 + i * 27, w: VIEW_W - 72, h: 24 }; }
+  static heroBranchRect(i, n) { return { x: 18 + (i % 2) * 240, y: 85 + Math.floor(i / 2) * 29, w: 236, h: 26 }; }
   static variantRect(i, n) { const cols = Math.min(3, n), w = 156, h = 58, gap = 8, rows = Math.ceil(n / cols), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % cols) * (w + gap), y: 66 + Math.floor(i / cols) * (h + gap) + (rows === 1 ? 30 : 0), w, h }; }
   // 컷신: 위아래 검은 띠 + 아래 띠에 한 자씩 나오는 대사
   static cutscene(ctx, game) {

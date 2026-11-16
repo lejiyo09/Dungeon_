@@ -274,13 +274,14 @@ class Game {
     const { x, y } = this.player;
     this.player = this.makePlayer(x, y);
     this.discover(hero.startWeapon);
-    this.showBanner(hero.name + (this.jobLevel(hero.id) ? ` Lv.${this.jobLevel(hero.id)}` : ''), `다시 E: 직업 레벨 창 · ${hero.title} · 스킬: ${hero.skillName} — ${hero.skillDesc}` + (hero.passiveName ? ` · 패시브: ${hero.passiveName} (${hero.passiveDesc})` : ''));
+    this.banner = null; // 캐릭터 교체 시 안내 배너는 생략하고, 선택한 단상에서 E로 상세 정보 확인
   }
 
   // ── 런 진행
   startRun() {
     this.mode = 'dungeon'; this.trialW = null;
     this.worldIdx = 0; this.levelIdx = 0; this.gold = 0; this.kills = 0;
+    this.save.runReviveUsed = false; // 새 탐험마다 부활 기회 초기화
     this.player = this.makePlayer(0, 0);
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); // 로비에서 고른 보구 (사망해도 영구 보유)
     if (tr) { this.player.treasure = tr; if (tr.apply) tr.apply(this.player); }
@@ -417,10 +418,28 @@ class Game {
       this.props.push(new ShopItem(c.x + (i >= 2 ? 8 : 0), c.y, kind, price, def));
     });
   }
+  reviveRun() {
+    const COST = 200, p = this.player;
+    if (this.mode !== 'dungeon' || this.trialW || !p || p.state !== 'DEAD' || this.save.runReviveUsed || this.save.bank < COST) return false;
+    this.save.bank -= COST;
+    this.save.runReviveUsed = true;
+    writeSave(this.save); // 재접속으로 부활 횟수를 초기화할 수 없도록 즉시 저장
+    p.state = 'NORMAL'; p.deathTimer = 0;
+    p.hp = Math.max(1, Math.ceil(p.maxHp * 0.5));
+    p.shield = Math.ceil(p.maxShield * 0.5);
+    p.hurtInvuln = 2.5; p.dashInvuln = 0; p.dashRemaining = 0;
+    p.castLock = 0; p.swing = null;
+    this.overlay = null;
+    this.effects.ring(p.x, p.y, 34, '#7ad0ff');
+    this.effects.burst(p.x, p.y, '#ffffff', 18);
+    SFX.play('heal');
+    this.showBanner('부활!', `결정석 ${COST}개 사용 · 이번 탐험의 부활 기회 소진`, '#7ad0ff');
+    return true;
+  }
   endRun(victory) {
     if (this.trialW) { this.endRhongoTrial(victory); return; }
     this.guildEvent('runs');
-    SFX.stopMusic(); this.save.run = null; writeSave(this.save);
+    SFX.stopMusic(); this.save.run = null; this.save.runReviveUsed = false; writeSave(this.save);
     SFX.play(victory ? 'victory' : 'hurt');
     // 로비 재화: 클리어한 스테이지 수 · 쓰러뜨린 필드 보스 수 · 승리 보너스 (던전 골드는 런과 함께 사라짐)
     const stages = this.stageIndex + (victory ? 1 : 0), bosses = this.worldIdx + (victory ? 1 : 0);
@@ -549,7 +568,8 @@ class Game {
         }
     } else if (p.deathTimer > 1 && !this.overlay) {
       SFX.stopMusic();
-      this.endRun(false);
+      if (this.mode === 'dungeon' && !this.trialW && !this.save.runReviveUsed) this.overlay = { type: 'revive', msg: null };
+      else this.endRun(false);
     }
     this.updateCamera(dt);
     input.endStep();
@@ -621,6 +641,17 @@ class Game {
         this.input.mouse.down = false;
         this.showBanner(b.name, b.desc, '#ffd84a');
         o.after();
+      }
+    } else if (o.type === 'revive') {
+      const click = input.wasPressed('Mouse0'), m = input.mouse;
+      const hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+      const revive = input.wasPressed('Digit1') || (click && hit(HUD.reviveRect(0)));
+      const giveUp = input.wasPressed('Digit2') || input.wasPressed('Enter') || input.wasPressed('Escape') || (click && hit(HUD.reviveRect(1)));
+      if (revive) {
+        if (!this.reviveRun()) { o.msg = `결정석이 부족합니다 (200개 필요 · 보유 ${this.save.bank}개)`; SFX.play('deny'); }
+        this.input.mouse.down = false;
+      } else if (giveUp) {
+        this.overlay = null; this.input.mouse.down = false; this.endRun(false);
       }
     } else if (o.type === 'result') {
       if (input.wasPressed('Enter')) this.finishResult();
@@ -712,9 +743,30 @@ class Game {
         let bet = null; GUILD_GAMBLE.bets.forEach((b, i) => { if (input.wasPressed('Digit' + (i + 1)) || (click && hit(HUD.betRect(i)))) bet = b; });
         if (bet !== null) { if (this.save.bank < bet) say([`${CUR.name}이 부족합니다`, '#ff9a9a']); else { o.pending = this.gamble(bet); o.roll = 0.9; o.msg = null; o.result = null; SFX.play('ui'); } }
       }
+    } else if (o.type === 'hero_info') { // 캐릭터 상세: 패시브·직업 계열·진화 스킬
+      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
+      if (input.wasPressed('KeyJ')) {
+        this.overlay = { type: 'joblevel', msg: null, returnToHeroInfo: true, branchIndex: o.branchIndex || 0 };
+        return;
+      }
+      const lines = jobLines(o.heroId || this.save.selected);
+      lines.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) o.branchIndex = i; });
+      if (input.wasPressed('Mouse0')) {
+        const m = input.mouse;
+        lines.forEach((_, i) => {
+          const r = HUD.heroBranchRect(i, lines.length);
+          if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) o.branchIndex = i;
+        });
+        this.input.mouse.down = false;
+      }
     } else if (o.type === 'joblevel') { // 직업 레벨 창: 숫자 키 / 클릭으로 레벨업
       if (o.msg) o.msg.t -= STEP;
-      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
+      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) {
+        this.overlay = o.returnToHeroInfo
+          ? { type: 'hero_info', heroId: this.save.selected, branchIndex: o.branchIndex || 0 }
+          : null;
+        return;
+      }
       let pickI = -1;
       DATA_HEROES.forEach((h, i) => { if (input.wasPressed('Digit' + (i + 1))) pickI = i; });
       if (input.wasPressed('Mouse0')) { const m = input.mouse; DATA_HEROES.forEach((h, i) => { const r = HUD.jobRowRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) pickI = i; }); }
