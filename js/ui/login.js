@@ -57,19 +57,19 @@ const LoginUI = {
     this.root.querySelectorAll('.lg-del').forEach((b) => b.onclick = () => this.askDelete(list.find((p) => p.id === b.dataset.del)));
     this.root.querySelector('#lg-new').onclick = () => this.renderNew();
     this.root.querySelector('#lg-guest').onclick = () => this.enter(null);
-    const adm = this.root.querySelector('#lg-admin'); if (adm) adm.onclick = () => this.renderPin({ name: '관리자 계정' }, '로그인', async (pin) => { if (await Auth.verifyAdminPin(pin)) this.enter(Auth.admin()); else return 'PIN이 맞지 않습니다'; });
+    const adm = this.root.querySelector('#lg-admin'); if (adm) adm.onclick = () => this.renderPin({ name: '관리자 계정', admin: true }, '로그인', async (pin) => { if (await Auth.verifyAdminPin(pin)) this.enter(Auth.admin()); else return '비밀번호가 맞지 않습니다'; });
     const first = this.root.querySelector(last ? '#lg-cont' : '#lg-new'); if (first) first.focus();
     this.setKeys(null); // Enter는 포커스된 버튼(기본: 계속하기)이 처리
   },
   pick(p) {
     if (!p.pinHash) { this.enter(p); return; }
     this.renderPin(p, '로그인', async (pin) => {
-      if (await Auth.verify(p, pin)) this.enter(p); else return 'PIN이 맞지 않습니다';
+      if (await Auth.verify(p, pin)) this.enter(p); else return p.admin ? '비밀번호가 맞지 않습니다' : 'PIN이 맞지 않습니다';
     });
   },
   askDelete(p) {
     const go = async (pin) => {
-      if (p.pinHash && !(await Auth.verify(p, pin))) return 'PIN이 맞지 않습니다';
+      if (p.pinHash && !(await Auth.verify(p, pin))) return p.admin ? '비밀번호가 맞지 않습니다' : 'PIN이 맞지 않습니다';
       Auth.remove(p); if (Auth.getAuto() && Auth.getAuto().id === p.id) Auth.setAuto(null);
       this.renderList(`'${p.name}' 계정을 삭제했습니다`);
     };
@@ -78,14 +78,15 @@ const LoginUI = {
   },
   renderPin(p, verb, onOk, warn) {
     this.frame(`<div class="lg-h">${this.esc(p.name)} — ${verb}</div>${warn ? `<div class="lg-msg">${this.esc(warn)}</div>` : ''}
-      <input class="lg-in lg-pin" id="lg-pin" type="password" inputmode="numeric" placeholder="PIN 4자리" autocomplete="off">
+      ${p.admin ? '<input class="lg-in" id="lg-pin" type="password" placeholder="관리자 비밀번호" autocomplete="off">' : '<input class="lg-in lg-pin" id="lg-pin" type="password" inputmode="numeric" placeholder="PIN 4자리" autocomplete="off">'}
       <div class="lg-err" id="lg-err"></div>
       <button class="lg-btn lg-main" id="lg-ok">${verb}</button><button class="lg-btn" id="lg-back">뒤로 (Esc)</button>`);
     const inp = this.root.querySelector('#lg-pin'), err = this.root.querySelector('#lg-err');
     let busy = false;
     const ok = async () => { if (busy) return; busy = true; const e = await onOk(inp.value); busy = false; if (e) { err.textContent = e; inp.value = ''; inp.focus(); } };
     this.root.querySelector('#lg-ok').onclick = ok;
-    inp.oninput = () => { inp.value = inp.value.replace(/\D/g, '').slice(0, 4); err.textContent = ''; if (inp.value.length === 4) ok(); }; // 4자리면 자동 확인
+    inp.oninput = p.admin ? () => { err.textContent = ''; } // 관리자: 글자 그대로, Enter로 확인
+      : () => { inp.value = inp.value.replace(/\D/g, '').slice(0, 4); err.textContent = ''; if (inp.value.length === 4) ok(); }; // 4자리면 자동 확인
     inp.onkeydown = (e) => { if (e.key === 'Enter') ok(); };
     this.root.querySelector('#lg-back').onclick = () => this.renderList();
     this.setKeys((e) => { if (e.key === 'Escape') this.renderList(); });

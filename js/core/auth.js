@@ -36,10 +36,10 @@ const Auth = {
     all.push(p); this.saveList(all);
     return p;
   },
-  // 관리자 계정: 모든 것이 해금된 테스트용 계정 (이 기기에 하나, 계정 수 제한에 포함되지 않음). PIN은 정해진 값 (해시로만 보관)
-  ADMIN_SALT: 'pd_admin', ADMIN_HASH: '68ca352031af3e2ddab7b98a30d199906b193ae680b4893bf5f17f50e9af7df1',
+  // 관리자 계정: 모든 것이 해금된 테스트용 계정 (이 기기에 하나, 계정 수 제한에 포함되지 않음). 비밀번호는 정해진 값 (해시로만 보관, 일반 계정과 달리 숫자 4자리가 아님)
+  ADMIN_SALT: 'pd_admin', ADMIN_HASH: 'ebfedd46a74ea966d17ab29e709bf0dee0fa0ebb20c5a08fdd152bf58236d6dd',
   async verifyAdminPin(pin) { return (await this.hashPin(pin || '', this.ADMIN_SALT)) === this.ADMIN_HASH; },
-  fixAdmin() { // 예전에 PIN 없이 만든 관리자 계정에도 PIN을 걺
+  fixAdmin() { // 예전에 만든 관리자 계정도 지금 비밀번호로 맞춤
     const all = this.list(), p = all.find((x) => x.admin);
     if (p && (p.pinHash !== this.ADMIN_HASH || p.salt !== this.ADMIN_SALT)) { p.salt = this.ADMIN_SALT; p.pinHash = this.ADMIN_HASH; this.saveList(all); }
     if (p && this.getAuto() && this.getAuto().id === p.id) this.setAuto(null); // 관리자는 자동 로그인 안 됨
