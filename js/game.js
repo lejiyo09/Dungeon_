@@ -492,16 +492,9 @@ class Game {
       this.effects.rays(cx, cy, '#ffd84a', 16, T.radius + 20, 0.7);
       this.effects.ring(cx, cy, T.radius, '#ffd84a'); this.effects.ring(cx, cy, T.radius * 0.6, '#fff4c0');
       this.addShake(0.25, 4); this.screenFlash = 0.08; this.flashColor = '255,216,74'; this.hitStop(0.05);
-    } else if (T.use === 'beam') { // 엑스칼리버: 벽까지 일직선, 스테이지가 깊을수록 피해도 커짐
-      const sx = p.x + p.aim.x * 8, sy = p.y + p.aim.y * 8, L = T.range;
-      const wt = sweepWall(sx, sy, sx + p.aim.x * L, sy + p.aim.y * L, this.map, 3), len = wt < 0 ? L : wt * L;
-      const ex = sx + p.aim.x * len, ey = sy + p.aim.y * len, dmg = T.damage * this.scale.hp;
-      for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, ex, ey, e.x, e.y, e.radius + T.width) >= 0)
-        this.damageEnemy(e, { damage: dmg, mods: p.mods, knockback: 10 }, p.aim.x, p.aim.y);
-      for (const b of this.enemyBullets) if (segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸
-      this.hitTile(ex + p.aim.x * 3, ey + p.aim.y * 3);
-      this.effects.excalibur(sx, sy, ex, ey, T.width, p.x, p.y); this.effects.goldBurst(ex, ey, 14); // 군더더기 없이 한 줄기 빛 + 끝의 충격
-      this.addShake(0.45, 8); this.screenFlash = 0.35; this.flashColor = '255,240,200'; this.hitStop(0.1);
+    } else if (T.use === 'beam') { // 엑스칼리버: 검을 들어 빛기둥을 세우고(0.6초) → 조준 방향으로 내려찍음 → 끝에서 폭발
+      this.zones.push(new ExcaliburRaise(p, T, () => this.excaliburStrike(p, T)));
+      SFX.play('skill');
     } else if (T.use === 'blessing') { // 솔로몬의 반지: 각종 버프
       p.solomon = T.duration; p.shield = p.maxShield; p.energy = p.maxEnergy; p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * T.heal)); p.skillCooldown = 0; this.effects.heal(p.x, p.y);
       this.effects.solomonSeal(p.x, p.y); this.effects.ring(p.x, p.y, 40, '#ffd84a'); this.effects.ring(p.x, p.y, 70, '#c8a0ff'); this.effects.solomonSeal(p.x, p.y, 1.8); this.addShake(0.2, 3);
@@ -509,6 +502,24 @@ class Game {
       for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; this.effects.skyBeam(p.x + Math.cos(a) * 46, p.y + Math.sin(a) * 34, i % 2 ? '#c8a0ff' : '#ffd84a', 0.1 + i * 0.05, 4); } // 육각형으로 내리는 빛기둥
       for (let i = 0; i < 30; i++) this.effects.part(p.x + randInt(-30, 30), p.y + randInt(-10, 14), randInt(-8, 8), -40 - Math.random() * 60, { color: i % 2 ? '#c8a0ff' : '#ffd84a', life: 1, size: 2, size2: 0, drag: 1, add: true });
     }
+  }
+  // 엑스칼리버 내려찍기 (ExcaliburRaise가 빛기둥을 세운 뒤 호출): 벽까지 일직선 피해 → 끝에서 폭발. 스테이지가 깊을수록 피해도 커짐
+  excaliburStrike(p, T) {
+    if (p.state === 'DEAD') return;
+    const sx = p.x + p.aim.x * 8, sy = p.y + p.aim.y * 8, L = T.range;
+    const wt = sweepWall(sx, sy, sx + p.aim.x * L, sy + p.aim.y * L, this.map, 3), len = wt < 0 ? L : wt * L;
+    const ex = sx + p.aim.x * len, ey = sy + p.aim.y * len, dmg = T.damage * this.scale.hp;
+    for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, ex, ey, e.x, e.y, e.radius + T.width) >= 0)
+      this.damageEnemy(e, { damage: dmg, mods: p.mods, knockback: 10 }, p.aim.x, p.aim.y);
+    for (const b of this.enemyBullets) if (segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸
+    this.hitTile(ex + p.aim.x * 3, ey + p.aim.y * 3);
+    this.effects.excalibur(sx, sy, ex, ey, T.width, p.x, p.y);
+    this.addShake(0.5, 9); this.screenFlash = 0.4; this.flashColor = '255,240,200'; this.hitStop(0.12); SFX.play('excal');
+    // 떨어진 자리에서 폭발: 금빛 대폭발 + 충격파 고리 + 빛살 + 빛기둥 (주변 적에게 추가 피해)
+    this.explodeAt(ex, ey, T.blast, { color: '#ffe9a0', hurtEnemies: true, src: { damage: dmg * T.blastRatio, mods: p.mods, knockback: 14 } });
+    this.effects.rays(ex, ey, '#fff4c0', 22, T.blast * 2.2, 0.8); this.effects.ring(ex, ey, T.blast, '#ffffff'); this.effects.ring(ex, ey, T.blast * 1.6, '#ffd84a');
+    for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.effects.explosion(ex + Math.cos(a) * T.blast * 0.55, ey + Math.sin(a) * T.blast * 0.4, 14 + (i % 3) * 4, '#ffd84a'); }
+    this.effects.skyBeam(ex, ey, '#ffffff', 0, 16); this.effects.goldBurst(ex, ey, 30); SFX.play('explode');
   }
   // ── 직업 계열·진화
   skillDmg(base) { return base * (1 + (this.scale.hp - 1) * 0.5); } // 스킬 피해: 깊이 내려갈수록 조금씩 커짐

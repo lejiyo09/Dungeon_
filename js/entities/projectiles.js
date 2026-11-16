@@ -531,6 +531,39 @@ class SkillCast {
     ctx.fillStyle = this.color; ctx.fillRect(Math.round(this.owner.x) - 14, Math.round(this.owner.y) - 23, bar, 2); // 시전 막대
   }
 }
+// 엑스칼리버 1단계: 검을 머리 위로 들어 올리면 칼끝에서 하늘까지 빛기둥이 솟음 (0.6초) → 조준 방향으로 휘둘러 내려찍음 (0.12초) → strike()
+class ExcaliburRaise {
+  constructor(owner, T, strike) { this.owner = owner; this.T = T; this.strike = strike; this.t = 0; this.alive = true; this.RAISE = 0.6; this.SWING = 0.12; owner.castLock = this.RAISE + this.SWING + 0.05; owner.blinkInv = Math.max(owner.blinkInv || 0, this.RAISE + this.SWING); }
+  get x() { return this.owner.x; } get y() { return this.owner.y; }
+  update(dt, world) {
+    const p = this.owner; this.t += dt;
+    if (p.state === 'DEAD') { this.alive = false; p.castLock = 0; return; }
+    if (this.t < this.RAISE) { // 모여드는 빛 + 기둥 둘레의 금가루
+      if (Math.random() < 0.8) { const a = Math.random() * TAU, d = 40 + Math.random() * 30; world.effects.part(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d * 0.7, -Math.cos(a) * d * 2.2, -Math.sin(a) * d * 1.6, { color: '#fff4c0', life: 0.4, size: 2, size2: 0, drag: 0, add: true }); }
+      if (Math.random() < 0.5) world.effects.part(p.x + randInt(-6, 6), p.y - 30 - Math.random() * 100, randInt(-10, 10), -20, { color: '#ffe9a0', life: 0.5, size: 1.5, size2: 0, drag: 1, add: true });
+      if (!this.rung && this.t > this.RAISE * 0.5) { this.rung = true; world.effects.ring(p.x, p.y, 30, '#ffe9a0'); world.addShake(0.15, 2); }
+    }
+    if (this.t >= this.RAISE + this.SWING) { this.alive = false; p.castLock = 0; this.strike(); }
+  }
+  render() {}
+  renderTop(ctx) { // 캐릭터 위에 그림: 들어 올린 검 + 빛기둥 → 내려찍는 동안 기둥이 조준 방향으로 회전
+    const p = this.owner, t = this.t, hx = Math.round(p.x), hy = Math.round(p.y - 8), aim = Math.atan2(p.aim.y, p.aim.x);
+    let ang = -Math.PI / 2, len, w;
+    if (t < this.RAISE) { const k = Math.min(1, t / (this.RAISE * 0.7)); len = 20 + 260 * k * k; w = 3 + 9 * k; }
+    else { const k = Math.min(1, (t - this.RAISE) / this.SWING); let end = aim; // 바라보는 쪽으로 휘둘러 내림 (오른쪽이면 시계 방향, 왼쪽이면 반대)
+      if (Math.cos(aim) >= 0) { while (end < -Math.PI / 2) end += TAU; while (end > Math.PI * 1.5) end -= TAU; } else { while (end > -Math.PI / 2) end -= TAU; while (end < -Math.PI * 2.5) end += TAU; }
+      ang = -Math.PI / 2 + (end + Math.PI / 2) * k * k; len = 280; w = 12; }
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(hx, hy); ctx.rotate(ang);
+    const band = (hw, col) => { const h = Math.max(1, Math.round(hw)); ctx.fillStyle = col; ctx.fillRect(10, -h, len, h * 2); };
+    band(w * 1.9, 'rgba(200,140,40,0.25)'); band(w * 1.2, 'rgba(255,200,70,0.6)'); band(w * 0.7, 'rgba(255,236,170,0.95)'); band(w * 0.3, '#ffffff');
+    ctx.fillStyle = 'rgba(255,255,255,0.8)'; for (let i = 0; i < 5; i++) { const off = 10 + ((i * 0.31 + t * 2.4) % 1) * len; ctx.fillRect(Math.round(off), Math.round((i % 3 - 1) * w * 0.4), 18, 1); } // 기둥을 타고 오르는 빛
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = OUTLINE; ctx.fillRect(-2, -4, 12, 8); ctx.fillStyle = '#ffd84a'; ctx.fillRect(6, -6, 2, 12); ctx.fillStyle = '#3a5aa0'; ctx.fillRect(0, -1, 6, 2); // 손잡이·날밑
+    ctx.fillStyle = '#ffe9a0'; ctx.fillRect(8, -2, 24, 4); ctx.fillStyle = '#ffffff'; ctx.fillRect(8, -1, 24, 1); // 검신
+    ctx.restore();
+    if (t < this.RAISE) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 + 0.2 * Math.sin(t * 30); ctx.fillStyle = '#ffe9a0'; ctx.beginPath(); ctx.ellipse(hx, Math.round(p.y + 6), 16 + t * 20, 5 + t * 6, 0, 0, TAU); ctx.fill(); ctx.restore(); } // 발밑 빛
+  }
+}
 // 이펙트 방출기: life초 동안 매 프레임 fn(world, x, y, t)을 불러 입자를 뿌림 (follow: 따라다닐 대상)
 class FxEmitter {
   constructor(x, y, life, fn, follow) { this.x = x; this.y = y; this.life = life; this.fn = fn; this.follow = follow || null; this.t = 0; this.alive = true; }

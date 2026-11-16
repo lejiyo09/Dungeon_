@@ -78,7 +78,7 @@ class Effects {
   excalibur(x, y, x1, y1, w, px, py) { // 금빛 검기: 휘두르는 빛의 검 → 한 줄기 굵은 빛 → 가늘어지며 남는 잔광 (단순하지만 묵직하게)
     const L = Math.hypot(x1 - x, y1 - y) || 1, dx = (x1 - x) / L, dy = (y1 - y) / L;
     this.push({ kind: 'excal', x, y, x1, y1, w, t: 0, life: 1.15, add: true });
-    this.push({ kind: 'excalSword', x: px, y: py - 3, ang: Math.atan2(dy, dx), t: 0, life: 0.5, add: false });
+    // (검을 휘두르는 모습은 ExcaliburRaise가 그림)
     this.push({ kind: 'shock', x, y, r: 34, color: '#ffffff', t: 0, life: 0.3, add: true });                 // 손끝 충격파
     this.push({ kind: 'shock', x: x1, y: y1, r: w * 2.6, color: '#ffe9a0', t: -0.06, life: 0.45, add: true }); // 끝에서 터지는 충격파
     for (let d = 0; d < L; d += 22) { // 빛줄기를 따라 드문드문 떠오르는 금빛 알갱이 (잔광)

@@ -58,7 +58,7 @@ const DATA_TREASURES = [
     radius: 72, range: 170, duration: 5, damage: 160, weak: 1.5, color: '#ffd84a',
     desc: '전방의 넓은 원형 범위에 황금 사슬을 소환해 적을 5초간 묶고 큰 피해, 묶인 적은 받는 피해 +50%' },
   { id: 'treasure_excalibur', name: '엑스칼리버', origin: '아서왕', use: 'beam', cooldown: 45, sfx: 'excal', icon: 'excalibur',
-    damage: 1100, width: 20, range: 640, color: '#ffe9a0',
+    damage: 1100, width: 20, range: 640, blast: 62, blastRatio: 0.3, color: '#ffe9a0', // blast: 끝 폭발 반경, blastRatio: 폭발 추가 피해 비율
     desc: '전방 일직선으로 거대한 금빛 검기를 발사해 압도적인 피해 — 보구 중 가장 강한 한 방 (벽까지)' },
   { id: 'treasure_ring_of_solomon', name: '솔로몬의 반지', origin: '솔로몬', use: 'blessing', cooldown: 60, sfx: 'solomon', icon: 'ring',
     duration: 12, atk: 0.7, rate: 0.6, speed: 0.3, guard: 0.5, heal: 0.3, color: '#c8a0ff',
