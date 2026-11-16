@@ -392,6 +392,7 @@ class Game {
     if (W.sanctum) this.decorateSanctum(map);
     this.snapCamera();
     if (W.sanctum && this.levelIdx === 0) this.playCutscene(ORIGIN_ARRIVAL_LINES, { id: 'origin_arrival', focus: null });
+    if (W.deep && !W.trial && W.depth === 1 && this.levelIdx === 0) this.playCutscene(DEEP_ARRIVAL_LINES, { id: 'deep_arrival', focus: null }); // 심층에 처음 들어설 때 (한 번만)
     if (this.coop && this.coop.host) this.coopOnStage(); // 멀티: 동료 배치·부활 + 새 맵 보내기
     if (W.trial) { this.showBanner(W.name, '롱고미니아드가 기다리고 있습니다', '#bfe6ff'); return; }
     this.showBanner(`${stageLabel(this.worldIdx, this.levelIdx)}  ${W.name}`, this.isBossStage ? '보스가 기다리고 있습니다' : W.deep && this.levelIdx === 0 ? `심층 ${W.depth}번째 필드 — 던전은 더 깊은 곳으로 이어진다` : '출구 포탈을 찾으세요', W.deep ? '#9ad8ff' : undefined);
@@ -760,7 +761,7 @@ class Game {
       if (o.msg) o.msg.t -= STEP;
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
       const m = input.mouse; let pickI = -1;
-      STORY_ARCHIVE.forEach((s, i) => { const r = HUD.guildRow(i); if (input.wasPressed('Digit' + (i + 1)) || (input.wasPressed('Mouse0') && m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h)) pickI = i; });
+      STORY_ARCHIVE.forEach((s, i) => { const r = HUD.archiveRow(i); if (input.wasPressed('Digit' + (i < 9 ? i + 1 : i === 9 ? 0 : 'X')) || (input.wasPressed('Mouse0') && m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h)) pickI = i; });
       if (pickI < 0) return;
       const S = STORY_ARCHIVE[pickI]; this.input.mouse.down = false;
       if (!S.unlocked(this.save)) { o.msg = { text: '아직 보지 못한 이야기입니다', color: '#ff9a9a', t: 2 }; return; }
@@ -956,7 +957,7 @@ class Game {
         patterns: [{ type: 'aimed', volleys: 3, count: 5, spread: 0.15, color: col }, { type: 'radial', rings: 2, count: 18, color: col }, { type: 'charge', dashes: 2, speed: 340, color: '#ffffff' }],
         phase2Patterns: [{ type: 'spiral', duration: 2.2, arms: 3 + next, interval: 0.09, spin: 1.8, color: col }, { type: 'slam', radius: 46, chain: next, color: col }] });
     }
-    npc.gone = true; r.trial = next; r.trialPlayer = p; r.hybrid = hy || null; // 시련을 시작한 사람이 진화 (멀티) r.branch = npc.branch || null; r.state = 'active'; this.activeRoom = r; r.wavesLeft = 0;
+    npc.gone = true; r.trial = next; r.trialPlayer = p; r.hybrid = hy || null; r.branch = npc.branch || null; r.state = 'active'; this.activeRoom = r; r.wavesLeft = 0; // 시련을 시작한 사람이 진화 (멀티)
     this.map.setDoors(r, true); this.enemyBullets.length = 0;
     const c = this.map.tileCenter(r.cx, r.cy - 1), m = this.spawnEnemy(key, c.x, c.y, r); m.phase = 1;
     this.showBanner(`${trialName}의 시련`, hy ? `${hy.el.name}의 마도사 상위자를 쓰러뜨리면 ${trialName}(으)로 진화합니다` : '상위자를 쓰러뜨리면 진화합니다', '#ffd84a'); SFX.play('boss');

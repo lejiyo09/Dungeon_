@@ -189,9 +189,9 @@ class HUD {
       hudText(ctx, `1~4 / 클릭: 탭 전환   ·   ${pages > 1 ? `◀ ▶ · A·D · 휠: 페이지 ${page + 1}/${pages}   ·   ` : ''}${tw ? (o.picked.length ? '클릭: 선택/해제   ·   Enter: 보스전 시작   ·   Esc: 로비로' : '클릭: 무기 선택 (최대 2개)   ·   Esc: 로비로') : 'E / Esc: 닫기'}`, VIEW_W / 2, VIEW_H - 12, pages > 1 ? '#bbb' : '#888', 'center', 8);
     } else if (o.type === 'archive') { // 이야기 기록
       const m = game.input.mouse; hudText(ctx, '이야기 기록 — 지금까지 본 이야기를 다시 봅니다', VIEW_W / 2, 12, '#e0d0b0', 'center', 11);
-      STORY_ARCHIVE.forEach((S, i) => { const r = HUD.guildRow(i), ok = S.unlocked(game.save), on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+      STORY_ARCHIVE.forEach((S, i) => { const r = HUD.archiveRow(i), ok = S.unlocked(game.save), on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
         ctx.fillStyle = on && ok ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h); if (ok) { ctx.strokeStyle = '#7a6040'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
-        hudText(ctx, `${i + 1}  ${ok ? S.name : '???'}`, r.x + 10, r.y + 8, ok ? '#fff' : '#555', 'left', 10); hudText(ctx, ok ? '다시 보기' : '아직 보지 못함', r.x + r.w - 10, r.y + 8, ok ? '#e0d0b0' : '#555', 'right', 9); });
+        hudText(ctx, `${i < 9 ? i + 1 : i === 9 ? 0 : '·'}  ${ok ? S.name : '???'}`, r.x + 10, r.y + 5, ok ? '#fff' : '#555', 'left', 9); hudText(ctx, ok ? '다시 보기' : '아직 보지 못함', r.x + r.w - 10, r.y + 5, ok ? '#e0d0b0' : '#555', 'right', 8); });
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 28, o.msg.color, 'center', 10);
       hudText(ctx, '숫자 키 / 클릭: 다시 보기   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
     } else if (o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble') { // 탐험가 길드 창들
@@ -526,6 +526,7 @@ class HUD {
   static trialBtn(i) { return { x: VIEW_W / 2 - 130 + i * 140, y: 140, w: 120, h: 26 }; }
   static guildTab(i) { return { x: 60 + i * 134, y: 22, w: 126, h: 16 }; }
   static adminRow(i) { return { x: 60, y: 32 + i * 24, w: VIEW_W - 120, h: 21 }; }
+  static archiveRow(i) { return { x: 40, y: 32 + i * 21, w: VIEW_W - 80, h: 18 }; }
   static guildRow(i) { return { x: 40, y: 46 + i * 28, w: VIEW_W - 80, h: 25 }; }
   static titleCell(i) { return { x: 40 + (i % 2) * 218, y: 46 + Math.floor(i / 2) * 30, w: 212, h: 27 }; }
   static betRect(i) { return { x: VIEW_W / 2 - 150 + i * 104, y: 150, w: 92, h: 22 }; }

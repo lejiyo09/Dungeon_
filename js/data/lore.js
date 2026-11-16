@@ -116,6 +116,14 @@ const RHONGO_TRIAL = {
       wallFace: '#7e8aa4', faceLine: '#6c7892', deco: 'rgba(191,230,255,0.35)' } },
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
 };
+// 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
+const DEEP_ARRIVAL_LINES = [
+  '발밑의 돌이 차갑게 식어 간다.',
+  '기원의 성역보다 더 아래 — 지도에도, 기록에도 없는 곳.',
+  '공기에 섞인 빛의 결이 낯설다. 이곳의 것들은 성역을 지키던 것들과 다르다.',
+  '「…아직 끝이 아니었구나.」',
+  '길은 보이지 않을 만큼 깊이 이어져 있다. 내려갈수록 돌아오는 길은 멀어질 것이다.'
+];
 // 탐험가 길드 '이야기 기록' 책장: 지금까지 본 이야기를 다시 보기 (unlocked: 볼 수 있는 조건)
 const STORY_ARCHIVE = [
   { id: 'prologue', name: '프롤로그', kind: 'story', lines: () => PROLOGUE_LINES, unlocked: () => true },
@@ -123,6 +131,7 @@ const STORY_ARCHIVE = [
   { id: 'gatekeeper_intro', name: '무명의 문지기', kind: 'cut', lines: () => GATEKEEPER_INTRO_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gatekeeper_intro') },
   { id: 'gatekeeper_fall', name: '열리는 문', kind: 'cut', lines: () => GATEKEEPER_FALL_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gatekeeper_fall') },
   { id: 'sanctum', name: '성역 깊은 곳', kind: 'sanctum', lines: () => SANCTUM_LINES, unlocked: (sv) => !!sv.sanctumReached },
+  { id: 'deep_arrival', name: '심층으로', kind: 'cut', lines: () => DEEP_ARRIVAL_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('deep_arrival') },
   { id: 'merlin', name: '후드를 쓴 마법사', kind: 'cut', lines: () => MERLIN_REVEAL_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.revealed) },
   { id: 'avalon', name: '아발론의 정원', kind: 'cut', lines: () => MERLIN_REWARD_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 2) },
   { id: 'spear_trial', name: '왕의 창', kind: 'cut', lines: () => MERLIN_SPEAR_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 3) },
