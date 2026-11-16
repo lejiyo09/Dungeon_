@@ -30,7 +30,7 @@ class Player extends Entity {
   }
   get weapon() { return this.weapons[this.slot] || null; }
   get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0; }
-  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.2 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
+  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.35 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
 
   update(dt, input, map, mouseWorld) {
     this.time += dt;

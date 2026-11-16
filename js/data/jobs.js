@@ -32,7 +32,7 @@ const JOB_LINES = {
       skills: [
         { id: 'fireball', name: '파이어볼', desc: '폭발하는 큰 불덩이를 발사 (화상)', cd: 4 },
         { id: 'flamestorm', name: '화염 회오리', desc: '5초간 자기 주위에 불길이 휘몰아쳐 지속 피해', cd: 9 },
-        { id: 'explosion', name: '익스플로전', desc: '범위를 정하고 2초간 시전(이동 불가) → 범위에 엄청난 피해', cd: 12 }] },
+        { id: 'explosion', name: '익스플로전', desc: '범위를 정하고 2초간 시전(이동 불가) → 범위에 엄청난 피해', cd: 10 }] },
     ice: { name: '얼음', desc: '서리 지팡이 · 얼려서 묶음', startWeapon: 'weapon_frost_001', ranks: ['얼음의 마도사', '빙결술사', '혹한의 대마도사'], color: '#9ad8ff',
       skills: [
         { id: 'icelance', name: '얼음 창', desc: '적을 꿰뚫는 얼음 창 3개 (빙결)', cd: 4 },
@@ -51,8 +51,8 @@ const JOB_LINES = {
     light: { name: '빛', desc: '견습 마법봉 · 회복과 정화', startWeapon: 'weapon_wand_001', ranks: ['빛의 마도사', '정화술사', '성광의 대마도사'], color: '#fff4c0',
       skills: [
         { id: 'lightarrow', name: '빛의 화살', desc: '적을 따라가 꿰뚫는 빛의 화살 5개', cd: 4 },
-        { id: 'radiance', name: '광휘', desc: '체력 회복 + 주변 적 피해, 탄환 제거', cd: 8 },
-        { id: 'judgment', name: '심판의 빛', desc: '1.5초 시전(이동 불가) → 조준 지점에 빛기둥, 큰 피해 + 체력 회복', cd: 12 }] },
+        { id: 'radiance', name: '광휘', desc: '체력 회복 + 주변 적 피해, 탄환 제거', cd: 6 },
+        { id: 'judgment', name: '심판의 빛', desc: '1.5초 시전(이동 불가) → 조준 지점에 빛기둥, 큰 피해 + 체력 회복', cd: 11 }] },
     dark: { name: '어둠', desc: '저주 지팡이 · 약점과 흡인', startWeapon: 'weapon_cursestaff_001', ranks: ['어둠의 마도사', '저주술사', '공허의 대마도사'], color: '#a070e0',
       skills: [
         { id: 'curseshot', name: '저주탄', desc: '맞은 적이 오래 약해지는(받는 피해 +40%) 저주 구체', cd: 4 },
@@ -61,14 +61,14 @@ const JOB_LINES = {
   },
   hero_gunner: { base: { ranks: ['사수', '건마스터', '데드아이'], color: '#ffd84a',
     skills: [
-      { id: 'overdrive', name: '과부하 사격', desc: '4초간 공격 속도 2배, 에너지 무소모', cd: 15 },
-      { id: 'overdrive2', name: '탄막 폭주', desc: '6초간 공격 속도 2배·공격력 +30%, 에너지 무소모', cd: 15 },
+      { id: 'overdrive', name: '과부하 사격', desc: '5초간 공격 속도 2배, 에너지 무소모', cd: 15 },
+      { id: 'overdrive2', name: '탄막 폭주', desc: '7초간 공격 속도 2배·공격력 +40%, 에너지 무소모', cd: 15 },
       { id: 'deadeye', name: '데드아이', desc: '1초 조준(이동 불가) → 보이는 모든 적을 한 발씩 저격', cd: 14 }] } },
   hero_engineer: { base: { ranks: ['기술자', '기계공학자', '전쟁 설계자'], color: '#f0c030',
     skills: [
       { id: 'turret', name: '자동 포탑', desc: '12초간 적을 쏘는 포탑 설치', cd: 13 },
       { id: 'turret2', name: '포대 전개', desc: '15초간 강한 포탑 2개 설치', cd: 13 },
-      { id: 'barrage', name: '궤도 폭격', desc: '1초 신호(이동 불가) → 조준 지점에 포격 10발', cd: 13 }] } },
+      { id: 'barrage', name: '궤도 폭격', desc: '1초 신호(이동 불가) → 조준 지점에 포격 14발', cd: 13 }] } },
   hero_assassin: { base: { ranks: ['암살자', '그림자 군주', '그림자 그 자체'], color: '#b080ff',
     skills: [
       { id: 'blink', name: '그림자 습격', desc: '조준 방향으로 순간이동하며 지나간 적을 벰 (잠깐 무적)', cd: 5 },
@@ -76,13 +76,13 @@ const JOB_LINES = {
       { id: 'execution', name: '그림자 처형', desc: '그림자 분신 둘과 함께 셋이서 주변 적을 연달아 습격 (무적), 체력 25% 이하(보스 10%)인 적은 즉시 처형', cd: 11 }] } },
   hero_priest: { base: { ranks: ['사제', '대사제', '성자'], color: '#ffe9a0',
     skills: [
-      { id: 'sanctuary', name: '성역', desc: '6초간 빛의 원: 안에 있으면 회복, 들어오는 적 탄 소멸', cd: 16 },
-      { id: 'sanctuary2', name: '대성역', desc: '더 넓고 오래, 회복 2배, 안에 있으면 공격력 +20%', cd: 16 },
-      { id: 'descent', name: '신성 강림', desc: '1초 기도(이동 불가) → 2초 무적, 체력 40% 회복, 주변 큰 피해', cd: 18 }] } },
+      { id: 'sanctuary', name: '성역', desc: '6초간 빛의 원: 안에 있으면 회복, 원 안의 적 지속 피해, 들어오는 적 탄 소멸', cd: 13 },
+      { id: 'sanctuary2', name: '대성역', desc: '더 넓고 오래, 회복·피해 2배, 안에 있으면 공격력 +35%', cd: 13 },
+      { id: 'descent', name: '신성 강림', desc: '1초 기도(이동 불가) → 2초 무적, 체력 40% 회복, 주변 큰 피해', cd: 15 }] } },
   hero_berserker: { base: { ranks: ['광전사', '전쟁광', '피의 군주'], color: '#ff5a3a',
     skills: [
-      { id: 'rage', name: '분노', desc: '5초간 공격력 +60%, 이동 속도 +20%', cd: 14 },
-      { id: 'rage2', name: '광란', desc: '7초간 공격력 +80%·이동 속도 +20%, 처치할 때마다 체력 +4', cd: 14 },
+      { id: 'rage', name: '분노', desc: '5초간 공격력 +70%, 이동 속도 +20%', cd: 12 },
+      { id: 'rage2', name: '광란', desc: '8초간 공격력 +100%·이동 속도 +20%, 처치할 때마다 체력 +5', cd: 10 },
       { id: 'bloodstorm', name: '피의 폭풍', desc: '6초간 광란 + 자기 주위에 피의 소용돌이 (지속 피해·흡혈)', cd: 16 }] } },
   hero_druid: { base: { ranks: ['드루이드', '대드루이드', '숲의 군주'], color: '#9ad8ff',
     skills: [

@@ -367,16 +367,20 @@ class Strike {
 
 // 사제 스킬 '성역': 안에 있으면 회복, 들어오는 적 탄 소멸
 class Sanctuary {
-  constructor(x, y, owner, o = {}) { this.x = x; this.y = y; this.owner = owner; this.r = o.r || 54; this.life = o.life || 6; this.rate = o.heal || 4; this.boost = !!o.boost; this.t = 0; this.heal = 0; this.alive = true; }
+  constructor(x, y, owner, o = {}) { this.x = x; this.y = y; this.owner = owner; this.r = o.r || 54; this.life = o.life || 6; this.rate = o.heal || 4; this.boost = !!o.boost; this.dmg = o.dmg || 0; this.tick = 0; this.t = 0; this.heal = 0; this.alive = true; }
   update(dt, world) {
     this.t += dt;
     if (this.t >= this.life) { this.alive = false; return; }
     const p = this.owner;
     if (p.state !== 'DEAD' && Math.hypot(p.x - this.x, p.y - this.y) < this.r) {
-      this.heal += this.rate * dt; if (this.boost) p.sancBoost = 0.2; // 대성역: 안에 있으면 공격력 +20%
+      this.heal += this.rate * dt; if (this.boost) p.sancBoost = 0.2; // 대성역: 안에 있으면 공격력 +35%
       if (this.heal >= 1) { const n = Math.floor(this.heal); this.heal -= n; p.hp = Math.min(p.maxHp, p.hp + n); if (Math.random() < 0.5) world.effects.heal(p.x, p.y); }
     }
     for (const b of world.enemyBullets) if (b.alive && Math.hypot(b.x - this.x, b.y - this.y) < this.r) { b.alive = false; world.effects.spark(b.x, b.y, '#ffe9a0'); }
+    if (this.dmg && (this.tick -= dt) <= 0) { // 원 안의 적에게 신성 피해 (0.5초마다)
+      this.tick = 0.5;
+      for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < this.r + e.radius) world.damageEnemy(e, { damage: world.skillDmg(this.dmg * 0.5), mods: p.mods, knockback: 0 }, 0, 0);
+    }
   }
   render(ctx) {
     const k = Math.min(1, (this.life - this.t) / 0.5, this.t / 0.2), pulse = 0.5 + 0.5 * Math.sin(this.t * 4);
@@ -401,8 +405,8 @@ class SpiritWolf {
     const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy) || 1;
     if (d > (best ? best.radius + 6 : 10)) { const v = 150 * dt; moveAndCollide(this, dx / d * v, dy / d * v, world.map); if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1; }
     if (best && d < best.radius + 10 && this.cd <= 0) {
-      this.cd = this.big ? 0.8 : 0.5;
-      const src = { damage: world.skillDmg(this.dmg), mods: this.owner.mods, knockback: this.big ? 10 : 3, status: this.slow ? { type: 'freeze', chance: 0.5, duration: 1, slow: 0.6 } : null };
+      this.cd = this.big ? 0.8 : 0.75;
+      const src = { damage: world.skillDmg(this.dmg), mods: this.owner.mods, knockback: this.big ? 10 : 3, status: this.slow ? { type: 'freeze', chance: 0.25, duration: 1, slow: 0.6 } : null };
       if (this.big) world.explodeAt(best.x, best.y, 30, { color: '#c8a070', hurtEnemies: true, src }); // 곰: 내려치기 범위 피해
       else world.damageEnemy(best, src, dx / d, dy / d);
       world.effects.slash(this.x, this.y, Math.atan2(dy, dx), this.big ? 20 : 10, 1.2, this.big ? '#c8a070' : '#9ad8ff'); if (this.big) world.addShake(0.08, 2);
