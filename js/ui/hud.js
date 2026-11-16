@@ -382,6 +382,22 @@ class HUD {
         if (eq) hudText(ctx, '장착됨', r.x + r.w / 2, r.y + r.h - 14, '#ffd84a', 'center', 8);
       });
       hudText(ctx, pick ? (list.length && !had ? '클릭: 선택' : 'Enter: 계속') : '클릭: 장착/해제   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 20, '#999', 'center', 9);
+    } else if (o.type === 'revive') {
+      const cost = 200, bank = game.save.bank, canRevive = bank >= cost;
+      hudText(ctx, '쓰러졌습니다', VIEW_W / 2, 65, '#ff7070', 'center', 17);
+      hudText(ctx, '결정석 200개를 사용하면 이번 탐험에서 한 번 부활할 수 있습니다.', VIEW_W / 2, 96, '#ddd', 'center', 9);
+      hudText(ctx, `보유 결정석: ${bank}개`, VIEW_W / 2, 116, canRevive ? '#7ad0ff' : '#ff9a9a', 'center', 10);
+      const reviveRect = HUD.reviveRect(0), leaveRect = HUD.reviveRect(1);
+      ctx.fillStyle = canRevive ? 'rgba(90,150,210,0.24)' : 'rgba(90,90,90,0.12)';
+      ctx.fillRect(reviveRect.x, reviveRect.y, reviveRect.w, reviveRect.h);
+      ctx.strokeStyle = canRevive ? '#7ad0ff' : '#555'; ctx.strokeRect(reviveRect.x + 0.5, reviveRect.y + 0.5, reviveRect.w - 1, reviveRect.h - 1);
+      ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(leaveRect.x, leaveRect.y, leaveRect.w, leaveRect.h);
+      ctx.strokeStyle = '#888'; ctx.strokeRect(leaveRect.x + 0.5, leaveRect.y + 0.5, leaveRect.w - 1, leaveRect.h - 1);
+      hudText(ctx, '1  부활하기 · 200', reviveRect.x + reviveRect.w / 2, reviveRect.y + 9, canRevive ? '#bfe6ff' : '#777', 'center', 9);
+      hudText(ctx, '2  포기하고 로비로', leaveRect.x + leaveRect.w / 2, leaveRect.y + 9, '#ddd', 'center', 9);
+      if (o.msg) hudText(ctx, o.msg, VIEW_W / 2, 201, '#ff9a9a', 'center', 8);
+      else if (!canRevive) hudText(ctx, '결정석이 부족해 부활할 수 없습니다.', VIEW_W / 2, 201, '#ff9a9a', 'center', 8);
+      hudText(ctx, '1 / 클릭: 부활   ·   2 / Enter / Esc: 탐험 종료', VIEW_W / 2, VIEW_H - 18, '#888', 'center', 8);
     } else if (o.type === 'result' && o.trial) {
       hudText(ctx, o.victory ? '롱고미니아드가 당신을 인정했습니다' : '시련 실패', VIEW_W / 2, 90, o.victory ? '#bfe6ff' : '#ff7070', 'center', 16);
       hudText(ctx, o.victory ? '보구 롱고미니아드를 얻었습니다 — 로비의 보구 보관대에서 장착할 수 있습니다' : '잃은 것은 없습니다. 멀린에게 말을 걸면 다시 도전할 수 있습니다', VIEW_W / 2, 116, '#ddd', 'center', 9);
@@ -403,6 +419,7 @@ class HUD {
   static guildRow(i) { return { x: 40, y: 46 + i * 28, w: VIEW_W - 80, h: 25 }; }
   static titleCell(i) { return { x: 40 + (i % 2) * 218, y: 46 + Math.floor(i / 2) * 30, w: 212, h: 27 }; }
   static betRect(i) { return { x: VIEW_W / 2 - 150 + i * 104, y: 150, w: 92, h: 22 }; }
+  static reviveRect(i) { return { x: VIEW_W / 2 - 154 + i * 160, y: 151, w: 148, h: 30 }; }
   static jobRowRect(i) { return { x: 36, y: 36 + i * 27, w: VIEW_W - 72, h: 24 }; }
   static heroBranchRect(i, n) { return { x: 18 + (i % 2) * 240, y: 85 + Math.floor(i / 2) * 29, w: 236, h: 26 }; }
   static variantRect(i, n) { const cols = Math.min(3, n), w = 156, h = 58, gap = 8, rows = Math.ceil(n / cols), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % cols) * (w + gap), y: 66 + Math.floor(i / cols) * (h + gap) + (rows === 1 ? 30 : 0), w, h }; }
