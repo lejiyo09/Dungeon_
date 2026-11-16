@@ -151,11 +151,16 @@ class Game {
     this.enemies.push(new Enemy(dm.x, dm.y, this.data.enemies.get('dummy_001'), { hp: 1, dmg: 1 }, this.map.startRoom));
     // 모험가 길드 (아래쪽)
     const gp = (tx, ty) => this.map.tileCenter(tx, ty);
-    { const c = gp(8, 25); this.props.push(new GuildDesk(c.x, c.y)); }
-    { const c = gp(26, 25); this.props.push(new HuntBoard(c.x, c.y)); }
-    { const c = gp(8, 32); this.props.push(new GuildTrader(c.x, c.y)); }
-    { const c = gp(26, 32); this.props.push(new GambleTable(c.x, c.y)); }
-    [[12, 28, 'a', 1], [22, 27, 'b', -1], [17, 33, 'c', 1], [12, 34, 'd', -1], [22, 33, 'a', -1]].forEach(([tx, ty, k, f], i) => { const c = gp(tx, ty); this.props.push(new GuildNpc(c.x, c.y, k, GUILD_CHATTER[i % GUILD_CHATTER.length], f)); });
+    this.props.push(new GuildCounter(27 * TILE, 23 * TILE, 29 * TILE, 35 * TILE)); // 오른쪽 벽을 따라 세로로 긴 접수대
+    { const c = gp(26, 27); this.props.push(new GuildClerk(c.x, c.y, 'quest', 'reception', 29.6 * TILE)); }  // 퀘스트·칭호 접수원 (카펫 끝)
+    { const c = gp(26, 32); this.props.push(new GuildClerk(c.x, c.y, 'trade', 'clerk2', 29.6 * TILE)); }    // 보급품 접수원
+    this.props.push(new WallBoard(7.5 * TILE, 22 * TILE, 'hunt'), new WallBoard(23 * TILE, 22 * TILE, 'notice')); // 벽에 붙은 게시판
+    const tbl = (tx, ty, seats, o) => this.props.push(new GuildTable((tx + 1) * TILE, ty * TILE + 8, seats, o));
+    tbl(6, 26, [[-22, 'a'], [22, 'b']], { line: GUILD_CHATTER[0] });
+    tbl(6, 31, [[-22, 'c'], [22, null]], { line: GUILD_CHATTER[3] });
+    tbl(20, 26, [[-22, 'd'], [22, 'e']], { line: GUILD_CHATTER[1] });
+    tbl(20, 31, [[-22, 'f'], [22, 'dealer']], { gamble: true });
+    tbl(10, 34, [[-22, 'b'], [22, 'a']], { line: GUILD_CHATTER[2] });
     this.guild(); // 오늘의 퀘스트·의뢰·진열 준비
     const pc = this.map.tileCenter(17, 18);
     this.portals.push(new Portal(pc.x, pc.y, () => this.startRun(), '던전 입장'));

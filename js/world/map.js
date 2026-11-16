@@ -257,6 +257,8 @@ function buildLobby() {
   const room = { type: 'lobby', gx: 0, gy: 0, x0: 3, y0: 4, w: 28, h: 32, cx: 17, cy: 12, doors: [], state: 'cleared', visited: true, wavesLeft: 0 };
   map.carveRoom(room.x0, room.y0, room.w, room.h);
   for (let x = 3; x < 31; x++) if (x < 13 || x > 20) map.set(x, 21, T_WALL); // 로비와 길드 사이 벽 (가운데가 입구)
+  for (let y = 23; y <= 34; y++) for (const x of [27, 28]) map.set(x, y, T_COVER); // 오른쪽 벽을 따라 세로로 긴 접수대
+  for (const [x, y] of [[6, 26], [6, 31], [20, 26], [20, 31], [10, 34]]) { map.set(x, y, T_COVER); map.set(x + 1, y, T_COVER); } // 탁자
   // 기둥
   for (const [x, y] of [[4, 5], [29, 5], [6, 16], [27, 16]]) map.set(x, y, T_WALL);
   map.rooms.push(room);
@@ -272,8 +274,9 @@ function buildLobby() {
     // 모험가 길드: 따뜻한 나무 바닥 + 가운데 긴 카펫
     g.fillStyle = 'rgba(120,70,30,0.35)'; g.fillRect(3 * TILE, 22 * TILE, 28 * TILE, 14 * TILE);
     for (let y = 22; y < 36; y++) { g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(3 * TILE, y * TILE + 15, 28 * TILE, 1); }
-    g.fillStyle = '#2a4a5a'; g.fillRect(14 * TILE, 22 * TILE, 6 * TILE, 14 * TILE); g.fillStyle = '#34606e'; g.fillRect(14 * TILE + 3, 22 * TILE, 6 * TILE - 6, 14 * TILE);
-    g.fillStyle = '#c89a40'; g.fillRect(14 * TILE + 5, 22 * TILE, 1, 14 * TILE); g.fillRect(20 * TILE - 6, 22 * TILE, 1, 14 * TILE);
+    g.fillStyle = '#2a4a5a'; g.fillRect(14 * TILE, 22 * TILE, 6 * TILE, 6 * TILE); g.fillRect(14 * TILE, 26 * TILE, 13 * TILE, 4 * TILE); // 입구에서 접수대로 이어지는 카펫
+    g.fillStyle = '#34606e'; g.fillRect(14 * TILE + 3, 22 * TILE, 6 * TILE - 6, 6 * TILE); g.fillRect(14 * TILE + 3, 26 * TILE + 3, 13 * TILE - 3, 4 * TILE - 6);
+    g.fillStyle = '#c89a40'; g.fillRect(14 * TILE + 5, 22 * TILE, 1, 4 * TILE + 5); g.fillRect(20 * TILE - 6, 22 * TILE, 1, 4 * TILE + 5);
   };
   return map;
 }
