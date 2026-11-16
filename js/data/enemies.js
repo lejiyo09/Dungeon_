@@ -461,7 +461,7 @@ const DATA_ENEMIES = [
       { type: 'zones', count: 8, radius: 26, delay: 0.85, bullets: 6, spreadAround: 120, stagger: 0.07, color: '#e8c070' }],
     finalPatterns: [{ type: 'laser', name: '열두 시의 종', beams: 4, spreadAng: Math.PI / 2, sweep: 1.6, duration: 2.6, width: 7, telegraph: 1.0, color: '#ffe9a0' }] },
   { id: 'boss_ash_king', name: '타오르는 재의 왕', title: '꺼지지 않는 불씨', sprite: 'boss_ash', color: '#6a2a20', phaseColors: ['#6a2a20', '#8a2a18', '#a82a10'],
-    boss: true, aiType: 'boss', health: 1850, damage: 22, moveSpeed: 38, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 145,
+    boss: true, aiType: 'boss', health: 1720, damage: 22, moveSpeed: 38, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 145,
     rewardGold: 260, patterns: [
       { type: 'rain', duration: 2, interval: 0.11, speed: 140, slant: 0.4, color: '#ffb04a' },
       { type: 'meteor', count: 7, delay: 0.75, stagger: 0.25, radius: 28, bullets: 5, color: '#ff8a3a' },
