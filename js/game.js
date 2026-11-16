@@ -204,15 +204,17 @@ class Game {
   updateNet(dt) {
     if (!Net.inRoom) return;
     const p = this.player; this.netT = (this.netT || 0) - dt;
-    if (this.netT <= 0 && p) { this.netT = 1 / NET_CONFIG.sendHz;
-      Net.relay({ k: 'pos', x: Math.round(p.x), y: Math.round(p.y), f: p.faceVis < 0 ? -1 : 1, h: p.hero.id, l: p.line && p.line.look ? p.line.look : null, m: this.mode, mv: !!p.moving }); }
+    if (this.netT <= 0 && p && !document.hidden) { this.netT = 1 / NET_CONFIG.sendHz; // 탭을 내려 두면 보내지 않음
+      const msg = { k: 'pos', x: Math.round(p.x), y: Math.round(p.y), f: p.faceVis < 0 ? -1 : 1, h: p.hero.id, l: p.line && p.line.look ? p.line.look : null, m: this.mode, mv: !!p.moving }, key = JSON.stringify(msg);
+      this.netIdle = key === this.netLast ? (this.netIdle || 0) + 1 / NET_CONFIG.sendHz : 0;
+      if (key !== this.netLast || this.netIdle >= NET_CONFIG.idleSend) { Net.relay(msg); this.netLast = key; this.netIdle = 0; } } // 바뀌었을 때만 (가만히 있으면 가끔)
     for (const P of Net.peers.values()) { const k = Math.min(1, dt * 12); P.x += (P.tx - P.x) * k; P.y += (P.ty - P.y) * k; }
   }
   netName() { return this.profile ? this.profile.name : '게스트'; }
   peerActors() { // 같은 화면(지금은 로비)에 있는 다른 사람들
     if (!Net.inRoom || this.mode !== 'lobby') return [];
     const out = [];
-    for (const P of Net.peers.values()) { if (P.mode !== 'lobby' || performance.now() - P.seen > 5000) continue;
+    for (const P of Net.peers.values()) { if (P.mode !== 'lobby' || performance.now() - P.seen > 8000) continue;
       const base = this.data.heroes.get(P.hero) || DATA_HEROES[0], hero = P.look ? heroWithLook(base, P.look) : base, name = Net.nameOf(P.id), t = this.time;
       out.push({ y: P.y, render: (ctx) => { const spr = heroSprite(hero, P.moving ? Math.floor(t * 8) % 2 : 0); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(Math.round(P.x), Math.round(P.y) + 7, 6, 2, 0, 0, TAU); ctx.fill();
         drawSprite(ctx, spr, P.x, P.y + 7, { flip: P.face < 0 }); hudText(ctx, name, Math.round(P.x), Math.round(P.y) - 20, '#7affc0', 'center', 7); } }); }

@@ -8,6 +8,8 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
+const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -15,7 +17,15 @@ const PORT = process.env.PORT || 8080;
 const MAX_PLAYERS = 4;
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json',
   '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.md': 'text/plain; charset=utf-8' };
-const BLOCK = ['server', 'tools', 'node_modules', '.git']; // 밖으로 내보내지 않는 폴더
+const BLOCK = ['server', 'tools', 'node_modules', '.git', 'versions']; // 밖으로 내보내지 않는 폴더
+// ── 사용량 아끼기 (Render 무료 요금제: 아무도 안 쓰면 잠들게, 오가는 데이터는 작게)
+const LIMIT = {
+  lobbyIdleMs: 2 * 60 * 1000,  // 방에 안 들어간 연결은 2분 뒤 끊음 → 아무도 없으면 서버가 잠들 수 있게
+  roomIdleMs: 10 * 60 * 1000,  // 10분 동안 아무 움직임 없는 방은 닫음 (창만 켜 두고 자리 비움)
+  msgPerSec: 40,               // 한 사람이 1초에 보낼 수 있는 메시지 (넘치면 버림)
+  maxRooms: 200
+};
+const fileCache = new Map(); // 경로 → { mtime, etag, raw, gz } : 같은 파일을 매번 읽고 압축하지 않게
 
 // ── 정적 파일
 const server = http.createServer((req, res) => {
@@ -25,10 +35,23 @@ const server = http.createServer((req, res) => {
   const file = path.normalize(path.join(ROOT, p));
   const rel = path.relative(ROOT, file);
   if (rel.startsWith('..') || BLOCK.includes(rel.split(path.sep)[0])) { res.writeHead(404); res.end('not found'); return; }
-  fs.readFile(file, (err, data) => {
-    if (err) { res.writeHead(404); res.end('not found'); return; }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
-    res.end(data);
+  fs.stat(file, (err, st) => {
+    if (err || !st.isFile()) { res.writeHead(404); res.end('not found'); return; }
+    const send200 = (c) => {
+      const headers = { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache', ETag: c.etag, Vary: 'Accept-Encoding' };
+      if ((req.headers['if-none-match'] || '') === c.etag) { res.writeHead(304, headers); res.end(); return; } // 바뀌지 않았으면 내용 없이 응답 (데이터 절약)
+      const gz = c.gz && /\bgzip\b/.test(req.headers['accept-encoding'] || '');
+      if (gz) headers['Content-Encoding'] = 'gzip';
+      res.writeHead(200, headers); res.end(gz ? c.gz : c.raw);
+    };
+    const hit = fileCache.get(file);
+    if (hit && hit.mtime === st.mtimeMs) { send200(hit); return; }
+    fs.readFile(file, (e2, raw) => {
+      if (e2) { res.writeHead(404); res.end('not found'); return; }
+      const ext = path.extname(file), c = { mtime: st.mtimeMs, raw, etag: '"' + crypto.createHash('sha1').update(raw).digest('base64').slice(0, 16) + '"' };
+      if (['.html', '.js', '.css', '.json', '.webmanifest', '.svg', '.md'].includes(ext)) c.gz = zlib.gzipSync(raw, { level: 9 }); // 글 파일은 압축해서 보냄 (약 1/4 크기)
+      fileCache.set(file, c); send200(c);
+    });
   });
 });
 
@@ -51,25 +74,27 @@ const clean = (s, n) => String(s || '').replace(/[\u0000-\u001f]/g, '').slice(0,
 
 const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 256 * 1024 });
 wss.on('connection', (ws) => {
-  ws.id = nextId++; ws.alive = true; ws.room = null;
+  ws.id = nextId++; ws.alive = true; ws.room = null; ws.since = Date.now(); ws.win = 0; ws.winAt = Date.now();
   ws.on('pong', () => { ws.alive = true; });
   ws.on('message', (buf) => {
+    const now = Date.now(); if (now - ws.winAt >= 1000) { ws.winAt = now; ws.win = 0; } if (++ws.win > LIMIT.msgPerSec) return; // 너무 많이 보내면 버림
     let m; try { m = JSON.parse(buf); } catch (e) { return; }
+    if (ws.room && m.t !== 'ping') ws.room.last = now;
     if (!m || typeof m.t !== 'string') return;
     if (m.t === 'create' || m.t === 'join') {
       leave(ws);
       ws.name = clean(m.name, 12) || '모험가'; ws.hero = clean(m.hero, 32);
       let room;
-      if (m.t === 'create') { room = { code: newCode(), players: [] }; rooms.set(room.code, room); }
+      if (m.t === 'create') { if (rooms.size >= LIMIT.maxRooms) { send(ws, { t: 'error', msg: '지금은 방이 너무 많습니다. 잠시 뒤 다시 시도해 주세요' }); return; } room = { code: newCode(), players: [], last: Date.now() }; rooms.set(room.code, room); }
       else {
         room = rooms.get(clean(m.code, 4).toUpperCase());
         if (!room) { send(ws, { t: 'error', msg: '없는 방 코드입니다' }); return; }
         if (room.players.length >= MAX_PLAYERS) { send(ws, { t: 'error', msg: `방이 가득 찼습니다 (최대 ${MAX_PLAYERS}명)` }); return; }
         if (room.started) { send(ws, { t: 'error', msg: '이미 탐험을 시작한 방입니다' }); return; }
       }
-      room.players.push(ws); ws.room = room;
+      room.players.push(ws); ws.room = room; room.last = Date.now();
       broadcastPlayers(room);
-    } else if (m.t === 'leave') { leave(ws); send(ws, { t: 'players', code: null, you: ws.id, players: [] }); }
+    } else if (m.t === 'leave') { leave(ws); ws.since = Date.now(); send(ws, { t: 'players', code: null, you: ws.id, players: [] }); }
     else if (m.t === 'profile') { ws.name = clean(m.name, 12) || ws.name; ws.hero = clean(m.hero, 32) || ws.hero; if (ws.room) broadcastPlayers(ws.room); }
     else if (m.t === 'start') { if (ws.room && ws.room.players[0] === ws) ws.room.started = !!m.on; } // 방장이 탐험 시작/종료 → 시작 중에는 새 참가 막음
     else if (m.t === 'relay') { // 방 안의 다른 사람에게 전달 (to: 특정 id, 없으면 나를 뺀 전원)
@@ -81,7 +106,18 @@ wss.on('connection', (ws) => {
   ws.on('close', () => leave(ws));
   send(ws, { t: 'hello', id: ws.id });
 });
-// 끊긴 연결 정리 (30초마다)
-setInterval(() => { for (const ws of wss.clients) { if (!ws.alive) { ws.terminate(); continue; } ws.alive = false; ws.ping(); } }, 30000);
+// 정리 (30초마다): 끊긴 연결 · 방에 안 들어간 채 오래된 연결 · 오래 조용한 방
+setInterval(() => {
+  const now = Date.now();
+  for (const ws of wss.clients) {
+    if (!ws.alive) { ws.terminate(); continue; }
+    if (!ws.room && now - ws.since > LIMIT.lobbyIdleMs) { ws.close(4000, 'idle'); continue; }
+    ws.alive = false; ws.ping();
+  }
+  for (const room of rooms.values()) if (now - room.last > LIMIT.roomIdleMs) {
+    for (const p of room.players) { send(p, { t: 'error', msg: '오랫동안 움직임이 없어 방이 닫혔습니다' }); p.room = null; p.close(4001, 'room idle'); }
+    rooms.delete(room.code);
+  }
+}, 30000);
 
 server.listen(PORT, () => console.log(`PROJECT: DUNGEON server on :${PORT}`));

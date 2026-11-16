@@ -8,7 +8,8 @@
 const NET_CONFIG = {
   server: '', // 예: 'wss://project-dungeon.onrender.com/ws' (비워 두면 게임이 열린 주소의 /ws 로 연결)
   maxPlayers: 4,
-  sendHz: 10 // 위치를 보내는 횟수 (초당)
+  sendHz: 10, // 위치를 보내는 최대 횟수 (초당) — 가만히 있으면 2초에 한 번만 보냄 (데이터 절약)
+  idleSend: 2
 };
 const Net = {
   ws: null, status: 'off', id: null, code: null, players: [], peers: new Map(), error: null, ping: null, handlers: [],
@@ -27,7 +28,7 @@ const Net = {
     this.status = 'connecting'; this.error = null; this.pendingThen = then;
     let ws; try { ws = new WebSocket(url); } catch (e) { this.status = 'off'; this.error = '연결할 수 없습니다'; return; }
     this.ws = ws;
-    ws.onopen = () => { this.status = 'online'; this.pingT = setInterval(() => this.raw({ t: 'ping', at: performance.now() }), 3000); const f = this.pendingThen; this.pendingThen = null; if (f) f(); };
+    ws.onopen = () => { this.status = 'online'; this.pingT = setInterval(() => { if (!document.hidden) this.raw({ t: 'ping', at: performance.now() }); }, 5000); const f = this.pendingThen; this.pendingThen = null; if (f) f(); };
     ws.onclose = () => { clearInterval(this.pingT); const was = this.status; this.reset(); if (was === 'connecting') this.error = '서버에 연결하지 못했습니다 (Render 무료 서버는 처음 깨어나는 데 30초~1분 걸릴 수 있어요)'; else if (was === 'online') this.error = '서버와 연결이 끊어졌습니다'; };
     ws.onerror = () => {};
     ws.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } this.onMessage(m); };
@@ -36,7 +37,8 @@ const Net = {
   raw(m) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(m)); },
   create(name, hero) { this.connect(() => this.raw({ t: 'create', name, hero })); },
   join(code, name, hero) { this.connect(() => this.raw({ t: 'join', code, name, hero })); },
-  leave() { this.raw({ t: 'leave' }); this.code = null; this.players = []; this.peers.clear(); },
+  leave() { this.raw({ t: 'leave' }); this.code = null; this.players = []; this.peers.clear(); this.disconnect(); }, // 방을 나가면 연결도 끊음 → 서버가 잠들 수 있음
+  disconnect() { const ws = this.ws; if (!ws) return; clearInterval(this.pingT); this.reset(); try { ws.onclose = null; ws.close(); } catch (e) { /* 무시 */ } },
   profile(name, hero) { if (this.inRoom) this.raw({ t: 'profile', name, hero }); },
   relay(data, to) { if (this.inRoom) this.raw({ t: 'relay', data, to }); },
   on(fn) { this.handlers.push(fn); },
