@@ -553,6 +553,7 @@ class MasterNPC {
   label(game) {
     const p = game.player; if (this.gone) return null;
     if (!p.line || p.rank >= 2) return '더 이상 진화할 수 없습니다';
+    if (this.hybrid) return `[E] ${this.hybrid.el.name}의 마도사 상위자 — ${game.hybridTitle(this)}(으)로 진화`;
     return `[E] 상위자 — ${p.line.ranks[p.rank + 1]}(으)로 진화`;
   }
   get labelColor() { return '#ffd84a'; }
@@ -561,10 +562,12 @@ class MasterNPC {
     if (this.gone) return;
     const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0, p = game.player;
     ctx.fillStyle = `rgba(255,216,74,${0.18 + 0.08 * Math.sin(t * 3)})`; ctx.beginPath(); ctx.ellipse(x, y + 6, 14, 5, 0, 0, TAU); ctx.fill();
-    drawHero(ctx, p.hero, x, y - 2, -1, 0, false);
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 + 0.15 * Math.sin(t * 4); drawSprite(ctx, heroSprite(p.hero, 0), x, y + 5, { flip: true, white: true }); ctx.restore(); // 금빛으로 빛나는 상위자
+    const H = this.hybrid ? this.hybrid.masterHero : p.hero; // 혼합 전직: 다른 직업(마도사)의 상위자
+    if (this.hybrid) { ctx.fillStyle = this.hybrid.el.color || '#ffd84a'; ctx.globalAlpha = 0.3 + 0.1 * Math.sin(t * 3); ctx.beginPath(); ctx.ellipse(x, y + 6, 18, 6, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; }
+    drawHero(ctx, H, x, y - 2, -1, 0, false);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 + 0.15 * Math.sin(t * 4); drawSprite(ctx, heroSprite(H, 0), x, y + 5, { flip: true, white: true }); ctx.restore(); // 금빛으로 빛나는 상위자
     ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 3, y - 22, 7, 2); ctx.fillRect(x - 3, y - 24, 1, 2); ctx.fillRect(x, y - 25, 1, 3); ctx.fillRect(x + 3, y - 24, 1, 2); // 왕관
-    hudText(ctx, '상위자', x, y + 10, '#ffd84a', 'center', 7);
+    hudText(ctx, this.hybrid ? `${this.hybrid.el.name}의 상위자` : '상위자', x, y + 10, this.hybrid ? (this.hybrid.el.color || '#ffd84a') : '#ffd84a', 'center', 7);
   }
 }
 

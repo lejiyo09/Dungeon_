@@ -92,3 +92,24 @@ const JOB_LINES = {
 };
 // 직업의 갈래 목록 (title 제외)
 function jobLines(heroId) { const J = JOB_LINES[heroId] || {}; return Object.keys(J).filter((k) => k !== 'title').map((k) => Object.assign({ id: k }, J[k])); }
+
+// ════════════════════════════════════════════
+// 혼합 전직 (제안 단계 · 지금은 마검사 하나)
+//  2차 진화 차례에 전직의 방에 들어가면 일정 확률로 내 직업 대신 다른 직업의 상위자가 나옴
+//  → 그 상위자를 이기거나 골드를 내면 혼합 직업으로 진화 (능력치 상승은 2차 진화와 같음)
+//  속성은 나온 상위자(마도사 갈래)를 따라감
+// ════════════════════════════════════════════
+const HYBRID_JOBS = {
+  spellblade: { from: 'hero_swordsman', master: 'hero_mage', chance: 0.3, name: '마검사',
+    skill: { id: 'spellblade', name: '마력 검무', desc: '회오리 베기 + 사방으로 속성 검기 8줄, 맞은 적에게 속성 상태이상', cd: 6 },
+    passiveChance: 0.15 } // 근접 공격에 붙는 속성 상태이상 확률
+};
+// 마도사 갈래 → 그 속성의 상태이상
+const ELEMENT_STATUS = {
+  fire: { type: 'burn', chance: 1, duration: 3, dps: 10 },
+  ice: { type: 'freeze', chance: 1, duration: 2, slow: 0.45 },
+  nature: { type: 'poison', chance: 1, duration: 4, dps: 10 },
+  lightning: { type: 'shock', chance: 1, duration: 3 },
+  light: { type: 'blind', chance: 1, duration: 3 },
+  dark: { type: 'curse', chance: 1, duration: 4 }
+};

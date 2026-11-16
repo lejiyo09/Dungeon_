@@ -220,12 +220,13 @@ class HUD {
         hudText(ctx, L.ranks.join(' → '), r.x + 6, r.y + 46, '#8a8a9a', 'left', 7); });
       hudText(ctx, '숫자 키 / 클릭: 선택', VIEW_W / 2, VIEW_H - 16, '#888', 'center', 8);
     } else if (o.type === 'evolve') {
-      const p = game.player, L = p.line, n = p.rank + 1, sk = L.skills[n];
-      hudText(ctx, `${L.ranks[p.rank]}  →  ${L.ranks[n]}`, VIEW_W / 2, 56, '#ffd84a', 'center', 15);
+      const p = game.player, L = p.line, n = p.rank + 1, hy = o.npc.hybrid, sk = hy ? hy.H.skill : L.skills[n];
+      hudText(ctx, `${L.ranks[p.rank]}  →  ${hy ? game.hybridTitle(o.npc) : L.ranks[n]}`, VIEW_W / 2, 56, hy ? (hy.el.color || '#ffd84a') : '#ffd84a', 'center', 15);
+      if (hy) hudText(ctx, `혼합 전직 — ${hy.el.name}의 마도사 상위자가 나타났습니다 · 근접 공격에 ${Math.round(hy.H.passiveChance * 100)}% 확률로 속성 상태이상`, VIEW_W / 2, 70, '#c8b8e0', 'center', 8);
       hudText(ctx, `새 스킬: ${sk.name}`, VIEW_W / 2, 84, '#ffe9a0', 'center', 11);
       hudText(ctx, sk.desc, VIEW_W / 2, 100, '#ccc', 'center', 9);
       hudText(ctx, `최대 체력 +${EVOLUTION.hp[n - 1]} · 최대 에너지 +${EVOLUTION.energy[n - 1]}`, VIEW_W / 2, 114, '#9fe89f', 'center', 8);
-      hudText(ctx, '1  시련 — 상위자와 대결 (이기면 무료로 진화)', VIEW_W / 2, 142, '#fff', 'center', 10);
+      hudText(ctx, `1  시련 — ${hy ? hy.el.name + '의 마도사 ' : ''}상위자와 대결 (이기면 무료로 진화)`, VIEW_W / 2, 142, '#fff', 'center', 10);
       hudText(ctx, `2  대가 — ${game.evolvePrice()}골드를 내고 바로 진화 (보유 ${game.gold})`, VIEW_W / 2, 160, game.gold >= game.evolvePrice() ? '#fff' : '#888', 'center', 10);
       if (o.msg) hudText(ctx, o.msg, VIEW_W / 2, 180, '#ff9a9a', 'center', 9);
       hudText(ctx, 'E / Esc: 닫기', VIEW_W / 2, VIEW_H - 16, '#888', 'center', 8);

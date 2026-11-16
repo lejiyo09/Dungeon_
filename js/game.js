@@ -125,7 +125,7 @@ class Game {
       p: { maxHp: p.maxHp, hp: p.hp, maxShield: p.maxShield, maxEnergy: p.maxEnergy, energy: p.energy, moveSpeed: p.moveSpeed,
         dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction,
         stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
-        treasure: p.treasure ? p.treasure.id : null, line: p.line ? p.line.id : null, rank: p.rank || 0 } };
+        treasure: p.treasure ? p.treasure.id : null, line: p.line ? p.line.id : null, rank: p.rank || 0, hybrid: p.hybrid ? { id: p.hybrid.id, el: p.hybrid.el } : null } };
   }
   resumeRun() {
     const r = this.save.run, hero = r && this.data.heroes.get(r.hero);
@@ -139,6 +139,7 @@ class Game {
     p.slot = Math.min(s.slot || 0, p.weapons.length - 1);
     p.treasure = DATA_TREASURES.find((t) => t.id === s.treasure) || null; // 보구 효과는 위 능력치에 이미 반영돼 있음
     const ln = jobLines(hero.id).find((l) => l.id === s.line) || jobLines(hero.id)[0]; if (ln) { this.setJob(p, ln, Math.min(2, s.rank || 0)); p.skillCdMax = p.skillBaseCd * ((s.skillCdMax || p.skillBaseCd) / p.skillBaseCd); } // 계열·진화 단계
+    if (s.hybrid && HYBRID_JOBS[s.hybrid.id]) { const H = HYBRID_JOBS[s.hybrid.id], el = jobLines(H.master).find((l) => l.id === s.hybrid.el); if (el) this.setHybrid(p, H, el); } // 혼합 직업 (쿨타임 감소 비율 유지)
     this.loadStage();
     this.showBanner(`이어하기 · ${stageLabel(this.worldIdx, this.levelIdx)} ${this.W.name}`, '스테이지 시작 지점부터 다시 시작합니다', '#7ad0ff');
   }
@@ -210,7 +211,11 @@ class Game {
       else if (r.type === 'challenge') this.props.push(new ChallengeStone(c.x, c.y, r));
       else if (r.type === 'forge') this.props.push(new Forge(c.x, c.y, Math.round(SR.forgePrice * inflate)));
       else if (r.type === 'blood') this.props.push(new BloodAltar(c.x, c.y));
-      else if (r.type === 'evolve') this.props.push(new MasterNPC(c.x, c.y, r));
+      else if (r.type === 'evolve') { // 2차 진화 차례면 일정 확률로 다른 직업의 상위자 (혼합 전직)
+        const npc = new MasterNPC(c.x, c.y, r), p = this.player, H = Object.values(HYBRID_JOBS).find((h) => h.from === p.hero.id);
+        if (H && p.rank === 1 && Math.random() < H.chance) { const el = pick(jobLines(H.master)); npc.hybrid = { H, el, masterHero: this.data.heroes.get(H.master) }; }
+        this.props.push(npc);
+      }
       else if (r.type === 'smithy') this.props.push(new UpgradeAnvil(c.x, c.y, BALANCE.upgrade.forgeRoomDiscount, BALANCE.upgrade.forgeRoomBonus, true)); // 강화소: 싸고 성공률 높음
       else if (r.type === 'rack') { // 무기 진열대: 셋 중 하나만 가져갈 수 있음
         const a = this.randomWeaponDef(), b = this.randomWeaponDef(0, [a.id]), d = this.randomWeaponDef(0, [a.id, b.id]), grp = {};
@@ -427,7 +432,7 @@ class Game {
       else if (input.wasPressed('Digit2')) {
         const price = this.evolvePrice();
         if (this.gold < price) { o.msg = `골드가 부족합니다 (${price}골드 필요)`; SFX.play('deny'); }
-        else { this.gold -= price; o.npc.gone = true; this.overlay = null; this.evolve(); }
+        else { this.gold -= price; o.npc.gone = true; this.overlay = null; this.evolve(o.npc.hybrid); }
       }
     } else if (o.type === 'resume') {
       if (input.wasPressed('Enter')) { this.overlay = null; this.transition = { t: 0, swapped: false, action: () => this.resumeRun() }; }
@@ -512,33 +517,42 @@ class Game {
     if (line.startWeapon && this.data.weapons.get(line.startWeapon)) { p.weapons[0] = new WeaponInstance(this.data.weapons.get(line.startWeapon)); this.discover(line.startWeapon); }
     if (line.moveSpeed) p.moveSpeed += line.moveSpeed;
   }
-  evolve() {
+  evolve(hybrid) {
     const p = this.player, next = p.rank + 1, line = p.line;
     if (!line || next > 2) return;
     p.maxHp += EVOLUTION.hp[next - 1]; p.hp = Math.min(p.maxHp, p.hp + EVOLUTION.hp[next - 1] + 20);
     p.maxEnergy += EVOLUTION.energy[next - 1]; p.energy = p.maxEnergy;
     this.setJob(p, line, next); p.skillCooldown = 0;
-    this.showBanner(`${line.ranks[next]} (으)로 진화!`, `새 스킬: ${p.skillName} — ${p.skillDesc}`, '#ffd84a');
+    if (hybrid) this.setHybrid(p, hybrid.H, hybrid.el);
+    this.showBanner(`${p.hybrid ? p.hybrid.title : line.ranks[next]} (으)로 진화!`, `새 스킬: ${p.skillName} — ${p.skillDesc}`, p.hybrid ? p.hybrid.color : '#ffd84a');
     this.effects.ring(p.x, p.y, 30, '#ffd84a'); this.effects.ring(p.x, p.y, 50, line.color || '#ffd84a'); this.effects.burst(p.x, p.y, '#ffd84a', 30);
     this.screenFlash = 0.3; this.flashColor = '255,216,74'; this.addShake(0.2, 3); SFX.play('clear'); SFX.play('solomon', 0.5);
   }
+  // 혼합 직업 적용: 스킬이 바뀌고 속성(상위자의 마도사 갈래)을 이어받음
+  setHybrid(p, H, el) {
+    const ratio = p.skillCdMax / (p.skillBaseCd || p.skillCdMax);
+    p.hybrid = { id: Object.keys(HYBRID_JOBS).find((k) => HYBRID_JOBS[k] === H), el: el.id, title: `${el.name}의 ${H.name}`, color: el.color || '#ffd84a', status: ELEMENT_STATUS[el.id], passiveChance: H.passiveChance };
+    p.skillId = H.skill.id; p.skillName = H.skill.name; p.skillDesc = H.skill.desc; p.skillBaseCd = H.skill.cd; p.skillCdMax = H.skill.cd * ratio; p.skillCooldown = 0;
+  }
+  hybridTitle(npc) { return npc.hybrid ? `${npc.hybrid.el.name}의 ${npc.hybrid.H.name}` : null; }
   evolvePrice() { return Math.round(EVOLUTION.price[this.player.rank] * (1 + BALANCE.shopInflate * this.stageIndex)); }
   startTrial(npc) { // 상위자와 1:1 대결 (미니 보스)
-    const p = this.player, r = npc.room, next = p.rank + 1, key = `master_${p.hero.id}_${p.line.id}_${next}`;
+    const p = this.player, r = npc.room, next = p.rank + 1, hy = npc.hybrid, MH = hy ? hy.masterHero : p.hero;
+    const key = hy ? `master_${hy.H.master}_${hy.el.id}_hybrid` : `master_${p.hero.id}_${p.line.id}_${next}`, trialName = hy ? this.hybridTitle(npc) : p.line.ranks[next];
     if (!this.data.enemies.get(key)) {
-      const look = p.hero.look.sprite, D = HERO_PROCS[look];
+      const look = MH.look.sprite, D = HERO_PROCS[look];
       if (!PIX['master_' + look]) PIX['master_' + look] = { tint: '#c8a050', w: HERO_W, h: HERO_H, proc: (P) => D.proc(P, 0),
-        pal: Object.assign({ s: '#f0c8a0', m: '#fff0b0', w: '#ffffff', r: p.hero.look.accent, y: '#ffd84a', l: '#8a6a30', h: p.hero.look.accent, g: shade(p.hero.look.accent, 0.68), e: '#ffffff', n: '#6a4628', d: '#3a2a1a' }, D.pal, { m: '#fff0b0' }) };
-      const col = p.line.color || '#ffd84a';
-      this.data.enemies.set(key, { id: key, name: `${p.line.ranks[next]}의 시련`, title: '상위자', sprite: 'master_' + look, color: '#c8a050', phaseColors: ['#c8a050', '#d8b060', '#ffd84a'],
+        pal: Object.assign({ s: '#f0c8a0', m: '#fff0b0', w: '#ffffff', r: MH.look.accent, y: '#ffd84a', l: '#8a6a30', h: MH.look.accent, g: shade(MH.look.accent, 0.68), e: '#ffffff', n: '#6a4628', d: '#3a2a1a' }, D.pal, { m: '#fff0b0' }) };
+      const col = (hy ? hy.el.color : p.line.color) || '#ffd84a';
+      this.data.enemies.set(key, { id: key, name: `${trialName}의 시련`, title: '상위자', sprite: 'master_' + look, color: '#c8a050', phaseColors: ['#c8a050', '#d8b060', '#ffd84a'],
         boss: true, master: true, aiType: 'boss', health: EVOLUTION.masterHp[next - 1], damage: 15 + next * 2, moveSpeed: 55, hitboxHalf: 9, knockbackResist: 0.9, attackCooldown: next === 1 ? 1.25 : 1.05, bulletSpeed: 135, rewardGold: 30,
         patterns: [{ type: 'aimed', volleys: 3, count: 5, spread: 0.15, color: col }, { type: 'radial', rings: 2, count: 18, color: col }, { type: 'charge', dashes: 2, speed: 340, color: '#ffffff' }],
         phase2Patterns: [{ type: 'spiral', duration: 2.2, arms: 3 + next, interval: 0.09, spin: 1.8, color: col }, { type: 'slam', radius: 46, chain: next, color: col }] });
     }
-    npc.gone = true; r.trial = next; r.state = 'active'; this.activeRoom = r; r.wavesLeft = 0;
+    npc.gone = true; r.trial = next; r.hybrid = hy || null; r.state = 'active'; this.activeRoom = r; r.wavesLeft = 0;
     this.map.setDoors(r, true); this.enemyBullets.length = 0;
     const c = this.map.tileCenter(r.cx, r.cy - 1), m = this.spawnEnemy(key, c.x, c.y, r); m.phase = 1;
-    this.showBanner(`${p.line.ranks[next]}의 시련`, '상위자를 쓰러뜨리면 진화합니다', '#ffd84a'); SFX.play('boss');
+    this.showBanner(`${trialName}의 시련`, hy ? `${hy.el.name}의 마도사 상위자를 쓰러뜨리면 ${trialName}(으)로 진화합니다` : '상위자를 쓰러뜨리면 진화합니다', '#ffd84a'); SFX.play('boss');
   }
   // ── 스킬
   useSkill() {
@@ -572,8 +586,13 @@ class Game {
     const strikeSky = (e, dmg) => { this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: 3, status: { type: 'shock', chance: 1, duration: 3 } }, 0, 1); this.effects.lightning(e.x + randInt(-8, 8), e.y - 100, e.x, e.y); };
     switch (p.skillId) {
       // 검사
-      case 'whirlwind': p.whirl = 0.5; p.whirlTick = 0; break;
-      case 'whirlwind2': p.whirl = 0.5; p.whirlTick = 0;
+      case 'whirlwind': p.whirl = 0.5; p.whirlTick = 0; p.whirlStatus = null; break;
+      case 'spellblade': { // 마검사 '마력 검무': 속성이 실린 회오리 베기 + 속성 검기 8줄
+        const st = p.hybrid ? p.hybrid.status : null, col = p.hybrid ? p.hybrid.color : '#d8e0e8';
+        p.whirl = 0.5; p.whirlTick = 0; p.whirlStatus = st;
+        for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.projectiles.push(new Projectile({ x: p.x, y: p.y, dx: Math.cos(a), dy: Math.sin(a), speed: 260, range: 170, damage: D(52), pierce: 99, knockback: 4, mods: p.mods, color: col, size: 3, wave: true, status: st })); }
+        this.effects.ring(p.x, p.y, 36, col); this.effects.ring(p.x, p.y, 22, '#ffffff'); this.effects.burst(p.x, p.y, col, 16); break; }
+      case 'whirlwind2': p.whirl = 0.5; p.whirlTick = 0; p.whirlStatus = null;
         for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.projectiles.push(new Projectile({ x: p.x, y: p.y, dx: Math.cos(a), dy: Math.sin(a), speed: 260, range: 160, damage: D(45), pierce: 99, knockback: 4, mods: p.mods, color: '#d8e0e8', size: 3, wave: true })); }
         break;
       case 'swordrain': { const c = at(170); for (let i = 0; i < 14; i++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * 52;
@@ -671,7 +690,7 @@ class Game {
         for (const e of this.enemies) {
           if (!e.targetable) continue;
           const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
-          if (d - e.radius <= 36) this.damageEnemy(e, { damage: this.skillDmg(22), mods: p.mods, knockback: 4 }, dx / (d || 1), dy / (d || 1));
+          if (d - e.radius <= 36) this.damageEnemy(e, { damage: this.skillDmg(22), mods: p.mods, knockback: 4, status: p.whirlStatus || null }, dx / (d || 1), dy / (d || 1));
         }
         for (const b of this.enemyBullets) if (Math.hypot(b.x - p.x, b.y - p.y) < 40) { b.alive = false; this.effects.spark(b.x, b.y, '#fff'); }
       }
@@ -794,7 +813,7 @@ class Game {
       const options = shuffled(DATA_BUFFS.filter((b) => !owned.has(b.id) || b.id === 'buff_atk' || b.id === 'buff_hp')).slice(0, 3);
       this.overlay = { type: 'buff', options, after };
     } else {
-      if (r.trial) { r.trial = 0; this.evolve(); return; } // 상위자를 쓰러뜨림 → 진화
+      if (r.trial) { r.trial = 0; this.evolve(r.hybrid); r.hybrid = null; return; } // 상위자를 쓰러뜨림 → 진화 (혼합 전직 포함)
       if (r.challenge) { // 도전 성공: 희귀 이상 무기 + 골드
         r.challenge = false; this.props.push(new Chest(c.x, c.y - 10, 'challenge'));
         for (let i = 0; i < 8; i++) this.pickups.push(new Pickup('coin', c.x, c.y));

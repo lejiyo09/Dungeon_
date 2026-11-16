@@ -20,14 +20,16 @@ const RUNS = +(process.argv[2] || 2);
     Game.prototype.damagePlayer = function (a) { const p = this.player, h0 = p.hp + p.shield; const r = origDP.apply(this, arguments); if (r) taken += h0 - p.hp - p.shield; return r; };
     for (const hero of DATA_HEROES) {
       if (ONLY && hero.id !== ONLY) continue;
-      for (const line of jobLines(hero.id)) for (const rank of RANKS) for (let run = 0; run < RUNS; run++) for (const test of ['wave', 'boss']) {
+      const H = Object.values(HYBRID_JOBS).find((h) => h.from === hero.id); // 혼합 직업도 2차 진화 단계에서 같이 측정 (속성마다)
+      const cases = jobLines(hero.id).map((line) => ({ line })).concat(H && RANKS.includes(2) ? jobLines(H.master).map((el) => ({ line: jobLines(hero.id)[0], H, el })) : []);
+      for (const cs of cases) for (const rank of (cs.H ? [2] : RANKS)) for (let run = 0; run < RUNS; run++) for (const test of ['wave', 'boss']) { const line = cs.line;
         const w = WORLD[rank];
         seed = 1000 + run * 7 + w * 131 + (test === 'boss' ? 17 : 0); // 같은 조건(무기·버프·맵)은 모든 직업이 공유
         const realRandom = Math.random; Math.random = rnd;
         g.save.unlocked = DATA_HEROES.map((h) => h.id); g.save.selected = hero.id; g.save.loadout = null;
         g.startRun(); g.overlay = null; g.worldIdx = w; g.levelIdx = test === 'boss' ? STAGES_PER_WORLD - 1 : 1; g.loadStage(); g.banner = null;
         const p = g.player, lv = Math.min(5, Math.floor(w / 2));
-        g.applyVariant(line); g.setJob(p, line, rank);
+        g.applyVariant(line); g.setJob(p, line, rank); if (cs.H) g.setHybrid(p, cs.H, cs.el);
         for (let k = 0; k < rank; k++) { p.maxHp += EVOLUTION.hp[k]; p.maxEnergy += EVOLUTION.energy[k]; }
         const pickS = (rar) => { const a = DATA_WEAPONS.filter((d) => rar.includes(d.rarity)); return a[Math.floor(rnd() * a.length)]; };
         p.weapons = LOAD[w].map((r) => new WeaponInstance(pickS(r), lv)); p.slot = 0;
@@ -49,7 +51,7 @@ const RUNS = +(process.argv[2] || 2);
           if (t % 1200 === 0) await new Promise((r) => setTimeout(r, 0));
         }
         const won = test === 'boss' ? !!(boss && !boss.alive) : room.state === 'cleared';
-        res.push({ hero: hero.id, line: line.id, name: line.ranks[rank], rank, test, won, died: p.state === 'DEAD', time: t / 60, taken: Math.round(taken), ehp: Math.round(p.maxHp + p.maxShield), bossLeft: boss ? Math.max(0, boss.hp / boss.maxHp) : 0 });
+        res.push({ hero: hero.id, line: cs.H ? 'spellblade_' + cs.el.id : line.id, name: cs.H ? p.hybrid.title : line.ranks[rank], rank, test, won, died: p.state === 'DEAD', time: t / 60, taken: Math.round(taken), ehp: Math.round(p.maxHp + p.maxShield), bossLeft: boss ? Math.max(0, boss.hp / boss.maxHp) : 0 });
       }
     }
     return res;

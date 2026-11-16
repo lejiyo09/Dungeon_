@@ -176,7 +176,7 @@ class WeaponSystem {
     }
     w.shots = (w.shots || 0) + 1;
     const pow = def.nth && w.shots % def.nth.every === 0; // N번째 휘두르기 강화
-    const src = { damage: def.damage * (pow ? def.nth.mult : 1), knockback: def.knockback * (pow ? 1.5 : 1), status: def.status || null,
+    const src = { damage: def.damage * (pow ? def.nth.mult : 1), knockback: def.knockback * (pow ? 1.5 : 1), status: def.status || (player.hybrid && Math.random() < player.hybrid.passiveChance ? player.hybrid.status : null), // 마검사: 근접 공격에 속성
       mods: weaponMods(player, w),
       execute: def.execute || 0, mark: def.mark || null, killEnergy: def.killEnergy || 0 };
     if (pow) { world.addShake(0.12, 3); SFX.play('crit', 0.05); }
