@@ -39,22 +39,24 @@ const LoginUI = {
   },
   renderList(msg) {
     const list = Auth.list().sort((a, b) => b.last - a.last), last = list[0];
-    const rows = list.slice(1).map((p) => `<div class="lg-row"><button class="lg-prof" data-id="${p.id}"><span class="lg-name"><b>${this.esc(p.name)}</b>${p.pinHash ? ' 🔒' : ''}</span>
+    const rows = list.slice(1).map((p) => `<div class="lg-row"><button class="lg-prof" data-id="${p.id}"><span class="lg-name"><b>${this.esc(p.name)}</b>${p.admin ? ' 👑' : ''}${p.pinHash ? ' 🔒' : ''}</span>
       <span class="lg-sum">${this.sumLine(p)} · ${this.ago(p.last)}</span></button><button class="lg-del" data-del="${p.id}" title="계정 삭제">✕</button></div>`).join('');
     this.frame(`${msg ? `<div class="lg-msg">${this.esc(msg)}</div>` : ''}
-      ${last ? `<div class="lg-row"><button class="lg-cont" id="lg-cont"><span class="lg-cont-t">▶ 계속하기 — ${this.esc(last.name)}${last.pinHash ? ' 🔒' : ''}</span>
+      ${last ? `<div class="lg-row"><button class="lg-cont" id="lg-cont"><span class="lg-cont-t">▶ 계속하기 — ${this.esc(last.name)}${last.admin ? ' 👑' : ''}${last.pinHash ? ' 🔒' : ''}</span>
         <span class="lg-sum">${this.sumLine(last)} · ${this.ago(last.last)}</span></button><button class="lg-del" data-del="${last.id}" title="계정 삭제">✕</button></div>` : ''}
       ${rows ? `<div class="lg-cap">다른 계정</div><div class="lg-list">${rows}</div>` : ''}
       ${last ? '' : '<div class="lg-empty">아직 계정이 없습니다. 닉네임만 정하면 바로 시작할 수 있어요.</div>'}
       ${last ? `<label class="lg-chk"><input type="checkbox" id="lg-auto" ${this.auto ? 'checked' : ''}> 이 기기에서 다음부터 바로 시작</label>` : ''}
       <button class="lg-btn ${last ? '' : 'lg-main'}" id="lg-new">새 계정 만들기</button>
-      <button class="lg-btn" id="lg-guest">게스트로 시작 (저장 안 됨)</button>`);
+      <button class="lg-btn" id="lg-guest">게스트로 시작 (저장 안 됨)</button>
+      ${list.some((p) => p.admin) ? '' : '<button class="lg-btn lg-admin" id="lg-admin">👑 관리자 계정 (모든 것 해금)</button>'}`);
     const auto = this.root.querySelector('#lg-auto'); if (auto) auto.onchange = () => { this.auto = auto.checked; };
     if (last) this.root.querySelector('#lg-cont').onclick = () => this.pick(last);
     this.root.querySelectorAll('.lg-prof').forEach((b) => b.onclick = () => this.pick(list.find((p) => p.id === b.dataset.id)));
     this.root.querySelectorAll('.lg-del').forEach((b) => b.onclick = () => this.askDelete(list.find((p) => p.id === b.dataset.del)));
     this.root.querySelector('#lg-new').onclick = () => this.renderNew();
     this.root.querySelector('#lg-guest').onclick = () => this.enter(null);
+    const adm = this.root.querySelector('#lg-admin'); if (adm) adm.onclick = () => this.enter(Auth.admin());
     const first = this.root.querySelector(last ? '#lg-cont' : '#lg-new'); if (first) first.focus();
     this.setKeys(null); // Enter는 포커스된 버튼(기본: 계속하기)이 처리
   },

@@ -29,11 +29,17 @@ const Auth = {
     if (pin && !/^\d{4}$/.test(pin)) throw new Error('PIN은 숫자 4자리이거나 비워 두세요');
     const all = this.list();
     if (all.some((p) => p.name === name)) throw new Error('이미 있는 닉네임입니다');
-    if (all.length >= 8) throw new Error('계정은 최대 8개까지 만들 수 있습니다');
+    if (all.filter((p) => !p.admin).length >= 8) throw new Error('계정은 최대 8개까지 만들 수 있습니다');
     const salt = Array.from(crypto.getRandomValues ? crypto.getRandomValues(new Uint8Array(8)) : [Date.now() & 255]).map((b) => b.toString(16)).join('');
     const p = { id: 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36), name, salt,
       pinHash: pin ? await this.hashPin(pin, salt) : null, created: Date.now(), last: Date.now() };
     all.push(p); this.saveList(all);
+    return p;
+  },
+  // 관리자 계정: 모든 것이 해금된 테스트용 계정 (이 기기에 하나, 계정 수 제한에 포함되지 않음)
+  admin() {
+    const all = this.list(); let p = all.find((x) => x.admin);
+    if (!p) { p = { id: 'p_admin', name: '관리자', admin: true, salt: '', pinHash: null, created: Date.now(), last: Date.now() }; all.push(p); this.saveList(all); }
     return p;
   },
   async verify(p, pin) { return !p.pinHash || (await this.hashPin(pin || '', p.salt)) === p.pinHash; },

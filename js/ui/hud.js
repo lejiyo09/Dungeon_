@@ -139,7 +139,7 @@ class HUD {
   }
   overlay(ctx, game) {
     const o = game.overlay;
-    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
@@ -285,6 +285,13 @@ class HUD {
       hudText(ctx, `2  대가 — ${game.evolvePrice()}골드를 내고 바로 진화 (보유 ${game.gold})`, VIEW_W / 2, 160, game.gold >= game.evolvePrice() ? '#fff' : '#888', 'center', 10);
       if (o.msg) hudText(ctx, o.msg, VIEW_W / 2, 180, '#ff9a9a', 'center', 9);
       hudText(ctx, 'E / Esc: 닫기', VIEW_W / 2, VIEW_H - 16, '#888', 'center', 8);
+    } else if (o.type === 'admin') { // 관리자 메뉴
+      const m = game.input.mouse; hudText(ctx, '👑 관리자 메뉴', VIEW_W / 2, 12, '#ffd84a', 'center', 12);
+      game.adminActions().forEach((a, i) => { const r = HUD.adminRow(i), ok = !('ok' in a) || !!a.ok, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        ctx.fillStyle = on && ok ? 'rgba(255,216,74,0.16)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
+        hudText(ctx, `${i + 1}  ${a.name}`, r.x + 10, r.y + 5, ok ? (/\[켜짐\]/.test(a.name) ? '#9fe89f' : '#fff') : '#555', 'left', 10); });
+      if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 28, o.msg.color, 'center', 10);
+      hudText(ctx, '숫자 키 / 클릭: 실행   ·   ` / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
     } else if (o.type === 'trial_confirm') { // 롱고미니아드의 시련 도전 확인
       hudText(ctx, '롱고미니아드의 시련', VIEW_W / 2, 60, '#bfe6ff', 'center', 16);
       hudText(ctx, '창에 깃든 신령 — 신령 롱고미니아드와 1:1로 싸웁니다', VIEW_W / 2, 86, '#e8e0f0', 'center', 10);
@@ -354,6 +361,7 @@ class HUD {
   // 보구 획득 알림: 오른쪽 아래에서 아이콘과 함께 미끄러져 들어와 6초 동안 표시
   static trialBtn(i) { return { x: VIEW_W / 2 - 130 + i * 140, y: 140, w: 120, h: 26 }; }
   static guildTab(i) { return { x: 60 + i * 134, y: 22, w: 126, h: 16 }; }
+  static adminRow(i) { return { x: 60, y: 32 + i * 24, w: VIEW_W - 120, h: 21 }; }
   static guildRow(i) { return { x: 40, y: 46 + i * 28, w: VIEW_W - 80, h: 25 }; }
   static titleCell(i) { return { x: 40 + (i % 2) * 218, y: 46 + Math.floor(i / 2) * 30, w: 212, h: 27 }; }
   static betRect(i) { return { x: VIEW_W / 2 - 150 + i * 104, y: 150, w: 92, h: 22 }; }

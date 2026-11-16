@@ -175,7 +175,32 @@ class Game {
     this.guildEvent('runs'); writeSave(this.save);
     this.overlay = { type: 'result', victory: win, stages: 0, bosses: 0, reward: 0, trial: true };
   }
-  titleUnlocked(T) { return T.test(this.save.stats || {}, this.save); }
+  // ── 관리자 계정: 직업·무기·보구·이야기·직업 레벨 전부 해금, 결정석 넉넉히 (로그인할 때마다 다시 채움)
+  applyAdmin() {
+    const s = this.save;
+    s.unlocked = DATA_HEROES.map((h) => h.id); s.discovered = DATA_WEAPONS.map((d) => d.id); s.armory = DATA_WEAPONS.map((d) => d.id);
+    s.bank = Math.max(s.bank || 0, 999999); s.treasures = DATA_TREASURES.map((t) => t.id); if (!s.treasureEquipped) s.treasureEquipped = 'treasure_excalibur';
+    s.sanctumReached = true; s.prologueSeen = true; s.merlin = Object.assign({ gate: 1, deep: 2 }, s.merlin, { revealed: true, quest: Math.max(4, (s.merlin && s.merlin.quest) || 0) });
+    s.jobLv = {}; for (const h of DATA_HEROES) s.jobLv[h.id] = BALANCE.jobLevel.max;
+    s.scenesSeen = ['origin_arrival', 'gatekeeper_intro', 'gatekeeper_fall'];
+    writeSave(s);
+  }
+  // 관리자 메뉴 (` 키): 숫자 키로 실행
+  adminActions() {
+    const A = this.admin, d = this.mode === 'dungeon', p = this.player;
+    return [
+      { name: `무적 ${A.god ? '[켜짐]' : '[꺼짐]'}`, run: () => { A.god = !A.god; } },
+      { name: `쿨타임 없음 (스킬·보구) ${A.nocd ? '[켜짐]' : '[꺼짐]'}`, run: () => { A.nocd = !A.nocd; } },
+      { name: '체력·보호막·에너지 모두 회복', ok: d, run: () => { p.hp = p.maxHp; p.shield = p.maxShield; p.energy = p.maxEnergy; } },
+      { name: '던전 골드 +5000', ok: d && !this.trialW, run: () => { this.gold += 5000; } },
+      { name: '다음 진화 단계로', ok: d && p.line && p.rank < 2, run: () => this.evolve() },
+      { name: '이 필드의 보스 스테이지로', ok: d && !this.trialW && !this.isBossStage, run: () => { this.levelIdx = STAGES_PER_WORLD - 1; this.loadStage(); } },
+      { name: `다음 필드로 (${stageLabel(this.worldIdx + 1, 0)})`, ok: d && !this.trialW, run: () => { this.worldIdx++; this.levelIdx = 0; this.loadStage(); } },
+      { name: '결정석 999,999로 채우기', run: () => { this.save.bank = 999999; writeSave(this.save); } },
+      { name: '롱고미니아드의 시련 바로 시작', ok: !d, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startRhongoTrial() }; } }
+    ];
+  }
+  titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
   resetWorldLists(map) {
     this.map = map;
@@ -397,9 +422,10 @@ class Game {
   login(profile) {
     Auth.current = profile; this.profile = profile;
     this.save = loadSave(); SFX.setMuted(!!this.save.muted);
+    this.admin = profile && profile.admin ? { god: false, nocd: false } : null; if (this.admin) this.applyAdmin();
     this.locked = false; this.enterLobby();
     if (this.save.run) this.overlay = { type: 'resume' };
-    this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다', '#ffd84a');
+    this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', this.admin ? '관리자 계정 — 모든 것이 해금됨 · ` 키: 관리자 메뉴' : profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다', '#ffd84a');
   }
   logout() {
     writeSave(this.save); Auth.current = null; this.profile = null; Auth.setAuto(null);
@@ -446,12 +472,14 @@ class Game {
     if (this.overlay) { this.updateOverlay(input); input.endStep(); return; }
     if (this.cutscene) { this.screenFlash = Math.max(0, this.screenFlash - dt); this.shake = Math.max(0, (this.shake || 0) - dt); this.updateCutscene(dt, input); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } // 컷신 중에는 세계가 멈춤 (번쩍임·흔들림은 가라앉음)
     if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; input.endStep(); return; }
+    if (this.admin && input.wasPressed('Backquote')) { this.overlay = { type: 'admin', msg: null }; input.endStep(); return; }
     if (this.hitStopT > 0) { this.hitStopT -= dt; return; }
     this.screenFlash = Math.max(0, this.screenFlash - dt);
     if (this.cinematic) { this.updateCinematic(dt); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; }
     if (this.slowMo) dt = this.updateSlowMo(dt); // 보스 처치 슬로우모션: 시뮬레이션 시간이 느려짐
 
     const p = this.player;
+    if (this.admin && this.admin.nocd) { p.skillCooldown = 0; p.treasureCd = 0; }
     const wasDash = p.state === 'DASH';
     p.update(dt, input, this.map, this.mouseWorld());
     if (!wasDash && p.state === 'DASH') SFX.play('dash');
@@ -586,6 +614,14 @@ class Game {
         if (this.gold < price) { o.msg = `골드가 부족합니다 (${price}골드 필요)`; SFX.play('deny'); }
         else { this.gold -= price; o.npc.gone = true; this.overlay = null; this.evolve(o.npc.hybrid, o.npc.branch); }
       }
+    } else if (o.type === 'admin') { // 관리자 메뉴
+      if (o.msg) o.msg.t -= STEP;
+      if (input.wasPressed('Escape') || input.wasPressed('Backquote')) { this.overlay = null; return; }
+      const acts = this.adminActions(), m = input.mouse; let k = -1;
+      acts.forEach((_, i) => { const r = HUD.adminRow(i); if (input.wasPressed('Digit' + (i + 1)) || (input.wasPressed('Mouse0') && m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h)) k = i; });
+      if (k < 0) return; const a = acts[k]; this.input.mouse.down = false;
+      if ('ok' in a && !a.ok) { o.msg = { text: '지금은 쓸 수 없습니다', color: '#ff9a9a', t: 1.5 }; return; }
+      const closes = /스테이지로|필드로|시련|진화/.test(a.name); a.run(); if (closes) this.overlay = null; else o.msg = { text: a.name.replace(/ \[.*\]/, '') + ' — 완료', color: '#ffd84a', t: 1.5 };
     } else if (o.type === 'trial_confirm') { // 롱고미니아드의 시련: 도전 / 나중에
       const m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h, click = input.wasPressed('Mouse0');
       if (input.wasPressed('Enter') || input.wasPressed('Digit1') || (click && hit(HUD.trialBtn(0)))) { this.overlay = null; this.input.mouse.down = false; this.transition = { t: 0, swapped: false, action: () => this.startRhongoTrial() }; }
@@ -1601,6 +1637,7 @@ class Game {
   }
   damagePlayer(amount) {
     const p = this.player, hp0 = p.hp;
+    if (this.admin && this.admin.god) return false; // 관리자 무적
     if (p.takeDamage(amount)) {
       this.addShake(0.15, 3);
       this.effects.text(p.x, p.y - 16, '-' + amount, '#ff6b6b', true);
