@@ -645,6 +645,25 @@ class Game {
       // 사수
       case 'overdrive': p.overdrive = 5; p.odDmg = 0; this.effects.text(p.x, p.y - 18, '과부하!', '#ffd84a'); break;
       case 'overdrive2': p.overdrive = 7; p.odDmg = 0.4; this.effects.text(p.x, p.y - 18, '탄막 폭주!', '#ffd84a'); this.effects.ring(p.x, p.y, 26, '#ffd84a'); break;
+      // 사수 · 저격 갈래
+      case 'snipe': case 'snipe2': { const two = p.skillId === 'snipe2';
+        shoot({ n: two ? 3 : 1, fan: two ? 0.16 : 0, p: { damage: two ? 60 : 75, pierce: 99, color: '#ffe9a0', size: 2, speed: 720, range: 620, arrow: true, knockback: 6 } });
+        this.effects.muzzle(p.x + p.aim.x * 12, p.y + 2 + p.aim.y * 9, A, '#ffe9a0'); this.addShake(0.1, 3); SFX.play('heavy'); break; }
+      case 'railshot': this.zones.push(new SkillCast(p, p.x, p.y, { r: 20, time: 0.8, color: '#ffe9a0' }, () => {
+        const a = Math.atan2(p.aim.y, p.aim.x), L = 700, x1 = p.x + Math.cos(a) * L, y1 = p.y + Math.sin(a) * L;
+        for (const e of this.enemies) if (e.targetable && segmentCircleHit(p.x, p.y, x1, y1, e.x, e.y, e.radius + 8) >= 0) this.damageEnemy(e, { damage: D(320), mods: p.mods, knockback: 12 }, Math.cos(a), Math.sin(a));
+        this.effects.beamline(p.x, p.y, x1, y1, 10, '#ffe9a0'); this.effects.beamline(p.x, p.y, x1, y1, 3, '#ffffff'); this.addShake(0.4, 7); this.hitStop(0.06); SFX.play('excal'); })); break;
+      // 사수 · 폭파 갈래
+      case 'grenade': { const c = at(180), bomb = { damage: D(60), mods: p.mods, knockback: 8, status: { type: 'burn', chance: 1, duration: 3, dps: 10 } };
+        this.zones.push(new Strike(c.x, c.y, 0.45, 40, bomb, '#ff9a4a', false)); this.effects.text(c.x, c.y - 12, '!', '#ff9a4a'); SFX.play('crate'); break; }
+      case 'cluster': { const c = at(180), big = { damage: D(70), mods: p.mods, knockback: 8, status: { type: 'burn', chance: 1, duration: 3, dps: 10 } };
+        this.zones.push(new Strike(c.x, c.y, 0.45, 42, big, '#ff9a4a', false));
+        for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + Math.random() * 0.4, r = 38 + Math.random() * 14;
+          this.zones.push(new Strike(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r * 0.75, 0.75 + i * 0.06, 24, { damage: D(34), mods: p.mods, knockback: 4 }, '#ffc070', false)); }
+        SFX.play('crate'); break; }
+      case 'carpet': { const a = A;
+        for (let i = 0; i < 11; i++) { const d = 30 + i * 24; this.zones.push(new Strike(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, 0.3 + i * 0.07, 34, { damage: D(100), mods: p.mods, knockback: 6, status: { type: 'burn', chance: 1, duration: 3, dps: 12 } }, '#ff7a3a', false)); }
+        this.addShake(0.2, 4); SFX.play('heavy'); break; }
       case 'deadeye': this.zones.push(new SkillCast(p, p.x, p.y, { r: 22, time: 0.7, color: '#ffd84a' }, () => {
         for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 320 && hasLineOfSight(p, e, this.map)) {
           this.damageEnemy(e, { damage: D(150), mods: Object.assign({}, p.mods, { critChance: 1 }), knockback: 8 }, (e.x - p.x) / 100, (e.y - p.y) / 100); this.effects.beamline(p.x, p.y, e.x, e.y, 2, '#ffd84a'); }

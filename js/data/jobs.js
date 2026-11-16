@@ -59,18 +59,28 @@ const JOB_LINES = {
         { id: 'abyss', name: '심연 소용돌이', desc: '조준 지점에 적을 빨아들이는 어둠 (저주)', cd: 8 },
         { id: 'voidcollapse', name: '블랙홀', desc: '2초 시전(이동 불가)하며 블랙홀로 주변 적을 모두 빨아들인 뒤 터뜨려 엄청난 피해', cd: 13 }] }
   },
-  hero_gunner: { base: { ranks: ['사수', '건마스터', '데드아이'], color: '#ffd84a',
+  hero_gunner: { title: '사격 방식 선택',
+    base: { name: '속사', desc: '빠른 연사 · 공격 속도 강화', ranks: ['사수', '건마스터', '데드아이'], color: '#ffd84a',
     skills: [
       { id: 'overdrive', name: '과부하 사격', desc: '5초간 공격 속도 2배, 에너지 무소모', cd: 15 },
       { id: 'overdrive2', name: '탄막 폭주', desc: '7초간 공격 속도 2배·공격력 +40%, 에너지 무소모', cd: 15 },
-      { id: 'deadeye', name: '데드아이', desc: '1초 조준(이동 불가) → 보이는 모든 적을 한 발씩 저격', cd: 14 }] } },
+      { id: 'deadeye', name: '데드아이', desc: '1초 조준(이동 불가) → 보이는 모든 적을 한 발씩 저격', cd: 14 }] },
+    sniper: { name: '저격', desc: '부싯돌 권총 · 느리지만 멀리, 강하게 관통', startWeapon: 'weapon_flintlock_001', ranks: ['저격수', '명사수', '일격필살'], color: '#ffe9a0',
+      skills: [
+        { id: 'snipe', name: '관통 저격', desc: '조준 방향으로 모든 적을 꿰뚫는 강한 탄 한 발', cd: 5 },
+        { id: 'snipe2', name: '철갑 연사', desc: '꿰뚫는 강한 탄 세 발을 부채꼴로', cd: 6 },
+        { id: 'railshot', name: '일격필살', desc: '0.8초 조준(이동 불가) → 화면 끝까지 뻗는 일직선 사격, 엄청난 피해', cd: 12 }] },
+    demo: { name: '폭파', desc: '터지는 것으로 넓게 정리', ranks: ['폭파병', '폭탄 전문가', '파괴 공작원'], color: '#ff9a4a',
+      skills: [
+        { id: 'grenade', name: '수류탄', desc: '조준 지점에 던져 폭발 (화상)', cd: 5 },
+        { id: 'cluster', name: '집속 수류탄', desc: '큰 폭발 뒤 주변에 작은 폭발 6개', cd: 6 },
+        { id: 'carpet', name: '융단 폭격', desc: '조준 방향 일직선으로 폭발 11개가 차례로 (화상)', cd: 10 }] } },
   hero_engineer: { base: { ranks: ['기술자', '기계공학자', '전쟁 설계자'], color: '#f0c030',
     skills: [
       { id: 'turret', name: '자동 포탑', desc: '12초간 적을 쏘는 포탑 설치', cd: 13 },
       { id: 'turret2', name: '포대 전개', desc: '15초간 강한 포탑 2개 설치', cd: 13 },
       { id: 'barrage', name: '궤도 폭격', desc: '1초 신호(이동 불가) → 조준 지점에 포격 14발', cd: 13 }] } },
-  // 암살자: 판 시작 때는 고르지 않고, 첫 진화 때 세 갈래 중 하나로 갈라짐 (branchAtEvolve)
-  hero_assassin: { title: '진화 갈래 선택', branchAtEvolve: true,
+  hero_assassin: { title: '암살 방식 선택',
     shadow: { name: '그림자', desc: '순간이동 연속 습격 · 마지막엔 분신과 처형', ranks: ['암살자', '그림자 군주', '그림자 그 자체'], color: '#b080ff',
     skills: [
       { id: 'blink', name: '그림자 습격', desc: '조준 방향으로 순간이동하며 지나간 적을 벰 (잠깐 무적)', cd: 5 },
