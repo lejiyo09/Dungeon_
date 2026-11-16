@@ -52,7 +52,7 @@ window.Bot = {
     if (ml > 0.2) { mx /= ml; my /= ml; if (mx < -0.38) I.down.add('KeyA'); if (mx > 0.38) I.down.add('KeyD'); if (my < -0.38) I.down.add('KeyW'); if (my > 0.38) I.down.add('KeyS'); }
     if (danger >= 1 && p.dashCooldown <= 0) I.pressed.add('Space');
     const sk = p.skillId || p.hero.skill; // 직업 스킬: 자기 주변형은 가까이 있을 때, 나머지는 조준형
-    const R = /^whirlwind|spellblade/.test(sk) ? 40 : ['frost_nova', 'flamestorm', 'thorns', 'radiance', 'quake', 'descent', 'execution', 'bloodstorm', 'voidcollapse', 'worldtree', 'plaguecloud', 'bladeorbit', 'bladestorm'].includes(sk) ? 95 : 160;
+    const R = /^whirlwind|spellblade/.test(sk) ? 40 : ['frost_nova', 'flamestorm', 'thorns', 'radiance', 'quake', 'descent', 'execution', 'bloodstorm', 'voidcollapse', 'worldtree', 'plaguecloud', 'bladeorbit', 'bladestorm', 'shout', 'shout2', 'earthshatter', 'ancientroot', 'barrier', 'barrier2', 'fortress', 'bless', 'bless2', 'miracle', 'bloodpact', 'bloodpact2', 'bloodmoon', 'bearform', 'bearform2', 'primal', 'thornburst'].includes(sk) ? 95 : 160;
     const near = en.filter((e) => Math.hypot(e.x - p.x, e.y - p.y) < R).length;
     if (p.skillCooldown <= 0 && (near >= 2 || (near >= 1 && en.some((e) => e.def.boss)) || (/^whirlwind|spellblade/.test(sk) && danger))) I.pressed.add('KeyF');
     g.update(STEP);

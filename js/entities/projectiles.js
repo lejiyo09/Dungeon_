@@ -254,10 +254,11 @@ class Hazard {
 
 // 기술자 포탑
 class Turret {
-  constructor(x, y, owner, o = {}) { this.x = x; this.y = y; this.owner = owner; this.life = o.life || 12; this.dmg = o.damage || 8; this.rate = o.rate || 0.2; this.range = o.range || 220; this.cd = 0.3; this.ang = 0; this.alive = true; }
+  constructor(x, y, owner, o = {}) { this.x = x; this.y = y; this.owner = owner; this.follow = o.follow || null; this.life = o.life || 12; this.dmg = o.damage || 8; this.rate = o.rate || 0.2; this.range = o.range || 220; this.cd = 0.3; this.ang = 0; this.alive = true; }
   update(dt, world) {
     this.life -= dt; this.cd -= dt;
     if (this.life <= 0) { this.alive = false; world.effects.burst(this.x, this.y, '#aaa', 6); return; }
+    if (this.follow) { this.t = (this.t || 0) + dt; const a = this.t * 1.6 + this.follow.slot, P = this.owner; this.x += (P.x + Math.cos(a) * 20 - this.x) * Math.min(1, dt * 6); this.y += (P.y - 10 + Math.sin(a) * 8 - this.y) * Math.min(1, dt * 6); } // 드론: 플레이어 주위를 돎
     let best = null, bestD = this.range;
     for (const e of world.enemies) {
       if (!e.targetable) continue;
@@ -275,6 +276,10 @@ class Turret {
   render(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y);
     if (this.life < 2 && Math.floor(this.life * 10) % 2 === 0) return;
+    if (this.follow) { // 드론: 떠다니는 작은 기계 + 프로펠러
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x - 4, y + 10, 8, 2);
+      ctx.fillStyle = OUTLINE; ctx.fillRect(x - 5, y - 3, 10, 6); ctx.fillStyle = '#5a6a7a'; ctx.fillRect(x - 4, y - 2, 8, 4); ctx.fillStyle = '#7ad0ff'; ctx.fillRect(x - 1, y - 1, 2, 2);
+      ctx.fillStyle = Math.floor(this.life * 20) % 2 ? '#c8d0dc' : '#8a94a4'; ctx.fillRect(x - 7, y - 5, 5, 1); ctx.fillRect(x + 2, y - 5, 5, 1); return; }
     ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - 6, y + 4, 12, 2);
     ctx.fillStyle = '#5a5a6a'; ctx.fillRect(x - 6, y - 2, 12, 7);
     ctx.fillStyle = '#c08a30'; ctx.fillRect(x - 4, y - 6, 8, 5);

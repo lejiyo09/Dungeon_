@@ -80,11 +80,22 @@ const JOB_LINES = {
         { id: 'grenade', name: '수류탄', desc: '조준 지점에 던져 폭발 (화상)', cd: 5 },
         { id: 'cluster', name: '집속 수류탄', desc: '큰 폭발 뒤 주변에 작은 폭발 6개', cd: 6 },
         { id: 'carpet', name: '융단 폭격', desc: '조준 방향 일직선으로 폭발 11개가 차례로 (화상)', cd: 10 }] } },
-  hero_engineer: { base: { ranks: ['기술자', '기계공학자', '전쟁 설계자'], color: '#f0c030',
+  hero_engineer: { title: '공학 분야 선택',
+    base: { name: '포탑', desc: '자리에 포탑을 세워 화력 지원', ranks: ['기술자', '기계공학자', '전쟁 설계자'], color: '#f0c030',
     skills: [
       { id: 'turret', name: '자동 포탑', desc: '12초간 적을 쏘는 포탑 설치', cd: 13 },
       { id: 'turret2', name: '포대 전개', desc: '15초간 강한 포탑 2개 설치', cd: 13 },
-      { id: 'barrage', name: '궤도 폭격', desc: '1초 신호(이동 불가) → 조준 지점에 포격 14발', cd: 13 }] } },
+      { id: 'barrage', name: '궤도 폭격', desc: '1초 신호(이동 불가) → 조준 지점에 포격 14발', cd: 13 }] },
+    drone: { name: '드론', desc: '나를 따라다니며 쏘는 드론', ranks: ['드론 기사', '드론 지휘관', '군단 설계자'], color: '#7ad0ff',
+      skills: [
+        { id: 'drones', name: '호위 드론', desc: '12초간 따라다니며 쏘는 드론 2기', cd: 13 },
+        { id: 'drones2', name: '드론 편대', desc: '14초간 강한 드론 3기', cd: 13 },
+        { id: 'droneswarm', name: '드론 군단', desc: '14초간 드론 4기 + 소환할 때 주변에 충격파', cd: 15 }] },
+    shield: { name: '방벽', desc: '방어막으로 탄을 막고 버팀', ranks: ['방벽 공병', '요새 기술자', '불락의 설계자'], color: '#9ac0e0',
+      skills: [
+        { id: 'barrier', name: '방어막 발생기', desc: '8초간 주위에 방어막 (들어오는 적 탄 소멸, 안의 적 약한 피해)', cd: 12 },
+        { id: 'barrier2', name: '충격 방어막', desc: '9초간 넓은 방어막, 안의 적에게 전격 피해', cd: 12 },
+        { id: 'fortress', name: '요새화', desc: '10초간 큰 방어막 + 포탑 2개 + 받는 피해 -25%', cd: 16 }] } },
   hero_assassin: { title: '암살 방식 선택',
     shadow: { name: '그림자', desc: '순간이동 연속 습격 · 마지막엔 분신과 처형', ranks: ['암살자', '그림자 군주', '그림자 그 자체'], color: '#b080ff',
     skills: [
@@ -101,21 +112,54 @@ const JOB_LINES = {
       { id: 'blink', name: '그림자 습격', desc: '조준 방향으로 순간이동하며 지나간 적을 벰 (잠깐 무적)', cd: 5 },
       { id: 'bladeorbit', name: '회전 칼날', desc: '8초간 칼날 4개가 몸 주위를 돌며 닿는 적을 벰', cd: 8 },
       { id: 'bladestorm', name: '칼날 폭풍', desc: '8초간 칼날 6개가 넓게 돌고, 순간 회오리로 주변 적을 베고 적 탄환을 지움', cd: 12 }] } },
-  hero_priest: { base: { ranks: ['사제', '대사제', '성자'], color: '#ffe9a0',
+  hero_priest: { title: '신앙의 길 선택',
+    base: { name: '성역', desc: '빛의 원으로 회복하고 탄을 막음', ranks: ['사제', '대사제', '성자'], color: '#ffe9a0',
     skills: [
       { id: 'sanctuary', name: '성역', desc: '6초간 빛의 원: 안에 있으면 회복, 원 안의 적 지속 피해, 들어오는 적 탄 소멸', cd: 13 },
       { id: 'sanctuary2', name: '대성역', desc: '더 넓고 오래, 회복·피해 2배, 안에 있으면 공격력 +35%', cd: 13 },
-      { id: 'descent', name: '신성 강림', desc: '1초 기도(이동 불가) → 2초 무적, 체력 40% 회복, 주변 큰 피해', cd: 15 }] } },
-  hero_berserker: { base: { ranks: ['광전사', '전쟁광', '피의 군주'], color: '#ff5a3a',
+      { id: 'descent', name: '신성 강림', desc: '1초 기도(이동 불가) → 2초 무적, 체력 40% 회복, 주변 큰 피해', cd: 15 }] },
+    smite: { name: '심판', desc: '빛으로 직접 내리치는 공격형', ranks: ['심판관', '대심판관', '빛의 집행자'], color: '#fff4c0',
+      skills: [
+        { id: 'holybolt', name: '빛의 창', desc: '꿰뚫는 빛의 창 3개 (실명)', cd: 5 },
+        { id: 'holyrain', name: '빛의 비', desc: '조준 지점에 빛줄기 12개가 쏟아짐', cd: 8 },
+        { id: 'heavensgate', name: '천상의 문', desc: '1.2초 기도(이동 불가) → 넓은 빛기둥, 큰 피해 + 체력 회복', cd: 12 }] },
+    bless: { name: '축복', desc: '나를 강하게 만드는 축복술', ranks: ['축복술사', '대축복술사', '기적의 사도'], color: '#ffd8a0',
+      skills: [
+        { id: 'bless', name: '축복', desc: '8초간 공격력 +40%·이동 속도 +15%, 체력 15 회복', cd: 12 },
+        { id: 'bless2', name: '큰 축복', desc: '10초간 공격력 +55%·이동 속도 +20%·받는 피해 -25%, 체력 25 회복', cd: 13 },
+        { id: 'miracle', name: '기적', desc: '체력 50% 회복 + 3초 무적 + 10초간 큰 축복', cd: 18 }] } },
+  hero_berserker: { title: '전투 방식 선택',
+    base: { name: '분노', desc: '분노로 공격력과 속도를 끌어올림', ranks: ['광전사', '전쟁광', '피의 군주'], color: '#ff5a3a',
     skills: [
       { id: 'rage', name: '분노', desc: '5초간 공격력 +70%, 이동 속도 +20%', cd: 12 },
       { id: 'rage2', name: '광란', desc: '8초간 공격력 +100%·이동 속도 +20%, 처치할 때마다 체력 +5', cd: 10 },
-      { id: 'bloodstorm', name: '피의 폭풍', desc: '6초간 광란 + 자기 주위에 피의 소용돌이 (지속 피해·흡혈)', cd: 16 }] } },
-  hero_druid: { base: { ranks: ['드루이드', '대드루이드', '숲의 군주'], color: '#9ad8ff',
+      { id: 'bloodstorm', name: '피의 폭풍', desc: '6초간 광란 + 자기 주위에 피의 소용돌이 (지속 피해·흡혈)', cd: 16 }] },
+    warcry: { name: '함성', desc: '고함으로 적을 얼어붙게 만듦', ranks: ['함성꾼', '전쟁 군주', '대지의 포효'], color: '#e0b070',
+      skills: [
+        { id: 'shout', name: '전투 함성', desc: '주변 적 피해 + 1.4초 기절', cd: 8 },
+        { id: 'shout2', name: '공포의 함성', desc: '넓게 피해 + 1.6초 기절 + 받는 피해 +20%(저주)', cd: 8 },
+        { id: 'earthshatter', name: '대지 분쇄', desc: '높이 뛰어올라 내려찍어 아주 넓게 큰 피해 + 2초 기절', cd: 12 }] },
+    blood: { name: '피의 서약', desc: '체력을 바쳐 힘을 얻음', ranks: ['피의 서약자', '피의 광신자', '붉은 달의 사도'], color: '#c02a3a',
+      skills: [
+        { id: 'bloodpact', name: '피의 서약', desc: '체력 10%를 바쳐 6초간 공격력 +90%', cd: 10 },
+        { id: 'bloodpact2', name: '피의 광기', desc: '체력 10%를 바쳐 8초간 공격력 +130%, 처치할 때마다 체력 +8', cd: 10 },
+        { id: 'bloodmoon', name: '붉은 달', desc: '체력 15%를 바쳐 8초간 공격력 +120%·흡혈 + 주위에 피의 달 소용돌이', cd: 14 }] } },
+  hero_druid: { title: '자연의 길 선택',
+    base: { name: '야수', desc: '영혼 늑대를 불러 함께 싸움', ranks: ['드루이드', '대드루이드', '숲의 군주'], color: '#9ad8ff',
     skills: [
       { id: 'wolves', name: '영혼 늑대', desc: '12초간 적을 물어뜯는 늑대 3마리 소환', cd: 13 },
       { id: 'wolves2', name: '야수의 무리', desc: '16초간 강한 늑대 4마리 (물면 둔화)', cd: 13 },
-      { id: 'guardian', name: '대지의 수호수', desc: '18초간 거대한 곰(내려치기 범위 피해) + 강한 늑대 3마리 소환', cd: 15 }] } }
+      { id: 'guardian', name: '대지의 수호수', desc: '18초간 거대한 곰(내려치기 범위 피해) + 강한 늑대 3마리 소환', cd: 15 }] },
+    thorn: { name: '가시', desc: '가시와 뿌리로 묶고 찌름', ranks: ['가시 수호자', '덤불의 주인', '고대 뿌리의 현자'], color: '#7adf4a',
+      skills: [
+        { id: 'thornfield', name: '가시 덤불', desc: '조준 지점에 6초간 가시 덤불 (지속 피해 + 중독)', cd: 8 },
+        { id: 'thornburst', name: '가시 폭발', desc: '사방으로 꿰뚫는 가시 16개 (중독)', cd: 7 },
+        { id: 'ancientroot', name: '고대의 뿌리', desc: '넓은 범위의 적을 3초간 묶고 큰 피해 + 강한 중독', cd: 12 }] },
+    shape: { name: '변신', desc: '곰의 힘을 몸에 두름', ranks: ['곰의 아이', '곰 전사', '원시의 군주'], color: '#c8a070',
+      skills: [
+        { id: 'bearform', name: '곰 변신', desc: '8초간 받는 피해 -40%·공격력 +40%', cd: 13 },
+        { id: 'bearform2', name: '성난 곰', desc: '10초간 받는 피해 -40%·공격력 +45% + 주위를 할퀴는 기운', cd: 13 },
+        { id: 'primal', name: '원시의 분노', desc: '12초간 받는 피해 -40%·공격력 +55% + 넓게 할퀴는 기운 + 체력 회복', cd: 16 }] } }
 };
 // 직업의 갈래 목록 (title 제외)
 function jobLines(heroId) { const J = JOB_LINES[heroId] || {}; return Object.keys(J).filter((k) => J[k] && typeof J[k] === 'object').map((k) => Object.assign({ id: k }, J[k])); }

@@ -42,7 +42,7 @@ class Player extends Entity {
   }
   get weapon() { return this.weapons[this.slot] || null; }
   get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0; }
-  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.35 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.avalonT > 0 ? this.avalonAtk : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
+  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.35 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.avalonT > 0 ? this.avalonAtk : 0) + (this.buffT > 0 ? this.buffAtk || 0 : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
 
   update(dt, input, map, mouseWorld) {
     this.time += dt;
@@ -52,7 +52,7 @@ class Player extends Entity {
     this.dashInvuln = Math.max(0, this.dashInvuln - dt);
     this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
     this.overdrive = Math.max(0, this.overdrive - dt); this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt); this.treasureCd = Math.max(0, this.treasureCd - dt); this.solomon = Math.max(0, this.solomon - dt);
-    this.castLock = Math.max(0, this.castLock - dt); this.blinkWindowT = Math.max(0, this.blinkWindowT - dt); this.sancBoost = Math.max(0, this.sancBoost - dt); this.hasteT = Math.max(0, (this.hasteT || 0) - dt); this.avalonT = Math.max(0, (this.avalonT || 0) - dt);
+    this.castLock = Math.max(0, this.castLock - dt); this.blinkWindowT = Math.max(0, this.blinkWindowT - dt); this.sancBoost = Math.max(0, this.sancBoost - dt); this.hasteT = Math.max(0, (this.hasteT || 0) - dt); this.avalonT = Math.max(0, (this.avalonT || 0) - dt); this.buffT = Math.max(0, (this.buffT || 0) - dt);
     if (this.swing) { this.swing.t += dt; if (this.swing.t >= this.swing.dur) this.swing = null; }
     this.sinceHit += dt;
     if (this.sinceHit >= this.cfg.shieldRegenDelay)
@@ -82,7 +82,7 @@ class Player extends Entity {
     if (input.wasPressed('Space') && this.dashCooldown <= 0) {
       this.startDash(); this.updateDash(dt, map); return;
     }
-    const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1) * (this.hasteT > 0 ? 1.2 : 1) * (this.solomon > 0 ? 1 + this.treasure.speed : 1);
+    const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1) * (this.hasteT > 0 ? 1.2 : 1) * (this.buffT > 0 ? 1 + (this.buffSpeed || 0) : 1) * (this.solomon > 0 ? 1 + this.treasure.speed : 1);
     moveAndCollide(this, ix * spd * dt, iy * spd * dt, map);
   }
   startDash() {
@@ -100,7 +100,7 @@ class Player extends Entity {
   }
   takeDamage(amount) {
     if (this.state === 'DEAD' || this.isInvulnerable) return false;
-    amount = Math.max(1, Math.round(amount * (1 - this.damageReduction) * (this.solomon > 0 ? 1 - this.treasure.guard : 1) * (this.avalonT > 0 ? 1 - this.avalonGuard : 1)));
+    amount = Math.max(1, Math.round(amount * (1 - this.damageReduction) * (this.solomon > 0 ? 1 - this.treasure.guard : 1) * (this.avalonT > 0 ? 1 - this.avalonGuard : 1) * (this.buffT > 0 ? 1 - (this.buffGuard || 0) : 1)));
     this.sinceHit = 0;
     const absorbed = Math.min(this.shield, amount);
     this.shield -= absorbed;
@@ -127,6 +127,8 @@ class Player extends Entity {
     }
     if (this.hurtInvuln > 0 && Math.floor(this.time * 20) % 2 === 0) return;
     const frame = this.moving && this.state !== 'DASH' ? Math.floor(this.time * 8) % 2 : 0;
+    if (this.buffT > 0) { const col = this.buffKillHeal ? '#c02a3a' : this.buffGuard >= 0.4 ? '#c8a070' : '#ffd8a0', a = 0.25 + 0.15 * Math.sin(performance.now() / 120); // 축복·변신·서약 기운
+      ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = col; ctx.beginPath(); ctx.ellipse(Math.round(this.x), Math.round(this.y) + 6, 11, 4, 0, 0, TAU); ctx.stroke(); ctx.restore(); }
     if (this.solomon > 0) { // 솔로몬의 반지: 보랏빛·금빛 고리
       ctx.strokeStyle = `rgba(200,160,255,${0.5 + 0.3 * Math.sin(this.time * 8)})`; ctx.beginPath(); ctx.ellipse(x, y + 6, 11, 4, 0, 0, TAU); ctx.stroke();
       ctx.strokeStyle = 'rgba(255,216,74,0.6)'; ctx.beginPath(); ctx.ellipse(x, y + 6, 8, 3, 0, this.time * 3, this.time * 3 + 2.5); ctx.stroke();
