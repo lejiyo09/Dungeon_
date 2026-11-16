@@ -52,7 +52,7 @@ class Player extends Entity {
     this.dashInvuln = Math.max(0, this.dashInvuln - dt);
     this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
     this.overdrive = Math.max(0, this.overdrive - dt); this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt); this.treasureCd = Math.max(0, this.treasureCd - dt); this.solomon = Math.max(0, this.solomon - dt);
-    this.castLock = Math.max(0, this.castLock - dt); this.blinkWindowT = Math.max(0, this.blinkWindowT - dt); this.sancBoost = Math.max(0, this.sancBoost - dt);
+    this.castLock = Math.max(0, this.castLock - dt); this.blinkWindowT = Math.max(0, this.blinkWindowT - dt); this.sancBoost = Math.max(0, this.sancBoost - dt); this.hasteT = Math.max(0, (this.hasteT || 0) - dt);
     if (this.swing) { this.swing.t += dt; if (this.swing.t >= this.swing.dur) this.swing = null; }
     this.sinceHit += dt;
     if (this.sinceHit >= this.cfg.shieldRegenDelay)
@@ -82,7 +82,7 @@ class Player extends Entity {
     if (input.wasPressed('Space') && this.dashCooldown <= 0) {
       this.startDash(); this.updateDash(dt, map); return;
     }
-    const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1) * (this.solomon > 0 ? 1 + this.treasure.speed : 1);
+    const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1) * (this.hasteT > 0 ? 1.2 : 1) * (this.solomon > 0 ? 1 + this.treasure.speed : 1);
     moveAndCollide(this, ix * spd * dt, iy * spd * dt, map);
   }
   startDash() {

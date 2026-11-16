@@ -69,11 +69,23 @@ const JOB_LINES = {
       { id: 'turret', name: '자동 포탑', desc: '12초간 적을 쏘는 포탑 설치', cd: 13 },
       { id: 'turret2', name: '포대 전개', desc: '15초간 강한 포탑 2개 설치', cd: 13 },
       { id: 'barrage', name: '궤도 폭격', desc: '1초 신호(이동 불가) → 조준 지점에 포격 14발', cd: 13 }] } },
-  hero_assassin: { base: { ranks: ['암살자', '그림자 군주', '그림자 그 자체'], color: '#b080ff',
+  // 암살자: 판 시작 때는 고르지 않고, 첫 진화 때 세 갈래 중 하나로 갈라짐 (branchAtEvolve)
+  hero_assassin: { title: '진화 갈래 선택', branchAtEvolve: true,
+    shadow: { name: '그림자', desc: '순간이동 연속 습격 · 마지막엔 분신과 처형', ranks: ['암살자', '그림자 군주', '그림자 그 자체'], color: '#b080ff',
     skills: [
       { id: 'blink', name: '그림자 습격', desc: '조준 방향으로 순간이동하며 지나간 적을 벰 (잠깐 무적)', cd: 5 },
       { id: 'blink2', name: '그림자 연무', desc: '습격을 연달아 3번 (피해 증가)', cd: 5 },
-      { id: 'execution', name: '그림자 처형', desc: '그림자 분신 둘과 함께 셋이서 주변 적을 연달아 습격 (무적), 체력 25% 이하(보스 10%)인 적은 즉시 처형', cd: 11 }] } },
+      { id: 'execution', name: '그림자 처형', desc: '그림자 분신 둘과 함께 셋이서 주변 적을 연달아 습격 (무적), 체력 25% 이하(보스 10%)인 적은 즉시 처형', cd: 11 }] },
+    venom: { name: '독', desc: '독 단검을 흩뿌리고 독안개로 둘러쌈', ranks: ['암살자', '독칼잡이', '맹독의 군주'], color: '#7adf4a',
+    skills: [
+      { id: 'blink', name: '그림자 습격', desc: '조준 방향으로 순간이동하며 지나간 적을 벰 (잠깐 무적)', cd: 5 },
+      { id: 'venomfan', name: '독 단검 부채', desc: '부채꼴로 독 단검 7개를 던짐 (관통 1, 강한 중독)', cd: 4 },
+      { id: 'plaguecloud', name: '맹독 안개', desc: '7초간 자기 주위에 독안개 (지속 피해 + 중독), 안에서 이동 속도 +20%', cd: 11 }] },
+    blade: { name: '칼날', desc: '몸 주위를 도는 칼날로 싸우는 근접형', ranks: ['암살자', '칼춤꾼', '천 개의 칼날'], color: '#d8e0e8',
+    skills: [
+      { id: 'blink', name: '그림자 습격', desc: '조준 방향으로 순간이동하며 지나간 적을 벰 (잠깐 무적)', cd: 5 },
+      { id: 'bladeorbit', name: '회전 칼날', desc: '8초간 칼날 4개가 몸 주위를 돌며 닿는 적을 벰', cd: 8 },
+      { id: 'bladestorm', name: '칼날 폭풍', desc: '8초간 칼날 6개가 넓게 돌고, 순간 회오리로 주변 적을 베고 적 탄환을 지움', cd: 12 }] } },
   hero_priest: { base: { ranks: ['사제', '대사제', '성자'], color: '#ffe9a0',
     skills: [
       { id: 'sanctuary', name: '성역', desc: '6초간 빛의 원: 안에 있으면 회복, 원 안의 적 지속 피해, 들어오는 적 탄 소멸', cd: 13 },
@@ -91,7 +103,8 @@ const JOB_LINES = {
       { id: 'guardian', name: '대지의 수호수', desc: '18초간 거대한 곰(내려치기 범위 피해) + 강한 늑대 3마리 소환', cd: 15 }] } }
 };
 // 직업의 갈래 목록 (title 제외)
-function jobLines(heroId) { const J = JOB_LINES[heroId] || {}; return Object.keys(J).filter((k) => k !== 'title').map((k) => Object.assign({ id: k }, J[k])); }
+function jobLines(heroId) { const J = JOB_LINES[heroId] || {}; return Object.keys(J).filter((k) => J[k] && typeof J[k] === 'object').map((k) => Object.assign({ id: k }, J[k])); }
+function branchesAtEvolve(heroId) { return !!(JOB_LINES[heroId] && JOB_LINES[heroId].branchAtEvolve); } // 첫 진화 때 갈래를 고르는 직업
 
 // ════════════════════════════════════════════
 // 혼합 전직 (제안 단계 · 지금은 마검사 하나)

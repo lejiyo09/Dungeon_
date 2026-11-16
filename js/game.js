@@ -197,7 +197,7 @@ class Game {
   rollSpecialRoom() { // 일반 스테이지마다 chance 확률로 특수방 하나 (전직의 방은 진화할 단계가 남았을 때 더 자주)
     const SR = BALANCE.specialRooms; if (Math.random() >= SR.chance) return [];
     const p = this.player, canEvolve = p && p.line && p.rank < 2;
-    const pool = SR.pool.filter((t) => t !== 'evolve' || canEvolve);
+    const pool = SR.pool.filter((t) => t !== 'evolve' || (canEvolve && this.worldIdx >= (SR.evolveFromWorld || 0)));
     return [weightedPick(pool, (t) => (SR.weight && SR.weight[t]) || 1)];
   }
   // 특수방 소품 배치
@@ -425,14 +425,16 @@ class Game {
     } else if (o.type === 'variant') {
       let ch = -1; o.lines.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) ch = i; });
       if (input.wasPressed('Mouse0')) o.lines.forEach((_, i) => { const r = HUD.variantRect(i, o.lines.length), m = input.mouse; if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) ch = i; });
-      if (ch >= 0) { this.overlay = null; this.input.mouse.down = false; this.applyVariant(o.lines[ch]); const L = o.lines[ch]; this.showBanner(`${L.ranks[0]}`, `스킬: ${L.skills[0].name} — ${L.skills[0].desc}`, L.color); if (o.after) o.after(); }
+      if (o.branch && (input.wasPressed('Escape') || input.wasPressed('KeyE'))) { this.overlay = null; return; }
+      if (ch >= 0 && o.onPick) { this.overlay = null; this.input.mouse.down = false; o.onPick(o.lines[ch]); }
+      else if (ch >= 0) { this.overlay = null; this.input.mouse.down = false; this.applyVariant(o.lines[ch]); const L = o.lines[ch]; this.showBanner(`${L.ranks[0]}`, `스킬: ${L.skills[0].name} — ${L.skills[0].desc}`, L.color); if (o.after) o.after(); }
     } else if (o.type === 'evolve') {
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
       if (input.wasPressed('Digit1')) { this.overlay = null; this.input.mouse.down = false; this.startTrial(o.npc); }
       else if (input.wasPressed('Digit2')) {
         const price = this.evolvePrice();
         if (this.gold < price) { o.msg = `골드가 부족합니다 (${price}골드 필요)`; SFX.play('deny'); }
-        else { this.gold -= price; o.npc.gone = true; this.overlay = null; this.evolve(o.npc.hybrid); }
+        else { this.gold -= price; o.npc.gone = true; this.overlay = null; this.evolve(o.npc.hybrid, o.npc.branch); }
       }
     } else if (o.type === 'resume') {
       if (input.wasPressed('Enter')) { this.overlay = null; this.transition = { t: 0, swapped: false, action: () => this.resumeRun() }; }
@@ -508,7 +510,7 @@ class Game {
   }
   askVariant(after) { // 갈래가 여럿인 직업은 판을 시작할 때 고름
     const lines = jobLines(this.player.hero.id);
-    if (lines.length === 1) { this.setJob(this.player, lines[0], 0); if (after) after(); return; }
+    if (lines.length === 1 || branchesAtEvolve(this.player.hero.id)) { this.setJob(this.player, lines[0], 0); if (after) after(); return; } // 갈래가 하나이거나 진화 때 고르는 직업
     if (window.__toolMode) { this.applyVariant(lines[0]); if (after) after(); return; } // 테스트 도구: 첫 갈래
     this.overlay = { type: 'variant', lines, title: JOB_LINES[this.player.hero.id].title, after };
   }
@@ -518,8 +520,8 @@ class Game {
     if (line.startWeapon && this.data.weapons.get(line.startWeapon)) { p.weapons[0] = new WeaponInstance(this.data.weapons.get(line.startWeapon)); this.discover(line.startWeapon); }
     if (line.moveSpeed) p.moveSpeed += line.moveSpeed;
   }
-  evolve(hybrid) {
-    const p = this.player, next = p.rank + 1, line = p.line;
+  evolve(hybrid, branch) {
+    const p = this.player, next = p.rank + 1, line = branch || p.line; // branch: 첫 진화 때 고른 갈래 (암살자)
     if (!line || next > 2) return;
     p.maxHp += EVOLUTION.hp[next - 1]; p.hp = Math.min(p.maxHp, p.hp + EVOLUTION.hp[next - 1] + 20);
     p.maxEnergy += EVOLUTION.energy[next - 1]; p.energy = p.maxEnergy;
@@ -539,19 +541,19 @@ class Game {
   evolvePrice() { return Math.round(EVOLUTION.price[this.player.rank] * (1 + BALANCE.shopInflate * this.stageIndex)); }
   startTrial(npc) { // 상위자와 1:1 대결 (미니 보스)
     const p = this.player, r = npc.room, next = p.rank + 1, hy = npc.hybrid, MH = hy ? hy.masterHero : p.hero;
-    const key = hy ? `master_${hy.H.master}_${hy.el.id}_hybrid` : `master_${p.hero.id}_${p.line.id}_${next}`, trialName = hy ? this.hybridTitle(npc) : p.line.ranks[next];
+    const TL = npc.branch || p.line, key = hy ? `master_${hy.H.master}_${hy.el.id}_hybrid` : `master_${p.hero.id}_${TL.id}_${next}`, trialName = hy ? this.hybridTitle(npc) : TL.ranks[next];
     if (!this.data.enemies.get(key)) {
       const look = MH.look.sprite, D = HERO_PROCS[look];
       const mkey = 'master_' + look + (hy ? '_' + hy.el.id : ''); // 혼합 전직 상위자는 속성 옷색
       if (!PIX[mkey]) PIX[mkey] = { tint: '#c8a050', w: HERO_W, h: HERO_H, proc: (P) => D.proc(P, 0),
         pal: Object.assign({ s: '#f0c8a0', m: '#fff0b0', w: '#ffffff', r: MH.look.accent, y: '#ffd84a', l: '#8a6a30', h: MH.look.accent, g: shade(MH.look.accent, 0.68), e: '#ffffff', n: '#6a4628', d: '#3a2a1a' }, D.pal, { m: '#fff0b0' }) };
-      const col = (hy ? hy.el.color : p.line.color) || '#ffd84a';
+      const col = (hy ? hy.el.color : TL.color) || '#ffd84a';
       this.data.enemies.set(key, { id: key, name: `${trialName}의 시련`, title: '상위자', sprite: mkey, color: '#c8a050', phaseColors: ['#c8a050', '#d8b060', '#ffd84a'],
         boss: true, master: true, aiType: 'boss', health: EVOLUTION.masterHp[next - 1], damage: 15 + next * 2, moveSpeed: 55, hitboxHalf: 9, knockbackResist: 0.9, attackCooldown: next === 1 ? 1.25 : 1.05, bulletSpeed: 135, rewardGold: 30,
         patterns: [{ type: 'aimed', volleys: 3, count: 5, spread: 0.15, color: col }, { type: 'radial', rings: 2, count: 18, color: col }, { type: 'charge', dashes: 2, speed: 340, color: '#ffffff' }],
         phase2Patterns: [{ type: 'spiral', duration: 2.2, arms: 3 + next, interval: 0.09, spin: 1.8, color: col }, { type: 'slam', radius: 46, chain: next, color: col }] });
     }
-    npc.gone = true; r.trial = next; r.hybrid = hy || null; r.state = 'active'; this.activeRoom = r; r.wavesLeft = 0;
+    npc.gone = true; r.trial = next; r.hybrid = hy || null; r.branch = npc.branch || null; r.state = 'active'; this.activeRoom = r; r.wavesLeft = 0;
     this.map.setDoors(r, true); this.enemyBullets.length = 0;
     const c = this.map.tileCenter(r.cx, r.cy - 1), m = this.spawnEnemy(key, c.x, c.y, r); m.phase = 1;
     this.showBanner(`${trialName}의 시련`, hy ? `${hy.el.name}의 마도사 상위자를 쓰러뜨리면 ${trialName}(으)로 진화합니다` : '상위자를 쓰러뜨리면 진화합니다', '#ffd84a'); SFX.play('boss');
@@ -662,6 +664,18 @@ class Game {
         this.effects.beamline(sx, sy, p.x, p.y, 3, '#b080ff'); this.effects.burst(sx, sy, '#3a3048', 10); this.effects.burst(p.x, p.y, '#b080ff', 10);
         if (ev) { p.blinkChain = p.blinkWindowT > 0 ? p.blinkChain + 1 : 1; p.blinkWindowT = 2.5; if (p.blinkChain < 3) p.skillCooldown = 0.3; else p.blinkChain = 0; } // 연달아 3번
         break; }
+      // 암살자 · 독 갈래
+      case 'venomfan': shoot({ n: 7, fan: 0.9, p: { damage: 32, pierce: 1, color: '#9aff5a', size: 2, speed: 340, arrow: true, status: { type: 'poison', chance: 1, duration: 4, dps: 18 } } }); SFX.play('bow'); break;
+      case 'plaguecloud': this.zones.push(new SkillAura(p, { r: 70, life: 7, tick: 0.3, dmg: 30, color: '#7adf4a', kind: 'flame', status: { type: 'poison', chance: 1, duration: 3, dps: 18 } }));
+        p.hasteT = 7; this.effects.ring(p.x, p.y, 70, '#7adf4a'); this.effects.text(p.x, p.y - 18, '맹독 안개!', '#9aff5a'); break;
+      // 암살자 · 칼날 갈래
+      case 'bladeorbit': case 'bladestorm': {
+        const storm = p.skillId === 'bladestorm', n = storm ? 6 : 4, life = 8;
+        this.projectiles = this.projectiles.filter((q) => !(q.orbit && q.srcId === 'skill_blade')); // 이전 칼날은 교체
+        for (let i = 0; i < n; i++) this.projectiles.push(new Projectile({ x: p.x, y: p.y, dx: 1, dy: 0, speed: 0, range: 9999, damage: D(38), pierce: 99, knockback: 3, mods: p.mods,
+          color: '#e8eef4', size: 3, rehit: 0.22, srcId: 'skill_blade', orbit: { owner: p, r: storm ? 44 : 40, speed: storm ? 6 : 5, life, ang: i / n * TAU } }));
+        if (storm) { p.whirl = 0.5; p.whirlTick = 0; p.whirlStatus = null; p.blinkInv = 0.5; this.effects.ring(p.x, p.y, 40, '#e8eef4'); this.addShake(0.15, 3); }
+        this.effects.burst(p.x, p.y, '#e8eef4', 12); SFX.play('melee'); break; }
       case 'execution': { // 그림자 분신 둘과 셋이서 연달아 습격 + 처형
         const list = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 240).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)).slice(0, 9);
         this.zones.push(new ShadowStrike(p, list, D(90))); p.blinkInv = 1.2; this.effects.burst(p.x, p.y, '#3a3048', 14); SFX.play('react'); break; }
@@ -815,7 +829,7 @@ class Game {
       const options = shuffled(DATA_BUFFS.filter((b) => !owned.has(b.id) || b.id === 'buff_atk' || b.id === 'buff_hp')).slice(0, 3);
       this.overlay = { type: 'buff', options, after };
     } else {
-      if (r.trial) { r.trial = 0; this.evolve(r.hybrid); r.hybrid = null; return; } // 상위자를 쓰러뜨림 → 진화 (혼합 전직 포함)
+      if (r.trial) { r.trial = 0; this.evolve(r.hybrid, r.branch); r.hybrid = null; r.branch = null; return; } // 상위자를 쓰러뜨림 → 진화 (혼합 전직 포함)
       if (r.challenge) { // 도전 성공: 희귀 이상 무기 + 골드
         r.challenge = false; this.props.push(new Chest(c.x, c.y - 10, 'challenge'));
         for (let i = 0; i < 8; i++) this.pickups.push(new Pickup('coin', c.x, c.y));
@@ -856,7 +870,12 @@ class Game {
   randomWeaponDef(minRank = 0, exclude = []) { // minRank: 0 고급 이상(기본) / 2 희귀 이상 / 3 영웅 이상
     const owned = new Set(this.player.weapons.map((w) => w.def.id).concat(exclude)), RANK = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
     const pool = DATA_WEAPONS.filter((d) => d.rarity !== 'common' && RANK.indexOf(d.rarity) >= minRank && !owned.has(d.id));
-    return weightedPick(pool.length ? pool : DATA_WEAPONS, (d) => { const w = Math.min(this.worldIdx, 12); return RARITY_WEIGHT[d.rarity] + (d.rarity === 'epic' ? w * BALANCE.epicPerWorld : d.rarity === 'legendary' ? w * BALANCE.legendaryPerWorld : 0); });
+    if (!pool.length) return pick(DATA_WEAPONS);
+    // 등급을 먼저 고르고(필드별 확률표) 그 등급 안에서 무작위 — 등급마다 무기 수가 달라도 확률이 그대로
+    const T = BALANCE.rarityByWorld, row = T[Math.min(this.worldIdx, T.length - 1)], rars = ['uncommon', 'rare', 'epic', 'legendary'];
+    const avail = rars.map((r, i) => ({ r, w: pool.some((d) => d.rarity === r) ? row[i] : 0 })).filter((x) => x.w > 0);
+    const rar = avail.length ? weightedPick(avail, (x) => x.w).r : pool[0].rarity;
+    return pick(pool.filter((d) => d.rarity === rar));
   }
   openChest(c) {
     this.effects.burst(c.x, c.y - 6, '#ffd84a', 10);

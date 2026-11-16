@@ -554,10 +554,18 @@ class MasterNPC {
     const p = game.player; if (this.gone) return null;
     if (!p.line || p.rank >= 2) return '더 이상 진화할 수 없습니다';
     if (this.hybrid) return `[E] ${this.hybrid.el.name}의 마도사 상위자 — ${game.hybridTitle(this)}(으)로 진화`;
+    if (p.rank === 0 && branchesAtEvolve(p.hero.id)) return this.branch ? `[E] 상위자 — ${this.branch.ranks[1]}(으)로 진화` : '[E] 상위자 — 진화 갈래 고르기';
     return `[E] 상위자 — ${p.line.ranks[p.rank + 1]}(으)로 진화`;
   }
   get labelColor() { return '#ffd84a'; }
-  interact(game) { const p = game.player; if (this.gone || !p.line || p.rank >= 2) return; game.overlay = { type: 'evolve', npc: this }; }
+  interact(game) {
+    const p = game.player; if (this.gone || !p.line || p.rank >= 2) return;
+    if (p.rank === 0 && branchesAtEvolve(p.hero.id) && !this.branch) { // 첫 진화: 갈래부터 고름 (암살자)
+      game.overlay = { type: 'variant', lines: jobLines(p.hero.id), title: JOB_LINES[p.hero.id].title, branch: true, onPick: (L) => { this.branch = L; game.overlay = { type: 'evolve', npc: this }; } };
+      return;
+    }
+    game.overlay = { type: 'evolve', npc: this };
+  }
   render(ctx, game) {
     if (this.gone) return;
     const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0, p = game.player;
