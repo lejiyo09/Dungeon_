@@ -57,7 +57,15 @@ const DEEP_WORLDS = [
   { id: 'deep_starfall', name: '부서진 별의 정원', boss: 'boss_fallen_star', waves: 2, deep: true,
     enemies: [['enemy_starwisp_001', 3], ['enemy_meteorgolem_001', 2], ['enemy_cometdog_001', 3], ['enemy_nebulamage_001', 2]],
     palette: { style: 'starfall', accent: '#9ad8ff', floor: ['#1a1e36', '#1c2039'], corridor: ['#12152a', '#13162c'], wall: '#262c4e', wallTop: '#30375e',
-      wallFace: '#4a5488', faceLine: '#3e4878', deco: 'rgba(154,216,255,0.35)' } }
+      wallFace: '#4a5488', faceLine: '#3e4878', deco: 'rgba(154,216,255,0.35)' } },
+  { id: 'deep_fungal', name: '뒤틀린 버섯숲', boss: 'boss_myco_queen', waves: 2, deep: true,
+    enemies: [['enemy_sporeling_001', 4], ['enemy_shroomknight_001', 2], ['enemy_puffcap_001', 2], ['enemy_vinelasher_001', 3]],
+    palette: { style: 'fungal', accent: '#e07aff', floor: ['#2a1e2e', '#2d2031'], corridor: ['#1e1522', '#201724'], wall: '#3a2a40', wallTop: '#46334e',
+      wallFace: '#5e4468', faceLine: '#503a5a', deco: 'rgba(224,122,255,0.35)' } },
+  { id: 'deep_sunken', name: '가라앉은 신전', boss: 'boss_tide_warden', waves: 2, deep: true,
+    enemies: [['enemy_drowned_001', 4], ['enemy_eel_001', 3], ['enemy_bubblemage_001', 2], ['enemy_coraltower_001', 2]],
+    palette: { style: 'sunken', accent: '#5ac8ff', floor: ['#16303a', '#18333e'], corridor: ['#10242c', '#11262e'], wall: '#1e3e4a', wallTop: '#264a58',
+      wallFace: '#3a6878', faceLine: '#305a68', deco: 'rgba(90,200,255,0.35)' } }
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {
