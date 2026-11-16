@@ -385,21 +385,21 @@ class HUD {
     const o = game.cutin, t = (performance.now() - o.start) / 1000, D = o.kind === 'treasure' ? 1.1 : 0.85;
     if (t > D) { game.cutin = null; return; }
     const tr = o.kind === 'treasure', inK = Math.min(1, t / 0.18), outK = Math.min(1, (D - t) / 0.25), k = Math.min(inK, outK), ease = 1 - Math.pow(1 - inK, 3);
-    const cy = tr ? VIEW_H / 2 - 6 : 70, h = tr ? 64 : 40, slide = (1 - ease) * -VIEW_W * 0.6 + t * 18;
+    const cy = tr ? 68 : 56, h = tr ? 30 : 22, slide = (1 - ease) * -VIEW_W * 0.6 + t * 18;
     ctx.save();
-    if (tr) { ctx.fillStyle = `rgba(0,0,0,${0.45 * k})`; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
+    if (tr) { ctx.fillStyle = `rgba(0,0,0,${0.15 * k})`; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
     ctx.globalAlpha = k;
     const g = ctx.createLinearGradient(0, 0, VIEW_W, 0); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(0.25, o.color); g.addColorStop(0.75, o.color); g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.globalAlpha = k * 0.35; ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(slide, cy - h / 2 + 8); ctx.lineTo(VIEW_W + slide, cy - h / 2 - 8); ctx.lineTo(VIEW_W + slide, cy + h / 2 - 8); ctx.lineTo(slide, cy + h / 2 + 8); ctx.fill();
-    ctx.globalAlpha = k; ctx.fillStyle = o.color; ctx.fillRect(0, cy - h / 2 - 1, VIEW_W, 1); ctx.fillRect(0, cy + h / 2, VIEW_W, 1);
+    ctx.globalAlpha = k * 0.35; ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(slide, cy - h / 2 + 4); ctx.lineTo(VIEW_W + slide, cy - h / 2 - 4); ctx.lineTo(VIEW_W + slide, cy + h / 2 - 4); ctx.lineTo(slide, cy + h / 2 + 4); ctx.fill();
+    ctx.globalAlpha = k * 0.8; ctx.fillStyle = o.color; ctx.fillRect(VIEW_W * 0.2, cy - h / 2 - 1, VIEW_W * 0.6, 1); ctx.fillRect(VIEW_W * 0.2, cy + h / 2, VIEW_W * 0.6, 1);
     ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = '#ffffff'; // 빠르게 지나가는 빛줄기
-    for (let i = 0; i < 7; i++) { const yy = cy - h / 2 + 4 + ((i * 37) % (h - 8)), xx = ((t * (500 + i * 90) + i * 140) % (VIEW_W + 120)) - 60; ctx.globalAlpha = k * 0.5; ctx.fillRect(xx, yy, 40 + i * 6, 1); }
+    for (let i = 0; i < 4; i++) { const yy = cy - h / 2 + 3 + ((i * 37) % (h - 6)), xx = ((t * (500 + i * 90) + i * 140) % (VIEW_W + 120)) - 60; ctx.globalAlpha = k * 0.5; ctx.fillRect(xx, yy, 40 + i * 6, 1); }
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k;
-    const ix = VIEW_W / 2 - (tr ? 120 : 96) + (1 - ease) * -60;
-    if (tr && o.T) drawTreasureIcon(ctx, o.T, ix, cy, 2);
-    else if (o.hero) drawSprite(ctx, heroSprite(o.hero, 0), ix, cy + 20, { scale: 2 });
-    hudText(ctx, o.name, VIEW_W / 2 + 14 - (1 - ease) * 40, cy - (tr ? 16 : 11), '#ffffff', 'center', tr ? 22 : 16);
-    if (o.sub) hudText(ctx, o.sub, VIEW_W / 2 + 14, cy + (tr ? 12 : 9), o.color, 'center', tr ? 10 : 8);
+    const ix = VIEW_W / 2 - (tr ? 78 : 66) + (1 - ease) * -40;
+    if (tr && o.T) drawTreasureIcon(ctx, o.T, ix, cy, 1.25);
+    else if (o.hero) drawSprite(ctx, heroSprite(o.hero, 0), ix, cy + 10, { scale: 1 });
+    hudText(ctx, o.name, VIEW_W / 2 + 8 - (1 - ease) * 24, cy - (tr ? 10 : 8), '#ffffff', 'center', tr ? 13 : 10);
+    if (o.sub) hudText(ctx, o.sub, VIEW_W / 2 + 8, cy + (tr ? 5 : 3), o.color, 'center', 7);
     ctx.restore();
   }
   static treasureToast(ctx, game) {
