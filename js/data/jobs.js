@@ -45,18 +45,18 @@ const JOB_LINES = {
         { id: 'worldtree', name: '세계수의 분노', desc: '1.5초 시전(이동 불가) → 넓은 범위를 오래 묶고 강한 중독, 체력 회복', cd: 13 }] },
     lightning: { name: '번개', desc: '테슬라 코일 · 연쇄 번개', startWeapon: 'weapon_tesla_001', ranks: ['번개의 마도사', '뇌전술사', '뇌신의 대마도사'], color: '#bfe8ff',
       skills: [
-        { id: 'shockorb', name: '전격구', desc: '튕겨 다니며 연쇄 번개를 일으키는 구체', cd: 4 },
-        { id: 'thunder', name: '낙뢰', desc: '가까운 적 6명에게 번개가 떨어짐', cd: 6 },
-        { id: 'thundergod', name: '뇌신강림', desc: '6초간 주변 적에게 번개가 계속 떨어짐', cd: 12 }] },
+        { id: 'shockorb', name: '전격구', desc: '튕겨 다니며 연쇄 번개를 일으키는 구체 (전격)', cd: 4 },
+        { id: 'thunder', name: '낙뢰', desc: '가까운 적 6명에게 번개가 떨어짐 (전격)', cd: 6 },
+        { id: 'thundergod', name: '뇌신강림', desc: '6초간 주변 적에게 번개가 계속 떨어짐 (전격)', cd: 12 }] },
     light: { name: '빛', desc: '견습 마법봉 · 회복과 정화', startWeapon: 'weapon_wand_001', ranks: ['빛의 마도사', '정화술사', '성광의 대마도사'], color: '#fff4c0',
       skills: [
-        { id: 'lightarrow', name: '빛의 화살', desc: '적을 따라가 꿰뚫는 빛의 화살 5개', cd: 4 },
-        { id: 'radiance', name: '광휘', desc: '체력 회복 + 주변 적 피해, 탄환 제거', cd: 6 },
-        { id: 'judgment', name: '심판의 빛', desc: '1.5초 시전(이동 불가) → 조준 지점에 빛기둥, 큰 피해 + 체력 회복', cd: 11 }] },
+        { id: 'lightarrow', name: '빛의 화살', desc: '적을 따라가 꿰뚫는 빛의 화살 5개 (실명)', cd: 4 },
+        { id: 'radiance', name: '광휘', desc: '체력 회복 + 주변 적 피해(실명), 탄환 제거', cd: 6 },
+        { id: 'judgment', name: '심판의 빛', desc: '1.5초 시전(이동 불가) → 조준 지점에 빛기둥, 큰 피해(실명) + 체력 회복', cd: 11 }] },
     dark: { name: '어둠', desc: '저주 지팡이 · 약점과 흡인', startWeapon: 'weapon_cursestaff_001', ranks: ['어둠의 마도사', '저주술사', '공허의 대마도사'], color: '#a070e0',
       skills: [
-        { id: 'curseshot', name: '저주탄', desc: '맞은 적이 오래 약해지는(받는 피해 +40%) 저주 구체', cd: 4 },
-        { id: 'abyss', name: '심연 소용돌이', desc: '조준 지점에 적을 빨아들이는 어둠', cd: 8 },
+        { id: 'curseshot', name: '저주탄', desc: '맞은 적이 오래 약해지는(받는 피해 +40%) 저주 구체 (저주)', cd: 4 },
+        { id: 'abyss', name: '심연 소용돌이', desc: '조준 지점에 적을 빨아들이는 어둠 (저주)', cd: 8 },
         { id: 'voidcollapse', name: '블랙홀', desc: '2초 시전(이동 불가)하며 블랙홀로 주변 적을 모두 빨아들인 뒤 터뜨려 엄청난 피해', cd: 13 }] }
   },
   hero_gunner: { base: { ranks: ['사수', '건마스터', '데드아이'], color: '#ffd84a',

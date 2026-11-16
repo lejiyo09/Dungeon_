@@ -569,7 +569,7 @@ class Game {
       for (let d = 12; d < L; d += 14) this.effects.explosion(p.x + Math.cos(ang) * d, p.y + Math.sin(ang) * d, 8 + d / 20, '#c8a070');
       this.effects.beamline(p.x, p.y, x1, y1, w * 0.6, '#e0b070');
     };
-    const strikeSky = (e, dmg) => { this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: 3 }, 0, 1); this.effects.lightning(e.x + randInt(-8, 8), e.y - 100, e.x, e.y); };
+    const strikeSky = (e, dmg) => { this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: 3, status: { type: 'shock', chance: 1, duration: 3 } }, 0, 1); this.effects.lightning(e.x + randInt(-8, 8), e.y - 100, e.x, e.y); };
     switch (p.skillId) {
       // 검사
       case 'whirlwind': p.whirl = 0.5; p.whirlTick = 0; break;
@@ -601,23 +601,23 @@ class Game {
       case 'worldtree': this.zones.push(new SkillCast(p, p.x, p.y, { r: 150, time: 1.5, color: '#7adf4a' }, () => {
         nova(150, 90, { color: '#7adf4a', root: 4, kb: 0, status: { type: 'poison', chance: 1, duration: 6, dps: 20 } }); p.hp = Math.min(p.maxHp, p.hp + 30); this.effects.heal(p.x, p.y); this.addShake(0.3, 4); })); break;
       // 번개
-      case 'shockorb': shoot({ p: { damage: 32, bounce: 3, color: '#bfe8ff', size: 4, speed: 260, range: 420, chain: { count: 3, range: 85, falloff: 0.8 } } }); break;
+      case 'shockorb': shoot({ p: { damage: 32, bounce: 3, color: '#bfe8ff', size: 4, speed: 260, range: 420, chain: { count: 3, range: 85, falloff: 0.8 }, status: { type: 'shock', chance: 1, duration: 3 } } }); break;
       case 'thunder': { const list = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 180).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)).slice(0, 6);
         for (const e of list) strikeSky(e, 55); SFX.play('react'); break; }
-      case 'thundergod': this.zones.push(new SkillAura(p, { r: 170, life: 6, tick: 0.35, dmg: 26, color: '#bfe8ff', kind: 'thunder' })); this.screenFlash = 0.1; this.flashColor = '200,230,255'; break;
+      case 'thundergod': this.zones.push(new SkillAura(p, { r: 170, life: 6, tick: 0.35, dmg: 26, color: '#bfe8ff', kind: 'thunder', status: { type: 'shock', chance: 1, duration: 3 } })); this.screenFlash = 0.1; this.flashColor = '200,230,255'; break;
       // 빛
-      case 'lightarrow': shoot({ n: 5, fan: 0.6, p: { damage: 18, pierce: 2, homing: 4, color: '#fff4c0', size: 2, speed: 300 } }); break;
-      case 'radiance': p.hp = Math.min(p.maxHp, p.hp + 25); this.effects.heal(p.x, p.y); nova(110, 60, { color: '#fff4c0', clear: true }); break;
+      case 'lightarrow': shoot({ n: 5, fan: 0.6, p: { damage: 18, pierce: 2, homing: 4, color: '#fff4c0', size: 2, speed: 300, status: { type: 'blind', chance: 0.6, duration: 3 } } }); break;
+      case 'radiance': p.hp = Math.min(p.maxHp, p.hp + 25); this.effects.heal(p.x, p.y); nova(110, 60, { color: '#fff4c0', clear: true, status: { type: 'blind', chance: 1, duration: 4 } }); break;
       case 'judgment': { const c = at(190); this.zones.push(new SkillCast(p, c.x, c.y, { r: 60, time: 1.5, color: '#fff4c0' }, () => {
-        this.explodeAt(c.x, c.y, 60, { color: '#fff4c0', hurtEnemies: true, src: { damage: D(300), mods: p.mods, knockback: 8 } });
+        this.explodeAt(c.x, c.y, 60, { color: '#fff4c0', hurtEnemies: true, src: { damage: D(300), mods: p.mods, knockback: 8, status: { type: 'blind', chance: 1, duration: 5 } } });
         this.effects.beamline(c.x, c.y - 140, c.x, c.y, 16, '#fff4c0'); this.effects.beamline(c.x, c.y - 140, c.x, c.y, 6, '#ffffff');
         p.hp = Math.min(p.maxHp, p.hp + 20); this.effects.heal(p.x, p.y); this.screenFlash = 0.3; this.flashColor = '255,244,192'; this.addShake(0.4, 6); SFX.play('excal'); })); break; }
       // 어둠
-      case 'curseshot': shoot({ p: { damage: 36, explodeRadius: 26, color: '#a070e0', size: 4, speed: 260, mark: { mult: 1.4, dur: 6 } } }); break;
-      case 'abyss': { const c = at(170); this.zones.push(new DarkHole(c.x, c.y, p, { r: 62, life: 2.5, pull: 75, dmg: 8 })); break; }
-      case 'voidcollapse': { const c = at(180); this.zones.push(new DarkHole(c.x, c.y, p, { r: 90, life: 2, pull: 110, dmg: 6 }));
+      case 'curseshot': shoot({ p: { damage: 36, explodeRadius: 26, color: '#a070e0', size: 4, speed: 260, mark: { mult: 1.4, dur: 6 }, status: { type: 'curse', chance: 1, duration: 6 } } }); break;
+      case 'abyss': { const c = at(170); this.zones.push(new DarkHole(c.x, c.y, p, { r: 62, life: 2.5, pull: 75, dmg: 8, status: { type: 'curse', chance: 1, duration: 5 } })); break; }
+      case 'voidcollapse': { const c = at(180); this.zones.push(new DarkHole(c.x, c.y, p, { r: 90, life: 2, pull: 110, dmg: 6, status: { type: 'curse', chance: 1, duration: 6 } }));
         this.zones.push(new SkillCast(p, c.x, c.y, { r: 90, time: 2, color: '#a070e0' }, () => {
-          this.explodeAt(c.x, c.y, 80, { color: '#a070e0', hurtEnemies: true, src: { damage: D(360), mods: p.mods, knockback: 10 } });
+          this.explodeAt(c.x, c.y, 80, { color: '#a070e0', hurtEnemies: true, src: { damage: D(360), mods: p.mods, knockback: 10, status: { type: 'curse', chance: 1, duration: 6 } } });
           this.effects.ring(c.x, c.y, 90, '#ffffff'); this.screenFlash = 0.3; this.flashColor = '160,110,230'; this.addShake(0.5, 8); this.hitStop(0.08); SFX.play('excal'); })); break; }
       // 사수
       case 'overdrive': p.overdrive = 5; p.odDmg = 0; this.effects.text(p.x, p.y - 18, '과부하!', '#ffd84a'); break;
@@ -902,6 +902,7 @@ class Game {
     let base = src.damage;
     if (src.execute && enemy.hp < enemy.maxHp * 0.35) base *= 1 + src.execute; // 처형: 빈사 적 추가 피해
     if (enemy.markT > 0) base *= enemy.markMult;                                 // 약점 표시된 적
+    if (enemy.curse > 0) base *= 1.2;                                             // 저주: 받는 피해 +20%
     const { amount, crit } = rollDamage(base, src.mods);
     if (!enemy.takeHit(amount)) return;
     let kb = (src.knockback || 0) * (1 - (enemy.def.knockbackResist || 0));
@@ -918,6 +919,10 @@ class Game {
     if (!enemy.def.dummy || Math.random() < 0.5) SFX.play(crit ? 'crit' : 'hit', crit ? 0.05 : 0.045);
     if (enemy.def.dummy) this.dpsLog.push({ t: this.time, a: amount });
     if (src.chain && !opts.noChain) this.chainLightning(enemy, src);
+    if (enemy.shock > 0 && !opts.noChain && Math.random() < 0.3) { // 전격: 옆 적에게 작은 번개
+      let best = null, bd = 70; for (const o of this.enemies) { if (o === enemy || !o.targetable) continue; const d = Math.hypot(o.x - enemy.x, o.y - enemy.y); if (d < bd) { bd = d; best = o; } }
+      if (best) { this.effects.lightning(enemy.x, enemy.y, best.x, best.y); this.damageEnemy(best, { damage: amount * 0.35, mods: { attackBonus: 0, critChance: 0, critMultiplier: 1 }, knockback: 0 }, 0, 0, { noChain: true, quiet: true }); }
+    }
     if (!enemy.alive) this.onEnemyKilled(enemy);
   }
   // 보스 격노 전환 연출: 탄 정리 + 충격파 + 잠깐의 숨 돌릴 틈
@@ -1022,6 +1027,31 @@ class Game {
       e.poison = 0;
       this.effects.text(e.x, e.y - 22, '독 연소!', '#c8ff70', true); SFX.play('react');
       this.explodeAt(e.x, e.y, 36, { color: '#9aff5a', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 16 * atk, knockback: 3 }) });
+    } else if (type === 'electro') { // 감전: 피해 + 주변 3명에게 번개
+      e.shock = 0; this.effects.text(e.x, e.y - 22, '감전!', '#dff4ff', true); SFX.play('react');
+      this.damageEnemy(e, Object.assign({}, quiet, { damage: 24 * atk }), 0, 0, { noChain: true });
+      this.enemies.filter((o) => o !== e && o.targetable && Math.hypot(o.x - e.x, o.y - e.y) < 80).slice(0, 3).forEach((o) => { this.effects.lightning(e.x, e.y, o.x, o.y); this.damageEnemy(o, Object.assign({}, quiet, { damage: 12 * atk }), 0, 0, { noChain: true }); });
+    } else if (type === 'overload') { // 과부하: 큰 폭발로 밀쳐냄, 화상·전격 소모
+      e.burn = 0; e.shock = 0; this.effects.text(e.x, e.y - 22, '과부하!', '#ffb04a', true); SFX.play('react');
+      this.explodeAt(e.x, e.y, 42, { color: '#ffb04a', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 22 * atk, knockback: 12 }) }); this.addShake(0.12, 3);
+    } else if (type === 'paralyze') { // 마비: 잠깐 완전히 멈춤 (보스는 크게 느려짐)
+      e.shock = 0; e.slow = Math.max(e.slow, e.def.boss ? 1 : 1.4); e.slowK = e.def.boss ? 0.6 : 0.02;
+      this.effects.text(e.x, e.y - 22, '마비!', '#e8ff7a', true); SFX.play('react'); this.effects.burst(e.x, e.y, '#e8ff7a', 10);
+      this.damageEnemy(e, Object.assign({}, quiet, { damage: 10 * atk }), 0, 0, { noChain: true });
+    } else if (type === 'eclipse') { // 일식: 빛과 어둠이 부딪혀 큰 단일 피해, 실명·저주 소모
+      e.blind = 0; e.curse = 0; this.effects.text(e.x, e.y - 22, '일식!', '#e0d0ff', true); SFX.play('react');
+      this.effects.ring(e.x, e.y, 22, '#fff8d8'); this.effects.ring(e.x, e.y, 14, '#7040c0'); this.effects.burst(e.x, e.y, '#b070ff', 12);
+      this.damageEnemy(e, Object.assign({}, quiet, { damage: 45 * atk, knockback: 4 }), 0, 0, { noChain: true }); this.hitStop(0.05);
+    } else if (type === 'plague') { // 역병: 주변 적에게 중독이 번짐
+      this.effects.text(e.x, e.y - 22, '역병!', '#a0e070', true); SFX.play('react'); this.effects.ring(e.x, e.y, 70, '#7ac04a');
+      for (const o of this.enemies) if (o !== e && o.targetable && Math.hypot(o.x - e.x, o.y - e.y) < 70) { o.poison = Math.max(o.poison, 3); o.poisonDps = Math.max(o.poisonDps, e.poisonDps || 8); }
+    } else if (type === 'hellfire') { // 지옥불: 검은 불꽃 폭발, 주변에 화상, 저주 소모
+      e.curse = 0; this.effects.text(e.x, e.y - 22, '지옥불!', '#c060ff', true); SFX.play('react');
+      this.explodeAt(e.x, e.y, 36, { color: '#a040e0', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 18 * atk, knockback: 4, status: { type: 'burn', chance: 1, duration: 2.5, dps: 8 * atk } }) });
+    } else if (type === 'judgment') { // 심판: 하늘에서 번개 기둥, 전격 소모
+      e.shock = 0; this.effects.text(e.x, e.y - 22, '심판!', '#fff4c0', true); SFX.play('react');
+      this.effects.lightning(e.x, e.y - 110, e.x, e.y); this.effects.beamline(e.x, e.y - 110, e.x, e.y, 5, '#fff4c0');
+      this.damageEnemy(e, Object.assign({}, quiet, { damage: 32 * atk, knockback: 3 }), 0, 0, { noChain: true });
     }
   }
   chainLightning(first, src) {

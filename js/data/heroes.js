@@ -22,7 +22,7 @@ const DATA_HEROES = [
   { id: 'hero_mage', name: '마도사 엘린', title: '원소 마법사', price: 0,
     maxHp: 115, maxShield: 50, maxEnergy: 290, moveSpeed: 116, startWeapon: 'weapon_wand_001',
     skill: 'frost_nova', skillName: '서리 폭발', skillDesc: '주변 적 피해 + 빙결, 탄환 제거', skillCooldown: 6,
-    passiveName: '원소 친화', passiveDesc: '상태이상(화상·빙결·중독) 효과 +30%', statusBoost: 0.3,
+    passiveName: '원소 친화', passiveDesc: '모든 상태이상 효과 +30%', statusBoost: 0.3,
     look: { sprite: 'wizard', body: '#6a4ab0', accent: '#3a2a80' } },
   { id: 'hero_engineer', name: '기술자 보로', title: '포탑 설계자', price: 200,
     maxHp: 100, maxShield: 45, maxEnergy: 220, moveSpeed: 112, startWeapon: 'weapon_rivet_001',

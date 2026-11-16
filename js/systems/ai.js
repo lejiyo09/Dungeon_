@@ -484,7 +484,7 @@ function updateEnemy(e, dt, world) {
   }
   if (e.state === 'SPAWN') { e.stateTime += dt; if (e.stateTime >= SPAWN_TIME) e.setState('CHASE'); return; }
   // 상태이상
-  e.burn = Math.max(0, e.burn - dt); e.poison = Math.max(0, e.poison - dt); e.slow = Math.max(0, e.slow - dt); if (e.markT > 0) e.markT -= dt; e.reactCd = Math.max(0, e.reactCd - dt);
+  e.burn = Math.max(0, e.burn - dt); e.poison = Math.max(0, e.poison - dt); e.slow = Math.max(0, e.slow - dt); e.shock = Math.max(0, (e.shock || 0) - dt); e.blind = Math.max(0, (e.blind || 0) - dt); e.curse = Math.max(0, (e.curse || 0) - dt); if (e.markT > 0) e.markT -= dt; e.reactCd = Math.max(0, e.reactCd - dt);
   if (e.burn > 0 || e.poison > 0) {
     e.dotTimer -= dt;
     if (e.dotTimer <= 0) {
@@ -504,7 +504,7 @@ function updateEnemy(e, dt, world) {
   const dx = p.x - e.x, dy = p.y - e.y;
   const ctx = { dx, dy, dist: Math.hypot(dx, dy) || 0.001, playerAlive: p.state !== 'DEAD' };
   if (!(e.state === 'ATTACK' && e.def.aiType === 'charger')) e.face = dx < 0 ? -1 : 1;
-  e.attackCd = Math.max(0, e.attackCd - sdt);
+  e.attackCd = Math.max(0, e.attackCd - sdt * (e.blind > 0 ? (e.def.boss ? 0.8 : 0.55) : 1)); // 실명: 공격 준비가 느려짐
   const behavior = AI_BEHAVIORS[e.def.aiType];
   if (!behavior) throw new Error('알 수 없는 aiType: ' + e.def.aiType);
   behavior(e, sdt, world, ctx);

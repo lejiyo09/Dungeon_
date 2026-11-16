@@ -1,4 +1,16 @@
 'use strict';
+// 원소 반응 표: 두 상태이상 이름을 가나다(알파벳)순으로 정렬해 '+'로 이은 키 → 반응 (game.triggerReaction)
+const REACTIONS = {
+  'burn+freeze': 'thermal',   // 열충격
+  'burn+poison': 'toxic',     // 독 연소
+  'freeze+shock': 'electro',  // 감전
+  'burn+shock': 'overload',   // 과부하
+  'poison+shock': 'paralyze', // 마비
+  'blind+curse': 'eclipse',   // 일식
+  'curse+poison': 'plague',   // 역병
+  'burn+curse': 'hellfire',   // 지옥불
+  'blind+shock': 'judgment'   // 심판
+};
 let nextEntityId = 1;
 class Entity {
   constructor(x, y, half) {
@@ -169,7 +181,7 @@ class Enemy extends Entity {
     this.strafe = Math.random() < 0.5 ? -1 : 1; this.strafeT = 1 + Math.random() * 2;
     this.aimAng = 0; this.dashX = 0; this.dashY = 0; this.dashHit = false;
     this.spin = Math.random() * TAU; this.pat = null; this.lastPat = null; this.pd = {}; this.jumpH = 0;
-    this.burn = 0; this.burnDps = 0; this.poison = 0; this.poisonDps = 0; this.slow = 0; this.slowK = 1; this.dotTimer = 0.5; this.reactCd = 0; this.fade = 1; this.phase = 1; this.elite = false;
+    this.burn = 0; this.burnDps = 0; this.poison = 0; this.poisonDps = 0; this.slow = 0; this.slowK = 1; this.shock = 0; this.blind = 0; this.curse = 0; this.dotTimer = 0.5; this.reactCd = 0; this.fade = 1; this.phase = 1; this.elite = false;
   }
   get targetable() { return this.alive && this.state !== 'SPAWN' && this.state !== 'INTRO' && this.state !== 'PHASE'; }
   makeElite(E) { this.elite = true; this.maxHp = Math.round(this.maxHp * E.hp); this.hp = this.maxHp; this.damage = Math.round(this.damage * E.dmg); }
@@ -186,17 +198,18 @@ class Enemy extends Entity {
   // mods: 공격자의 능력치 (공격력 버프가 지속 피해에도 반영됨)
   applyStatus(st, mods) {
     if (!st || Math.random() > st.chance) return null;
-    // 원소 반응 판정 (적마다 0.8초 쿨타임): 빙결+화상=열충격, 중독+화상=독 연소
-    let reaction = null;
+    // 원소 반응 판정 (적마다 0.8초 쿨타임): 이미 걸린 상태이상과 새 상태이상의 조합 (REACTIONS 표)
     if (this.reactCd <= 0) {
-      if ((st.type === 'burn' && this.slow > 0) || (st.type === 'freeze' && this.burn > 0)) reaction = 'thermal';
-      else if ((st.type === 'burn' && this.poison > 0) || (st.type === 'poison' && this.burn > 0)) reaction = 'toxic';
-      if (reaction) { this.reactCd = 0.8; return reaction; }
+      const on = { burn: this.burn > 0, freeze: this.slow > 0, poison: this.poison > 0, shock: this.shock > 0, blind: this.blind > 0, curse: this.curse > 0 };
+      for (const k of Object.keys(on)) if (on[k] && k !== st.type) { const r = REACTIONS[[k, st.type].sort().join('+')]; if (r) { this.reactCd = 0.8; return r; } }
     }
     const dps = (st.dps || 0) * (1 + (mods ? mods.attackBonus : 0));
     if (st.type === 'burn') { this.burnDps = this.burn > 0 ? Math.max(this.burnDps, dps) : dps; this.burn = Math.max(this.burn, st.duration); }
     else if (st.type === 'poison') { this.poisonDps = this.poison > 0 ? Math.max(this.poisonDps, dps) : dps; this.poison = Math.max(this.poison, st.duration); }
     else if (st.type === 'freeze') { this.slow = Math.max(this.slow, st.duration); this.slowK = this.def.boss ? Math.max(0.7, st.slow) : st.slow; }
+    else if (st.type === 'shock') this.shock = Math.max(this.shock, st.duration);   // 전격: 맞을 때 옆 적에게 번개가 튐
+    else if (st.type === 'blind') this.blind = Math.max(this.blind, st.duration);   // 실명: 공격 준비가 느려짐
+    else if (st.type === 'curse') this.curse = Math.max(this.curse, st.duration);   // 저주: 받는 피해 증가
     return null;
   }
   renderTelegraph(ctx) {
@@ -297,6 +310,9 @@ class Enemy extends Entity {
     if (this.slow > 0) { ctx.fillStyle = 'rgba(140,210,255,0.35)'; ctx.fillRect(x - h - 1, y - h - 2, h * 2 + 2, h * 2 + 4); }
     if (this.burn > 0 && Math.floor(this.stateTime * 10) % 2 === 0) { ctx.fillStyle = '#ff8a3a'; ctx.fillRect(x - 2 + randInt(-3, 3), y - h - 3, 2, 2); }
     if (this.poison > 0) { ctx.fillStyle = '#9aff5a'; ctx.fillRect(x + h - 1, y - h - 3, 2, 2); }
+    if (this.shock > 0 && Math.floor(this.stateTime * 12) % 3 === 0) { ctx.fillStyle = '#fff27a'; ctx.fillRect(x - h - 1 + randInt(0, h * 2), y - h + randInt(0, h * 2), 1, 2); }
+    if (this.blind > 0) { ctx.fillStyle = '#fff8d8'; ctx.fillRect(x - h - 2, y - h - 3, 2, 2); }
+    if (this.curse > 0) { ctx.fillStyle = '#b070ff'; ctx.fillRect(x - 1, y - h - 4, 2, 2); }
     if (this.chainT > 0) { // 황금 사슬에 묶임
       ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x - h - 2, y - h); ctx.lineTo(x + h + 2, y + h); ctx.moveTo(x + h + 2, y - h); ctx.lineTo(x - h - 2, y + h); ctx.stroke();

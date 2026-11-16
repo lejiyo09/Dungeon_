@@ -331,7 +331,7 @@ function weaponGrid(tab = 0, page = 0) { // 한 페이지 40칸 (5열 × 8줄), 
 // 무기 특성: 가장 눈에 띄는 메커닉 2~3개를 짧게
 function weaponTraits(d, max = 3) {
   if (d.trait) return d.trait;
-  const t = [], S = { burn: '화상', freeze: '빙결', poison: '중독' }, n = d.projectileCount || 1;
+  const t = [], S = { burn: '화상', freeze: '빙결', poison: '중독', shock: '전격', blind: '실명', curse: '저주' }, n = d.projectileCount || 1;
   if (d.summon) t.push('드론 소환'); if (d.deploy) t.push('포탑 설치'); if (d.orbit) t.push('회전 구슬');
   if (d.meteor) t.push(d.meteor.arrow ? '화살비' : '낙하 공격'); if (d.beamShot) t.push('일직선 관통 광선');
   if (d.mine) t.push('지뢰 설치'); if (d.boomerang) t.push('돌아오는 부메랑'); if (d.puddle) t.push('불 웅덩이');

@@ -482,7 +482,7 @@ class SkillAura {
     if (this.kind === 'thunder') { // 범위 안 무작위 적 2명에게 하늘에서 번개
       const list = world.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < this.r);
       for (let i = 0; i < 2 && list.length; i++) { const e = list.splice(randInt(0, list.length - 1), 1)[0];
-        world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: p.mods, knockback: 2 }, 0, 1, { quiet: true }); world.effects.lightning(e.x + randInt(-6, 6), e.y - 90, e.x, e.y); }
+        world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: p.mods, knockback: 2, status: this.status || null }, 0, 1, { quiet: true }); world.effects.lightning(e.x + randInt(-6, 6), e.y - 90, e.x, e.y); }
       if (list.length || Math.random() < 0.5) SFX.play('react', 0.12);
       return;
     }
@@ -535,7 +535,7 @@ class DarkHole {
       if (d < this.r + 30 && d > 4) moveAndCollide(e, dx / d * this.pull * dt * (e.def.boss ? 0.3 : 1), dy / d * this.pull * dt * (e.def.boss ? 0.3 : 1), world.map);
     }
     if (this.next <= 0) { this.next = this.tick;
-      for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < this.r) world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: this.owner.mods, knockback: 0 }, 0, 0, { quiet: true }); }
+      for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < this.r) world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: this.owner.mods, knockback: 0, status: this.status || null }, 0, 0, { quiet: true }); }
     if (Math.random() < 0.8) { const a = Math.random() * TAU; world.effects.part(this.x + Math.cos(a) * this.r, this.y + Math.sin(a) * this.r * 0.6, -Math.cos(a) * this.r * 1.5 - Math.sin(a) * 30, -Math.sin(a) * this.r + Math.cos(a) * 20, { color: '#a070e0', life: 0.6, size: 2, size2: 0, drag: 0, add: true }); }
   }
   render(ctx) {
