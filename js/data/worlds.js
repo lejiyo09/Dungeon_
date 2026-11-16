@@ -65,7 +65,15 @@ const DEEP_WORLDS = [
   { id: 'deep_sunken', name: '가라앉은 신전', boss: 'boss_tide_warden', waves: 2, deep: true,
     enemies: [['enemy_drowned_001', 4], ['enemy_eel_001', 3], ['enemy_bubblemage_001', 2], ['enemy_coraltower_001', 2]],
     palette: { style: 'sunken', accent: '#5ac8ff', floor: ['#16303a', '#18333e'], corridor: ['#10242c', '#11262e'], wall: '#1e3e4a', wallTop: '#264a58',
-      wallFace: '#3a6878', faceLine: '#305a68', deco: 'rgba(90,200,255,0.35)' } }
+      wallFace: '#3a6878', faceLine: '#305a68', deco: 'rgba(90,200,255,0.35)' } },
+  { id: 'deep_sky', name: '뒤집힌 하늘섬', boss: 'boss_storm_lord', waves: 2, deep: true,
+    enemies: [['enemy_windsprite_001', 4], ['enemy_thunderhawk_001', 3], ['enemy_cloudmage_001', 2], ['enemy_galetotem_001', 2]],
+    palette: { style: 'sky', accent: '#dff8ff', floor: ['#8a9ab8', '#8e9ebc'], corridor: ['#6a7a98', '#6c7c9a'], wall: '#5a6a8a', wallTop: '#6e7ea0',
+      wallFace: '#9aaac8', faceLine: '#8494b4', deco: 'rgba(255,255,255,0.35)' } },
+  { id: 'deep_mirror', name: '거울의 미궁', boss: 'boss_mirror_face', waves: 2, deep: true,
+    enemies: [['enemy_mirrorknight_001', 3], ['enemy_shardbat_001', 4], ['enemy_prismmage_001', 2], ['enemy_prismtower_001', 2]],
+    palette: { style: 'mirror', accent: '#e0c8ff', floor: ['#2e2a3a', '#312d3e'], corridor: ['#221f2c', '#24212e'], wall: '#3e3a50', wallTop: '#4c4862',
+      wallFace: '#8a86a8', faceLine: '#76729a', deco: 'rgba(224,200,255,0.35)' } }
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {

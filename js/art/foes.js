@@ -224,5 +224,45 @@ Object.assign(PIX, {
   coraltower: { tint: '#e06a6a', w: 16, h: 16, pal: { s: '#4a6a74', e: '#ffe9a0' }, proc: (P) => {
     P.rect(4, 13, 8, 3, 's'); P.rect(7, 6, 2, 8, 'a'); P.line(7, 9, 4, 5, 'a'); P.line(9, 8, 12, 4, 'a'); P.line(4, 5, 4, 3, 'c'); P.line(12, 4, 12, 2, 'c'); // 받침·가지
     P.ell(8, 5, 2, 2, 'b'); P.px(8, 5, 'e'); P.px(4, 2, 'e'); P.px(12, 1, 'e');
+  } },
+  // ── 심층: 뒤집힌 하늘섬
+  windsprite: { tint: '#bfefff', w: 16, h: 16, pal: { w: '#ffffff', e: '#3a5a8a' }, proc: (P) => {
+    P.ell(8, 7, 4, 4, 'a'); P.tri(4, 9, 12, 9, 8, 15, 'a'); P.line(2, 5, 5, 7, 'c'); P.line(14, 6, 11, 8, 'c'); P.line(1, 10, 4, 10, 'c'); // 회오리 몸·바람줄기
+    P.ell(7, 5, 1.5, 1, 'w'); P.px(7, 7, 'e'); P.px(9, 7, 'e');
+  } },
+  thunderhawk: { tint: '#6a7ab8', w: 16, h: 16, pal: { y: '#ffe94a', w: '#ffffff', n: '#c8a050' }, proc: (P) => {
+    P.tri(0, 6, 7, 8, 2, 12, 'b'); P.tri(15, 6, 9, 8, 13, 12, 'b');                          // 날개
+    P.ell(8, 9, 3.5, 3, 'a'); P.ell(8, 6, 2.5, 2, 'a'); P.tri(8, 6, 11, 6, 10, 8, 'n'); P.px(7, 5, 'y'); // 몸·부리·눈
+    P.line(1, 4, 3, 7, 'y'); P.line(14, 4, 12, 7, 'y'); P.px(7, 13, 'b'); P.px(9, 13, 'b');   // 날개 끝 번개
+  } },
+  cloudmage: { tint: '#9aaac8', w: 16, h: 16, pal: { w: '#ffffff', y: '#ffe94a' }, proc: (P) => {
+    robe(P, 'w'); P.ell(7, 5, 3, 3, 'a'); P.rect(6, 5, 3, 2, 'k'); P.px(6, 5, 'e'); P.px(8, 5, 'e');
+    P.ell(7, 1.5, 4, 1.5, 'w'); P.ell(5, 2, 1.5, 1, 'w'); P.ell(9.5, 2, 1.5, 1, 'w');        // 머리 위 구름
+    P.line(10, 9, 13, 8, 'a'); P.ell(13.5, 6.5, 2, 1.5, 'w'); P.px(13, 8, 'y');               // 손 위 작은 구름과 번개
+  } },
+  galetotem: { tint: '#7a8ab0', w: 16, h: 16, pal: { s: '#5a6a8a', w: '#ffffff', e: '#bfefff' }, proc: (P) => {
+    P.rect(4, 13, 8, 3, 's'); P.rect(5, 4, 6, 10, 'a'); P.rect(5, 4, 1, 10, 'c'); P.rect(5, 8, 6, 1, 'b'); // 받침·토템 기둥
+    P.px(6, 6, 'e'); P.px(9, 6, 'e'); P.rect(7, 10, 2, 1, 'k'); P.tri(3, 4, 13, 4, 8, 1, 'b');            // 얼굴·머리
+    P.line(1, 6, 4, 6, 'w'); P.line(12, 7, 15, 7, 'w');                                                     // 바람
+  } },
+  // ── 심층: 거울의 미궁
+  mirrorknight: { tint: '#a8a4c8', w: 16, h: 16, pal: { g: '#e0c8ff', w: '#ffffff', e: '#ff7ad0' }, proc: (P) => {
+    P.rect(4, 13, 3, 3, 'b'); P.rect(9, 13, 3, 3, 'b'); P.rect(3, 7, 10, 7, 'a'); P.rect(4, 8, 8, 2, 'c'); // 거울 갑옷
+    P.rect(0, 6, 4, 8, 'g'); P.px(1, 7, 'w'); P.px(1, 8, 'w');                                // 거울 방패
+    P.rect(5, 1, 6, 6, 'a'); P.rect(6, 3, 4, 1, 'k'); P.px(7, 3, 'e'); P.px(9, 3, 'e');       // 투구
+    P.line(14, 1, 14, 12, 'g'); P.px(14, 0, 'w');                                             // 유리 검
+  } },
+  shardbat: { tint: '#c8b0ff', w: 16, h: 16, pal: { w: '#ffffff', e: '#ff7ad0' }, proc: (P) => {
+    P.tri(0, 4, 6, 8, 1, 11, 'b'); P.tri(15, 4, 10, 8, 14, 11, 'b'); P.line(2, 6, 4, 9, 'c'); P.line(13, 6, 11, 9, 'c'); // 유리 조각 날개
+    P.tri(8, 4, 5, 10, 11, 10, 'a'); P.px(7, 7, 'e'); P.px(9, 7, 'e'); P.px(8, 5, 'w');     // 다이아몬드 몸
+  } },
+  prismmage: { tint: '#5a4a7a', w: 16, h: 16, pal: { g: '#e0c8ff', w: '#ffffff' }, proc: (P) => {
+    robe(P, 'g'); P.ell(7, 5, 3, 3, 'a'); P.rect(6, 5, 3, 2, 'k'); P.px(6, 5, 'e'); P.px(8, 5, 'e');
+    P.tri(11, 6, 15, 6, 13, 2, 'g'); P.tri(11, 6, 15, 6, 13, 10, 'g'); P.px(13, 5, 'w');      // 떠 있는 프리즘
+    P.px(2, 3, 'g'); P.px(4, 1, 'w');
+  } },
+  prismtower: { tint: '#d8c8ff', w: 16, h: 16, pal: { s: '#4c4862', w: '#ffffff', e: '#ffb0ff' }, proc: (P) => {
+    P.rect(4, 13, 8, 3, 's'); P.tri(4, 12, 12, 12, 8, 1, 'a'); P.tri(8, 1, 8, 12, 4, 12, 'c'); // 받침·큰 프리즘
+    P.px(8, 7, 'e'); P.px(7, 4, 'w'); P.px(2, 6, 'e'); P.px(14, 9, 'e');
   } }
 });

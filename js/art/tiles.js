@@ -33,6 +33,8 @@ const THEME = {
   sanctum: { gold: '#c8a050', light: '#ffe9a0', torch: '#ffe9a0', ambient: [30, 25, 10, 0.2] },
   abyss: { vein: '#5affd8', torch: '#5affd8', ambient: [0, 20, 20, 0.45] },
   starfall: { star: '#dff8ff', shard: '#9ad8ff', torch: '#9ad8ff', ambient: [10, 10, 40, 0.38] },
+  sky: { cloud: '#ffffff', grass: '#8ac070', torch: '#dff8ff', ambient: [40, 50, 80, 0.18] },
+  mirror: { glint: '#ffffff', glass: '#c8b8ff', torch: '#e0c8ff', ambient: [20, 10, 40, 0.38] },
   fungal: { glow: '#e07aff', cap: '#c87ad8', moss: '#5a8a4a', torch: '#e07aff', ambient: [30, 0, 40, 0.4] },
   sunken: { water: '#5ac8ff', foam: '#bfefff', coral: '#e06a6a', torch: '#5ac8ff', ambient: [0, 20, 40, 0.42] },
   wood: { torch: '#ffb040', ambient: [30, 15, 0, 0.18] },
@@ -136,6 +138,18 @@ function drawFloorTile(g, x, y, base, style, tx = 0, ty = 0) {
     if (h(1) < 0.05) { const sx = x + 6, sy = y + 6; pxs(g, T.shard, [[sx, sy, 3, 1], [sx + 1, sy - 1, 1, 3]]); pxs(g, T.star, [[sx + 1, sy]]); }
     return;
   }
+  if (style === 'sky') { // 하늘섬: 풀 덮인 흙 위에 떠다니는 구름 조각
+    pxs(g, hi, [[x, y, TILE - 1, 1]]); pxs(g, lo, [[x, y + 15, TILE, 1]]);
+    for (let i = 0; i < 3; i++) if (h(10 + i) < 0.5) pxs(g, THEME.sky.grass, [[x + 1 + Math.floor(h(20 + i) * 14), y + 1 + Math.floor(h(30 + i) * 14), 1, 2]]);
+    if (h(1) < 0.08) { g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(x + 2, y + 6, 8, 2); g.fillRect(x + 4, y + 5, 4, 1); }
+    return;
+  }
+  if (style === 'mirror') { // 거울 바닥: 비스듬한 반사광 + 가끔 금
+    pxs(g, hi, [[x, y, TILE - 1, 1], [x, y, 1, TILE - 1]]); pxs(g, lo, [[x + 15, y, 1, TILE], [x, y + 15, TILE, 1]]);
+    if ((tx + ty) % 3 === 0) { g.fillStyle = 'rgba(224,200,255,0.14)'; for (let i = 0; i < 4; i++) g.fillRect(x + 3 + i, y + 10 - i * 2, 1, 2); }
+    if (h(1) < 0.05) pxs(g, 'rgba(255,255,255,0.6)', [[x + 5, y + 4], [x + 6, y + 5], [x + 7, y + 6], [x + 8, y + 6], [x + 9, y + 7]]);
+    return;
+  }
   if (style === 'fungal') { // 축축한 흙 + 빛나는 작은 버섯 + 균사
     const T = THEME.fungal;
     for (let i = 0; i < 3; i++) pxs(g, lo, [[x + 1 + Math.floor(h(20 + i) * 14), y + 1 + Math.floor(h(30 + i) * 14), 2, 1]]);
@@ -203,6 +217,10 @@ function drawWallTile(g, x, y, pal, face, style, tx = 0, ty = 0) {
     if (face && h(1) < 0.4) { let cx = x + 3 + Math.floor(h(2) * 8), cy = y + 9; for (let i = 0; i < 5; i++) { pxs(g, '#5affd8', [[cx, cy]]); cx += h(3 + i) < 0.5 ? 1 : -1; cy++; } }
   } else if (style === 'starfall') { // 별빛 띠
     if (face) { g.fillStyle = 'rgba(154,216,255,0.4)'; g.fillRect(x, y + 10, TILE, 1); if (h(1) < 0.3) pxs(g, '#dff8ff', [[x + 7, y + 9]]); }
+  } else if (style === 'sky') { // 흰 구름 띠
+    if (face) { g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(x, y + 11, TILE, 2); if (h(1) < 0.3) g.fillRect(x + 4, y + 9, 6, 2); }
+  } else if (style === 'mirror') { // 거울 조각이 박힌 벽
+    if (face && h(1) < 0.4) { pxs(g, '#c8b8ff', [[x + 4, y + 7, 5, 4]]); pxs(g, '#ffffff', [[x + 5, y + 8]]); }
   } else if (style === 'fungal') { // 벽에 붙은 선반 버섯
     if (face && h(1) < 0.35) { const cx = x + 3 + Math.floor(h(2) * 8); pxs(g, '#c87ad8', [[cx, y + 9, 5, 1], [cx + 1, y + 10, 3, 1]]); pxs(g, '#e07aff', [[cx + 1, y + 9]]); }
   } else if (style === 'sunken') { // 물 자국 + 이끼
@@ -248,6 +266,10 @@ function drawCover(g, x, y, style, tx, ty) {
   } else if (style === 'abyss') { // 맥이 박힌 검은 바위
     fillEll(g, x + 8, y + 9, 7, 6, OUTLINE); fillEll(g, x + 8, y + 9, 6, 5, '#262b30'); fillEll(g, x + 7, y + 7, 4, 2, '#343a40');
     pxs(g, '#5affd8', [[x + 5, y + 9], [x + 6, y + 10], [x + 7, y + 10], [x + 9, y + 8]]);
+  } else if (style === 'sky') { // 떠 있는 바위 + 구름
+    fillEll(g, x + 8, y + 8, 7, 5, OUTLINE); fillEll(g, x + 8, y + 8, 6, 4, '#6a7a98'); fillEll(g, x + 7, y + 6, 4, 2, '#8a9ab8'); g.fillStyle = 'rgba(255,255,255,0.8)'; g.fillRect(x + 2, y + 12, 12, 2);
+  } else if (style === 'mirror') { // 세워진 거울 조각
+    pxs(g, OUTLINE, [[x + 4, y + 1, 8, 14]]); pxs(g, '#8a86a8', [[x + 5, y + 2, 6, 12]]); pxs(g, '#c8b8ff', [[x + 6, y + 3, 4, 10]]); pxs(g, '#ffffff', [[x + 6, y + 4, 1, 4]]);
   } else if (style === 'fungal') { // 커다란 버섯
     pxs(g, OUTLINE, [[x + 6, y + 8, 4, 7]]); pxs(g, '#e8d8c8', [[x + 7, y + 8, 2, 6]]);
     fillEll(g, x + 8, y + 7, 7, 4, OUTLINE); fillEll(g, x + 8, y + 7, 6, 3, '#8a4aa0'); fillEll(g, x + 7, y + 6, 4, 1.5, '#b06ac8'); pxs(g, '#e07aff', [[x + 5, y + 6], [x + 10, y + 7], [x + 8, y + 5]]);
@@ -295,6 +317,10 @@ function drawCrate(g, x, y, style) {
     pxs(g, '#c8a050', [[x + 7, y + 6, 2, 6]]);
   } else if (style === 'abyss') { // 검은 돌함
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#2a3036', [[x + 3, y + 4, 10, 10]]); pxs(g, '#3a4148', [[x + 3, y + 4, 10, 2]]); pxs(g, '#5affd8', [[x + 7, y + 7, 2, 4]]);
+  } else if (style === 'sky') { // 구름 끼인 나무 상자
+    pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#9a7a5a', [[x + 3, y + 4, 10, 10]]); pxs(g, '#b8946a', [[x + 3, y + 4, 10, 1]]); pxs(g, '#ffffff', [[x + 3, y + 12, 6, 2]]);
+  } else if (style === 'mirror') { // 거울 상자
+    pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#4c4862', [[x + 3, y + 4, 10, 10]]); pxs(g, '#c8b8ff', [[x + 5, y + 6, 6, 6]]); pxs(g, '#ffffff', [[x + 6, y + 7, 1, 2]]);
   } else if (style === 'fungal') { // 버섯 덮인 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#5a3a3a', [[x + 3, y + 4, 10, 10]]); pxs(g, '#6a4a48', [[x + 3, y + 4, 10, 1]]); pxs(g, '#c87ad8', [[x + 4, y + 3, 3, 1], [x + 10, y + 3, 2, 1]]);
   } else if (style === 'sunken') { // 물먹은 상자
