@@ -39,6 +39,8 @@ async function ghLoad() {
   if (!GH.token || !GH.repo) return;
   try { const r = await ghApi('/contents/' + GH.file + '?ref=' + GH.branch);
     if (r.ok) { const j = await r.json(); GH.sha = j.sha; const remote = JSON.parse(Buffer.from(j.content, 'base64').toString('utf8')); for (const k of Object.keys(scores)) for (const row of remote[k] || []) addScoreRow(k, row, true); console.log('scores loaded from GitHub'); }
+    else if (r.status === 404) { scoresDirty = true; console.log('no scores file yet → will create'); } // 처음: 빈 랭킹 파일을 만들어 저장이 되는지 바로 확인
+    else console.log('GitHub load failed', r.status);
   } catch (e) { console.log('GitHub load failed', e.message); }
 }
 async function ghSave() {
