@@ -35,6 +35,8 @@ const THEME = {
   starfall: { star: '#dff8ff', shard: '#9ad8ff', torch: '#9ad8ff', ambient: [10, 10, 40, 0.38] },
   sky: { cloud: '#ffffff', grass: '#8ac070', torch: '#dff8ff', ambient: [40, 50, 80, 0.18] },
   mirror: { glint: '#ffffff', glass: '#c8b8ff', torch: '#e0c8ff', ambient: [20, 10, 40, 0.38] },
+  clock: { brass: '#e8c070', torch: '#ffd890', ambient: [40, 25, 5, 0.3] },
+  ember: { ember: '#ff8a3a', ash: '#6a5a56', torch: '#ff8a3a', ambient: [60, 15, 0, 0.36] },
   fungal: { glow: '#e07aff', cap: '#c87ad8', moss: '#5a8a4a', torch: '#e07aff', ambient: [30, 0, 40, 0.4] },
   sunken: { water: '#5ac8ff', foam: '#bfefff', coral: '#e06a6a', torch: '#5ac8ff', ambient: [0, 20, 40, 0.42] },
   wood: { torch: '#ffb040', ambient: [30, 15, 0, 0.18] },
@@ -157,6 +159,18 @@ function drawFloorTile(g, x, y, base, style, tx = 0, ty = 0) {
     if (h(5) < 0.07) { let cx = x + 1, cy = y + 4 + Math.floor(h(6) * 8); for (let i = 0; i < 12; i++) { pxs(g, 'rgba(224,122,255,0.35)', [[cx, cy]]); cx++; cy += h(9 + i) < 0.3 ? 1 : h(9 + i) > 0.75 ? -1 : 0; } }
     return;
   }
+  if (style === 'clock') { // 놋쇠 테두리 석판 + 가끔 박힌 톱니
+    pxs(g, hi, [[x, y, TILE - 1, 1], [x, y, 1, TILE - 1]]); pxs(g, lo, [[x + 15, y, 1, TILE], [x, y + 15, TILE, 1]]);
+    if ((tx + ty) % 4 === 0) pxs(g, 'rgba(232,192,112,0.25)', [[x, y, TILE, 1]]);
+    if (h(1) < 0.07) { const cx = x + 4 + Math.floor(h(2) * 7), cy = y + 4 + Math.floor(h(3) * 7); fillEll(g, cx + 2, cy + 2, 2.5, 2.5, '#8a7044'); pxs(g, '#e8c070', [[cx + 2, cy], [cx + 2, cy + 4], [cx, cy + 2], [cx + 4, cy + 2]]); pxs(g, lo, [[cx + 2, cy + 2]]); }
+    return;
+  }
+  if (style === 'ember') { // 그을린 석판 + 재 + 가끔 빛나는 불씨 틈
+    pxs(g, hi, [[x, y, TILE - 1, 1], [x, y, 1, TILE - 1]]); pxs(g, lo, [[x + 15, y, 1, TILE], [x, y + 15, TILE, 1]]);
+    for (let i = 0; i < 3; i++) if (h(10 + i) < 0.5) pxs(g, THEME.ember.ash, [[x + 1 + Math.floor(h(20 + i) * 14), y + 1 + Math.floor(h(30 + i) * 14)]]);
+    if (h(1) < 0.08) { let cx = x + 3, cy = y + 5 + Math.floor(h(2) * 6); for (let i = 0; i < 8; i++) { pxs(g, i % 3 ? '#c8502a' : '#ffb04a', [[cx, cy]]); cx++; cy += h(4 + i) < 0.3 ? 1 : h(4 + i) > 0.75 ? -1 : 0; } }
+    return;
+  }
   if (style === 'sunken') { // 물에 잠긴 석판 + 물결 반사 + 해초
     const T = THEME.sunken;
     pxs(g, hi, [[x, y, TILE - 1, 1], [x, y, 1, TILE - 1]]); pxs(g, lo, [[x + 15, y, 1, TILE], [x, y + 15, TILE, 1]]);
@@ -225,6 +239,10 @@ function drawWallTile(g, x, y, pal, face, style, tx = 0, ty = 0) {
     if (face && h(1) < 0.35) { const cx = x + 3 + Math.floor(h(2) * 8); pxs(g, '#c87ad8', [[cx, y + 9, 5, 1], [cx + 1, y + 10, 3, 1]]); pxs(g, '#e07aff', [[cx + 1, y + 9]]); }
   } else if (style === 'sunken') { // 물 자국 + 이끼
     if (face) { g.fillStyle = 'rgba(90,200,255,0.3)'; g.fillRect(x, y + 11, TILE, 1); if (h(1) < 0.3) pxs(g, '#3a8a6a', [[x + 5, y + 8, 1, 3], [x + 10, y + 9, 1, 2]]); }
+  } else if (style === 'clock') { // 놋쇠 띠 + 톱니
+    if (face) { pxs(g, '#8a7044', [[x, y + 10, TILE, 1]]); if (h(1) < 0.3) { fillEll(g, x + 8, y + 10, 2.5, 2.5, '#e8c070'); pxs(g, '#4a3e30', [[x + 8, y + 10]]); } }
+  } else if (style === 'ember') { // 그을음 + 불씨 틈
+    if (face) { g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x, y + 6, TILE, 4); if (h(1) < 0.35) pxs(g, '#ff8a3a', [[x + 5 + Math.floor(h(2) * 6), y + 10, 2, 1]]); }
   } else if (style === 'void') { // 보랏빛 룬 띠
     if (face) { g.fillStyle = 'rgba(170,110,255,0.45)'; g.fillRect(x, y + 10, TILE, 1); if (h(1) < 0.3) pxs(g, '#c8a0ff', [[x + 6, y + 9, 3, 3]]); }
   }
@@ -268,6 +286,12 @@ function drawCover(g, x, y, style, tx, ty) {
     pxs(g, '#5affd8', [[x + 5, y + 9], [x + 6, y + 10], [x + 7, y + 10], [x + 9, y + 8]]);
   } else if (style === 'sky') { // 떠 있는 바위 + 구름
     fillEll(g, x + 8, y + 8, 7, 5, OUTLINE); fillEll(g, x + 8, y + 8, 6, 4, '#6a7a98'); fillEll(g, x + 7, y + 6, 4, 2, '#8a9ab8'); g.fillStyle = 'rgba(255,255,255,0.8)'; g.fillRect(x + 2, y + 12, 12, 2);
+  } else if (style === 'clock') { // 쓰러진 큰 톱니
+    fillEll(g, x + 8, y + 9, 7, 6, OUTLINE); fillEll(g, x + 8, y + 9, 6, 5, '#8a7044'); fillEll(g, x + 8, y + 9, 2.5, 2, '#4a3e30');
+    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; pxs(g, '#e8c070', [[Math.round(x + 8 + Math.cos(a) * 5), Math.round(y + 9 + Math.sin(a) * 4)]]); }
+  } else if (style === 'ember') { // 꺼져 가는 화로
+    pxs(g, OUTLINE, [[x + 3, y + 6, 10, 9]]); pxs(g, '#4a3a34', [[x + 4, y + 7, 8, 7]]); pxs(g, '#6a544a', [[x + 4, y + 7, 8, 1]]);
+    pxs(g, '#ff6a2a', [[x + 5, y + 5, 6, 2]]); pxs(g, '#ffb04a', [[x + 7, y + 4, 2, 2]]);
   } else if (style === 'mirror') { // 세워진 거울 조각
     pxs(g, OUTLINE, [[x + 4, y + 1, 8, 14]]); pxs(g, '#8a86a8', [[x + 5, y + 2, 6, 12]]); pxs(g, '#c8b8ff', [[x + 6, y + 3, 4, 10]]); pxs(g, '#ffffff', [[x + 6, y + 4, 1, 4]]);
   } else if (style === 'fungal') { // 커다란 버섯
@@ -319,6 +343,10 @@ function drawCrate(g, x, y, style) {
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#2a3036', [[x + 3, y + 4, 10, 10]]); pxs(g, '#3a4148', [[x + 3, y + 4, 10, 2]]); pxs(g, '#5affd8', [[x + 7, y + 7, 2, 4]]);
   } else if (style === 'sky') { // 구름 끼인 나무 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#9a7a5a', [[x + 3, y + 4, 10, 10]]); pxs(g, '#b8946a', [[x + 3, y + 4, 10, 1]]); pxs(g, '#ffffff', [[x + 3, y + 12, 6, 2]]);
+  } else if (style === 'clock') { // 놋쇠 테 상자
+    pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#5a4632', [[x + 3, y + 4, 10, 10]]); pxs(g, '#e8c070', [[x + 3, y + 4, 10, 1], [x + 3, y + 13, 10, 1], [x + 7, y + 4, 2, 10]]);
+  } else if (style === 'ember') { // 그을린 상자
+    pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#3e302c', [[x + 3, y + 4, 10, 10]]); pxs(g, '#4c3a34', [[x + 3, y + 4, 10, 1]]); pxs(g, '#ff8a3a', [[x + 4, y + 12, 3, 1], [x + 10, y + 11, 2, 1]]);
   } else if (style === 'mirror') { // 거울 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#4c4862', [[x + 3, y + 4, 10, 10]]); pxs(g, '#c8b8ff', [[x + 5, y + 6, 6, 6]]); pxs(g, '#ffffff', [[x + 6, y + 7, 1, 2]]);
   } else if (style === 'fungal') { // 버섯 덮인 상자

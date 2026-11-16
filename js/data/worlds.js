@@ -73,7 +73,15 @@ const DEEP_WORLDS = [
   { id: 'deep_mirror', name: '거울의 미궁', boss: 'boss_mirror_face', waves: 2, deep: true,
     enemies: [['enemy_mirrorknight_001', 3], ['enemy_shardbat_001', 4], ['enemy_prismmage_001', 2], ['enemy_prismtower_001', 2]],
     palette: { style: 'mirror', accent: '#e0c8ff', floor: ['#2e2a3a', '#312d3e'], corridor: ['#221f2c', '#24212e'], wall: '#3e3a50', wallTop: '#4c4862',
-      wallFace: '#8a86a8', faceLine: '#76729a', deco: 'rgba(224,200,255,0.35)' } }
+      wallFace: '#8a86a8', faceLine: '#76729a', deco: 'rgba(224,200,255,0.35)' } },
+  { id: 'deep_clock', name: '멈춘 태엽탑', boss: 'boss_clock_giant', waves: 2, deep: true,
+    enemies: [['enemy_gearsoldier_001', 3], ['enemy_cogbug_001', 4], ['enemy_clockmage_001', 2], ['enemy_belltower_001', 2]],
+    palette: { style: 'clock', accent: '#e8c070', floor: ['#3a3026', '#3d3329'], corridor: ['#2a231c', '#2c251e'], wall: '#4a3e30', wallTop: '#5a4c3a',
+      wallFace: '#8a7450', faceLine: '#76643f', deco: 'rgba(232,192,112,0.35)' } },
+  { id: 'deep_ember', name: '잿불 성채', boss: 'boss_ash_king', waves: 2, deep: true,
+    enemies: [['enemy_emberimp_001', 4], ['enemy_ashhound_001', 3], ['enemy_cinderpriest_001', 2], ['enemy_brazier_001', 2]],
+    palette: { style: 'ember', accent: '#ff8a3a', floor: ['#2e2422', '#312624'], corridor: ['#211a18', '#231b19'], wall: '#3e302c', wallTop: '#4c3a34',
+      wallFace: '#6e544a', faceLine: '#5e463e', deco: 'rgba(255,138,58,0.35)' } }
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {

@@ -264,5 +264,40 @@ Object.assign(PIX, {
   prismtower: { tint: '#d8c8ff', w: 16, h: 16, pal: { s: '#4c4862', w: '#ffffff', e: '#ffb0ff' }, proc: (P) => {
     P.rect(4, 13, 8, 3, 's'); P.tri(4, 12, 12, 12, 8, 1, 'a'); P.tri(8, 1, 8, 12, 4, 12, 'c'); // 받침·큰 프리즘
     P.px(8, 7, 'e'); P.px(7, 4, 'w'); P.px(2, 6, 'e'); P.px(14, 9, 'e');
+  } },
+  // ── 심층: 멈춘 태엽탑
+  gearsoldier: { tint: '#a88a5a', w: 16, h: 16, pal: { y: '#e8c070', w: '#ffffff', e: '#ff6a3a' }, proc: (P) => {
+    P.rect(4, 13, 3, 3, 'b'); P.rect(9, 13, 3, 3, 'b'); P.rect(3, 7, 10, 7, 'a'); P.ell(8, 10, 2, 2, 'y'); P.px(8, 10, 'b'); // 놋쇠 몸통·가슴 톱니
+    P.rect(5, 1, 6, 6, 'a'); P.rect(6, 3, 4, 1, 'k'); P.px(7, 3, 'e'); P.px(9, 3, 'e');                                     // 머리
+    P.line(8, 0, 8, 1, 'y'); P.rect(13, 3, 2, 10, 'c'); P.rect(12, 2, 4, 2, 'y');                                           // 태엽 손잡이·망치
+  } },
+  cogbug: { tint: '#c8a050', w: 16, h: 16, pal: { w: '#ffffff', e: '#ff6a3a' }, proc: (P) => {
+    P.ell(8, 9, 5, 4, 'a'); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; P.px(8 + Math.cos(a) * 6, 9 + Math.sin(a) * 5, 'b'); } // 톱니 몸
+    P.ell(8, 9, 2, 1.5, 'c'); P.px(6, 7, 'e'); P.px(10, 7, 'e'); P.line(3, 13, 1, 15, 'b'); P.line(13, 13, 15, 15, 'b');
+  } },
+  clockmage: { tint: '#4a3e5a', w: 16, h: 16, pal: { y: '#e8c070', w: '#ffffff' }, proc: (P) => {
+    robe(P, 'y'); P.ell(7, 5, 3, 3, 'a'); P.rect(6, 5, 3, 2, 'k'); P.px(6, 5, 'e'); P.px(8, 5, 'e');
+    P.line(12, 1, 12, 9, 'y'); P.ell(12, 11, 2, 2, 'y'); P.px(12, 11, 'w');                                                  // 시계추 지팡이
+  } },
+  belltower: { tint: '#b08a40', w: 16, h: 16, pal: { s: '#4a3e30', w: '#ffffff', e: '#ffe9a0' }, proc: (P) => {
+    P.rect(4, 13, 8, 3, 's'); P.rect(5, 6, 6, 7, 's'); P.tri(3, 7, 13, 7, 8, 2, 'a'); P.ell(8, 9, 2.5, 2.5, 'c'); P.px(8, 11, 'e'); // 받침·지붕·종
+    P.px(7, 8, 'w'); P.px(2, 9, 'e'); P.px(14, 9, 'e');
+  } },
+  // ── 심층: 잿불 성채
+  emberimp: { tint: '#c8502a', w: 16, h: 16, pal: { y: '#ffb04a', w: '#ffffff', e: '#ffe94a' }, proc: (P) => {
+    P.ell(8, 10, 4, 4, 'a'); P.ell(8, 6, 3, 3, 'a'); P.tri(5, 5, 6, 1, 7, 4, 'b'); P.tri(9, 4, 10, 1, 11, 5, 'b'); // 몸·뿔
+    P.px(7, 6, 'e'); P.px(9, 6, 'e'); P.line(12, 11, 15, 9, 'b'); P.px(15, 8, 'y'); P.px(8, 2, 'y'); P.px(4, 13, 'y'); // 꼬리 불씨
+  } },
+  ashhound: { tint: '#5a4a46', w: 16, h: 16, pal: { y: '#ff8a3a', e: '#ffe94a' }, proc: (P) => {
+    P.ell(7, 10, 5, 3, 'a'); P.ell(12, 8, 3, 2.5, 'a'); P.tri(11, 6, 12, 3, 13, 6, 'b');                         // 몸·머리·귀
+    P.rect(3, 12, 2, 3, 'b'); P.rect(9, 12, 2, 3, 'b'); P.px(13, 8, 'e'); P.line(2, 9, 0, 7, 'y'); P.px(5, 8, 'y'); P.px(8, 8, 'y'); // 다리·눈·불꼬리·등 불씨
+  } },
+  cinderpriest: { tint: '#6a2a2a', w: 16, h: 16, pal: { y: '#ff8a3a', w: '#ffe9a0' }, proc: (P) => {
+    robe(P, 'y'); P.ell(7, 5, 3, 3, 'a'); P.rect(6, 5, 3, 2, 'k'); P.px(6, 5, 'e'); P.px(8, 5, 'e');
+    P.line(12, 3, 12, 13, 'b'); P.ell(12, 2, 1.5, 2, 'y'); P.px(12, 1, 'w');                                     // 불붙은 지팡이
+  } },
+  brazier: { tint: '#6a5a50', w: 16, h: 16, pal: { y: '#ffb04a', r: '#ff6a2a', w: '#ffe94a' }, proc: (P) => {
+    P.rect(4, 13, 8, 3, 'b'); P.rect(6, 9, 4, 4, 'a'); P.rect(3, 7, 10, 3, 'a'); P.rect(3, 7, 10, 1, 'c');        // 받침·화로
+    P.tri(4, 7, 12, 7, 8, 1, 'r'); P.tri(6, 7, 10, 7, 8, 3, 'y'); P.px(8, 5, 'w');                               // 불꽃
   } }
 });
