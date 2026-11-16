@@ -14,10 +14,10 @@ class Pickup {
   get magnetic() { return this.kind !== 'weapon'; }
   update(dt, world) {
     this.t += dt; this.delay = Math.max(0, this.delay - dt);
-    const p = world.player;
+    const p = world.nearestPlayer(this.x, this.y); // 멀티: 가장 가까운 플레이어에게 끌려감
     if (this.magnetic && this.delay <= 0 && p.state !== 'DEAD') {
       const dx = p.x - this.x, dy = p.y - this.y, d = Math.hypot(dx, dy);
-      if (d < 9) { world.collect(this); this.alive = false; return; }
+      if (d < 9) { world.withPlayer(p, () => world.collect(this)); this.alive = false; return; }
       if (d < 64) { const k = 260 * (1 - d / 80); this.vx += dx / d * k * dt * 6; this.vy += dy / d * k * dt * 6; }
     }
     this.vx *= Math.pow(0.02, dt); this.vy *= Math.pow(0.02, dt);

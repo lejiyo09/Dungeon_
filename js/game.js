@@ -290,6 +290,7 @@ class Game {
     this.guild(); this.applySupplies(); // 길드 퀘스트 준비 · 거래상에서 산 보급품
     this.loadStage();
     if (!this.save.prologueSeen) this.showPrologue(() => this.askVariant()); else this.askVariant();
+    if (Net.inRoom && Net.isHost && Net.players.length > 1) this.coopHostStart(); // 멀티: 방 사람들과 함께 출발
   }
   // ── 이어하기: 스테이지 시작 시점의 런 상태 (맵은 그 스테이지를 새로 생성)
   snapshotRun() {
@@ -363,6 +364,7 @@ class Game {
     if (W.sanctum) this.decorateSanctum(map);
     this.snapCamera();
     if (W.sanctum && this.levelIdx === 0) this.playCutscene(ORIGIN_ARRIVAL_LINES, { id: 'origin_arrival', focus: null });
+    if (this.coop && this.coop.host) this.coopOnStage(); // 멀티: 동료 배치·부활 + 새 맵 보내기
     if (W.trial) { this.showBanner(W.name, '롱고미니아드가 기다리고 있습니다', '#bfe6ff'); return; }
     this.showBanner(`${stageLabel(this.worldIdx, this.levelIdx)}  ${W.name}`, this.isBossStage ? '보스가 기다리고 있습니다' : W.deep && this.levelIdx === 0 ? `심층 ${W.depth}번째 필드 — 던전은 더 깊은 곳으로 이어진다` : '출구 포탈을 찾으세요', W.deep ? '#9ad8ff' : undefined);
   }
@@ -440,6 +442,8 @@ class Game {
   }
   endRun(victory) {
     if (this.trialW) { this.endRhongoTrial(victory); return; }
+    if (this.coop && this.coop.guest) { this.coopGuestEnd({ victory: false, quit: true }); return; }
+    if (this.coop && this.coop.host) this.coopHostEnd(victory);
     this.guildEvent('runs');
     SFX.stopMusic(); this.save.run = null; this.save.runReviveUsed = false; writeSave(this.save);
     SFX.play(victory ? 'victory' : 'hurt');
@@ -476,9 +480,9 @@ class Game {
   addShake(t, mag) { this.shake = Math.max(this.shake, t); this.shakeMag = Math.max(this.shakeMag, mag); }
 
   // ── 카메라
-  mouseWorld() { return { x: this.input.mouse.x + Math.round(this.cam.x), y: this.input.mouse.y + Math.round(this.cam.y) }; }
-  cameraTarget() {
-    const p = this.player, mx = this.input.mouse.x - VIEW_W / 2, my = this.input.mouse.y - VIEW_H / 2;
+  mouseWorld() { if (this.coop && this.coop.aim) return this.coop.aim; return { x: this.input.mouse.x + Math.round(this.cam.x), y: this.input.mouse.y + Math.round(this.cam.y) }; }
+  cameraTarget() { // 멀티: 내가 쓰러지면 동료를 비춤
+    const p = this.coop && this.player.state === 'DEAD' ? this.allPlayers().find((q) => q.state !== 'DEAD') || this.player : this.player, mx = this.input.mouse.x - VIEW_W / 2, my = this.input.mouse.y - VIEW_H / 2;
     let fx = p.x + mx * 0.2, fy = p.y + my * 0.2;
     const cs = this.cutscene, focus = cs && cs.focus ? cs.focus : this.cinematic ? this.cinematic.boss : this.slowMo ? this.slowMo : null; // 컷신·보스 등장·처치 연출 중에는 그쪽을 비춤
     if (focus) { fx = focus.x; fy = focus.y; }
@@ -495,9 +499,10 @@ class Game {
 
   // ── 메인 업데이트
   update(dt) {
-    const input = this.input;
+    let input = this.input;
     this.time += dt;
     if (this.locked) { input.endStep(); return; } // 로그인 화면
+    if (this.coop && this.coop.guest) { this.coopGuestUpdate(dt, input); return; } // 멀티 참가자: 방장 화면을 받아 그림
     if (this.banner) this.banner.t += dt;
     if (input.wasPressed('KeyM')) this.toggleMute();
     this.hurtFlash = Math.max(0, this.hurtFlash - dt);
@@ -509,7 +514,7 @@ class Game {
       if (this.transition.t >= 0.9) this.transition = null;
       input.endStep(); return;
     }
-    if (this.overlay) { this.updateOverlay(input); input.endStep(); return; }
+    if (this.overlay) { this.updateOverlay(input); input.endStep(); if (!(this.coop && this.coop.host) || !this.overlay) return; input = NULL_INPUT; } // 멀티 방장: 창을 열어도 다른 사람 때문에 세계는 계속 돌아감 (내 캐릭터만 멈춤)
     if (this.cutscene) { this.screenFlash = Math.max(0, this.screenFlash - dt); this.shake = Math.max(0, (this.shake || 0) - dt); this.updateCutscene(dt, input); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } // 컷신 중에는 세계가 멈춤 (번쩍임·흔들림은 가라앉음)
     if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; input.endStep(); return; }
     if (this.admin && input.wasPressed('Backquote')) { this.overlay = { type: 'admin', msg: null }; input.endStep(); return; }
@@ -538,9 +543,11 @@ class Game {
     this.weaponSystem.update(p, dt, input);
     if (p.state !== 'DEAD' && (input.wasPressed('KeyF') || input.wasPressed('Mouse2'))) this.useSkill();
     if (p.state !== 'DEAD' && input.wasPressed('KeyR')) this.useTreasure();
+    if (this.coop && this.coop.host) this.coopHostTickRemotes(dt); // 참가자들의 공격·스킬·보구
     this.updateSkillEffects(dt);
     this.updateFlow(dt);
-    for (const e of this.enemies) updateEnemy(e, dt, this);
+    if (this.coop && this.coop.host) { for (const e of this.enemies) this.withPlayer(this.nearestPlayer(e.x, e.y), () => updateEnemy(e, dt, this)); } // 적은 가장 가까운 플레이어를 노림
+    else for (const e of this.enemies) updateEnemy(e, dt, this);
     separateEnemies(this.enemies, this.map);
     for (const pr of this.projectiles) pr.update(dt, this);
     for (const b of this.enemyBullets) b.update(dt, this);
@@ -568,12 +575,14 @@ class Game {
           if (this.mode === 'lobby' && this.save.run) { this.overlay = { type: 'resume' }; p.y += 22; break; } // 진행 중인 탐험이 있으면 이어하기 물음
           this.transition = { t: 0, swapped: false, action: po.onEnter }; break;
         }
+    } else if (this.coop && this.coop.host && this.allPlayers().some((q) => q.state !== 'DEAD')) { // 멀티: 동료가 살아 있으면 계속 (다음 스테이지에서 부활)
     } else if (p.deathTimer > 1 && !this.overlay) {
       SFX.stopMusic();
       if (this.mode === 'dungeon' && !this.trialW && !this.save.runReviveUsed) this.overlay = { type: 'revive', msg: null };
       else this.endRun(false);
     }
     this.updateCamera(dt);
+    if (this.coop && this.coop.host) this.coopHostSend(dt);
     input.endStep();
   }
   updateOverlay(input) {
@@ -1265,11 +1274,12 @@ class Game {
     r.wavesLeft--;
     const pool = this.W.enemies;
     const W = BALANCE.waveSize, count = Math.min(W.max, W.base + this.worldIdx + Math.floor(this.levelIdx * W.perLevel) + randInt(0, W.rand)) + (r.challenge ? BALANCE.specialRooms.challenge.extra : 0);
-    for (let i = 0; i < count; i++) {
+    const party = this.partyCount(), cnt = party > 1 ? Math.min(Math.round(W.max * this.partyScale('mobCount')), Math.round(count * this.partyScale('mobCount'))) : count; // 멀티: 인원만큼 몬스터 증가
+    for (let i = 0; i < cnt; i++) {
       const [id] = weightedPick(pool, (x) => x[1]);
       const pt = this.findSpawnPoint(r, 72);
       const e = this.spawnEnemy(id, pt.x, pt.y, r), E = BALANCE.elite;
-      if (r.challenge || (this.worldIdx >= E.fromWorld && Math.random() < Math.min(0.45, E.base + E.perWorld * (this.worldIdx - E.fromWorld)))) e.makeElite(E);
+      if (r.challenge || (this.worldIdx >= E.fromWorld && Math.random() < Math.min(0.45, E.base + E.perWorld * (this.worldIdx - E.fromWorld) + COOP.scale.elite * (party - 1)))) e.makeElite(E);
       if (r.challenge) { const C = BALANCE.specialRooms.challenge; e.maxHp = Math.round(e.maxHp * C.hp); e.hp = e.maxHp; e.damage = Math.round(e.damage * C.dmg); }
     }
   }
@@ -1277,6 +1287,7 @@ class Game {
     const def = this.data.enemies.get(id);
     if (!def) throw new Error('알 수 없는 적 ID: ' + id);
     const e = new Enemy(x, y, def, this.scale, room);
+    if (this.partyCount() > 1 && !def.dummy) { e.maxHp = Math.round(e.maxHp * this.partyScale(def.boss ? 'bossHp' : 'mobHp')); e.hp = e.maxHp; } // 멀티: 인원만큼 체력 증가
     this.enemies.push(e);
     return e;
   }
@@ -1364,6 +1375,7 @@ class Game {
       };
       const owned = new Set(this.player.buffs);
       const options = shuffled(DATA_BUFFS.filter((b) => !owned.has(b.id) || b.id === 'buff_atk' || b.id === 'buff_hp')).slice(0, 3);
+      if (this.coop && this.coop.host) for (const R of this.remotes.values()) { const b = pick(DATA_BUFFS); b.apply(R.p); R.p.buffs.push(b.id); if (R.p.state !== 'DEAD') R.p.hp = Math.min(R.p.maxHp, R.p.hp + Math.round(R.p.maxHp * BALANCE.bossHealRatio)); Net.relay({ k: 'msg', text: `보스 보상: ${b.name} — ${b.desc}` }, R.id); } // 멀티: 동료는 무작위 축복 + 회복
       this.overlay = { type: 'buff', options, after };
     } else {
       if (r.trial) { r.trial = 0; this.evolve(r.hybrid, r.branch); r.hybrid = null; r.branch = null; return; } // 상위자를 쓰러뜨림 → 진화 (혼합 전직 포함)
@@ -1813,6 +1825,9 @@ class Game {
     ctx.imageSmoothingEnabled = false;
     ctx.setTransform(R, 0, 0, R, 0, 0);
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    if (this.coop && this.coop.guest && (this.coop.loading || !this.map)) { // 멀티 참가자: 방장의 던전을 받는 중
+      hudText(ctx, '방장의 던전을 불러오는 중…', VIEW_W / 2, VIEW_H / 2 - 6, '#7affc0', 'center', 11);
+      if (this.overlay) this.hud.overlay(ctx, this); return; }
     const cx = Math.round(this.cam.x), cy = Math.round(this.cam.y);
     let sx = 0, sy = 0;
     if (this.shake > 0) { sx = Math.round((Math.random() - 0.5) * 2 * this.shakeMag); sy = Math.round((Math.random() - 0.5) * 2 * this.shakeMag); }
@@ -1827,7 +1842,7 @@ class Game {
     for (const o of this.props) o.render(ctx, this);
     for (const pk of this.pickups) pk.render(ctx);
     for (const e of this.enemies) e.renderTelegraph(ctx);
-    const actors = [...(this.cutscene ? this.enemies.filter((e) => e.state !== 'INTRO') : this.enemies), ...this.allies, this.player, ...this.peerActors()].sort((a, b) => a.y - b.y); // 등장 전 보스는 컷신 동안 숨김
+    const actors = [...(this.cutscene ? this.enemies.filter((e) => e.state !== 'INTRO') : this.enemies), ...this.allies, this.player, ...this.peerActors(), ...this.coopActors()].sort((a, b) => a.y - b.y); // 등장 전 보스는 컷신 동안 숨김
     for (const a of actors) a.render(ctx);
     for (const pr of this.projectiles) pr.render(ctx);
     for (const z of this.zones) if (z.renderTop) z.renderTop(ctx);

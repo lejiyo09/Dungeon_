@@ -220,10 +220,10 @@ class EnemyBullet {
     this.x += this.vx * dt; this.y += this.vy * dt;
     if (this.life <= 0) { this.alive = false; return; }
     if (world.map.isSolidAt(this.x, this.y)) { world.hitTile(this.x, this.y); this.alive = false; world.effects.impact(this.x, this.y, this.color); return; }
-    const p = world.player;
-    if (p.state !== 'DEAD' && Math.abs(p.x - this.x) < p.half + this.r - 1 && Math.abs(p.y - this.y) < p.half + this.r - 1) {
-      if (world.damagePlayer(this.damage)) { this.alive = false; world.effects.spark(this.x, this.y, '#fff'); }
-    }
+    for (const p of world.allPlayers()) // 멀티: 모든 플레이어와 부딪힘
+      if (p.state !== 'DEAD' && Math.abs(p.x - this.x) < p.half + this.r - 1 && Math.abs(p.y - this.y) < p.half + this.r - 1) {
+        if (world.withPlayer(p, () => world.damagePlayer(this.damage))) { this.alive = false; world.effects.spark(this.x, this.y, '#fff'); break; }
+      }
   }
   render(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y);
@@ -242,8 +242,7 @@ class Hazard {
     this.t += dt;
     if (this.t < this.delay) return;
     this.alive = false;
-    const p = world.player;
-    if (p.state !== 'DEAD' && Math.hypot(p.x - this.x, p.y - this.y) < this.r + p.half) world.damagePlayer(this.damage);
+    for (const p of world.allPlayers()) if (p.state !== 'DEAD' && Math.hypot(p.x - this.x, p.y - this.y) < this.r + p.half) world.withPlayer(p, () => world.damagePlayer(this.damage));
     world.effects.explosion(this.x, this.y, this.r, this.color);
     for (let i = 0; i < this.bullets; i++)
       world.enemyShoot(this.x, this.y, i * TAU / this.bullets + Math.random() * 0.3, 110, Math.round(this.damage * 0.7), this.color, 3);
