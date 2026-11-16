@@ -1015,25 +1015,25 @@ class Game {
       }
   }
   // 원소 반응
-  triggerReaction(e, type, mods) {
-    const atk = 1 + (mods ? mods.attackBonus : 0), quiet = { damage: 0, mods: { attackBonus: 0, critChance: 0, critMultiplier: 1 }, knockback: 0 };
+  triggerReaction(e, type, mods) { // 반응 피해는 적 체력과 같은 비율로 깊이에 따라 커짐 → 어느 층에서든 비슷한 몫
+    const atk = (1 + (mods ? mods.attackBonus : 0)) * this.scale.hp * (1 + 0.05 * this.worldIdx), quiet = { damage: 0, mods: { attackBonus: 0, critChance: 0, critMultiplier: 1 }, knockback: 0 };
     if (type === 'thermal') { // 열충격: 큰 단일 피해, 빙결·화상 해제
       e.slow = 0; e.burn = 0;
       this.effects.ring(e.x, e.y, 18, '#9ad8ff'); this.effects.ring(e.x, e.y, 12, '#ff9a4a'); this.effects.burst(e.x, e.y, '#dff4ff', 10);
       this.effects.reaction(e.x, e.y, 'thermal', '열충격', '#bfe8ff'); SFX.play('react');
-      this.damageEnemy(e, Object.assign({}, quiet, { damage: 28 * atk, knockback: 4 }), 0, 0, { noChain: true });
+      this.damageEnemy(e, Object.assign({}, quiet, { damage: 30 * atk, knockback: 4 }), 0, 0, { noChain: true });
       this.hitStop(0.05);
     } else if (type === 'toxic') { // 독 연소: 주변 폭발, 중독 소모
       e.poison = 0;
       this.effects.reaction(e.x, e.y, 'toxic', '독 연소', '#c8ff70'); SFX.play('react');
-      this.explodeAt(e.x, e.y, 36, { color: '#9aff5a', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 16 * atk, knockback: 3 }) });
+      this.explodeAt(e.x, e.y, 36, { color: '#9aff5a', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 9 * atk, knockback: 3 }) });
     } else if (type === 'electro') { // 감전: 피해 + 주변 3명에게 번개
       e.shock = 0; this.effects.reaction(e.x, e.y, 'electro', '감전', '#dff4ff'); SFX.play('react');
-      this.damageEnemy(e, Object.assign({}, quiet, { damage: 24 * atk }), 0, 0, { noChain: true });
-      this.enemies.filter((o) => o !== e && o.targetable && Math.hypot(o.x - e.x, o.y - e.y) < 80).slice(0, 3).forEach((o) => { this.effects.lightning(e.x, e.y, o.x, o.y); this.damageEnemy(o, Object.assign({}, quiet, { damage: 12 * atk }), 0, 0, { noChain: true }); });
+      this.damageEnemy(e, Object.assign({}, quiet, { damage: 16 * atk }), 0, 0, { noChain: true });
+      this.enemies.filter((o) => o !== e && o.targetable && Math.hypot(o.x - e.x, o.y - e.y) < 80).slice(0, 3).forEach((o) => { this.effects.lightning(e.x, e.y, o.x, o.y); this.damageEnemy(o, Object.assign({}, quiet, { damage: 8 * atk }), 0, 0, { noChain: true }); });
     } else if (type === 'overload') { // 과부하: 큰 폭발로 밀쳐냄, 화상·전격 소모
       e.burn = 0; e.shock = 0; this.effects.reaction(e.x, e.y, 'overload', '과부하', '#ffb04a'); SFX.play('react');
-      this.explodeAt(e.x, e.y, 42, { color: '#ffb04a', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 22 * atk, knockback: 12 }) }); this.addShake(0.12, 3);
+      this.explodeAt(e.x, e.y, 42, { color: '#ffb04a', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 9 * atk, knockback: 12 }) }); this.addShake(0.12, 3);
     } else if (type === 'paralyze') { // 마비: 잠깐 완전히 멈춤 (보스는 크게 느려짐)
       e.shock = 0; e.slow = Math.max(e.slow, e.def.boss ? 1 : 1.4); e.slowK = e.def.boss ? 0.6 : 0.02;
       this.effects.reaction(e.x, e.y, 'paralyze', '마비', '#e8ff7a'); SFX.play('react'); this.effects.burst(e.x, e.y, '#e8ff7a', 10);
@@ -1041,17 +1041,17 @@ class Game {
     } else if (type === 'eclipse') { // 일식: 빛과 어둠이 부딪혀 큰 단일 피해, 실명·저주 소모
       e.blind = 0; e.curse = 0; this.effects.reaction(e.x, e.y, 'eclipse', '일식', '#e0d0ff'); SFX.play('react');
       this.effects.ring(e.x, e.y, 22, '#fff8d8'); this.effects.ring(e.x, e.y, 14, '#7040c0'); this.effects.burst(e.x, e.y, '#b070ff', 12);
-      this.damageEnemy(e, Object.assign({}, quiet, { damage: 45 * atk, knockback: 4 }), 0, 0, { noChain: true }); this.hitStop(0.05);
+      this.damageEnemy(e, Object.assign({}, quiet, { damage: 40 * atk, knockback: 4 }), 0, 0, { noChain: true }); this.hitStop(0.05);
     } else if (type === 'plague') { // 역병: 주변 적에게 중독이 번짐
-      this.effects.reaction(e.x, e.y, 'plague', '역병', '#a0e070'); SFX.play('react'); this.effects.ring(e.x, e.y, 70, '#7ac04a');
-      for (const o of this.enemies) if (o !== e && o.targetable && Math.hypot(o.x - e.x, o.y - e.y) < 70) { o.poison = Math.max(o.poison, 3); o.poisonDps = Math.max(o.poisonDps, e.poisonDps || 8); }
+      e.curse = 0; this.effects.reaction(e.x, e.y, 'plague', '역병', '#a0e070'); SFX.play('react'); this.effects.ring(e.x, e.y, 70, '#7ac04a');
+      for (const o of this.enemies) if (o !== e && o.targetable && Math.hypot(o.x - e.x, o.y - e.y) < 70) { o.poison = Math.max(o.poison, 4); o.poisonDps = Math.max(o.poisonDps, Math.max(e.poisonDps || 0, 5 * atk)); }
     } else if (type === 'hellfire') { // 지옥불: 검은 불꽃 폭발, 주변에 화상, 저주 소모
       e.curse = 0; this.effects.reaction(e.x, e.y, 'hellfire', '지옥불', '#c060ff'); SFX.play('react');
-      this.explodeAt(e.x, e.y, 36, { color: '#a040e0', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 18 * atk, knockback: 4, status: { type: 'burn', chance: 1, duration: 2.5, dps: 8 * atk } }) });
+      this.explodeAt(e.x, e.y, 36, { color: '#a040e0', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 7 * atk, knockback: 4, status: { type: 'burn', chance: 1, duration: 2.5, dps: 4 * atk } }) });
     } else if (type === 'judgment') { // 심판: 하늘에서 번개 기둥, 전격 소모
       e.shock = 0; this.effects.reaction(e.x, e.y, 'judgment', '심판', '#fff4c0'); SFX.play('react');
       this.effects.lightning(e.x, e.y - 110, e.x, e.y); this.effects.beamline(e.x, e.y - 110, e.x, e.y, 5, '#fff4c0');
-      this.damageEnemy(e, Object.assign({}, quiet, { damage: 32 * atk, knockback: 3 }), 0, 0, { noChain: true });
+      this.damageEnemy(e, Object.assign({}, quiet, { damage: 34 * atk, knockback: 3 }), 0, 0, { noChain: true });
     }
   }
   chainLightning(first, src) {
