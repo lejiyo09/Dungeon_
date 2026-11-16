@@ -554,6 +554,7 @@ function updateEnemy(e, dt, world) {
   if (e.burn > 0 && Math.random() < 0.25) world.effects.status(e.x, e.y, 'burn');
   if (e.slow > 0 && Math.random() < 0.12) world.effects.status(e.x, e.y, 'freeze');
   if (e.poison > 0 && Math.random() < 0.08) world.effects.status(e.x, e.y, 'poison');
+  if (e.stunT > 0) { e.stunT -= dt; return; } // 엑스칼리버 빛에 맞아 경직
   if (e.chainT > 0) { e.chainT -= dt; return; } // 황금 사슬에 묶임: 이동·공격 정지 (지속 피해는 계속)
   const sdt = dt * e.speedMul; // 빙결 시 이동/행동 모두 느려짐
   e.stateTime += sdt;

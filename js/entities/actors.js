@@ -48,7 +48,7 @@ class Player extends Entity {
     this.time += dt;
     if (this.state === 'DEAD') { this.deathTimer += dt; return; }
     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
-    this.skillCooldown = Math.max(0, this.skillCooldown - dt);
+    this.skillCooldown = Math.max(0, this.skillCooldown - dt * (this.solomon > 0 && this.treasure && this.treasure.skillHaste ? this.treasure.skillHaste : 1)); // 솔로몬의 반지: 스킬 쿨타임 빨리 회복
     this.dashInvuln = Math.max(0, this.dashInvuln - dt);
     this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
     this.overdrive = Math.max(0, this.overdrive - dt); this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt); this.treasureCd = Math.max(0, this.treasureCd - dt); this.solomon = Math.max(0, this.solomon - dt);
@@ -313,6 +313,7 @@ class Enemy extends Entity {
     if (this.shock > 0 && Math.floor(this.stateTime * 12) % 3 === 0) { ctx.fillStyle = '#fff27a'; ctx.fillRect(x - h - 1 + randInt(0, h * 2), y - h + randInt(0, h * 2), 1, 2); }
     if (this.blind > 0) { ctx.fillStyle = '#fff8d8'; ctx.fillRect(x - h - 2, y - h - 3, 2, 2); }
     if (this.curse > 0) { ctx.fillStyle = '#b070ff'; ctx.fillRect(x - 1, y - h - 4, 2, 2); }
+    if (this.stunT > 0) { const t = performance.now() / 150; ctx.fillStyle = '#fff4c0'; for (let i = 0; i < 3; i++) { const a = t + i * TAU / 3; ctx.fillRect(Math.round(x + Math.cos(a) * (h + 2)) - 1, Math.round(y - h - 6 + Math.sin(a) * 2), 2, 2); } } // 경직: 머리 위를 도는 빛
     if (this.chainT > 0) { // 황금 사슬에 묶임
       ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x - h - 2, y - h); ctx.lineTo(x + h + 2, y + h); ctx.moveTo(x + h + 2, y - h); ctx.lineTo(x - h - 2, y + h); ctx.stroke();

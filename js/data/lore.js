@@ -54,13 +54,13 @@ const GATEKEEPER_FALL_LINES = [
 //  [사용자 결정] 목록·능력은 아래 3종. 쿨타임·수치는 Claude가 정한 값(조정 가능)
 //  기원의 성역에서 처음 받는 보구는 이 3종 중 하나를 직접 고름. 추가 보구 획득 방법은 미정
 const DATA_TREASURES = [
-  { id: 'treasure_gate_of_babylon', name: '게이트 오브 바빌론', origin: '길가메시', use: 'chains', cooldown: 40, sfx: 'gate', icon: 'gate',
-    radius: 72, range: 170, duration: 5, damage: 160, weak: 1.5, color: '#ffd84a',
-    desc: '전방의 넓은 원형 범위에 황금 사슬을 소환해 적을 5초간 묶고 큰 피해, 묶인 적은 받는 피해 +50%' },
-  { id: 'treasure_excalibur', name: '엑스칼리버', origin: '아서왕', use: 'beam', cooldown: 45, sfx: 'excal', icon: 'excalibur',
-    damage: 1100, width: 22, range: 260, blast: 62, blastRatio: 0.3, color: '#ffe9a0', // blast: 끝 폭발 반경, blastRatio: 폭발 추가 피해 비율
-    desc: '검을 들어 빛기둥을 세운 뒤 조준 방향으로 내려꽂아 일직선에 압도적인 피해(벽 관통), 조준한 지점에서 폭발 — 보구 중 가장 강한 한 방' },
-  { id: 'treasure_ring_of_solomon', name: '솔로몬의 반지', origin: '솔로몬', use: 'blessing', cooldown: 60, sfx: 'solomon', icon: 'ring',
-    duration: 12, atk: 0.7, rate: 0.6, speed: 0.3, guard: 0.5, heal: 0.3, color: '#c8a0ff',
-    desc: '12초간 공격력 +70%·공격 속도 +60%·이동 속도 +30%·받는 피해 -50%, 체력 30%·에너지·보호막 회복, 스킬 쿨타임 초기화' }
+  { id: 'treasure_gate_of_babylon', name: '게이트 오브 바빌론', origin: '길가메시', use: 'chains', cooldown: 60, sfx: 'gate', icon: 'gate',
+    radius: 92, range: 200, duration: 6, damage: 280, weak: 1.7, color: '#ffd84a',
+    desc: '전방의 아주 넓은 원형 범위에 황금 사슬을 소환해 적을 6초간 묶고 큰 피해, 묶인 적은 받는 피해 +70%' },
+  { id: 'treasure_excalibur', name: '엑스칼리버', origin: '아서왕', use: 'beam', cooldown: 65, sfx: 'excal', icon: 'excalibur',
+    damage: 1050, width: 28, range: 300, blast: 86, blastRatio: 0.35, stun: 1.5, color: '#ffe9a0', // blast: 끝 폭발 반경, blastRatio: 폭발 추가 피해 비율
+    desc: '검을 들어 빛기둥을 세운 뒤 조준 방향으로 내려꽂아 일직선에 압도적인 피해(벽 관통), 조준한 지점에서 큰 폭발, 맞은 적은 1.5초 경직 — 보구 중 가장 강한 한 방' },
+  { id: 'treasure_ring_of_solomon', name: '솔로몬의 반지', origin: '솔로몬', use: 'blessing', cooldown: 68, sfx: 'solomon', icon: 'ring',
+    duration: 15, atk: 0.9, rate: 0.7, speed: 0.35, guard: 0.6, heal: 0.5, skillHaste: 2, color: '#c8a0ff',
+    desc: '15초간 공격력 +90%·공격 속도 +70%·이동 속도 +35%·받는 피해 -60%·스킬 쿨타임 2배 빨리 회복, 체력 50%·에너지·보호막 회복, 스킬 쿨타임 초기화' }
 ];
