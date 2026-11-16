@@ -80,7 +80,9 @@ const DATA_TREASURES = [
     damage: 650, thornR: 110, thornDmg: 110, bleed: 5, bleedDps: 40, color: '#ff4a5a',
     desc: '가장 강한 적(보스 우선)에게 절대 빗나가지 않는 창을 던져 큰 피해, 꿰뚫린 자리에서 가시가 터져 주변 적을 찌르고, 맞은 적은 5초간 출혈' }
 ];
-const HERO_TREASURE_DROP = 0.1; // 심층 보스를 쓰러뜨리면 아직 없는 영웅의 보구(heroDrop) 하나를 얻을 확률 [제안]
+// 심층 보스를 쓰러뜨리면 아직 없는 영웅의 보구(heroDrop) 하나를 얻을 확률: 낮게 시작해 깊이 내려갈수록 조금씩 오름 [사용자 결정], 수치는 [제안]
+//  확률 = min(max, base + perDepth × (심층 깊이 - 1)) → 심층 1: 3% · 5: 9% · 10: 16.5% · 13 이후: 20%
+const HERO_TREASURE_DROP = { base: 0.03, perDepth: 0.015, max: 0.2 };
 // 탐험가 길드 구석의 마법사 (멀린) — 대사는 모두 [임시] 연출 문구. 정체(아서왕의 궁정 마법사 멀린)와 보구는 [사용자 결정]
 const MERLIN_REVEAL_LINES = [
   '후드 아래에서 하얀 머리카락이 흘러내린다.',
