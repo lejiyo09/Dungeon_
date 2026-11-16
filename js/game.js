@@ -213,7 +213,7 @@ class Game {
       else if (r.type === 'blood') this.props.push(new BloodAltar(c.x, c.y));
       else if (r.type === 'evolve') { // 2차 진화 차례면 일정 확률로 다른 직업의 상위자 (혼합 전직)
         const npc = new MasterNPC(c.x, c.y, r), p = this.player, H = Object.values(HYBRID_JOBS).find((h) => h.from === p.hero.id);
-        if (H && p.rank === 1 && Math.random() < H.chance) { const el = pick(jobLines(H.master)); npc.hybrid = { H, el, masterHero: this.data.heroes.get(H.master) }; }
+        if (H && p.rank === 1 && Math.random() < H.chance) { const el = pick(jobLines(H.master)); npc.hybrid = { H, el, masterHero: heroWithLook(this.data.heroes.get(H.master), el.look) }; }
         this.props.push(npc);
       }
       else if (r.type === 'smithy') this.props.push(new UpgradeAnvil(c.x, c.y, BALANCE.upgrade.forgeRoomDiscount, BALANCE.upgrade.forgeRoomBonus, true)); // 강화소: 싸고 성공률 높음
@@ -502,6 +502,7 @@ class Game {
   skillDmg(base) { return base * (1 + (this.scale.hp - 1) * 0.5); } // 스킬 피해: 깊이 내려갈수록 조금씩 커짐
   setJob(p, line, rank) {
     const sk = line.skills[rank], ratio = p.skillCdMax / (p.skillBaseCd || p.skillCdMax); // '집중' 같은 쿨타임 감소 유지
+    if (line.look) p.hero = heroWithLook(this.data.heroes.get(p.hero.id) || p.hero, line.look); // 갈래별 옷색 (마도사 속성)
     p.line = line; p.rank = rank; p.skillId = sk.id; p.skillName = sk.name; p.skillDesc = sk.desc;
     p.skillBaseCd = sk.cd; p.skillCdMax = sk.cd * ratio; p.skillCooldown = Math.min(p.skillCooldown, p.skillCdMax);
   }
@@ -541,10 +542,11 @@ class Game {
     const key = hy ? `master_${hy.H.master}_${hy.el.id}_hybrid` : `master_${p.hero.id}_${p.line.id}_${next}`, trialName = hy ? this.hybridTitle(npc) : p.line.ranks[next];
     if (!this.data.enemies.get(key)) {
       const look = MH.look.sprite, D = HERO_PROCS[look];
-      if (!PIX['master_' + look]) PIX['master_' + look] = { tint: '#c8a050', w: HERO_W, h: HERO_H, proc: (P) => D.proc(P, 0),
+      const mkey = 'master_' + look + (hy ? '_' + hy.el.id : ''); // 혼합 전직 상위자는 속성 옷색
+      if (!PIX[mkey]) PIX[mkey] = { tint: '#c8a050', w: HERO_W, h: HERO_H, proc: (P) => D.proc(P, 0),
         pal: Object.assign({ s: '#f0c8a0', m: '#fff0b0', w: '#ffffff', r: MH.look.accent, y: '#ffd84a', l: '#8a6a30', h: MH.look.accent, g: shade(MH.look.accent, 0.68), e: '#ffffff', n: '#6a4628', d: '#3a2a1a' }, D.pal, { m: '#fff0b0' }) };
       const col = (hy ? hy.el.color : p.line.color) || '#ffd84a';
-      this.data.enemies.set(key, { id: key, name: `${trialName}의 시련`, title: '상위자', sprite: 'master_' + look, color: '#c8a050', phaseColors: ['#c8a050', '#d8b060', '#ffd84a'],
+      this.data.enemies.set(key, { id: key, name: `${trialName}의 시련`, title: '상위자', sprite: mkey, color: '#c8a050', phaseColors: ['#c8a050', '#d8b060', '#ffd84a'],
         boss: true, master: true, aiType: 'boss', health: EVOLUTION.masterHp[next - 1], damage: 15 + next * 2, moveSpeed: 55, hitboxHalf: 9, knockbackResist: 0.9, attackCooldown: next === 1 ? 1.25 : 1.05, bulletSpeed: 135, rewardGold: 30,
         patterns: [{ type: 'aimed', volleys: 3, count: 5, spread: 0.15, color: col }, { type: 'radial', rings: 2, count: 18, color: col }, { type: 'charge', dashes: 2, speed: 340, color: '#ffffff' }],
         phase2Patterns: [{ type: 'spiral', duration: 2.2, arms: 3 + next, interval: 0.09, spin: 1.8, color: col }, { type: 'slam', radius: 46, chain: next, color: col }] });

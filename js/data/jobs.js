@@ -28,32 +28,32 @@ const JOB_LINES = {
   },
   hero_mage: {
     title: '속성 선택',
-    fire: { name: '불', desc: '화염 지팡이 · 태워서 지속 피해', startWeapon: 'weapon_firestaff_001', ranks: ['불의 마도사', '화염술사', '폭염의 대마도사'], color: '#ff7a3a',
+    fire: { name: '불', desc: '화염 지팡이 · 태워서 지속 피해', startWeapon: 'weapon_firestaff_001', ranks: ['불의 마도사', '화염술사', '폭염의 대마도사'], color: '#ff7a3a', look: { body: '#b8402a', accent: '#ffb040' },
       skills: [
         { id: 'fireball', name: '파이어볼', desc: '폭발하는 큰 불덩이를 발사 (화상)', cd: 4 },
         { id: 'flamestorm', name: '화염 회오리', desc: '5초간 자기 주위에 불길이 휘몰아쳐 지속 피해', cd: 9 },
         { id: 'explosion', name: '익스플로전', desc: '범위를 정하고 2초간 시전(이동 불가) → 범위에 엄청난 피해', cd: 10 }] },
-    ice: { name: '얼음', desc: '서리 지팡이 · 얼려서 묶음', startWeapon: 'weapon_frost_001', ranks: ['얼음의 마도사', '빙결술사', '혹한의 대마도사'], color: '#9ad8ff',
+    ice: { name: '얼음', desc: '서리 지팡이 · 얼려서 묶음', startWeapon: 'weapon_frost_001', ranks: ['얼음의 마도사', '빙결술사', '혹한의 대마도사'], color: '#9ad8ff', look: { body: '#3a78c0', accent: '#bfefff' },
       skills: [
         { id: 'icelance', name: '얼음 창', desc: '적을 꿰뚫는 얼음 창 3개 (빙결)', cd: 4 },
         { id: 'frost_nova', name: '서리 폭발', desc: '주변 적 피해 + 강한 빙결, 탄환 제거', cd: 6 },
         { id: 'blizzard', name: '블리자드', desc: '조준 지점에 5초간 눈보라 (지속 피해 + 빙결)', cd: 11 }] },
-    nature: { name: '자연', desc: '독안개 지팡이 · 묶고 중독', startWeapon: 'weapon_poisonstaff_001', ranks: ['자연의 마도사', '숲의 술사', '태고의 대마도사'], color: '#7adf4a',
+    nature: { name: '자연', desc: '독안개 지팡이 · 묶고 중독', startWeapon: 'weapon_poisonstaff_001', ranks: ['자연의 마도사', '숲의 술사', '태고의 대마도사'], color: '#7adf4a', look: { body: '#3a8a3a', accent: '#c8e070' },
       skills: [
         { id: 'thorns', name: '가시 덩굴', desc: '주변 적을 덩굴로 묶고 중독', cd: 7 },
         { id: 'bog', name: '독 늪', desc: '조준 지점에 6초간 독 늪 (중독 + 지속 피해)', cd: 9 },
         { id: 'worldtree', name: '세계수의 분노', desc: '1.5초 시전(이동 불가) → 넓은 범위를 오래 묶고 강한 중독, 체력 회복', cd: 13 }] },
-    lightning: { name: '번개', desc: '테슬라 코일 · 연쇄 번개', startWeapon: 'weapon_tesla_001', ranks: ['번개의 마도사', '뇌전술사', '뇌신의 대마도사'], color: '#bfe8ff',
+    lightning: { name: '번개', desc: '테슬라 코일 · 연쇄 번개', startWeapon: 'weapon_tesla_001', ranks: ['번개의 마도사', '뇌전술사', '뇌신의 대마도사'], color: '#bfe8ff', look: { body: '#3a4ab8', accent: '#ffe24a' },
       skills: [
         { id: 'shockorb', name: '전격구', desc: '튕겨 다니며 연쇄 번개를 일으키는 구체 (전격)', cd: 4 },
         { id: 'thunder', name: '낙뢰', desc: '가까운 적 6명에게 번개가 떨어짐 (전격)', cd: 6 },
         { id: 'thundergod', name: '뇌신강림', desc: '6초간 주변 적에게 번개가 계속 떨어짐 (전격)', cd: 12 }] },
-    light: { name: '빛', desc: '견습 마법봉 · 회복과 정화', startWeapon: 'weapon_wand_001', ranks: ['빛의 마도사', '정화술사', '성광의 대마도사'], color: '#fff4c0',
+    light: { name: '빛', desc: '견습 마법봉 · 회복과 정화', startWeapon: 'weapon_wand_001', ranks: ['빛의 마도사', '정화술사', '성광의 대마도사'], color: '#fff4c0', look: { body: '#e8e0c8', accent: '#e0b030' },
       skills: [
         { id: 'lightarrow', name: '빛의 화살', desc: '적을 따라가 꿰뚫는 빛의 화살 5개 (실명)', cd: 4 },
         { id: 'radiance', name: '광휘', desc: '체력 회복 + 주변 적 피해(실명), 탄환 제거', cd: 6 },
         { id: 'judgment', name: '심판의 빛', desc: '1.5초 시전(이동 불가) → 조준 지점에 빛기둥, 큰 피해(실명) + 체력 회복', cd: 11 }] },
-    dark: { name: '어둠', desc: '저주 지팡이 · 약점과 흡인', startWeapon: 'weapon_cursestaff_001', ranks: ['어둠의 마도사', '저주술사', '공허의 대마도사'], color: '#a070e0',
+    dark: { name: '어둠', desc: '저주 지팡이 · 약점과 흡인', startWeapon: 'weapon_cursestaff_001', ranks: ['어둠의 마도사', '저주술사', '공허의 대마도사'], color: '#a070e0', look: { body: '#2e2242', accent: '#b070ff' },
       skills: [
         { id: 'curseshot', name: '저주탄', desc: '맞은 적이 오래 약해지는(받는 피해 +40%) 저주 구체 (저주)', cd: 4 },
         { id: 'abyss', name: '심연 소용돌이', desc: '조준 지점에 적을 빨아들이는 어둠 (저주)', cd: 8 },

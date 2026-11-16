@@ -337,8 +337,10 @@ function getSprite(name, color, color2) {
   if (color2) pal.e = color2;
   s = t.proc ? bakeProc(t.w, t.h, t.proc, pal) : bakeSprite(t.rows, pal); spriteCache.set(key, s); return s;
 }
+// 옷색만 바꾼 영웅 (마도사 속성별 옷 등): 나머지 정보는 원래 영웅 그대로 이어받음
+function heroWithLook(hero, look) { return look ? Object.create(hero, { look: { value: Object.assign({}, hero.look, look), enumerable: true } }) : hero; }
 function heroSprite(hero, frame) {
-  const key = 'hero|' + hero.id + '|' + frame;
+  const key = 'hero|' + hero.id + '|' + hero.look.body + '|' + hero.look.accent + '|' + frame; // 같은 직업이라도 옷색(갈래)이 다르면 따로
   let s = spriteCache.get(key);
   if (s) return s;
   const L = hero.look, T = HERO_SPRITES[L.sprite] || HERO_SPRITES.knight;
