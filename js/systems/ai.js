@@ -300,6 +300,56 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // ── 심층 보스용 새 패턴
+  // 탄막 벽: 방 한쪽 끝에서 반대쪽으로 밀려오는 탄의 벽, 매번 다른 자리에 빈틈
+  wall: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, r = e.room; d.timer -= dt;
+      if (d.timer <= 0 && d.shots < P.waves) {
+        const side = ((d.side0 ??= randInt(0, 3)) + d.shots) % 4, horiz = side < 2, n = horiz ? r.w : r.h, gap = randInt(1, n - P.gap - 1), sp = P.speed;
+        for (let i = 0; i < n; i++) { if (i >= gap && i < gap + P.gap) continue;
+          const t = i + 0.5, x = horiz ? (r.x0 + t) * TILE : side === 2 ? (r.x0 + 0.6) * TILE : (r.x0 + r.w - 0.6) * TILE, y = horiz ? (side === 0 ? (r.y0 + 0.6) * TILE : (r.y0 + r.h - 0.6) * TILE) : (r.y0 + t) * TILE;
+          const b = new EnemyBullet(x, y, horiz ? 0 : side === 2 ? sp : -sp, horiz ? (side === 0 ? sp : -sp) : 0, e.damage, P.color, 4); b.life = (horiz ? r.h : r.w) * TILE / sp + 0.3; world.enemyBullets.push(b); }
+        world.effects.ring(e.x, e.y, 26, P.color); d.shots++; d.timer = P.interval / spd;
+      }
+      return d.shots >= P.waves && d.timer <= 0;
+    }
+  },
+  // 분열탄: 큰 탄을 플레이어 쪽으로 쏘고, 잠시 뒤 사방으로 터짐
+  split: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player; d.timer -= dt; d.list = d.list || []; d.t = (d.t || 0) + dt;
+      if (d.timer <= 0 && d.shots < P.volleys) {
+        const base = Math.atan2(p.y - e.y, p.x - e.x), h = (P.count - 1) / 2;
+        for (let i = 0; i < P.count; i++) { const a = base + (i - h) * P.spread, b = new EnemyBullet(e.x, e.y, Math.cos(a) * P.speed, Math.sin(a) * P.speed, Math.round(e.damage * 1.2), P.color, 6); b.splitAt = d.t + P.splitAfter; world.enemyBullets.push(b); d.list.push(b); }
+        d.shots++; d.timer = 0.45 / spd;
+      }
+      for (const b of d.list) if (b.alive && !b.split && d.t >= b.splitAt) { b.split = true; b.alive = false; world.effects.ring(b.x, b.y, 12, P.color);
+        for (let k = 0; k < P.splitN; k++) world.enemyShoot(b.x, b.y, k * TAU / P.splitN + d.t, e.def.bulletSpeed * 0.75, e.damage, P.color, 3); }
+      return d.shots >= P.volleys && d.list.every((b) => b.split || !b.alive);
+    }
+  },
+  // 회전 고리: 보스 둘레에 탄이 돌며 넓어지다가 한꺼번에 바깥으로 날아감
+  orbit: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd; d.t = (d.t || 0) + dt;
+      if (!d.list) { d.list = []; for (let i = 0; i < P.count; i++) { const b = new EnemyBullet(e.x, e.y, 0, 0, e.damage, P.color, 4); b.life = 6; b.oa = i * TAU / P.count; world.enemyBullets.push(b); d.list.push(b); } }
+      const k = Math.min(1, d.t / P.spinTime), R = 14 + (P.radius - 14) * k, rot = d.t * (P.spin || 3) * spd;
+      if (d.t < P.spinTime) { for (const b of d.list) if (b.alive) { b.x = e.x + Math.cos(b.oa + rot) * R; b.y = e.y + Math.sin(b.oa + rot) * R; } return false; }
+      for (const b of d.list) if (b.alive) { const a = b.oa + rot + (P.curve || 0.35); b.vx = Math.cos(a) * P.speed; b.vy = Math.sin(a) * P.speed; b.life = 3; }
+      world.effects.ring(e.x, e.y, P.radius, P.color); SFX.play('react', 0.05); return true;
+    }
+  },
+  // 탄막 비: 방 위쪽에서 탄이 비처럼 쏟아짐 (조금씩 비스듬히)
+  rain: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, r = e.room; d.timer -= dt; d.t = (d.t || 0) + dt;
+      while (d.timer <= 0) { d.timer += P.interval / spd;
+        const x = (r.x0 + 0.5 + Math.random() * (r.w - 1)) * TILE, y = (r.y0 + 0.6) * TILE, a = Math.PI / 2 + (P.slant || 0) * (Math.random() - 0.3);
+        const b = new EnemyBullet(x, y, Math.cos(a) * P.speed, Math.sin(a) * P.speed, e.damage, P.color, 3); b.life = r.h * TILE / P.speed + 0.5; world.enemyBullets.push(b); }
+      return d.t >= P.duration;
+    }
+  },
   // 롱고미니아드 (신령 롱고미니아드의 궁극기): 플레이어 자리로 빛의 창 → 빛의 탑이 끌어당기며 탄막 → 무너지며 대폭발 (반경 밖으로 피해야 함)
   rhongo: {
     begin(e, world) {
