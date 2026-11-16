@@ -1,0 +1,10 @@
+# Render 배포 설정 (Blueprint): 게임 파일과 멀티 서버를 한 주소에서 제공
+#  Render 대시보드 → New → Blueprint → 이 저장소 선택 → Apply
+services:
+  - type: web
+    name: project-dungeon
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health

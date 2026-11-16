@@ -7,13 +7,14 @@ class InputManager {
     this.canvas = canvas;
     this.down = new Set();
     this.pressed = new Set();
+    this.typed = []; // 누른 순서대로 (방 코드 입력 등)
     this.mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, rdown: false };
     const blocked = new Set(['Space', 'Tab', 'KeyQ', 'KeyE', 'KeyR', 'KeyF']);
     const typing = (e) => e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'); // 로그인 입력칸에서는 게임 키 무시
     window.addEventListener('keydown', (e) => {
       if (typing(e)) return;
       if (blocked.has(e.code)) e.preventDefault();
-      if (!this.down.has(e.code)) this.pressed.add(e.code);
+      if (!this.down.has(e.code)) { this.pressed.add(e.code); this.typed.push(e.code); }
       this.down.add(e.code);
     });
     window.addEventListener('keyup', (e) => this.down.delete(e.code));
@@ -44,5 +45,5 @@ class InputManager {
   }
   isDown(c) { return this.down.has(c); }
   wasPressed(c) { return this.pressed.has(c); }
-  endStep() { this.pressed.clear(); }
+  endStep() { this.pressed.clear(); this.typed.length = 0; }
 }

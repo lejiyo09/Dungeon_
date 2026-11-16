@@ -35,6 +35,7 @@ class HUD {
       hudText(ctx, `${ttl ? '「' + ttl.name + '」 ' : ''}${game.profile ? game.profile.name : '게스트'}   ·   보유 ${CUR.name} ${game.save.bank}`, VIEW_W / 2, 6, '#ffd84a', 'center');
       hudText(ctx, 'F/우클릭 스킬 · E 상호작용 · Esc 조작법', VIEW_W / 2, VIEW_H - 14, '#aaa', 'center', 8);
       this.notice(ctx, game);
+      if (Net.inRoom) hudText(ctx, `멀티 방 ${Net.code} · ${Net.players.length}/${NET_CONFIG.maxPlayers}명${Net.isHost ? ' · 방장' : ''}`, VIEW_W / 2, 20, '#7affc0', 'center', 8);
     } else {
       const W = game.W;
       hudText(ctx, `${W.trial ? '' : stageLabel(game.worldIdx, game.levelIdx) + ' '}${W.name}   골드 ${game.gold}   처치 ${game.kills}`, VIEW_W / 2, 6, W.deep ? '#9ad8ff' : '#fff', 'center');
@@ -140,7 +141,7 @@ class HUD {
   }
   overlay(ctx, game) {
     const o = game.overlay;
-    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
@@ -296,6 +297,31 @@ class HUD {
         hudText(ctx, `${i + 1}  ${a.name}`, r.x + 10, r.y + 5, ok ? (/\[켜짐\]/.test(a.name) ? '#9fe89f' : '#fff') : '#555', 'left', 10); });
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 28, o.msg.color, 'center', 10);
       hudText(ctx, '숫자 키 / 클릭: 실행   ·   ` / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
+    } else if (o.type === 'multi') { // 멀티 방
+      const m = game.input.mouse, row = (i, s, en = true, col) => { const r = HUD.adminRow(i), on = en && m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        ctx.fillStyle = on ? 'rgba(122,208,255,0.18)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h); hudText(ctx, s, r.x + 10, r.y + 5, en ? col || '#fff' : '#666', 'left', 10); };
+      hudText(ctx, '멀티 플레이 (2~4인 협동)', VIEW_W / 2, 12, '#7ad0ff', 'center', 12);
+      const st = { off: '연결 안 됨', connecting: '서버에 연결하는 중… (무료 서버는 처음 깨어나는 데 최대 1분)', online: '서버 연결됨' + (Net.ping != null ? ` · 지연 ${Net.ping}ms` : '') }[Net.status];
+      hudText(ctx, st, VIEW_W / 2, VIEW_H - 44, Net.status === 'online' ? '#9fe89f' : '#c8b890', 'center', 8);
+      if (Net.error) hudText(ctx, Net.error, VIEW_W / 2, VIEW_H - 30, '#ff9a9a', 'center', 8);
+      if (o.mode === 'code') {
+        hudText(ctx, '방 코드 4글자를 입력하세요', VIEW_W / 2, 70, '#ddd', 'center', 10);
+        for (let i = 0; i < 4; i++) { const x = VIEW_W / 2 - 66 + i * 34; ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(x, 92, 28, 34); ctx.strokeStyle = i === o.code.length ? '#7ad0ff' : '#555'; ctx.strokeRect(x + 0.5, 92.5, 27, 33);
+          if (o.code[i]) hudText(ctx, o.code[i], x + 14, 100, '#fff', 'center', 18); }
+        hudText(ctx, '알파벳 입력 · Backspace 지우기 · Enter 참가 · Esc 뒤로', VIEW_W / 2, 142, '#888', 'center', 8);
+      } else if (!Net.inRoom) {
+        row(0, '1  방 만들기 (내가 방장)'); row(1, '2  방 코드로 참가');
+        hudText(ctx, '같은 방 사람들과 로비에서 서로 보입니다 · 함께 던전 들어가기는 다음 단계에서 열립니다', VIEW_W / 2, 100, '#888', 'center', 8);
+      } else {
+        row(0, '1  방 나가기', true, '#ff9a9a');
+        hudText(ctx, `방 코드  ${Net.code}`, VIEW_W / 2, 66, '#ffd84a', 'center', 18);
+        hudText(ctx, '친구에게 이 코드를 알려 주세요', VIEW_W / 2, 88, '#aaa', 'center', 8);
+        Net.players.forEach((pl, i) => { const y = 104 + i * 16, h = game.data.heroes.get(pl.hero);
+          hudText(ctx, `${pl.host ? '👑 ' : ''}${pl.name}${pl.id === Net.id ? ' (나)' : ''}`, VIEW_W / 2 - 80, y, pl.id === Net.id ? '#7affc0' : '#fff', 'left', 9);
+          hudText(ctx, h ? h.name : '', VIEW_W / 2 + 80, y, '#c8b890', 'right', 8); });
+        hudText(ctx, `${Net.players.length} / ${NET_CONFIG.maxPlayers}명`, VIEW_W / 2, 104 + 4 * 16 + 4, '#888', 'center', 8);
+      }
+      hudText(ctx, '숫자 키 / 클릭 · E / Esc 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
     } else if (o.type === 'details') { // 상세 정보 (수치는 설정값에서 바로 읽음)
       const m = game.input.mouse, T = (s, x, y, c = '#e8e0f0', a = 'left', z = 8) => hudText(ctx, s, x, y, c, a, z), pct = (v) => (Math.round(v * 1000) / 10) + '%';
       ['특수방 확률', '무기 강화', '원소 반응'].forEach((t, i) => { const r = HUD.guildTab(i), on = o.tab === i; ctx.fillStyle = on ? 'rgba(255,216,74,0.25)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); T(`${i + 1} ${t}`, r.x + r.w / 2, r.y + 4, on ? '#ffd84a' : '#aaa', 'center', 9); });

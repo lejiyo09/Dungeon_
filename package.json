@@ -1,0 +1,16 @@
+{
+  "name": "project-dungeon",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PROJECT: DUNGEON — 게임 파일 + 멀티 서버 (Render 배포용)",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "8.18.0"
+  }
+}

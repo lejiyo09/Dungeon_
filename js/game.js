@@ -200,6 +200,24 @@ class Game {
       { name: '롱고미니아드의 시련 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startRhongoTrial() }; } }
     ];
   }
+  // ── 멀티 (1단계): 내 위치를 보내고, 다른 사람 위치를 부드럽게 따라감
+  updateNet(dt) {
+    if (!Net.inRoom) return;
+    const p = this.player; this.netT = (this.netT || 0) - dt;
+    if (this.netT <= 0 && p) { this.netT = 1 / NET_CONFIG.sendHz;
+      Net.relay({ k: 'pos', x: Math.round(p.x), y: Math.round(p.y), f: p.faceVis < 0 ? -1 : 1, h: p.hero.id, l: p.line && p.line.look ? p.line.look : null, m: this.mode, mv: !!p.moving }); }
+    for (const P of Net.peers.values()) { const k = Math.min(1, dt * 12); P.x += (P.tx - P.x) * k; P.y += (P.ty - P.y) * k; }
+  }
+  netName() { return this.profile ? this.profile.name : '게스트'; }
+  peerActors() { // 같은 화면(지금은 로비)에 있는 다른 사람들
+    if (!Net.inRoom || this.mode !== 'lobby') return [];
+    const out = [];
+    for (const P of Net.peers.values()) { if (P.mode !== 'lobby' || performance.now() - P.seen > 5000) continue;
+      const base = this.data.heroes.get(P.hero) || DATA_HEROES[0], hero = P.look ? heroWithLook(base, P.look) : base, name = Net.nameOf(P.id), t = this.time;
+      out.push({ y: P.y, render: (ctx) => { const spr = heroSprite(hero, P.moving ? Math.floor(t * 8) % 2 : 0); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(Math.round(P.x), Math.round(P.y) + 7, 6, 2, 0, 0, TAU); ctx.fill();
+        drawSprite(ctx, spr, P.x, P.y + 7, { flip: P.face < 0 }); hudText(ctx, name, Math.round(P.x), Math.round(P.y) - 20, '#7affc0', 'center', 7); } }); }
+    return out;
+  }
   titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
   resetWorldLists(map) {
@@ -220,6 +238,7 @@ class Game {
     this.player = this.makePlayer(sp.x, sp.y);
     DATA_HEROES.forEach((h, i) => { const c = this.map.tileCenter(6 + i * 3, 8); this.props.push(new Pedestal(c.x, c.y, h, i % 2)); });
     const cb = this.map.tileCenter(5, 12); this.props.push(new CodexBoard(cb.x, cb.y));
+    { const ms = this.map.tileCenter(28, 16); this.props.push(new MultiStone(ms.x, ms.y)); } // 멀티 플레이 석판
     const ar = this.map.tileCenter(9, 16); this.props.push(new Armory(ar.x, ar.y));
     if (this.save.sanctumReached) { const tv = this.map.tileCenter(25, 16); this.props.push(new TreasureVault(tv.x, tv.y)); }
     const dm = this.map.tileCenter(28, 12);
@@ -479,6 +498,7 @@ class Game {
     if (this.slowMo) dt = this.updateSlowMo(dt); // 보스 처치 슬로우모션: 시뮬레이션 시간이 느려짐
 
     const p = this.player;
+    this.updateNet(dt);
     if (this.admin && this.admin.nocd) { p.skillCooldown = 0; p.treasureCd = 0; }
     const wasDash = p.state === 'DASH';
     p.update(dt, input, this.map, this.mouseWorld());
@@ -626,6 +646,18 @@ class Game {
       if (k < 0) return; const a = acts[k]; this.input.mouse.down = false;
       if ('ok' in a && !a.ok) { o.msg = { text: '지금은 쓸 수 없습니다', color: '#ff9a9a', t: 1.5 }; return; }
       const closes = /스테이지로|필드로|시련|진화/.test(a.name); a.run(); if (closes) this.overlay = null; else o.msg = { text: a.name.replace(/ \[.*\]/, '') + ' — 완료', color: '#ffd84a', t: 1.5 };
+    } else if (o.type === 'multi') { // 멀티 방: 만들기 / 코드로 참가 / 나가기
+      const name = this.netName(), hero = this.save.selected;
+      if (o.mode === 'code') { // 방 코드 입력 (알파벳 4글자)
+        for (const k of input.typed) { if (/^Key[A-Z]$/.test(k) && o.code.length < 4) o.code += k[3]; else if (k === 'Backspace') o.code = o.code.slice(0, -1); } // 누른 순서대로
+        if (input.wasPressed('Escape')) { o.mode = 'menu'; o.code = ''; return; }
+        if ((input.wasPressed('Enter')) && o.code.length === 4) { Net.join(o.code, name, hero); o.mode = 'menu'; }
+        return;
+      }
+      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
+      const pickN = (n) => input.wasPressed('Digit' + n) || (input.wasPressed('Mouse0') && (() => { const r = HUD.adminRow(n - 1), m = input.mouse; return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; })());
+      if (!Net.inRoom) { if (pickN(1)) Net.create(name, hero); else if (pickN(2)) { o.mode = 'code'; o.code = ''; Net.error = null; } }
+      else if (pickN(1)) Net.leave();
     } else if (o.type === 'details') { // 상세 정보: 1~3 / 클릭 탭, Esc·I 뒤로
       if (input.wasPressed('Escape') || input.wasPressed('KeyI')) { this.overlay = { type: 'pause' }; return; }
       ['Digit1', 'Digit2', 'Digit3'].forEach((k, i) => { if (input.wasPressed(k)) o.tab = i; });
@@ -1741,7 +1773,7 @@ class Game {
     for (const o of this.props) o.render(ctx, this);
     for (const pk of this.pickups) pk.render(ctx);
     for (const e of this.enemies) e.renderTelegraph(ctx);
-    const actors = [...(this.cutscene ? this.enemies.filter((e) => e.state !== 'INTRO') : this.enemies), ...this.allies, this.player].sort((a, b) => a.y - b.y); // 등장 전 보스는 컷신 동안 숨김
+    const actors = [...(this.cutscene ? this.enemies.filter((e) => e.state !== 'INTRO') : this.enemies), ...this.allies, this.player, ...this.peerActors()].sort((a, b) => a.y - b.y); // 등장 전 보스는 컷신 동안 숨김
     for (const a of actors) a.render(ctx);
     for (const pr of this.projectiles) pr.render(ctx);
     for (const z of this.zones) if (z.renderTop) z.renderTop(ctx);

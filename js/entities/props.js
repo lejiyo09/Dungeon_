@@ -260,6 +260,21 @@ class Pedestal {
   }
 }
 
+// 로비: 멀티 플레이 석판 (방 만들기·참가)
+class MultiStone {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 22; }
+  label() { return Net.inRoom ? `[E] 멀티 방 ${Net.code} (${Net.players.length}/${NET_CONFIG.maxPlayers}명)` : '[E] 멀티 플레이 (2~4인)'; }
+  get labelColor() { return '#7ad0ff'; }
+  interact(game) { game.overlay = { type: 'multi', mode: 'menu', code: '' }; game.input.mouse.down = false; }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0, on = Net.inRoom;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 10, y + 6, 20, 3);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 9, y - 16, 18, 23); ctx.fillStyle = '#4a5068'; ctx.fillRect(x - 8, y - 15, 16, 21); ctx.fillStyle = '#5c6480'; ctx.fillRect(x - 8, y - 15, 16, 3); // 석판
+    const c = on ? '#7affc0' : '#7ad0ff', a = 0.6 + 0.4 * Math.sin(t * 3);
+    ctx.globalAlpha = a; ctx.fillStyle = c; for (let i = 0; i < 4; i++) { const ang = t * 1.5 + i * Math.PI / 2; ctx.fillRect(Math.round(x + Math.cos(ang) * 4) - 1, Math.round(y - 6 + Math.sin(ang) * 4) - 1, 2, 2); } // 도는 빛 4개 (4인)
+    ctx.fillRect(x - 1, y - 7, 2, 2); ctx.globalAlpha = 1;
+  }
+}
 class CodexBoard {
   constructor(x, y) { this.x = x; this.y = y; this.radius = 22; }
   label() { return '[E] 무기 도감'; }
