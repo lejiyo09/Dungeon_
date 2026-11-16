@@ -436,5 +436,8 @@ const DATA_WEAPONS = [
     wave: { damage: 14, speed: 380, range: 170 }, color: '#5a6a9a', len: 17 },
   { id: 'weapon_starfall_001', name: '별똥별 석궁', rarity: 'legendary', type: 'charge', shape: 'crossbow',
     damage: 86, fireRate: 1.5, energyCost: 1.5, chargeTime: 0.5, range: 600, projectileSpeed: 900, explodeRadius: 22,
-    status: { type: 'blind', chance: 1, duration: 3 }, chain: { count: 3, range: 90, falloff: 0.75 }, pierce: 99, knockback: 8, color: '#3a4270', len: 13, bulletColor: '#dff8ff', bulletSize: 2 }
+    status: { type: 'blind', chance: 1, duration: 3 }, chain: { count: 3, range: 90, falloff: 0.75 }, pierce: 99, knockback: 8, color: '#3a4270', len: 13, bulletColor: '#dff8ff', bulletSize: 2 },
+  { id: 'weapon_aurora_001', name: '오로라 소총', rarity: 'legendary', type: 'gun', shape: 'gun',
+    damage: 18, fireRate: 5, energyCost: 0.5, range: 480, projectileSpeed: 820, projectileCount: 1, spreadDeg: 2, pierce: 2, bounce: 1,
+    status: { type: 'freeze', chance: 0.3, duration: 1.4, slow: 0.5 }, mark: { mult: 1.15, dur: 2 }, knockback: 3, color: '#3a5a7a', len: 16, bulletColor: '#9affe0', bulletSize: 2 }
 ];

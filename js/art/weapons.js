@@ -107,6 +107,7 @@ Object.assign(WPIX, {
   curseorb: { auto: true, p: [3, 2], rows: ['..........ooo.', '.........oowoo', 'ddddddddd.ooo.', '.........o...o', '..............'] },
   stormglaive: { auto: true, p: [4, 2], rows: ['................cc.', '..............ccaa.', 'ddddddddddddddaaaao', '...............aa..', '................o..'] },
   starfall: { auto: true, p: [3, 3], rows: ['.........o.', '........ao.', '.aaaaaaaaa.', 'nnnnnnnnnnw', '.aa.....ao.', '..a......o.'] },
+  aurora: { auto: true, p: [4, 3], rows: ['....ooccccccccc..', 'bbbaaaaaaaaaaaaoo', 'bb..aannnbbbbb.ow', '....gg.nn........', '....gg...........'] },
   headshot: { auto: true, p: [5, 3], rows: ['.....nnnnnnn........', '.....nooooon........', 'bbbbaaaaaaaaaaaaaaaan', 'bb...aanbb..........', '.....gg.............', '.....gg.............'] }
 });
 
@@ -140,7 +141,7 @@ Object.assign(WEAPON_SPRITE, {
   weapon_dartgun_001: 'dartgun', weapon_waterballoon_001: 'sling', weapon_iceshuriken_001: 'shuriken', weapon_beehive_001: 'beehive',
   weapon_crystalstaff_001: 'crystalstaff', weapon_thunderjavelin_001: 'javelin', weapon_goldrevolver_001: 'revolver',
   weapon_nailgun_001: 'nailgun', weapon_ironmallet_001: 'mallet', weapon_sparkpistol_001: 'sparkpistol', weapon_kusarigama_001: 'kusarigama', weapon_blastbow_001: 'blastbow',
-  weapon_curseorb_001: 'curseorb', weapon_stormglaive_001: 'stormglaive', weapon_starfall_001: 'starfall',
+  weapon_curseorb_001: 'curseorb', weapon_stormglaive_001: 'stormglaive', weapon_starfall_001: 'starfall', weapon_aurora_001: 'aurora',
   weapon_kitchenknife_001: 'kitchenknife', weapon_pickaxe_001: 'pickaxe', weapon_icegreatsword_001: 'greatsword', weapon_steelxbow_001: 'repeatxbow', weapon_quakehammer_001: 'quakehammer'
 });
 
