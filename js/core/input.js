@@ -25,7 +25,14 @@ class InputManager {
       if (e.button === 2) this.pressed.add('Mouse2');
     });
     window.addEventListener('mouseup', (e) => { if (e.button === 0) this.mouse.down = false; });
-    canvas.addEventListener('wheel', (e) => { e.preventDefault(); this.pressed.add('Wheel'); this.pressed.add(e.deltaY < 0 ? 'WheelUp' : 'WheelDown'); }, { passive: false });
+    // 휠은 캔버스 위에만 마우스가 있을 때 놓치는 경우가 있어 window에서 캡처한다.
+    // 트랙패드의 작은 deltaY도 방향만으로 판정하고, 수평 스크롤은 무시한다.
+    window.addEventListener('wheel', (e) => {
+      if (!e.deltaY) return;
+      e.preventDefault();
+      this.pressed.add('Wheel');
+      this.pressed.add(e.deltaY < 0 ? 'WheelUp' : 'WheelDown');
+    }, { passive: false, capture: true });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
   updatePointer(e) {
