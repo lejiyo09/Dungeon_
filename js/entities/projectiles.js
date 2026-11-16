@@ -73,7 +73,12 @@ class Projectile {
     hits.sort((a, b) => a.t - b.t);
     for (const { e, t } of hits) {
       if (this.explodeRadius && !this.mine) {
-        this.x = sx + (ex - sx) * t; this.y = sy + (ey - sy) * t; this.detonate(world); return;
+        this.x = sx + (ex - sx) * t; this.y = sy + (ey - sy) * t;
+        if (this.pierceLeft > 0) { // 관통 폭발탄: 맞은 자리에서 터지고 계속 날아감
+          this.pierceLeft--; for (const o of world.enemies) if (Math.hypot(o.x - this.x, o.y - this.y) < this.explodeRadius + o.radius) this.hitTargets.add(o.id);
+          world.explodeAt(this.x, this.y, this.explodeRadius, { src: this, color: this.color, hurtEnemies: true }); continue;
+        }
+        this.detonate(world); return;
       }
       this.hitTargets.add(e.id);
       world.damageEnemy(e, this, this.dx, this.dy);

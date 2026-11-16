@@ -236,12 +236,15 @@ class WeaponSystem {
     const sx = player.x + player.aim.x * 10, sy = player.y - 1 + player.aim.y * 10;
     let ex = sx + player.aim.x * def.range, ey = sy + player.aim.y * def.range;
     const wt = sweepWall(sx, sy, ex, ey, world.map);
-    let limit = wt >= 0 ? wt : 1, target = null;
+    const wall = wt >= 0 ? wt : 1, hits = [];
     for (const e of world.enemies) {
       if (!e.targetable) continue;
       const t = segmentCircleHit(sx, sy, ex, ey, e.x, e.y, e.radius + 2);
-      if (t >= 0 && t <= limit) { limit = t; target = e; }
+      if (t >= 0 && t <= wall) hits.push([t, e]);
     }
+    hits.sort((a, b) => a[0] - b[0]);
+    const target = hits.length ? hits[0][1] : null, extra = def.pierce ? hits.slice(1, 1 + def.pierce).map((h) => h[1]) : []; // 관통: 뒤에 있는 적도 함께 지짐
+    const limit = !target ? wall : def.pierce && hits.length > 1 + def.pierce ? hits[def.pierce][0] : def.pierce ? wall : hits[0][0];
     w.beamEnd = { sx, sy, x: sx + (ex - sx) * limit, y: sy + (ey - sy) * limit };
     if (def.focus) { w.focusT = target && target === w.focusTarget ? (w.focusT || 0) + dt : 0; w.focusTarget = target; w.focusK = Math.min(1, w.focusT / 1.5); } // 같은 적을 계속 비추면 강해짐
     // 누적식 틱: 간격을 이어서 더해야 공속 버프가 프레임 단위로 잘리지 않음
@@ -250,6 +253,7 @@ class WeaponSystem {
     while (w.beamTick <= 0) {
       w.beamTick += interval;
       if (target) world.damageEnemy(target, { damage: def.damage * (1 + (def.focus || 0) * (w.focusK || 0)), mods: weaponMods(player, w), knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
+      for (const e of extra) if (e.alive) world.damageEnemy(e, { damage: def.damage, mods: weaponMods(player, w), knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
     }
   }
 }
