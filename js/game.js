@@ -741,6 +741,64 @@ class Game {
       case 'guardian': this.allies.push(new SpiritWolf(p.x, p.y - 10, p, { big: true, dmg: 20, life: 18 }));
         for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 14, p.y, p, { dmg: 5, life: 18, slow: true })); this.effects.ring(p.x, p.y, 40, '#9ad8ff'); this.addShake(0.2, 3); break;
     }
+    this.skillFx(p, at, A);
+  }
+  // ── 스킬 자체 연출 (주로 최종 진화 스킬): 피해 처리와 따로, 보이는 효과만 더함
+  skillFx(p, at, A) {
+    const E = this.effects, col = (p.hybrid && p.hybrid.color) || (p.line && p.line.color) || '#ffffff';
+    const later = (t, fn) => { let done = false; this.zones.push(new FxEmitter(p.x, p.y, t + 0.05, (w, x, y, tt) => { if (!done && tt >= t) { done = true; fn(); } })); }; // t초 뒤 한 번
+    const emit = (life, fn, follow) => this.zones.push(new FxEmitter(p.x, p.y, life, fn, follow)); // life초 동안 매 프레임
+    const P = (x, y, vx, vy, color, life = 0.6, size = 2) => E.part(x, y, vx, vy, { color, life, size, size2: 0, drag: 1.5, add: true });
+    const debris = (x, y, n, color) => { for (let i = 0; i < n; i++) { const a = Math.random() * TAU, s = 60 + Math.random() * 90; E.part(x, y, Math.cos(a) * s, Math.sin(a) * s * 0.7 - 40, { color, life: 0.7, size: 2, size2: 1, drag: 2, grav: 160 }); } };
+    switch (p.skillId) {
+      case 'swordrain': { const c = at(170); E.rays(c.x, c.y, '#fff4c0', 12, 60, 0.5);
+        for (let i = 0; i < 14; i++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * 52; E.skyBeam(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r * 0.7, i % 2 ? '#ffffff' : '#fff4c0', 0.3 + i * 0.05, 3); }
+        later(1.1, () => { E.ring(c.x, c.y, 60, '#fff4c0'); E.burst(c.x, c.y, '#ffffff', 16); }); break; }
+      case 'quake': later(1, () => { E.rays(p.x, p.y, '#e0b070', 20, 150, 0.7); for (let i = 0; i < 3; i++) later(1 + i * 0.1, () => E.ring(p.x, p.y, 60 + i * 40, i ? '#c8a070' : '#ffffff'));
+        for (let i = 0; i < 10; i++) { const a = i / 10 * TAU + Math.random() * 0.3, L = 70 + Math.random() * 60; E.beamline(p.x, p.y, p.x + Math.cos(a) * L, p.y + Math.sin(a) * L * 0.7, 2, '#ffd8a0'); } // 갈라지는 땅
+        debris(p.x, p.y, 30, '#8a6a4a'); }); break;
+      case 'skyspear': { const L = 300, x1 = p.x + Math.cos(A) * L, y1 = p.y + Math.sin(A) * L;
+        for (let d = 20; d < L; d += 16) P(p.x + Math.cos(A) * d, p.y + Math.sin(A) * d, randInt(-20, 20), randInt(-30, 0), d % 32 ? '#c8d8f0' : '#ffffff', 0.5);
+        later(0.25, () => { E.skyBeam(x1, y1, '#ffffff', 0, 8); E.rays(x1, y1, '#c8d8f0', 14, 70, 0.6); debris(x1, y1, 16, '#9aa8c0'); }); break; }
+      case 'explosion': { const c = at(200); emit(2, (w, x, y, t) => { if (Math.random() < 0.5) { const a = Math.random() * TAU, d = 90 * (1 - (t % 0.5) * 2); P(c.x + Math.cos(a) * d, c.y + Math.sin(a) * d * 0.6, -Math.cos(a) * 30, -Math.sin(a) * 20, '#ffb04a', 0.4); } }); // 모여드는 불씨
+        later(2, () => { E.rays(c.x, c.y, '#ffd84a', 22, 140, 0.8); for (let i = 0; i < 3; i++) later(2 + i * 0.08, () => E.ring(c.x, c.y, 50 + i * 30, i === 1 ? '#ffffff' : '#ff7a3a'));
+          for (let i = 0; i < 30; i++) P(c.x + randInt(-40, 40), c.y + randInt(-20, 20), randInt(-20, 20), -60 - Math.random() * 80, i % 3 ? '#ff9a3a' : '#ffe08a', 1); }); break; }
+      case 'blizzard': { const c = at(180); emit(5, (w, x, y, t) => { for (let i = 0; i < 2; i++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * 64; // 내리는 눈 + 휘도는 바람
+          E.part(c.x + Math.cos(a) * r + 20, c.y + Math.sin(a) * r * 0.6 - 30, -30, 50, { color: '#ffffff', life: 0.6, size: 1.5, size2: 1, drag: 0, add: true, shape: 'plus' }); }
+          if (Math.random() < 0.15) E.ring(c.x, c.y, 30 + Math.random() * 34, '#bfefff'); }); E.rays(c.x, c.y, '#bfefff', 12, 70, 0.5); break; }
+      case 'worldtree': later(1.5, () => { E.rays(p.x, p.y, '#7adf4a', 18, 150, 0.8);
+        for (let i = 0; i < 14; i++) { const a = i / 14 * TAU, L = 110 + Math.random() * 40; E.beamline(p.x, p.y, p.x + Math.cos(a) * L, p.y + Math.sin(a) * L * 0.7, 2, i % 2 ? '#7adf4a' : '#c8e070'); } // 뻗어 나가는 덩굴
+        for (let i = 0; i < 24; i++) P(p.x + randInt(-60, 60), p.y + randInt(-30, 30), randInt(-10, 10), -30 - Math.random() * 40, i % 2 ? '#9aff5a' : '#e0ff9a', 1.2); }); break;
+      case 'thundergod': emit(6, (w, x, y, t) => { if (Math.random() < 0.12) { const a = Math.random() * TAU, d = 30 + Math.random() * 120; E.lightning(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.6 - 100, x + Math.cos(a) * d, y + Math.sin(a) * d * 0.6); }
+          if (Math.random() < 0.05) E.ring(x, y, 170, '#bfe8ff'); if (Math.random() < 0.3) P(x + randInt(-10, 10), y + randInt(-8, 4), randInt(-40, 40), randInt(-40, 10), '#ffffff', 0.25, 1.5); }, p);
+        E.rays(p.x, p.y, '#bfe8ff', 16, 120, 0.6); break;
+      case 'judgment': { const c = at(190); later(1.5, () => { E.skyBeam(c.x, c.y, '#ffffff', 0, 14); E.skyBeam(c.x, c.y, '#fff4c0', 0.05, 24); E.rays(c.x, c.y, '#fff4c0', 18, 90, 0.7); E.solomonSeal(c.x, c.y, 1.2); }); break; }
+      case 'voidcollapse': { const c = at(180); emit(2, (w, x, y, t) => { for (let i = 0; i < 2; i++) { const a = Math.random() * TAU, d = 100; E.part(c.x + Math.cos(a) * d, c.y + Math.sin(a) * d * 0.6, -Math.cos(a) * 160, -Math.sin(a) * 100, { color: i ? '#a070e0' : '#e0c8ff', life: 0.6, size: 2, size2: 0, drag: 0, add: true }); } }); // 빨려 드는 빛
+        later(2, () => { E.rays(c.x, c.y, '#b070ff', 20, 120, 0.8); E.ring(c.x, c.y, 100, '#ffffff'); E.ring(c.x, c.y, 60, '#7040c0'); for (let i = 0; i < 20; i++) P(c.x, c.y, randInt(-120, 120), randInt(-80, 80), '#c8a0ff', 0.7); }); break; }
+      case 'deadeye': later(0.7, () => { E.rays(p.x, p.y, '#ffd84a', 12, 50, 0.5);
+        for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 320) { E.ring(e.x, e.y, 12, '#ffd84a'); E.burst(e.x, e.y, '#ffe9a0', 6); } }); // 맞힌 자리마다 조준 고리
+        emit(0.7, (w, x, y, t) => { for (const e of this.enemies) if (e.targetable && Math.random() < 0.15 && Math.hypot(e.x - x, e.y - y) < 320) { E.spark(e.x, e.y - 2, '#ff5a5a'); } }, p); break;
+      case 'railshot': later(0.8, () => { const L = 700, x1 = p.x + Math.cos(A) * L, y1 = p.y + Math.sin(A) * L;
+        for (let d = 16; d < 420; d += 12) P(p.x + Math.cos(A) * d, p.y + Math.sin(A) * d, -Math.sin(A) * randInt(-40, 40), Math.cos(A) * randInt(-40, 40), d % 24 ? '#ffe9a0' : '#ffffff', 0.5, 1.5);
+        E.rays(p.x, p.y, '#ffe9a0', 12, 40, 0.4); E.ring(p.x, p.y, 26, '#ffffff'); }); break;
+      case 'carpet': for (let i = 0; i < 11; i++) { const d = 30 + i * 24; E.skyBeam(p.x + Math.cos(A) * d, p.y + Math.sin(A) * d, '#ffb04a', 0.15 + i * 0.07, 3); }
+        later(0.3 + 11 * 0.07, () => { const x1 = p.x + Math.cos(A) * 270, y1 = p.y + Math.sin(A) * 270; E.rays(x1, y1, '#ff7a3a', 14, 60, 0.6); }); break;
+      case 'barrage': { const c = at(200); for (let i = 0; i < 14; i++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * 60; E.skyBeam(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r * 0.7, '#ffd070', 1.15 + i * 0.1, 3); }
+        later(1, () => E.rays(c.x, c.y, '#f0c030', 14, 80, 0.6)); break; }
+      case 'execution': E.rays(p.x, p.y, '#b080ff', 16, 90, 0.6); E.ring(p.x, p.y, 40, '#3a2050'); E.ring(p.x, p.y, 70, '#b080ff');
+        emit(1.2, (w, x, y, t) => { if (Math.random() < 0.6) E.part(x + randInt(-12, 12), y + randInt(-10, 6), randInt(-20, 20), -30, { color: '#3a2a50', life: 0.5, size: 3, size2: 0, drag: 1 }); }, p); break;
+      case 'plaguecloud': emit(7, (w, x, y, t) => { if (Math.random() < 0.5) { const a = Math.random() * TAU, d = Math.random() * 70; E.part(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.6, 0, -18, { color: Math.random() < 0.5 ? '#9aff5a' : '#5aa03a', life: 0.8, size: 1.5, size2: 3.5, drag: 1, shape: 'ring' }); } }, p);
+        E.rays(p.x, p.y, '#7adf4a', 14, 80, 0.6); break;
+      case 'bladestorm': emit(8, (w, x, y, t) => { if (Math.random() < 0.4) { const a = t * 7 + Math.random() * TAU, d = 36; P(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.85, -Math.sin(a) * 40, Math.cos(a) * 30, '#ffffff', 0.3, 1.5); } }, p);
+        E.rays(p.x, p.y, '#e8eef4', 16, 70, 0.5); break;
+      case 'descent': later(1, () => { E.skyBeam(p.x, p.y, '#ffffff', 0, 18); E.skyBeam(p.x, p.y, '#ffe9a0', 0.05, 30); E.rays(p.x, p.y, '#ffe9a0', 20, 120, 0.8);
+        for (let i = 0; i < 20; i++) P(p.x + randInt(-30, 30), p.y + randInt(-10, 10), randInt(-10, 10), -50 - Math.random() * 60, '#fff4c0', 1); }); break;
+      case 'bloodstorm': emit(6, (w, x, y, t) => { if (Math.random() < 0.5) { const a = t * 5 + Math.random() * 1.5, d = 30 + Math.random() * 20; E.part(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.7, -Math.sin(a) * 60, Math.cos(a) * 40, { color: Math.random() < 0.5 ? '#ff3a3a' : '#8a0a0a', life: 0.5, size: 2.5, size2: 0, drag: 2 }); } }, p);
+        E.rays(p.x, p.y, '#ff3a3a', 16, 70, 0.6); break;
+      case 'guardian': E.rays(p.x, p.y, '#9ad8ff', 16, 80, 0.7); E.ring(p.x, p.y - 10, 30, '#c8a070'); debris(p.x, p.y - 4, 14, '#6a8a4a');
+        for (let i = 0; i < 16; i++) P(p.x + randInt(-30, 30), p.y + randInt(-14, 10), randInt(-10, 10), -40 - Math.random() * 40, i % 2 ? '#9ad8ff' : '#9aff5a', 1); break;
+      case 'spellblade': E.rays(p.x, p.y, col, 16, 70, 0.5); for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; P(p.x + Math.cos(a) * 20, p.y + Math.sin(a) * 16, Math.cos(a) * 80, Math.sin(a) * 60, col, 0.5); } break;
+    }
   }
   updateSkillEffects(dt) {
     const p = this.player;

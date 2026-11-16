@@ -509,10 +509,18 @@ class SkillCast {
     this.t += dt;
     if (this.owner.state === 'DEAD') { this.alive = false; this.owner.castLock = 0; return; }
     if (Math.random() < 0.6) { const a = Math.random() * TAU; world.effects.part(this.x + Math.cos(a) * this.r, this.y + Math.sin(a) * this.r * 0.6, -Math.cos(a) * this.r * 1.2, -Math.sin(a) * this.r * 0.7, { color: this.color, life: 0.5, size: 2, size2: 0, drag: 0, add: true }); } // 모여드는 빛
-    if (this.t >= this.time) { this.alive = false; this.owner.castLock = 0; this.done(world, this); }
+    if (Math.random() < 0.4) world.effects.part(this.owner.x + randInt(-6, 6), this.owner.y + 4, 0, -40 - Math.random() * 30, { color: this.color, life: 0.5, size: 1.5, size2: 0, drag: 1, add: true }); // 시전자 주위로 솟는 빛
+    if (this.t >= this.time) { this.alive = false; this.owner.castLock = 0; this.done(world, this);
+      world.effects.rays(this.x, this.y, this.color, 16, this.r + 24, 0.6); world.effects.ring(this.x, this.y, this.r, '#ffffff'); } // 발동 순간 빛살
   }
   render(ctx) {
     const k = Math.min(1, this.t / this.time), rot = this.t * 2;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(this.x, this.y); ctx.scale(1, 0.6); // 마법진: 바깥 고리의 육각별 + 안쪽에서 반대로 도는 삼각형
+    ctx.globalAlpha = 0.5 + 0.3 * k; ctx.strokeStyle = this.color; ctx.lineWidth = 1;
+    const star = (R, n, step, a0) => { ctx.beginPath(); for (let i = 0; i <= n; i++) { const a = a0 + (i * step % n) / n * TAU; const px = Math.cos(a) * R, py = Math.sin(a) * R; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.stroke(); };
+    star(this.r * 0.8, 6, 2, rot * 0.5); star(this.r * 0.8, 6, 2, rot * 0.5 + Math.PI / 6); star(this.r * 0.45, 3, 1, -rot);
+    ctx.globalAlpha = 0.25 * k; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0, 0, this.r * 0.25 * k, 0, TAU); ctx.fill();
+    ctx.restore();
     ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.6);
     ctx.globalAlpha = 0.15 + 0.2 * k; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(0, 0, this.r * k, 0, TAU); ctx.fill(); // 차오르는 범위
     ctx.globalAlpha = 0.9; ctx.strokeStyle = this.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.stroke();
@@ -522,6 +530,12 @@ class SkillCast {
     const bar = Math.round(28 * k); ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(Math.round(this.owner.x) - 15, Math.round(this.owner.y) - 24, 30, 4);
     ctx.fillStyle = this.color; ctx.fillRect(Math.round(this.owner.x) - 14, Math.round(this.owner.y) - 23, bar, 2); // 시전 막대
   }
+}
+// 이펙트 방출기: life초 동안 매 프레임 fn(world, x, y, t)을 불러 입자를 뿌림 (follow: 따라다닐 대상)
+class FxEmitter {
+  constructor(x, y, life, fn, follow) { this.x = x; this.y = y; this.life = life; this.fn = fn; this.follow = follow || null; this.t = 0; this.alive = true; }
+  update(dt, world) { this.t += dt; if (this.follow) { this.x = this.follow.x; this.y = this.follow.y; } if (this.t >= this.life || (this.follow && this.follow.state === 'DEAD')) { this.alive = false; return; } this.fn(world, this.x, this.y, this.t); }
+  render() {}
 }
 // 어둠 소용돌이: 범위 안 적을 중심으로 끌어당기며 지속 피해
 class DarkHole {
