@@ -331,6 +331,42 @@ Object.assign(PIX, {
     P.rect(4, 13, 8, 3, 'b'); P.tri(5, 13, 11, 13, 8, 1, 'a'); P.tri(8, 1, 8, 13, 5, 13, 'c');               // 받침·오벨리스크
     P.line(8, 5, 8, 10, 'r'); P.px(8, 4, 'w'); P.px(2, 8, 'r'); P.px(14, 10, 'r');
   } },
+  // ── 심층: 실 끊긴 인형극장
+  puppet: { tint: '#c89a6a', w: 16, h: 16, pal: { w: '#e8dcc0', r: '#c02a3a' }, proc: (P) => {
+    P.ell(8, 4, 3, 3, 'a'); P.px(7, 4, 'k'); P.px(9, 4, 'k'); P.px(6, 5, 'r'); P.px(10, 5, 'r');            // 둥근 나무 머리·볼
+    P.rect(6, 7, 5, 5, 'r'); P.rect(4, 7, 2, 4, 'a'); P.rect(11, 7, 2, 4, 'a'); P.rect(6, 12, 2, 3, 'b'); P.rect(9, 12, 2, 3, 'b'); // 몸·팔다리
+    P.line(8, 0, 8, 1, 'w'); P.px(4, 6, 'w'); P.px(12, 6, 'w');                                            // 끊긴 실
+  } },
+  jester: { tint: '#8a2a6a', w: 16, h: 16, pal: { w: '#f4ecd8', y: '#ffd86a' }, proc: (P) => {
+    robe(P, 'y'); P.ell(7, 5, 3, 3, 'w'); P.px(6, 5, 'k'); P.px(8, 5, 'k'); P.line(6, 7, 8, 7, 'k');         // 흰 가면
+    P.tri(3, 3, 6, 1, 7, 3, 'a'); P.tri(8, 3, 9, 1, 12, 3, 'b'); P.px(3, 3, 'y'); P.px(12, 3, 'y');         // 광대 모자·방울
+  } },
+  threadspider: { tint: '#e8dcc0', w: 16, h: 16, pal: { r: '#c02a3a', e: '#ffd86a' }, proc: (P) => {
+    P.ell(8, 9, 4, 3.5, 'a'); P.ell(8, 9, 2, 2, 'c'); P.line(6, 8, 10, 10, 'b'); P.line(6, 10, 10, 8, 'b');   // 실뭉치 몸
+    for (const s of [-1, 1]) for (let i = 0; i < 3; i++) P.line(8 + s * 4, 8 + i * 2, 8 + s * 7, 6 + i * 3, 'k'); // 다리
+    P.px(7, 6, 'e'); P.px(9, 6, 'e'); P.line(12, 11, 15, 15, 'r');                                         // 눈·풀린 실
+  } },
+  spotlight: { tint: '#5a5a6a', w: 16, h: 16, pal: { y: '#fff0a0', w: '#ffffff' }, proc: (P) => {
+    P.rect(4, 13, 8, 3, 'b'); P.rect(7, 9, 2, 4, 'b'); P.ell(8, 6, 5, 4, 'a'); P.ell(8, 6, 3, 2.5, 'y'); P.px(8, 6, 'w'); // 받침·조명
+  } },
+  // ── 심층: 호박빛 벌집
+  drone_bee: { tint: '#ffb02a', w: 16, h: 16, pal: { w: '#e8f8ff', e: '#2a1a0a' }, proc: (P) => {
+    P.ell(5, 5, 3, 2, 'w'); P.ell(11, 5, 3, 2, 'w'); P.ell(8, 9, 4, 3, 'a'); P.rect(6, 7, 1, 5, 'e'); P.rect(9, 7, 1, 5, 'e'); // 날개·줄무늬 몸
+    P.px(12, 9, 'e'); P.px(3, 10, 'e'); P.line(13, 7, 14, 5, 'e');                                         // 침·더듬이
+  } },
+  beetle: { tint: '#3a4a2a', w: 16, h: 16, pal: { g: '#7aff9a', y: '#ffb02a' }, proc: (P) => {
+    P.ell(8, 9, 6, 5, 'a'); P.line(8, 4, 8, 14, 'k'); P.ell(5, 7, 1.5, 1, 'c'); P.ell(11, 7, 1.5, 1, 'c');  // 등껍질
+    P.ell(8, 3, 3, 2, 'b'); P.px(7, 3, 'g'); P.px(9, 3, 'g'); P.line(8, 1, 8, 0, 'y');                       // 머리·뿔
+    for (const x of [2, 14]) P.line(x, 8, x, 13, 'b');
+  } },
+  honeymage: { tint: '#a0701e', w: 16, h: 16, pal: { y: '#ffc04a', w: '#ffe9a0' }, proc: (P) => {
+    robe(P, 'y'); P.ell(7, 5, 3, 3, 'a'); P.rect(6, 5, 3, 2, 'k'); P.px(6, 5, 'y'); P.px(8, 5, 'y');        // 두건
+    P.line(12, 4, 12, 13, 'b'); P.ell(12, 3, 2, 2, 'y'); P.px(12, 2, 'w');                                 // 꿀단지 지팡이
+  } },
+  waxtower: { tint: '#d8b060', w: 16, h: 16, pal: { y: '#ffb02a', d: '#8a601a' }, proc: (P) => {
+    P.rect(4, 13, 8, 3, 'd'); P.rect(5, 4, 6, 9, 'a'); P.rect(5, 4, 6, 1, 'c');                              // 밀랍 기둥
+    P.px(7, 7, 'y'); P.px(9, 9, 'y'); P.px(7, 11, 'y'); P.ell(8, 3, 2, 1.5, 'y');                           // 육각 칸·꿀
+  } },
   brazier: { tint: '#6a5a50', w: 16, h: 16, pal: { y: '#ffb04a', r: '#ff6a2a', w: '#ffe94a' }, proc: (P) => {
     P.rect(4, 13, 8, 3, 'b'); P.rect(6, 9, 4, 4, 'a'); P.rect(3, 7, 10, 3, 'a'); P.rect(3, 7, 10, 1, 'c');        // 받침·화로
     P.tri(4, 7, 12, 7, 8, 1, 'r'); P.tri(6, 7, 10, 7, 8, 3, 'y'); P.px(8, 5, 'w');                               // 불꽃

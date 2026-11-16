@@ -37,6 +37,8 @@ const THEME = {
   mirror: { glint: '#ffffff', glass: '#c8b8ff', torch: '#e0c8ff', ambient: [20, 10, 40, 0.38] },
   clock: { brass: '#e8c070', torch: '#ffd890', ambient: [40, 25, 5, 0.3] },
   library: { ink: '#2a2a4a', paper: '#e8dcc0', torch: '#ffd890', ambient: [30, 15, 30, 0.36] },
+  theater: { velvet: '#8a2a34', gold: '#ffd86a', torch: '#ffd86a', ambient: [30, 10, 10, 0.36] },
+  hive: { honey: '#ffb02a', wax: '#d8b060', torch: '#ffc04a', ambient: [40, 20, 0, 0.3] },
   bloodmoon: { blood: '#a02a3a', grass: '#5a2a30', torch: '#ff5a6a', ambient: [60, 0, 10, 0.4] },
   ember: { ember: '#ff8a3a', ash: '#6a5a56', torch: '#ff8a3a', ambient: [60, 15, 0, 0.36] },
   fungal: { glow: '#e07aff', cap: '#c87ad8', moss: '#5a8a4a', torch: '#e07aff', ambient: [30, 0, 40, 0.4] },
@@ -173,6 +175,17 @@ function drawFloorTile(g, x, y, base, style, tx = 0, ty = 0) {
     if (h(4) < 0.05) fillEll(g, x + 8, y + 9, 3, 2, 'rgba(30,30,70,0.6)');
     return;
   }
+  if (style === 'theater') { // 무대 마루 + 금색 표시선 + 흩어진 꽃잎
+    pxs(g, hi, [[x, y, TILE - 1, 1]]); pxs(g, lo, [[x, y + 15, TILE, 1], [x + ((ty % 2) ? 5 : 11), y, 1, TILE]]);
+    if (h(1) < 0.05) pxs(g, THEME.theater.gold, [[x + 4, y + 8, 8, 1]]);
+    if (h(4) < 0.05) pxs(g, '#c02a3a', [[x + 3 + Math.floor(h(2) * 9), y + 3 + Math.floor(h(3) * 9), 2, 1]]);
+    return;
+  }
+  if (style === 'hive') { // 육각 벌집 칸 + 꿀 고임
+    const ox = (ty % 2) ? 4 : 0; pxs(g, lo, [[x + ox, y + 4, 1, 8], [x + ox + 8, y + 4, 1, 8], [x + ox + 1, y + 3, 6, 1], [x + ox + 1, y + 12, 6, 1]]);
+    if (h(1) < 0.08) fillEll(g, x + ox + 4, y + 8, 2.5, 3, THEME.hive.honey);
+    return;
+  }
   if (style === 'bloodmoon') { // 붉은 풀밭 + 마른 줄기 + 핏빛 꽃
     for (let i = 0; i < 4; i++) if (h(10 + i) < 0.6) pxs(g, i % 2 ? lo : THEME.bloodmoon.grass, [[x + 1 + Math.floor(h(20 + i) * 14), y + 1 + Math.floor(h(30 + i) * 13), 1, 2]]);
     if (h(1) < 0.05) pxs(g, '#ff5a6a', [[x + 6, y + 7, 3, 1], [x + 7, y + 6, 1, 3]]);
@@ -256,6 +269,10 @@ function drawWallTile(g, x, y, pal, face, style, tx = 0, ty = 0) {
     if (face) { pxs(g, '#8a7044', [[x, y + 10, TILE, 1]]); if (h(1) < 0.3) { fillEll(g, x + 8, y + 10, 2.5, 2.5, '#e8c070'); pxs(g, '#4a3e30', [[x + 8, y + 10]]); } }
   } else if (style === 'library') { // 책장 벽
     if (face) { for (let i = 0; i < 4; i++) pxs(g, ['#8a3a3a', '#3a5a8a', '#6a5a3a', '#4a6a4a'][Math.floor(h(i) * 4)], [[x + 1 + i * 4, y + 6, 3, 5]]); pxs(g, '#3a2a20', [[x, y + 11, TILE, 1]]); }
+  } else if (style === 'theater') { // 붉은 벨벳 커튼 + 금술
+    if (face) { for (let i = 0; i < 4; i++) pxs(g, i % 2 ? '#6a1a24' : '#a0323e', [[x + i * 4, y + 4, 4, 7]]); pxs(g, '#ffd86a', [[x, y + 11, TILE, 1]]); }
+  } else if (style === 'hive') { // 밀랍 벽 + 흘러내린 꿀
+    if (face) { pxs(g, '#d8b060', [[x, y + 10, TILE, 1]]); if (h(1) < 0.4) pxs(g, '#ffb02a', [[x + 3 + Math.floor(h(2) * 9), y + 8, 2, 4]]); }
   } else if (style === 'bloodmoon') { // 붉은 이끼
     if (face && h(1) < 0.4) { pxs(g, '#7a2a34', [[x + 3 + Math.floor(h(2) * 8), y + 8, 4, 2]]); }
   } else if (style === 'ember') { // 그을음 + 불씨 틈
@@ -305,6 +322,10 @@ function drawCover(g, x, y, style, tx, ty) {
     fillEll(g, x + 8, y + 8, 7, 5, OUTLINE); fillEll(g, x + 8, y + 8, 6, 4, '#6a7a98'); fillEll(g, x + 7, y + 6, 4, 2, '#8a9ab8'); g.fillStyle = 'rgba(255,255,255,0.8)'; g.fillRect(x + 2, y + 12, 12, 2);
   } else if (style === 'library') { // 쌓인 책 더미
     pxs(g, OUTLINE, [[x + 2, y + 4, 12, 11]]); pxs(g, '#8a3a3a', [[x + 3, y + 11, 10, 3]]); pxs(g, '#3a5a8a', [[x + 4, y + 8, 8, 3]]); pxs(g, '#6a5a3a', [[x + 3, y + 5, 9, 3]]); pxs(g, '#e8dcc0', [[x + 12, y + 11, 1, 3], [x + 11, y + 8, 1, 3]]);
+  } else if (style === 'theater') { // 쓰러진 무대 소품 상자 + 가면
+    pxs(g, OUTLINE, [[x + 2, y + 5, 12, 10]]); pxs(g, '#6a4a30', [[x + 3, y + 6, 10, 8]]); fillEll(g, x + 8, y + 9, 3, 2.5, '#f4ecd8'); pxs(g, OUTLINE, [[x + 7, y + 9], [x + 9, y + 9]]);
+  } else if (style === 'hive') { // 굳은 호박 덩어리
+    fillEll(g, x + 8, y + 9, 6, 5, OUTLINE); fillEll(g, x + 8, y + 9, 5, 4, '#c8801a'); fillEll(g, x + 7, y + 7, 2.5, 1.5, '#ffd070'); pxs(g, '#4a2a0a', [[x + 9, y + 10, 2, 1]]);
   } else if (style === 'bloodmoon') { // 마른 나무 그루터기
     fillEll(g, x + 8, y + 10, 6, 5, OUTLINE); fillEll(g, x + 8, y + 10, 5, 4, '#4a2a2a'); fillEll(g, x + 8, y + 8, 4, 2, '#6a3a3a'); pxs(g, OUTLINE, [[x + 11, y + 2, 1, 6]]); pxs(g, '#4a2a2a', [[x + 12, y + 3, 2, 1]]);
   } else if (style === 'clock') { // 쓰러진 큰 톱니
@@ -366,6 +387,10 @@ function drawCrate(g, x, y, style) {
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#9a7a5a', [[x + 3, y + 4, 10, 10]]); pxs(g, '#b8946a', [[x + 3, y + 4, 10, 1]]); pxs(g, '#ffffff', [[x + 3, y + 12, 6, 2]]);
   } else if (style === 'library') { // 책 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#5a4030', [[x + 3, y + 4, 10, 10]]); pxs(g, '#6a5040', [[x + 3, y + 4, 10, 1]]); pxs(g, '#e8dcc0', [[x + 4, y + 7, 8, 2]]);
+  } else if (style === 'theater') { // 소품 상자
+    pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#5a3a26', [[x + 3, y + 4, 10, 10]]); pxs(g, '#ffd86a', [[x + 3, y + 4, 10, 1], [x + 7, y + 4, 2, 10]]);
+  } else if (style === 'hive') { // 밀랍 상자
+    pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#b8903a', [[x + 3, y + 4, 10, 10]]); pxs(g, '#d8b060', [[x + 3, y + 4, 10, 1]]); pxs(g, '#ffb02a', [[x + 5, y + 8, 2, 3], [x + 9, y + 6, 2, 2]]);
   } else if (style === 'bloodmoon') { // 핏자국 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#4a3030', [[x + 3, y + 4, 10, 10]]); pxs(g, '#5a3838', [[x + 3, y + 4, 10, 1]]); pxs(g, '#a02a3a', [[x + 5, y + 9, 3, 2], [x + 9, y + 7, 2, 1]]);
   } else if (style === 'clock') { // 놋쇠 테 상자

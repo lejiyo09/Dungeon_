@@ -89,7 +89,15 @@ const DEEP_WORLDS = [
   { id: 'deep_bloodmoon', name: '붉은 달의 들판', boss: 'boss_moon_hunter', waves: 2, deep: true,
     enemies: [['enemy_redwolf_001', 3], ['enemy_bloodbat_001', 4], ['enemy_moonmaiden_001', 2], ['enemy_bloodobelisk_001', 2]],
     palette: { style: 'bloodmoon', accent: '#ff5a6a', floor: ['#2a1a1e', '#2d1c20'], corridor: ['#1e1215', '#201316'], wall: '#3a2228', wallTop: '#482a32',
-      wallFace: '#6a3a44', faceLine: '#5a3038', deco: 'rgba(255,90,106,0.35)' } }
+      wallFace: '#6a3a44', faceLine: '#5a3038', deco: 'rgba(255,90,106,0.35)' } },
+  { id: 'deep_theater', name: '실 끊긴 인형극장', boss: 'boss_puppeteer', waves: 2, deep: true,
+    enemies: [['enemy_puppet_001', 4], ['enemy_jester_001', 2], ['enemy_threadspider_001', 3], ['enemy_spotlight_001', 2]],
+    palette: { style: 'theater', accent: '#ffd86a', floor: ['#3a2a22', '#3d2c24'], corridor: ['#281d18', '#2a1f19'], wall: '#4a1a22', wallTop: '#5a2028',
+      wallFace: '#8a2a34', faceLine: '#74222c', deco: 'rgba(255,216,106,0.35)' } },
+  { id: 'deep_hive', name: '호박빛 벌집', boss: 'boss_amber_queen', waves: 2, deep: true,
+    enemies: [['enemy_drone_bee_001', 4], ['enemy_beetle_001', 3], ['enemy_honeymage_001', 2], ['enemy_waxtower_001', 2]],
+    palette: { style: 'hive', accent: '#ffb02a', floor: ['#4a3618', '#4d391a'], corridor: ['#352610', '#372811'], wall: '#5a3e14', wallTop: '#6a4a18',
+      wallFace: '#a0701e', faceLine: '#8a601a', deco: 'rgba(255,176,42,0.35)' } }
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {

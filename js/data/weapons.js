@@ -481,5 +481,29 @@ const DATA_WEAPONS = [
     damage: 35, fireRate: 1.6, energyCost: 0.3, range: 42, arcDeg: 200, lifesteal: 0.3, knockback: 5, color: '#8a8aa8', len: 14 },
   { id: 'weapon_stickybomb_001', name: '점착 폭탄 발사기', rarity: 'rare', type: 'gun', shape: 'launcher',
     damage: 36, fireRate: 1.4, energyCost: 1.5, range: 320, projectileSpeed: 300, projectileCount: 1, spreadDeg: 2, explodeRadius: 30,
-    pierce: 0, knockback: 6, color: '#5a6a3a', len: 13, bulletColor: '#c8ff70', bulletSize: 3 }
+    pierce: 0, knockback: 6, color: '#5a6a3a', len: 13, bulletColor: '#c8ff70', bulletSize: 3 },
+  // ── 고급 2
+  { id: 'weapon_dualstring_001', name: '쌍현 석궁', rarity: 'uncommon', type: 'gun', shape: 'crossbow',
+    damage: 15, fireRate: 2.4, energyCost: 0.5, range: 400, projectileSpeed: 560, projectileCount: 2, spreadDeg: 1, parallel: 4,
+    pierce: 1, arrow: true, knockback: 2, color: '#8a6a40', len: 11, bulletColor: '#e0d8c8', bulletSize: 1 },
+  { id: 'weapon_shockbaton_001', name: '전기 곤봉', rarity: 'uncommon', type: 'melee', shape: 'sword',
+    damage: 25, fireRate: 2.2, energyCost: 0.2, range: 38, arcDeg: 120, knockback: 5, status: { type: 'shock', chance: 0.35, duration: 2 }, color: '#5a6a8a', len: 12 },
+  // ── 희귀 2
+  { id: 'weapon_ricochetrifle_001', name: '도탄 소총', rarity: 'rare', type: 'gun', shape: 'gun',
+    damage: 17, fireRate: 3.2, energyCost: 0.6, range: 420, projectileSpeed: 620, projectileCount: 1, spreadDeg: 2,
+    ricochet: 2, pierce: 0, knockback: 3, color: '#6a6a4a', len: 14, bulletColor: '#ffe08a', bulletSize: 1 },
+  { id: 'weapon_splitpistol_001', name: '갈래탄 권총', rarity: 'rare', type: 'gun', shape: 'gun',
+    damage: 16, fireRate: 2.6, energyCost: 0.7, range: 380, projectileSpeed: 520, projectileCount: 1, spreadDeg: 2,
+    split: { count: 4, damage: 4, range: 60, speed: 240 }, pierce: 0, knockback: 3, color: '#4a5a6a', len: 10, bulletColor: '#8affd8', bulletSize: 2 },
+  // ── 영웅 2
+  { id: 'weapon_swarm_001', name: '벌떼 미사일', rarity: 'epic', type: 'gun', shape: 'launcher',
+    damage: 13, fireRate: 1.5, energyCost: 1.6, range: 420, projectileSpeed: 300, projectileCount: 4, spreadDeg: 6, parallel: 4, homing: 2.6, explodeRadius: 16,
+    pierce: 0, knockback: 3, color: '#6a5a3a', len: 13, bulletColor: '#ffc04a', bulletSize: 2 },
+  { id: 'weapon_boltjavelin_001', name: '번개 투척창', rarity: 'epic', type: 'gun', shape: 'spear',
+    damage: 50, fireRate: 1.4, energyCost: 1, range: 460, projectileSpeed: 600, projectileCount: 1, spreadDeg: 0,
+    chain: { count: 3, range: 85, falloff: 0.75 }, status: { type: 'shock', chance: 0.5, duration: 3 }, pierce: 2, arrow: true, knockback: 6, color: '#5a6a9a', len: 16, bulletColor: '#fff27a', bulletSize: 2 },
+  // ── 전설 1
+  { id: 'weapon_eclipse_001', name: '일식의 원반', rarity: 'legendary', type: 'gun', shape: 'gun',
+    damage: 38, fireRate: 2.2, energyCost: 0.5, range: 300, projectileSpeed: 400, projectileCount: 1, spreadDeg: 0,
+    pierce: 99, boomerang: true, rehit: 0.3, status: { type: 'burn', chance: 0.5, duration: 2, dps: 12 }, mark: { mult: 1.2, dur: 2 }, knockback: 5, color: '#2a2030', len: 9, bulletColor: '#ffb04a', bulletSize: 3 }
 ];

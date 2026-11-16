@@ -123,6 +123,13 @@ Object.assign(WPIX, {
   icicle: { auto: true, p: [3, 2], rows: ['..........o..', '.........ooo.', 'aaaaaaaaaowwo', '.........ooo.', '..........o..'] },
   moonscythe: { auto: true, p: [1, 3], rows: ['.........ccc.', '...........cc', '............c', 'ddddddddddddm', '.............'] },
   stickybomb: { auto: true, p: [3, 3], rows: ['...nnnnnnn...', '.aaaaaaaaaaoo', 'aacccccccaaoo', '.aaaaaaaaaaoo', '...gg........', '...gg........'] },
+  dualstring: { auto: true, p: [3, 3], rows: ['.....s.......', '..y.s.mmmmmmm', 'ddddddddddddm', '..y.s.mmmmmmm', '.....s.......', '..gg.........'] },
+  shockbaton: { auto: true, p: [2, 1], rows: ['.....o..o..', 'ggnaaaaaaao', '.....o..o..'] },
+  ricochetrifle: { auto: true, p: [4, 3], rows: ['....cccccccccc.', 'bbbaaaaaaaaaaan', 'bb..aannbbb.y..', '....gg.nn......', '....gg.........'] },
+  splitpistol: { auto: true, p: [2, 3], rows: ['.ccccccc.o.', '.aaaaaaanoo', '.bbnbbbb.o.', '.gg.n......', '.gg........'] },
+  swarm: { auto: true, p: [3, 3], rows: ['..nnnnnnnnn..', '.naoaoaoaoaon', '.naaaaaaaaaan', '.naoaoaoaoaon', '..nnnnnnnnn..', '...gg........'] },
+  boltjavelin: { auto: true, p: [3, 1], rows: ['.............oo.', 'dddddddddddyoooo', '.............oo.'] },
+  eclipse: { auto: true, p: [4, 4], rows: ['...ooooo...', '..oaaaaao..', '.oaaaaaaao.', '.oaacccaao.', '.oaacwcaao.', '.oaacccaao.', '.oaaaaaaao.', '..oaaaaao..', '...ooooo...'] },
   headshot: { auto: true, p: [5, 3], rows: ['.....nnnnnnn........', '.....nooooon........', 'bbbbaaaaaaaaaaaaaaaan', 'bb...aanbb..........', '.....gg.............', '.....gg.............'] }
 });
 
@@ -160,6 +167,7 @@ Object.assign(WEAPON_SPRITE, {
   weapon_dragonslayer_001: 'dragonslayer', weapon_skyrail_001: 'skyrail', weapon_firestorm_001: 'firestorm', weapon_chainscepter_001: 'chainscepter', weapon_sawlauncher_001: 'sawlauncher',
   weapon_earthbreaker_001: 'earthbreaker', weapon_bronzesword_001: 'bronzesword', weapon_flametwin_001: 'flametwin', weapon_abyssblade_001: 'abyssblade',
   weapon_emberwand_001: 'emberwand', weapon_shortspear_001: 'shortspear', weapon_burstpistol_001: 'burstpistol', weapon_icicle_001: 'icicle', weapon_moonscythe_001: 'moonscythe', weapon_stickybomb_001: 'stickybomb',
+  weapon_dualstring_001: 'dualstring', weapon_shockbaton_001: 'shockbaton', weapon_ricochetrifle_001: 'ricochetrifle', weapon_splitpistol_001: 'splitpistol', weapon_swarm_001: 'swarm', weapon_boltjavelin_001: 'boltjavelin', weapon_eclipse_001: 'eclipse',
   weapon_kitchenknife_001: 'kitchenknife', weapon_pickaxe_001: 'pickaxe', weapon_icegreatsword_001: 'greatsword', weapon_steelxbow_001: 'repeatxbow', weapon_quakehammer_001: 'quakehammer'
 });
 
