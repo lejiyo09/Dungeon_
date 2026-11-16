@@ -108,10 +108,18 @@ class Effects {
     else if (type === 'poison') this.part(x + randInt(-5, 5), y + randInt(-2, 4), randInt(-3, 3), -20, { color: '#9aff5a', life: 0.55, size: 1.5, size2: 3, drag: 1, shape: 'ring' });
   }
 
+  // 원소 반응: 반응마다 다른 문양(가산 혼합) + 테두리 있는 큰 이름표
+  reaction(x, y, kind, label, color) {
+    const seed = Math.random() * 1000;
+    this.push({ kind: 'react', type: kind, x, y, color, seed, t: 0, life: kind === 'plague' ? 0.7 : 0.6, add: true });
+    this.push({ kind: 'rlabel', x, y: y - 24, str: label, color, t: 0, life: 1.0 });
+    this.ring(x, y, 24, color); this.burst(x, y, color, 8);
+  }
   update(dt) {
     for (const fx of this.list) {
       fx.t += dt;
       if (fx.kind === 'text') fx.y -= 20 * dt;
+      else if (fx.kind === 'rlabel') fx.y -= 10 * dt;
       else if (fx.kind === 'p') {
         const d = Math.exp(-fx.drag * dt); fx.vx *= d; fx.vy = fx.vy * d + fx.grav * dt;
         fx.x += fx.vx * dt; fx.y += fx.vy * dt;
@@ -121,12 +129,59 @@ class Effects {
   }
   render(ctx) {
     // 1) 일반 혼합
-    for (const fx of this.list) if (!fx.add && fx.kind !== 'boom' && fx.kind !== 'flash') this.draw(ctx, fx);
+    for (const fx of this.list) if (!fx.add && fx.kind !== 'boom' && fx.kind !== 'flash' && fx.kind !== 'rlabel') this.draw(ctx, fx);
     // 2) 빛나는 효과는 가산 혼합
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     for (const fx of this.list) if (fx.add || fx.kind === 'boom' || fx.kind === 'flash') this.draw(ctx, fx);
     ctx.restore();
+    for (const fx of this.list) if (fx.kind === 'rlabel') this.draw(ctx, fx); // 반응 이름표는 맨 위
     ctx.globalAlpha = 1;
+  }
+  drawReaction(ctx, fx, k, x, y) { // 반응별 문양 (k: 1 → 0)
+    const g = 1 - k, R = (a) => { const v = Math.sin(fx.seed + a * 12.9898) * 43758.5453; return v - Math.floor(v); };
+    ctx.lineWidth = 1;
+    const jag = (x0, y0, x1, y1, n, amp) => { ctx.beginPath(); ctx.moveTo(x0, y0); for (let i = 1; i < n; i++) { const t = i / n; ctx.lineTo(x0 + (x1 - x0) * t + (Math.random() - 0.5) * amp, y0 + (y1 - y0) * t + (Math.random() - 0.5) * amp); } ctx.lineTo(x1, y1); ctx.stroke(); };
+    switch (fx.type) {
+      case 'thermal': { // 얼음 파편이 터져 나가고 주황 고리
+        for (let i = 0; i < 8; i++) { const a = i / 8 * TAU + R(i), d = 4 + g * 22;
+          ctx.fillStyle = i % 2 ? '#bfefff' : '#ffffff'; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * (d + 5), y + Math.sin(a) * (d + 5)); ctx.lineTo(x + Math.cos(a + 0.25) * d, y + Math.sin(a + 0.25) * d); ctx.lineTo(x + Math.cos(a - 0.25) * d, y + Math.sin(a - 0.25) * d); ctx.fill(); }
+        ctx.strokeStyle = '#ff9a4a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 6 + g * 18, 0, TAU); ctx.stroke(); break; }
+      case 'toxic': { // 초록 불길이 솟음
+        for (let i = 0; i < 7; i++) { const ox = (i - 3) * 5, hgt = (10 + R(i) * 14) * Math.min(1, g * 4) * (0.6 + k * 0.4);
+          ctx.fillStyle = i % 2 ? '#9aff5a' : '#d8ff7a'; ctx.beginPath(); ctx.moveTo(x + ox - 3, y + 4); ctx.lineTo(x + ox + Math.sin(fx.t * 20 + i) * 2, y + 4 - hgt); ctx.lineTo(x + ox + 3, y + 4); ctx.fill(); }
+        ctx.strokeStyle = '#7ad04a'; ctx.beginPath(); ctx.ellipse(x, y + 4, 10 + g * 16, 4 + g * 6, 0, 0, TAU); ctx.stroke(); break; }
+      case 'electro': { // 번개 고리가 지직거림
+        ctx.strokeStyle = Math.floor(fx.t * 30) % 2 ? '#ffffff' : '#9ae8ff';
+        const r = 12 + g * 8; for (let i = 0; i < 6; i++) { const a0 = i / 6 * TAU, a1 = a0 + TAU / 6; jag(x + Math.cos(a0) * r, y + Math.sin(a0) * r, x + Math.cos(a1) * r, y + Math.sin(a1) * r, 3, 6); }
+        for (let i = 0; i < 4; i++) { const a = R(i) * TAU; jag(x, y, x + Math.cos(a) * r * 1.4, y + Math.sin(a) * r * 1.4, 4, 5); } break; }
+      case 'overload': { // 이중 충격파 + 방사형 빛줄기
+        ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 8 + g * 40, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = '#ff7a2a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 4 + g * 26, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = '#fff4c0'; ctx.lineWidth = 1; for (let i = 0; i < 10; i++) { const a = i / 10 * TAU, d0 = 6 + g * 20, d1 = d0 + 10; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * d0, y + Math.sin(a) * d0); ctx.lineTo(x + Math.cos(a) * d1, y + Math.sin(a) * d1); ctx.stroke(); } break; }
+      case 'paralyze': { // 노란 전기 우리
+        ctx.strokeStyle = Math.floor(fx.t * 24) % 2 ? '#e8ff7a' : '#ffffff';
+        for (let i = 0; i < 5; i++) { const ox = x - 12 + i * 6; jag(ox, y - 14, ox, y + 8, 4, 3); }
+        ctx.beginPath(); ctx.moveTo(x - 13, y - 14); ctx.lineTo(x + 13, y - 14); ctx.moveTo(x - 13, y + 8); ctx.lineTo(x + 13, y + 8); ctx.stroke(); break; }
+      case 'eclipse': { // 검은 원판 + 흰 코로나 + 보랏빛 빛살
+        ctx.restore(); ctx.save(); ctx.globalAlpha = Math.max(0, k); // 검은 원판은 일반 혼합으로
+        ctx.fillStyle = '#0a0612'; ctx.beginPath(); ctx.arc(x, y, 9 + g * 3, 0, TAU); ctx.fill();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = '#fff8d8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 11 + g * 4, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = '#b070ff'; ctx.lineWidth = 1; for (let i = 0; i < 12; i++) { const a = i / 12 * TAU + fx.t, d0 = 14 + g * 4, d1 = d0 + 6 + R(i) * 8; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * d0, y + Math.sin(a) * d0); ctx.lineTo(x + Math.cos(a) * d1, y + Math.sin(a) * d1); ctx.stroke(); } break; }
+      case 'plague': { // 점선 원이 퍼져 나감 + 포자
+        ctx.strokeStyle = '#9ad05a'; ctx.setLineDash([3, 3]); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 10 + g * 60, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#c8ff7a'; for (let i = 0; i < 10; i++) { const a = i / 10 * TAU + R(i), d = g * (30 + R(i + 9) * 30); ctx.fillRect(Math.round(x + Math.cos(a) * d), Math.round(y + Math.sin(a) * d * 0.7), 2, 2); } break; }
+      case 'hellfire': { // 보랏빛 불기둥
+        const hgt = 34 * Math.min(1, g * 5);
+        for (let i = 0; i < 5; i++) { const ox = (i - 2) * 5, hh = hgt * (0.6 + R(i) * 0.4);
+          ctx.fillStyle = i % 2 ? '#c060ff' : '#7030c0'; ctx.beginPath(); ctx.moveTo(x + ox - 4, y + 4); ctx.lineTo(x + ox + Math.sin(fx.t * 18 + i) * 3, y + 4 - hh); ctx.lineTo(x + ox + 4, y + 4); ctx.fill(); }
+        ctx.strokeStyle = '#e0a0ff'; ctx.beginPath(); ctx.ellipse(x, y + 4, 12 + g * 14, 4 + g * 5, 0, 0, TAU); ctx.stroke(); break; }
+      case 'judgment': { // 하늘에서 내려오는 빛기둥 + 십자
+        const w = 10 * k + 2; ctx.fillStyle = '#fff4c0'; ctx.fillRect(Math.round(x - w / 2), y - 120, Math.round(w), 124);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(x - w / 4), y - 120, Math.max(1, Math.round(w / 2)), 124);
+        ctx.fillStyle = '#ffe9a0'; ctx.fillRect(x - 10, y - 1, 21, 3); ctx.fillRect(x - 1, y - 10, 3, 21); break; }
+    }
+    ctx.lineWidth = 1;
   }
   draw(ctx, fx) {
     if (fx.t < 0) return; // 늦게 시작하는 효과
@@ -142,6 +197,16 @@ class Effects {
         else { const r = Math.max(1, Math.round(s)); ctx.fillRect(x - (r >> 1), y - (r >> 1), r, r); }
         break;
       }
+      case 'rlabel': { // 반응 이름표: 튀어나왔다가 천천히 떠오름
+        const pop = 1 + 0.6 * Math.max(0, 1 - fx.t / 0.1), sz = Math.round(11 * pop);
+        ctx.globalAlpha = Math.min(1, k * 2.5);
+        ctx.font = `bold ${sz}px monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const w = ctx.measureText(fx.str).width + 8, h = sz + 4;
+        ctx.fillStyle = 'rgba(10,8,18,0.85)'; ctx.fillRect(Math.round(x - w / 2), Math.round(y - h / 2), Math.round(w), h);
+        ctx.strokeStyle = fx.color; ctx.lineWidth = 1; ctx.strokeRect(Math.round(x - w / 2) + 0.5, Math.round(y - h / 2) + 0.5, Math.round(w) - 1, h - 1);
+        ctx.fillStyle = fx.color; ctx.fillText(fx.str, x, y + 1); ctx.textBaseline = 'alphabetic'; break;
+      }
+      case 'react': this.drawReaction(ctx, fx, k, x, y); break;
       case 'text': {
         const pop = 1 + (fx.big ? 0.8 : 0.3) * Math.max(0, 1 - fx.t / 0.12);
         ctx.font = `bold ${Math.round((fx.big ? 12 : 9) * pop)}px monospace`;
