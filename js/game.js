@@ -507,14 +507,14 @@ class Game {
   excaliburStrike(p, T) {
     if (p.state === 'DEAD') return;
     const sx = p.x + p.aim.x * 8, sy = p.y + p.aim.y * 8, len = T.range; // 빛기둥 길이 그대로 내려꽂힘 (벽에 막히지 않음)
-    const ex = sx + p.aim.x * len, ey = sy + p.aim.y * len, dmg = T.damage * this.scale.hp;
+    let ex = sx + p.aim.x * len, ey = sy + p.aim.y * len; const dmg = T.damage * this.scale.hp;
     for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, ex, ey, e.x, e.y, e.radius + T.width) >= 0)
       this.damageEnemy(e, { damage: dmg, mods: p.mods, knockback: 10 }, p.aim.x, p.aim.y);
     for (const b of this.enemyBullets) if (segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸
-    this.hitTile(ex + p.aim.x * 3, ey + p.aim.y * 3);
     this.effects.excalibur(sx, sy, ex, ey, T.width, p.x, p.y);
     this.addShake(0.5, 9); this.screenFlash = 0.4; this.flashColor = '255,240,200'; this.hitStop(0.12); SFX.play('excal');
-    // 떨어진 자리에서 폭발: 금빛 대폭발 + 충격파 고리 + 빛살 + 빛기둥 (주변 적에게 추가 피해)
+    // 폭발은 마우스로 조준한 지점(검기 위, 사거리 안)에서: 금빛 대폭발 + 충격파 고리 + 빛살 + 빛기둥 (주변 적에게 추가 피해)
+    { const mw = this.mouseWorld(), along = clamp((mw.x - sx) * p.aim.x + (mw.y - sy) * p.aim.y, 40, len); ex = sx + p.aim.x * along; ey = sy + p.aim.y * along; }
     this.explodeAt(ex, ey, T.blast, { color: '#ffe9a0', hurtEnemies: true, src: { damage: dmg * T.blastRatio, mods: p.mods, knockback: 14 } });
     this.effects.rays(ex, ey, '#fff4c0', 22, T.blast * 2.2, 0.8); this.effects.ring(ex, ey, T.blast, '#ffffff'); this.effects.ring(ex, ey, T.blast * 1.6, '#ffd84a');
     for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.effects.explosion(ex + Math.cos(a) * T.blast * 0.55, ey + Math.sin(a) * T.blast * 0.4, 14 + (i % 3) * 4, '#ffd84a'); }

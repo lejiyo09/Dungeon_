@@ -80,7 +80,6 @@ class Effects {
     this.push({ kind: 'excal', x, y, x1, y1, w, t: 0, life: 1.15, add: true });
     // (검을 휘두르는 모습은 ExcaliburRaise가 그림)
     this.push({ kind: 'shock', x, y, r: 34, color: '#ffffff', t: 0, life: 0.3, add: true });                 // 손끝 충격파
-    this.push({ kind: 'shock', x: x1, y: y1, r: w * 2.6, color: '#ffe9a0', t: -0.06, life: 0.45, add: true }); // 끝에서 터지는 충격파
     for (let d = 0; d < L; d += 22) { // 빛줄기를 따라 드문드문 떠오르는 금빛 알갱이 (잔광)
       const s = (Math.random() - 0.5) * w * 1.6;
       this.push({ kind: 'p', x: x + dx * d - dy * s, y: y + dy * d + dx * s, vx: 0, vy: -18 - Math.random() * 14, t: -0.25 - d / L * 0.15, life: 0.6, size: 2, size2: 0, color: '#fff4c0', color2: '#c8a050', drag: 1, grav: 0, add: true });
