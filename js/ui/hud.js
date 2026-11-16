@@ -289,6 +289,17 @@ class HUD {
   // 보구 획득 알림: 오른쪽 아래에서 아이콘과 함께 미끄러져 들어와 6초 동안 표시
   static jobRowRect(i) { return { x: 36, y: 36 + i * 27, w: VIEW_W - 72, h: 24 }; }
   static variantRect(i, n) { const cols = Math.min(3, n), w = 156, h = 58, gap = 8, rows = Math.ceil(n / cols), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % cols) * (w + gap), y: 66 + Math.floor(i / cols) * (h + gap) + (rows === 1 ? 30 : 0), w, h }; }
+  // 컷신: 위아래 검은 띠 + 아래 띠에 한 자씩 나오는 대사
+  static cutscene(ctx, game) {
+    const c = game.cutscene, ease = Math.min(1, c.t / 0.5), H = Math.round(40 * ease);
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VIEW_W, H); ctx.fillRect(0, VIEW_H - H, VIEW_W, H);
+    if (ease < 1) return;
+    const line = c.lines[Math.min(c.i, c.lines.length - 1)] || '', n = Math.min(line.length, Math.floor(c.lt * 28)), txt = line.slice(0, n);
+    hudText(ctx, txt, VIEW_W / 2, VIEW_H - 28, '#f0e8d0', 'center', 11);
+    if (n >= line.length && Math.floor(c.t * 2.5) % 2 === 0) hudText(ctx, '▶', VIEW_W - 22, VIEW_H - 16, '#ffe9a0', 'center', 9);
+    hudText(ctx, `${c.i + 1} / ${c.lines.length}`, 14, 14, '#666', 'left', 8);
+    hudText(ctx, 'Enter·클릭: 다음   Esc: 건너뛰기', VIEW_W - 10, 14, '#666', 'right', 8);
+  }
   // 최종 진화 스킬·보구 사용 컷인: 화면을 가로지르는 띠 + 아이콘/캐릭터 + 이름 (약 1초)
   static cutin(ctx, game) {
     const o = game.cutin, t = (performance.now() - o.start) / 1000, D = o.kind === 'treasure' ? 1.1 : 0.85;

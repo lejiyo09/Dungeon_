@@ -186,7 +186,9 @@ class Game {
     if (ex) { const c = map.tileCenter(ex.cx, ex.cy); this.portals.push(new Portal(c.x, c.y, () => this.advanceStage(), '다음 스테이지')); }
     this.save.bestStage = Math.max(this.save.bestStage, this.stageIndex + 1);
     this.save.run = this.snapshotRun(); writeSave(this.save); // 이어하기용: 이 스테이지 시작 지점을 저장
+    if (W.sanctum) this.decorateSanctum(map);
     this.snapCamera();
+    if (W.sanctum && this.levelIdx === 0) this.playCutscene(ORIGIN_ARRIVAL_LINES, { id: 'origin_arrival', focus: null });
     this.showBanner(`${stageLabel(this.worldIdx, this.levelIdx)}  ${W.name}`, this.isBossStage ? '보스가 기다리고 있습니다' : W.deep && this.levelIdx === 0 ? `심층 ${W.depth}번째 필드 — 던전은 더 깊은 곳으로 이어진다` : '출구 포탈을 찾으세요', W.deep ? '#9ad8ff' : undefined);
   }
   advanceStage() {
@@ -281,7 +283,7 @@ class Game {
   cameraTarget() {
     const p = this.player, mx = this.input.mouse.x - VIEW_W / 2, my = this.input.mouse.y - VIEW_H / 2;
     let fx = p.x + mx * 0.2, fy = p.y + my * 0.2;
-    const focus = this.cinematic ? this.cinematic.boss : this.slowMo ? this.slowMo : null; // 보스 등장·처치 연출 중에는 보스를 비춤
+    const cs = this.cutscene, focus = cs && cs.focus ? cs.focus : this.cinematic ? this.cinematic.boss : this.slowMo ? this.slowMo : null; // 컷신·보스 등장·처치 연출 중에는 그쪽을 비춤
     if (focus) { fx = focus.x; fy = focus.y; }
     return {
       x: clamp(fx - VIEW_W / 2, 0, this.map.width * TILE - VIEW_W),
@@ -311,6 +313,7 @@ class Game {
       input.endStep(); return;
     }
     if (this.overlay) { this.updateOverlay(input); input.endStep(); return; }
+    if (this.cutscene) { this.screenFlash = Math.max(0, this.screenFlash - dt); this.shake = Math.max(0, (this.shake || 0) - dt); this.updateCutscene(dt, input); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } // 컷신 중에는 세계가 멈춤 (번쩍임·흔들림은 가라앉음)
     if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; input.endStep(); return; }
     if (this.hitStopT > 0) { this.hitStopT -= dt; return; }
     this.screenFlash = Math.max(0, this.screenFlash - dt);
@@ -858,7 +861,8 @@ class Game {
       const id = this.W.boss, c = this.map.tileCenter(r.cx, r.cy - 3);
       const boss = this.spawnEnemy(id, c.x, c.y, r);
       boss.setState('INTRO'); boss.jumpH = 160; boss.phase = 1;
-      this.cinematic = { t: 0, boss, landed: false, roared: false };
+      this.cinematic = { t: 0, boss, landed: false, roared: false, grand: !!this.W.sanctum };
+      if (this.W.sanctum && this.sanctumGate) this.playCutscene(GATEKEEPER_INTRO_LINES, { id: 'gatekeeper_intro', focus: { x: this.sanctumGate.x, y: this.sanctumGate.y - 20 } });
       this.banner = null; this.input.mouse.down = false;
       SFX.play('door');
     } else this.spawnWave(r);
@@ -949,7 +953,12 @@ class Game {
       const W = this.W, next = worldDef(this.worldIdx + 1);
       this.portalSpot = c;
       const after = () => {
-        if (W.sanctum) this.portals.push(new Portal(c.x, c.y + 24, () => this.enterSanctum(), '성역 깊은 곳으로', [255, 233, 160]));
+        if (W.sanctum) { // 문지기를 쓰러뜨림: 거대한 문이 열리고, 그 앞에 성역 깊은 곳으로 가는 포탈
+          const G = this.sanctumGate, gx = G ? G.x : c.x, gy = G ? G.y + 22 : c.y + 24;
+          if (G) { G.opening = true; this.effects.rays(G.x, G.y - 30, '#ffe9a0', 20, 120, 1.2); for (let i = 0; i < 6; i++) this.effects.skyBeam(G.x - 30 + i * 12, G.y - 4, '#fff4c0', 0.3 + i * 0.12, 4); SFX.play('solomon', 0.6); }
+          this.playCutscene(GATEKEEPER_FALL_LINES, { id: 'gatekeeper_fall', focus: G ? { x: G.x, y: G.y - 10 } : null });
+          this.portals.push(new Portal(gx, gy, () => this.enterSanctum(), '성역 깊은 곳으로', [255, 233, 160]));
+        }
         else {
           this.props.push(new Chest(c.x, c.y - 24, 'weapon'));
           this.portals.push(new Portal(c.x + (W.deep ? 26 : 0), c.y + 24, () => this.advanceStage(), `${stageLabel(this.worldIdx + 1, 0)} ${next.name}`, next.deep ? [120, 200, 255] : undefined));
@@ -1127,8 +1136,42 @@ class Game {
       this.addShake(0.5, 7); SFX.play('explode'); this.screenFlash = 0.2;
       this.effects.ring(b.x, b.y, 40, '#ffffff'); this.effects.ring(b.x, b.y, 70, b.def.color); this.effects.burst(b.x, b.y, b.def.color, 26);
     }
-    if (c.t >= 1.3 && !c.roared) { c.roared = true; SFX.play('boss'); this.addShake(0.6, 3); this.effects.ring(b.x, b.y, 100, '#ffffff'); }
-    if (c.t >= 2.8) { b.setState('CHASE'); this.cinematic = null; SFX.startMusic(); }
+    if (c.grand && c.landed && !c.grandFx) { c.grandFx = true; // 성역: 착지할 때 빛살·빛기둥
+      this.effects.rays(b.x, b.y, '#ffe9a0', 22, 160, 1); for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.effects.skyBeam(b.x + Math.cos(a) * 70, b.y + Math.sin(a) * 45, '#ffe9a0', 0.1 + i * 0.05, 4); }
+      this.screenFlash = 0.35; this.flashColor = '255,233,160'; }
+    if (c.t >= 1.3 && !c.roared) { c.roared = true; SFX.play('boss'); this.addShake(0.6, 3); this.effects.ring(b.x, b.y, 100, '#ffffff'); if (c.grand) { this.effects.ring(b.x, b.y, 160, '#ffe9a0'); this.effects.rays(b.x, b.y, '#ffffff', 12, 120, 0.7); SFX.play('solomon', 0.5); } }
+    if (c.t >= (c.grand ? 3.4 : 2.8)) { b.setState('CHASE'); this.cinematic = null; SFX.startMusic(c.grand ? 'sanctum' : null); }
+  }
+  // ── 컷신: 위아래 검은 띠 + 비추는 곳으로 카메라 이동 + 글자가 한 자씩 (Enter/Space/클릭: 다음 · Esc: 건너뛰기)
+  playCutscene(lines, o = {}) {
+    if (o.id && (this.save.scenesSeen || []).includes(o.id) && !o.always) { if (o.done) o.done(); return; } // 처음 한 번만
+    if (window.__toolMode && !o.force) { if (o.done) o.done(); return; } // 테스트 도구는 건너뜀
+    this.cutscene = { lines, i: 0, t: 0, lt: 0, focus: o.focus || null, id: o.id, done: o.done };
+    this.input.mouse.down = false;
+  }
+  updateCutscene(dt, input) {
+    const c = this.cutscene; c.t += dt; c.lt += dt;
+    const line = c.lines[c.i] || '', shown = Math.floor(c.lt * 28);
+    const next = input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('Mouse0') || input.wasPressed('KeyE');
+    if (input.wasPressed('Escape')) c.i = c.lines.length;
+    else if (next) { if (shown < line.length) c.lt = 99; else { c.i++; c.lt = 0; } }
+    if (c.i >= c.lines.length) {
+      this.cutscene = null; this.input.mouse.down = false;
+      if (c.id) { this.save.scenesSeen = (this.save.scenesSeen || []).concat([c.id]); writeSave(this.save); }
+      if (c.done) c.done();
+    }
+  }
+  // 기원의 성역 장식: 보스방엔 거대한 문·화로·바닥 문양, 일반 방엔 빛기둥
+  decorateSanctum(map) {
+    this.sanctumGate = null;
+    for (const r of map.rooms) {
+      if (r.type === 'boss') {
+        const c = map.tileCenter(r.cx, r.y0 + 1); this.sanctumGate = new SanctumGate(c.x, c.y + 10); this.props.push(this.sanctumGate);
+        for (const [dx, dy] of [[2, 2], [r.w - 3, 2], [2, r.h - 3], [r.w - 3, r.h - 3]]) { const b = map.tileCenter(r.x0 + dx, r.y0 + dy); this.props.push(new Brazier(b.x, b.y)); }
+      } else if (r.type === 'combat' || r.type === 'start') {
+        for (let i = 0; i < 2; i++) { const p = map.tileCenter(r.x0 + 2 + Math.floor(Math.random() * Math.max(1, r.w - 4)), r.y0 + 2 + Math.floor(Math.random() * Math.max(1, r.h - 4))); this.props.push(new LightPillar(p.x, p.y)); }
+      }
+    }
   }
   // 보스 처치 슬로우모션: 연쇄 폭발 → 섬광 → 보상
   updateSlowMo(dt) {
@@ -1314,6 +1357,15 @@ class Game {
   // 화면 효과: 피격/저체력 비네트, 화면 밖 적 방향 표시
   renderScreenFx(ctx, cx, cy) {
     const p = this.player;
+    if (this.mode === 'dungeon' && this.W && this.W.sanctum) { // 기원의 성역: 비스듬히 내려오는 빛줄기 + 떠다니는 금빛 알갱이 (화면 기준)
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 4; i++) { const x = ((i * 157 + this.time * 6 - cx * 0.3) % (VIEW_W + 200)) - 100, a = 0.05 + 0.03 * Math.sin(this.time * 0.7 + i * 2);
+        const g = ctx.createLinearGradient(x, 0, x + 80, VIEW_H); g.addColorStop(0, `rgba(255,233,160,${a})`); g.addColorStop(1, 'rgba(255,233,160,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + 34, 0); ctx.lineTo(x + 34 + 90, VIEW_H); ctx.lineTo(x + 90, VIEW_H); ctx.fill(); }
+      for (let i = 0; i < 26; i++) { const sx = ((i * 97.3 - cx * 0.6 + Math.sin(this.time * 0.5 + i) * 12) % VIEW_W + VIEW_W) % VIEW_W, sy = ((i * 61.7 - cy * 0.6 - this.time * (6 + i % 5)) % VIEW_H + VIEW_H) % VIEW_H;
+        ctx.globalAlpha = 0.3 + 0.3 * Math.sin(this.time * 2 + i); ctx.fillStyle = i % 3 ? '#ffe9a0' : '#ffffff'; ctx.fillRect(Math.round(sx), Math.round(sy), 1, 1); }
+      ctx.restore();
+    }
     if (this.mode === 'dungeon' && this.activeRoom && p.state !== 'DEAD') {
       for (const e of this.enemies) {
         if (!e.targetable) continue;
@@ -1361,7 +1413,7 @@ class Game {
     for (const o of this.props) o.render(ctx, this);
     for (const pk of this.pickups) pk.render(ctx);
     for (const e of this.enemies) e.renderTelegraph(ctx);
-    const actors = [...this.enemies, ...this.allies, this.player].sort((a, b) => a.y - b.y);
+    const actors = [...(this.cutscene ? this.enemies.filter((e) => e.state !== 'INTRO') : this.enemies), ...this.allies, this.player].sort((a, b) => a.y - b.y); // 등장 전 보스는 컷신 동안 숨김
     for (const a of actors) a.render(ctx);
     for (const pr of this.projectiles) pr.render(ctx);
     for (const z of this.zones) if (z.renderTop) z.renderTop(ctx);
@@ -1403,7 +1455,7 @@ class Game {
 
     ctx.setTransform(R, 0, 0, R, 0, 0);
     this.renderScreenFx(ctx, cx, cy);
-    this.hud.render(ctx, this);
+    if (this.cutscene) HUD.cutscene(ctx, this); else this.hud.render(ctx, this); // 컷신 중에는 HUD 대신 검은 띠와 대사
     if (this.cutin && !this.overlay) HUD.cutin(ctx, this); else if (this.overlay) this.cutin = null; // 최종 스킬·보구 컷인
     if (this.treasureToast) HUD.treasureToast(ctx, this); // 보구 획득 알림 (결과 화면 위에도 보임)
 

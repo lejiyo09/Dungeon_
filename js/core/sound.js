@@ -32,7 +32,8 @@ class SoundSystem {
     if (this.ctx.state === 'suspended') this.ctx.resume();
   }
   // 보스전 배경음악: 16스텝 베이스 + 킥/스네어/하이햇 루프를 조금씩 앞서 예약
-  startMusic() {
+  startMusic(theme) {
+    this.theme = theme || null;
     if (!this.ctx || this.musicTimer) return;
     this.beat = 0; this.nextT = this.ctx.currentTime + 0.05;
     this.musicTimer = setInterval(() => this.scheduleMusic(), 90);
@@ -41,6 +42,19 @@ class SoundSystem {
   scheduleMusic() {
     if (!this.ctx) return;
     const BASS = [55, 55, 82.4, 55, 49, 49, 73.4, 49, 58.3, 58.3, 87.3, 58.3, 41.2, 49, 55, 61.7];
+    if (this.theme === 'sanctum') { // 기원의 성역: 낮은 북 + 길게 울리는 화음 (Am - F - C - G)
+      const CH = [[110, 130.8, 164.8], [87.3, 110, 130.8], [65.4, 82.4, 98], [98, 123.5, 146.8]];
+      while (this.nextT < this.ctx.currentTime + 0.25) {
+        const b = this.beat % 32, d = Math.max(0, this.nextT - this.ctx.currentTime);
+        if (!this.muted) {
+          if (b % 8 === 0) for (const f of CH[(b / 8) | 0]) { this.tone('sine', f * 2, f * 2, 1.7, 0.03, d); this.tone('triangle', f, f, 1.7, 0.025, d); }
+          if (b % 8 === 0 || b % 8 === 3) this.tone('sine', 70, 30, 0.35, 0.14, d);
+          if (b % 4 === 2) this.noise(0.12, 0.02, 'bandpass', 900, d);
+        }
+        this.nextT += 0.22; this.beat++;
+      }
+      return;
+    }
     while (this.nextT < this.ctx.currentTime + 0.25) {
       const b = this.beat % 16, d = Math.max(0, this.nextT - this.ctx.currentTime);
       if (!this.muted) {

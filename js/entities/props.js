@@ -394,3 +394,56 @@ class Portal {
     if (this.label) hudText(ctx, this.label, x, y - 30, '#bfe0ff', 'center', 8);
   }
 }
+
+// ── 기원의 성역 장식 (제10 필드)
+// 보스방 위쪽의 거대한 문: 문지기를 쓰러뜨리면 열림 (open 0 → 1)
+class SanctumGate {
+  constructor(x, y) { this.x = x; this.y = y; this.open = 0; this.opening = false; }
+  label() { return null; }
+  render(ctx, game) {
+    const t = game.time; if (this.opening) this.open = Math.min(1, this.open + 1 / 60 / 2.2);
+    const x = Math.round(this.x), y = Math.round(this.y), W = 76, H = 70, k = this.open;
+    ctx.fillStyle = '#2a2632'; ctx.fillRect(x - W / 2 - 8, y - H, W + 16, H + 4); // 석조 틀
+    ctx.fillStyle = '#6c6878'; ctx.fillRect(x - W / 2 - 8, y - H, 8, H + 4); ctx.fillRect(x + W / 2, y - H, 8, H + 4);
+    ctx.fillStyle = '#c8a050'; ctx.fillRect(x - W / 2 - 10, y - H - 6, W + 20, 6); ctx.fillStyle = '#ffe9a0'; ctx.fillRect(x - W / 2 - 10, y - H - 6, W + 20, 1);
+    for (let i = 0; i < 5; i++) { const a = 0.5 + 0.5 * Math.sin(t * 2 + i); ctx.globalAlpha = 0.4 + 0.5 * a; ctx.fillStyle = '#ffe9a0'; ctx.fillRect(x - 28 + i * 14, y - H - 4, 3, 2); } ctx.globalAlpha = 1; // 빛나는 문양
+    if (k > 0) { // 열린 틈으로 빛
+      const g = ctx.createLinearGradient(0, y - H, 0, y + 40); g.addColorStop(0, 'rgba(255,240,190,0.95)'); g.addColorStop(1, 'rgba(255,220,140,0)');
+      ctx.fillStyle = g; ctx.fillRect(x - (W / 2) * k, y - H + 2, W * k, H + 38);
+    }
+    const dw = (W / 2) * (1 - k * 0.92); // 양쪽 문짝이 옆으로 밀려남
+    for (const sgn of [-1, 1]) {
+      const dx = sgn < 0 ? x - W / 2 : x + W / 2 - dw;
+      ctx.fillStyle = '#4a4652'; ctx.fillRect(dx, y - H + 2, dw, H);
+      ctx.fillStyle = '#5a5666'; ctx.fillRect(dx + 2, y - H + 6, Math.max(0, dw - 4), H - 10);
+      ctx.fillStyle = '#c8a050'; ctx.fillRect(sgn < 0 ? dx + dw - 2 : dx, y - H + 2, 2, H); // 금빛 테두리
+      if (dw > 12) { ctx.fillStyle = '#ffe9a0'; ctx.globalAlpha = 0.6 + 0.3 * Math.sin(t * 3 + sgn); ctx.fillRect(dx + dw / 2 - 2, y - H / 2 - 6, 4, 12); ctx.globalAlpha = 1; } // 문 가운데 빛 문양
+    }
+  }
+}
+// 금빛 불꽃이 타는 화로
+class Brazier {
+  constructor(x, y) { this.x = x; this.y = y; this.seed = Math.random() * 10; }
+  label() { return null; }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game.time + this.seed;
+    ctx.fillStyle = 'rgba(255,220,140,0.12)'; ctx.beginPath(); ctx.arc(x, y - 8, 22 + Math.sin(t * 5) * 2, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#3a3640'; ctx.fillRect(x - 2, y - 6, 4, 8); ctx.fillStyle = '#c8a050'; ctx.fillRect(x - 6, y - 9, 12, 3); ctx.fillStyle = '#8a6a30'; ctx.fillRect(x - 5, y - 6, 10, 1);
+    for (let i = 0; i < 3; i++) { const h = 6 + Math.sin(t * 9 + i * 2) * 2 + i; ctx.fillStyle = i === 2 ? '#ffffff' : i ? '#ffe9a0' : '#ffb040'; ctx.fillRect(x - 3 + i, y - 9 - h, 6 - i * 2, h); }
+    if (Math.random() < 0.08) game.effects.part(x + randInt(-2, 2), y - 16, randInt(-4, 4), -30, { color: '#ffe9a0', life: 0.8, size: 1.5, size2: 0, drag: 1, add: true });
+  }
+}
+// 천장에서 내려오는 빛기둥 (장식)
+class LightPillar {
+  constructor(x, y) { this.x = x; this.y = y; this.seed = Math.random() * 10; }
+  label() { return null; }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game.time + this.seed, a = 0.16 + 0.06 * Math.sin(t * 1.5);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createLinearGradient(0, y - 120, 0, y + 6); g.addColorStop(0, 'rgba(255,233,160,0)'); g.addColorStop(1, `rgba(255,233,160,${a})`);
+    ctx.fillStyle = g; ctx.fillRect(x - 10, y - 120, 20, 126);
+    ctx.fillStyle = `rgba(255,240,200,${a * 0.8})`; ctx.beginPath(); ctx.ellipse(x, y + 4, 14, 5, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+    if (Math.random() < 0.05) game.effects.part(x + randInt(-8, 8), y, 0, -14 - Math.random() * 10, { color: '#fff4c0', life: 1.6, size: 1.2, size2: 0, drag: 0.3, add: true });
+  }
+}
