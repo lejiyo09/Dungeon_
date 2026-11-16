@@ -99,6 +99,14 @@ Object.assign(WPIX, {
   torch: { auto: true, p: [1, 1], rows: ['.......ooo', 'ddddddoowo', '.......ooo'] },
   executioner: { auto: true, p: [1, 2], rows: ['........aaa.', '.......acccc', 'dddddddacccc', '.......acccc', '........aaa.'] },
   phoenixspear: { auto: true, p: [3, 1], rows: ['.............o.o.', 'ddddyddddddddyyyw', '.............o.o.'] },
+  nailgun: { auto: true, p: [2, 3], rows: ['.mmmmmmm..', '.aaaaaaanm', '.abbbbba..', '.gg.......', '.gg.......'] },
+  mallet: { auto: true, p: [1, 2], rows: ['........mmm', 'dddddddnmmm', '........mmm'] },
+  sparkpistol: { auto: true, p: [2, 3], rows: ['......o.o.', '.cccccccoo', '.aaaaaaano', '.bbnbbbb..', '.gg.......', '.gg.......'] },
+  kusarigama: { auto: true, p: [1, 2], rows: ['...........mm', '..........m..', 'dddddm.m.mm..', '.............', '.............'] },
+  blastbow: { auto: true, p: [5, 6], rows: ['.a.....', '.sa....', '.s.a...', '.s..a..', '.s...a.', '.s...a.', '.s...ro', '.s...a.', '.s...a.', '.s..a..', '.s.a...', '.sa....', '.a.....'] },
+  curseorb: { auto: true, p: [3, 2], rows: ['..........ooo.', '.........oowoo', 'ddddddddd.ooo.', '.........o...o', '..............'] },
+  stormglaive: { auto: true, p: [4, 2], rows: ['................cc.', '..............ccaa.', 'ddddddddddddddaaaao', '...............aa..', '................o..'] },
+  starfall: { auto: true, p: [3, 3], rows: ['.........o.', '........ao.', '.aaaaaaaaa.', 'nnnnnnnnnnw', '.aa.....ao.', '..a......o.'] },
   headshot: { auto: true, p: [5, 3], rows: ['.....nnnnnnn........', '.....nooooon........', 'bbbbaaaaaaaaaaaaaaaan', 'bb...aanbb..........', '.....gg.............', '.....gg.............'] }
 });
 
@@ -131,6 +139,8 @@ Object.assign(WEAPON_SPRITE, {
   weapon_shadowblades_001: 'shadowblades', weapon_judgebow_001: 'judgebow', weapon_judgment_001: 'judgment',
   weapon_dartgun_001: 'dartgun', weapon_waterballoon_001: 'sling', weapon_iceshuriken_001: 'shuriken', weapon_beehive_001: 'beehive',
   weapon_crystalstaff_001: 'crystalstaff', weapon_thunderjavelin_001: 'javelin', weapon_goldrevolver_001: 'revolver',
+  weapon_nailgun_001: 'nailgun', weapon_ironmallet_001: 'mallet', weapon_sparkpistol_001: 'sparkpistol', weapon_kusarigama_001: 'kusarigama', weapon_blastbow_001: 'blastbow',
+  weapon_curseorb_001: 'curseorb', weapon_stormglaive_001: 'stormglaive', weapon_starfall_001: 'starfall',
   weapon_kitchenknife_001: 'kitchenknife', weapon_pickaxe_001: 'pickaxe', weapon_icegreatsword_001: 'greatsword', weapon_steelxbow_001: 'repeatxbow', weapon_quakehammer_001: 'quakehammer'
 });
 

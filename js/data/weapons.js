@@ -415,5 +415,26 @@ const DATA_WEAPONS = [
     knockback: 6, color: '#6a4a8a', len: 13, bulletColor: '#ffb040' },
   { id: 'weapon_thunderhammer_001', name: '뇌명의 철퇴', rarity: 'legendary', type: 'melee', shape: 'hammer',
     damage: 66, fireRate: 1.15, energyCost: 0.8, range: 48, arcDeg: 180, slam: { r: 50, damage: 44 }, deflect: true,
-    status: { type: 'shock', chance: 1, duration: 3 }, knockback: 14, shake: true, color: '#5a6a9a', len: 15 }
+    status: { type: 'shock', chance: 1, duration: 3 }, knockback: 14, shake: true, color: '#5a6a9a', len: 15 },
+  // ── 추가 무기 (등급별)
+  { id: 'weapon_nailgun_001', name: '못 박기 총', rarity: 'common', type: 'gun', shape: 'gun',
+    damage: 10, fireRate: 6, energyCost: 0.25, range: 300, projectileSpeed: 440, projectileCount: 1, spreadDeg: 6, pierce: 1, knockback: 1, color: '#8a7a5a', len: 9, bulletColor: '#c8c8d0', bulletSize: 1 },
+  { id: 'weapon_ironmallet_001', name: '쇠망치', rarity: 'common', type: 'melee', shape: 'hammer',
+    damage: 25, fireRate: 1.7, energyCost: 0, range: 30, arcDeg: 110, knockback: 10, color: '#8a5a30', len: 11 },
+  { id: 'weapon_sparkpistol_001', name: '스파크 권총', rarity: 'uncommon', type: 'gun', shape: 'gun',
+    damage: 17, fireRate: 3.6, energyCost: 0.5, range: 320, projectileSpeed: 480, projectileCount: 1, spreadDeg: 4,
+    status: { type: 'shock', chance: 0.3, duration: 2 }, pierce: 0, knockback: 2, color: '#4a5a7a', len: 10, bulletColor: '#dff4ff', bulletSize: 2 },
+  { id: 'weapon_kusarigama_001', name: '사슬낫', rarity: 'uncommon', type: 'melee', shape: 'sword',
+    damage: 26, fireRate: 2, energyCost: 0.3, range: 46, arcDeg: 130, knockback: 4, color: '#7a7a8a', len: 13 },
+  { id: 'weapon_blastbow_001', name: '폭발 화살 활', rarity: 'rare', type: 'charge', shape: 'bow',
+    damage: 66, fireRate: 1.2, energyCost: 1.4, chargeTime: 0.6, range: 520, projectileSpeed: 540, explodeRadius: 28, pierce: 0, knockback: 8, color: '#8a4a2a', len: 12, bulletColor: '#ffb04a', bulletSize: 2 },
+  { id: 'weapon_curseorb_001', name: '저주 구슬', rarity: 'rare', type: 'gun', shape: 'staff',
+    damage: 26, fireRate: 2.6, energyCost: 1.1, range: 360, projectileSpeed: 320, projectileCount: 1, spreadDeg: 2, homing: 2.5,
+    status: { type: 'curse', chance: 0.5, duration: 3 }, pierce: 1, knockback: 2, color: '#4a2a5a', len: 13, bulletColor: '#b070ff', bulletSize: 3 },
+  { id: 'weapon_stormglaive_001', name: '폭풍 언월도', rarity: 'epic', type: 'melee', shape: 'spear',
+    damage: 45, fireRate: 1.3, energyCost: 0.8, range: 54, arcDeg: 140, knockback: 8, status: { type: 'shock', chance: 0.6, duration: 3 },
+    wave: { damage: 14, speed: 380, range: 170 }, color: '#5a6a9a', len: 17 },
+  { id: 'weapon_starfall_001', name: '별똥별 석궁', rarity: 'legendary', type: 'charge', shape: 'crossbow',
+    damage: 86, fireRate: 1.5, energyCost: 1.5, chargeTime: 0.5, range: 600, projectileSpeed: 900, explodeRadius: 22,
+    status: { type: 'blind', chance: 1, duration: 3 }, chain: { count: 3, range: 90, falloff: 0.75 }, pierce: 99, knockback: 8, color: '#3a4270', len: 13, bulletColor: '#dff8ff', bulletSize: 2 }
 ];
