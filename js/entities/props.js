@@ -232,13 +232,13 @@ class Pedestal {
     const s = game.save;
     if (s.selected === this.hero.id) { // 고른 직업: 결정석으로 직업 레벨업
       const cost = game.jobLevelCost(this.hero.id), lv = game.jobLevel(this.hero.id);
-      return cost === null ? `직업 레벨 최고 (Lv.${lv})` : `[E] 직업 레벨업 Lv.${lv}→${lv + 1} (${cost} ${CUR.name})`;
+      return `[E] 직업 레벨 (Lv.${lv}${cost === null ? ' 최고' : ''})`;
     }
     if (s.unlocked.includes(this.hero.id)) return `[E] ${this.hero.name} 선택`;
     return `[E] 해금: ${this.hero.name} (${this.hero.price} ${CUR.name})`;
   }
   get labelColor() { return '#ffffff'; }
-  interact(game) { if (game.save.selected === this.hero.id) game.levelUpJob(this.hero); else game.selectHero(this.hero); }
+  interact(game) { if (game.save.selected === this.hero.id) game.overlay = { type: 'joblevel', msg: null }; else game.selectHero(this.hero); }
   render(ctx, game) {
     const x = Math.round(this.x), y = Math.round(this.y), s = game.save;
     const unlocked = s.unlocked.includes(this.hero.id), selected = s.selected === this.hero.id;

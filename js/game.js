@@ -55,15 +55,16 @@ class Game {
   }
   jobLevel(id) { return (this.save.jobLv && this.save.jobLv[id]) || 0; }
   jobLevelCost(id) { const J = BALANCE.jobLevel, lv = this.jobLevel(id); return lv >= J.max ? null : J.base + J.perLevel * lv; }
+  // 직업 레벨업 → 결과 메시지 [글, 색] (직업 레벨 창에서 사용)
   levelUpJob(hero) {
     const s = this.save, cost = this.jobLevelCost(hero.id), p = this.player;
-    if (cost === null) { this.effects.text(p.x, p.y - 18, '최고 레벨입니다', '#ffd84a'); return; }
-    if (s.bank < cost) { this.effects.text(p.x, p.y - 18, `${CUR.name}이 부족합니다`, '#ff7070'); SFX.play('deny'); return; }
+    if (!s.unlocked.includes(hero.id)) { SFX.play('deny'); return ['아직 해금하지 않은 직업입니다', '#ff9a9a']; }
+    if (cost === null) return ['이미 최고 레벨입니다', '#ffd84a'];
+    if (s.bank < cost) { SFX.play('deny'); return [`${CUR.name}이 부족합니다 (${cost} 필요)`, '#ff9a9a']; }
     s.bank -= cost; s.jobLv = s.jobLv || {}; s.jobLv[hero.id] = this.jobLevel(hero.id) + 1; writeSave(s);
     const { x, y } = p; this.player = this.makePlayer(x, y);
-    const J = BALANCE.jobLevel, lv = s.jobLv[hero.id];
     this.effects.ring(x, y, 30, '#7ad0ff'); this.effects.burst(x, y, '#7ad0ff', 18); SFX.play('buy');
-    this.showBanner(`${hero.name} Lv.${lv}`, `누적: 체력 +${J.hp * lv} · 공격력 +${Math.round(J.atk * lv * 1000) / 10}% · 에너지 +${J.energy * lv}`, '#7ad0ff');
+    return [`${hero.name} Lv.${s.jobLv[hero.id]} 달성!`, '#7ad0ff'];
   }
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
   resetWorldLists(map) {
@@ -104,8 +105,7 @@ class Game {
     const { x, y } = this.player;
     this.player = this.makePlayer(x, y);
     this.discover(hero.startWeapon);
-    const J = BALANCE.jobLevel; // 고른 뒤 같은 단상에서 E를 누르면 직업 레벨업 안내
-    this.showBanner(hero.name + (this.jobLevel(hero.id) ? ` Lv.${this.jobLevel(hero.id)}` : ''), `다시 E: 직업 레벨업 (레벨당 체력 +${J.hp} · 공격력 +${J.atk * 100}% · 에너지 +${J.energy}) · ${hero.title} · 스킬: ${hero.skillName} — ${hero.skillDesc}` + (hero.passiveName ? ` · 패시브: ${hero.passiveName} (${hero.passiveDesc})` : ''));
+    this.showBanner(hero.name + (this.jobLevel(hero.id) ? ` Lv.${this.jobLevel(hero.id)}` : ''), `다시 E: 직업 레벨 창 · ${hero.title} · 스킬: ${hero.skillName} — ${hero.skillDesc}` + (hero.passiveName ? ` · 패시브: ${hero.passiveName} (${hero.passiveDesc})` : ''));
   }
 
   // ── 런 진행
@@ -443,6 +443,13 @@ class Game {
       const list = DATA_TREASURES;
       if (!list.length || this.save.treasures.length) { if (input.wasPressed('Enter') || input.wasPressed('Mouse0')) this.pickTreasure(null); return; } // 첫 보구는 한 번만 (추가 획득 방법은 미정)
       if (input.wasPressed('Mouse0')) { const m = input.mouse, i = list.findIndex((_, i) => { const r = HUD.treasureRect(i, list.length); return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; }); if (i >= 0) this.pickTreasure(list[i]); }
+    } else if (o.type === 'joblevel') { // 직업 레벨 창: 숫자 키 / 클릭으로 레벨업
+      if (o.msg) o.msg.t -= STEP;
+      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
+      let pickI = -1;
+      DATA_HEROES.forEach((h, i) => { if (input.wasPressed('Digit' + (i + 1))) pickI = i; });
+      if (input.wasPressed('Mouse0')) { const m = input.mouse; DATA_HEROES.forEach((h, i) => { const r = HUD.jobRowRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) pickI = i; }); }
+      if (pickI >= 0) { const [text, color] = this.levelUpJob(DATA_HEROES[pickI]); o.msg = { text, color, t: 2 }; this.input.mouse.down = false; }
     } else if (o.type === 'treasures') { // 로비 보구 보관대: 1개 장착
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
       const own = DATA_TREASURES.filter((t) => this.save.treasures.includes(t.id));
