@@ -185,6 +185,7 @@ const AI_BEHAVIORS = {
     const spd = [1, 1, 1.25, 1.5][phase];
     const ratio = e.hp / e.maxHp, want = ratio <= 0.33 ? 3 : ratio <= 0.66 ? 2 : 1;
     if (want > phase && e.state !== 'INTRO') {
+      if (e.ult) { e.ult = false; e.damage = e.dmg0; }
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = 1.5;
       world.onBossPhase(e, want); e.setState('PHASE'); return;
     }
@@ -198,7 +199,10 @@ const AI_BEHAVIORS = {
         if (ctx.dist > 50) pathStep(e, def.moveSpeed * spd, dt, world);
         if (e.stateTime < def.attackCooldown * (e.cdMul || 1) / spd) break;
         let pat;
-        if (phase >= 3 && def.finalPatterns && e.finalCd <= 0) { pat = pick(def.finalPatterns); e.finalCd = 11; }
+        if (phase >= 3 && def.finalPatterns && e.finalCd <= 0) { // 궁극기: 규모를 키우고 피해 +20%, 끝나면 마무리 폭발
+          pat = boostUltimate(pick(def.finalPatterns)); e.finalCd = 9;
+          e.ult = true; e.dmg0 = e.damage; e.damage = Math.round(e.damage * 1.2); if (world.onBossUltimate) world.onBossUltimate(e, pat);
+        }
         else {
           const pool = def.patterns.concat(phase >= 2 ? def.phase2Patterns || [] : []);
           pat = pick(pool.filter((x) => x !== e.lastPat));
@@ -215,7 +219,7 @@ const AI_BEHAVIORS = {
         if (e.stateTime >= (e.pat.telegraph || (e.pat.type === 'slam' ? 0.8 : 0.5)) / spd) { e.pd.sx = e.x; e.pd.sy = e.y; e.setState('ATTACK'); }
         break;
       case 'ATTACK':
-        if (BOSS_PATTERNS[e.pat.type].update(e, dt, world, ctx, spd)) { e.laser = null; e.fade = 1; e.setState('RECOVERY'); }
+        if (BOSS_PATTERNS[e.pat.type].update(e, dt, world, ctx, spd)) { e.laser = null; e.fade = 1; if (e.ult) endUltimate(e, world); e.setState('RECOVERY'); }
         break;
       case 'RECOVERY': if (e.stateTime >= (e.pat && e.pat.name ? 1.1 : 0.6) / spd) e.setState('CHASE'); break;
     }
@@ -279,7 +283,60 @@ function beamLength(e, a, map) {
   const L = 420, t = sweepWall(e.x, e.y, e.x + Math.cos(a) * L, e.y + Math.sin(a) * L, map, 4);
   return t < 0 ? L : t * L;
 }
+// 궁극기 강화: 같은 패턴을 더 크게 (탄 수·겹·시간·끌어당김 증가, 간격·예고 단축)
+function boostUltimate(P) {
+  const q = Object.assign({}, P);
+  if (q.rings) q.rings += 1; if (q.count) q.count = Math.round(q.count * 1.15); if (q.bullets) q.bullets += 2; if (q.arms && q.type !== 'vortex') q.arms += 1;
+  if (q.duration) q.duration *= 1.15; if (q.pull) q.pull *= 1.1; if (q.spin) q.spin *= 1.1; if (q.delay) q.delay *= 0.92; if (q.interval) q.interval *= 0.9;
+  if (q.gap) q.gap = Math.max(4, q.gap - 1); if (q.volleys) q.volleys += 2; if (q.dashes) q.dashes += 1; if (q.chain !== undefined) q.chain += 1;
+  return q;
+}
+// 궁극기가 끝날 때: 피해 원래대로 + 사방으로 터지는 마무리 탄막
+function endUltimate(e, world) {
+  e.ult = false; e.damage = e.dmg0;
+  const n = 28, col = (e.pat && e.pat.color) || '#ff5a5a';
+  for (let i = 0; i < n; i++) world.enemyShoot(e.x, e.y, i * TAU / n + 0.11, e.def.bulletSpeed * 1.15, e.damage, col, 4);
+  world.effects.ring(e.x, e.y, 60, '#ffffff'); world.effects.ring(e.x, e.y, 40, col); if (world.effects.rays) world.effects.rays(e.x, e.y, col, 16, 90, 0.6);
+  world.addShake(0.35, 6); SFX.play('explode', 0.05);
+}
 const BOSS_PATTERNS = {
+  // 추격 낙하: 플레이어가 서 있던 자리에 차례로 떨어지는 장판 (멈추면 맞음)
+  meteor: {
+    update(e, dt, world) {
+      const P = e.pat, d = e.pd, p = world.player; d.timer -= dt;
+      if (d.timer <= 0 && d.shots < P.count) {
+        const r = e.room, x = clamp(p.x, r.x0 * TILE + 8, (r.x0 + r.w) * TILE - 8), y = clamp(p.y, r.y0 * TILE + 8, (r.y0 + r.h) * TILE - 8);
+        world.hazards.push(new Hazard(x, y, { r: P.radius, delay: P.delay, damage: Math.round(e.damage * 1.2), bullets: P.bullets || 0, color: P.color }));
+        d.shots++; d.timer = P.stagger;
+      }
+      return d.shots >= P.count && d.timer <= 0;
+    }
+  },
+  // 퍼지는 고리: 보스에서 바깥으로 퍼지는 원형 탄막, 틈이 매번 돌아감
+  ringOut: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd; d.timer -= dt;
+      if (d.timer <= 0 && d.shots < P.rings) {
+        const gapAt = (d.gap0 ?? (d.gap0 = randInt(0, P.count - 1))) + d.shots * Math.max(2, Math.round(P.count / 6));
+        for (let i = 0; i < P.count; i++) { if (((i - gapAt) % P.count + P.count) % P.count < P.gap) continue; world.enemyShoot(e.x, e.y, i * TAU / P.count, P.speed || e.def.bulletSpeed, e.damage, P.color, 4); }
+        d.shots++; d.timer = (P.interval || 0.5) / spd;
+      }
+      return d.shots >= P.rings && d.timer <= 0;
+    }
+  },
+  // 창 세우기: 주위에 탄을 천천히 흩뿌려 멈춰 세운 뒤, 한꺼번에 플레이어를 향해 빠르게 발사
+  lances: {
+    update(e, dt, world) {
+      const P = e.pat, d = e.pd, p = world.player; d.t = (d.t || 0) + dt;
+      if (!d.list) { d.list = [];
+        for (let i = 0; i < P.count; i++) { const a = i * TAU / P.count, b = new EnemyBullet(e.x, e.y, Math.cos(a) * 70, Math.sin(a) * 70, e.damage, P.color, 4); b.life = 4; world.enemyBullets.push(b); d.list.push(b); } }
+      if (d.t < 0.45) return false;
+      if (!d.stopped) { d.stopped = true; for (const b of d.list) { b.vx = 0; b.vy = 0; } world.effects.ring(e.x, e.y, 40, P.color); }
+      if (d.t < (P.delay || 0.7)) return false;
+      for (const b of d.list) if (b.alive) { const dx = p.x - b.x, dy = p.y - b.y, dd = Math.hypot(dx, dy) || 1; b.vx = dx / dd * (P.speed || 300); b.vy = dy / dd * (P.speed || 300); b.life = 2.5; }
+      SFX.play('react', 0.05); return true;
+    }
+  },
   radial: {
     update(e, dt, world, ctx, enr) {
       const P = e.pat, d = e.pd; d.timer -= dt;

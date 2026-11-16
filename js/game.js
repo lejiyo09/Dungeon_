@@ -1128,6 +1128,11 @@ class Game {
     this.pickups.push(new Pickup('hp', c.x, c.y, { value: 15 }));
   }
   // 궁극기 이름 외치기
+  // 보스 궁극기 시작: 붉은 기운 + 강한 흔들림 + 큰 이름 (화면 가장자리가 붉게 맥동, renderScreenFx)
+  onBossUltimate(e, pat) {
+    this.addShake(0.5, 6); this.screenFlash = 0.25; this.flashColor = '255,60,60'; SFX.play('boss');
+    this.effects.ring(e.x, e.y, 50, '#ff3a3a'); this.effects.ring(e.x, e.y, 90, '#ffffff'); this.effects.rays(e.x, e.y, '#ff5a5a', 18, 110, 0.8);
+  }
   announceBossSkill(e, name) {
     this.showBanner(name, null, '#ff4a5a'); this.banner.life = 1.4;
     this.effects.text(e.x, e.y - 34, name + '!', '#ff8a8a', true); SFX.play('react');
@@ -1364,6 +1369,10 @@ class Game {
   // 화면 효과: 피격/저체력 비네트, 화면 밖 적 방향 표시
   renderScreenFx(ctx, cx, cy) {
     const p = this.player;
+    const ultBoss = this.enemies.find((e) => e.ult && e.alive);
+    if (ultBoss) { const a = 0.22 + 0.12 * Math.sin(this.time * 9); // 보스 궁극기 중: 가장자리가 붉게 맥동
+      const g = ctx.createRadialGradient(VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.3, VIEW_W / 2, VIEW_H / 2, VIEW_W * 0.65); g.addColorStop(0, 'rgba(255,0,0,0)'); g.addColorStop(1, `rgba(200,0,20,${a})`);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW_W, VIEW_H); }
     if (this.mode === 'dungeon' && this.W && this.W.sanctum) { // 기원의 성역: 비스듬히 내려오는 빛줄기 + 떠다니는 금빛 알갱이 (화면 기준)
       ctx.save(); ctx.globalCompositeOperation = 'lighter';
       for (let i = 0; i < 4; i++) { const x = ((i * 157 + this.time * 6 - cx * 0.3) % (VIEW_W + 200)) - 100, a = 0.05 + 0.03 * Math.sin(this.time * 0.7 + i * 2);
