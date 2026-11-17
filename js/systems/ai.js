@@ -189,6 +189,8 @@ const AI_BEHAVIORS = {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
       e.riposteT = 0; e.riposteHit = false;
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
+      if (def.arm && want >= 2 && !e.armOn) { e.armOn = true; e.damage = Math.round(e.damage * (1 + def.arm)); e.dmg0 = e.damage; world.announceBossSkill(e, '스위치 온 — 아가트람'); world.effects.rays(e.x, e.y, '#a0d0ff', 16, 80, 0.7); } /* 베디비어: 은빛 팔이 켜짐 */
+      if (def.arm && want === 3) world.announceBossSkill(e, '해방 — 데드 엔드 아가트람');
       if (def.accuse && want === 3) { e.accuseOn = true; e.accuseCd = 2; e.accuseT = 0; world.announceBossSkill(e, '고발 — 도망칠 곳은 없다'); }
       if (def.fierce && want === 3) { e.fierce = true; world.announceBossSkill(e, '치열 — 멈추지 않는 검'); }
       if (def.wall && want === 3) { e.wallCone = def.wall.cone3; e.wallMult = def.wall.mult3; world.announceBossSkill(e, '철벽 — 무너지지 않는 성채'); }
@@ -422,6 +424,40 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 은빛 팔 휩쓸기 (베디비어 2페이즈~): 은빛 팔을 휘둘러, 플레이어 쪽 부채꼴을 쓸고 지나가며 탄을 흩뿌림 — 쓸 때마다 방향이 바뀜
+  armsweep: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player;
+      if (d.k === undefined) { d.k = 0; d.st = 0; d.fire = 0; d.base = Math.atan2(p.y - e.y, p.x - e.x); }
+      d.st += dt * spd; d.fire -= dt;
+      const u = Math.min(1, d.st / P.time), dir = d.k % 2 ? -1 : 1, a = d.base + dir * (u - 0.5) * P.arc;
+      while (d.fire <= 0) { d.fire += P.interval; world.enemyShoot(e.x, e.y, a, P.speed, e.damage, P.color, 3); world.enemyShoot(e.x, e.y, a, P.speed * 0.65, e.damage, '#ffffff', 3); }
+      if (u >= 1) { d.k++; d.st = 0; d.base = Math.atan2(p.y - e.y, p.x - e.x); world.effects.ring(e.x, e.y, 18, P.color); }
+      return d.k >= P.sweeps;
+    }
+  },
+  // 데드 엔드 아가트람 (베디비어의 보구, 3페이즈 해방): 은빛 팔에 빛을 모으며 조준선이 따라오다가(점점 굵어짐) 마지막 순간 고정 → 한 번의 거대한 일격이 방 끝까지 관통, 지나간 자리에 충격파. 쓰는 동안 페이즈 전환 없음
+  deadend: {
+    begin(e, world, ctx) { const a = Math.atan2(ctx.dy, ctx.dx); e.pd.ang = a; e.laser = { angs: [a], width: 6, color: e.pat.color, live: false }; },
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;
+      if (!e.laser) e.laser = { angs: [d.ang], width: 6, color: P.color, live: false };
+      if (d.t < P.charge) {
+        if (d.t < P.charge - P.lockT) { const want = Math.atan2(p.y - e.y, p.x - e.x); let df = want - d.ang; df = Math.atan2(Math.sin(df), Math.cos(df)); d.ang += clamp(df, -3 * dt, 3 * dt); }
+        e.laser.angs[0] = d.ang; e.laser.width = P.width * (0.2 + 0.6 * d.t / P.charge); e.laser.live = false; e.laser.color = d.t >= P.charge - P.lockT ? '#ff5a5a' : P.color;
+        const ax = e.x + (e.face < 0 ? -8 : 8), ay = e.y - 8; if (Math.random() < 0.9) { const a = Math.random() * TAU, q = 20 + Math.random() * 18; fx.part(ax + Math.cos(a) * q, ay + Math.sin(a) * q, -Math.cos(a) * q * 3, -Math.sin(a) * q * 3, { color: Math.random() < 0.5 ? '#ffffff' : P.color, life: 0.3, size: 2, size2: 0, drag: 0, add: true }); }
+        return false;
+      }
+      if (!d.fired) { d.fired = true; e.laser.live = true; e.laser.width = P.width; e.laser.color = '#ffffff'; /* 일격 */
+        const len = beamLength(e, d.ang, world.map), ex = e.x + Math.cos(d.ang) * len, ey = e.y + Math.sin(d.ang) * len;
+        world.eachTarget((q) => { if (segmentCircleHit(e.x, e.y, ex, ey, q.x, q.y, P.width + q.half) >= 0) world.damagePlayer(Math.round(e.damage * P.mult)); });
+        for (let k = P.step; k < len; k += P.step) world.hazards.push(new Hazard(e.x + Math.cos(d.ang) * k, e.y + Math.sin(d.ang) * k, { r: 16, delay: 0.25 + k / len * 0.3, damage: e.damage, bullets: P.shock, color: P.color }));
+        fx.rays(e.x, e.y, '#ffffff', 22, 120, 0.8); world.screenFlash = 0.35; world.flashColor = '200,230,255'; world.addShake(0.6, 10); world.hitStop(0.1); SFX.play('excal'); }
+      if (d.t >= P.charge + P.show) e.laser = null;
+      if (d.t >= P.charge + P.show + 0.7) { d.lock = false; return true; }
+      return false;
+    }
+  },
   // 감시의 눈 (아그라베인): 방 곳곳(플레이어에게서 조금 떨어진 곳)에 떠오른 눈이 한동안 조준 사격 — 부술 수 있음. 그동안 보스도 조준 사격
   watchers: {
     update(e, dt, world, ctx, spd) {

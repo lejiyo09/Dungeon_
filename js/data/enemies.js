@@ -689,5 +689,21 @@ const DATA_ENEMIES = [
       { type: 'wall', waves: 3, gap: 3, speed: 130, interval: 0.8, color: '#f0d8a0' },
       { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 155, interval: 0.4, color: '#d8b070' },
       { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.5, bullets: 0, color: '#ffb070' }],
-    finalPatterns: [{ type: 'ironhand', name: '단죄의 철완', charge: 0.8, eyes: 6, life: 5.5, hp: 200, interval: 0.75, volley: 3, spread: 0.12, speed: 210, slams: 3, slamEvery: 0.95, radius: 56, bullets: 10, color: '#d8b070' }] }
+    finalPatterns: [{ type: 'ironhand', name: '단죄의 철완', charge: 0.8, eyes: 6, life: 5.5, hp: 200, interval: 0.75, volley: 3, spread: 0.12, speed: 210, slams: 3, slamEvery: 0.95, radius: 56, bullets: 10, color: '#d8b070' }] },
+  // [사용자 결정] 카멜롯 8층 보스: 충절의 기사 베디비어 — 2페이즈 '스위치 온 아가트람'(강화 + 은빛 팔 패턴), 3페이즈부터 보구 '데드 엔드 아가트람'(강력한 일격). 패턴·수치는 Claude가 정한 [제안]
+  //  arm: 2페이즈에 공격력 +arm, 은빛 팔이 빛남 / ultFrom 3: 보구는 3페이즈(해방)부터
+  { id: 'boss_bedivere', name: '베디비어', title: '충절의 기사', sprite: 'boss_bedivere', color: '#3a4a7a', phaseColors: ['#3a4a7a', '#3a5a9a', '#4a6ab8'],
+    boss: true, aiType: 'boss', health: 8000, damage: 36, moveSpeed: 88, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.45, bulletSpeed: 195,
+    rewardGold: 0, ultFrom: 3, ultCd: 16, arm: 0.15, patterns: [
+      { type: 'charge', dashes: 3, speed: 580, color: '#c8e0ff' },
+      { type: 'slam', radius: 62, chain: 2, color: '#c8e0ff' },
+      { type: 'aimed', volleys: 6, count: 8, spread: 0.1, color: '#e0ecff' },
+      { type: 'split', volleys: 3, count: 3, spread: 0.3, speed: 190, splitAfter: 0.45, splitN: 7, color: '#c8e0ff' },
+      { type: 'wall', waves: 3, gap: 3, speed: 125, interval: 0.85, color: '#e0ecff' }],
+    phase2Patterns: [{ type: 'armsweep', sweeps: 3, arc: 2.2, time: 0.7, interval: 0.035, speed: 210, color: '#a0d0ff' },
+      { type: 'laser', beams: 1, spreadAng: 0, sweep: 2.2, duration: 1.6, width: 9, telegraph: 0.55, color: '#a0d0ff' },
+      { type: 'armsweep', sweeps: 5, arc: 2.6, time: 0.6, interval: 0.03, speed: 230, color: '#ffffff' },
+      { type: 'orbit', count: 24, radius: 52, spinTime: 1, spin: 3, speed: 165, color: '#a0d0ff' },
+      { type: 'meteor', count: 10, delay: 0.55, stagger: 0.17, radius: 30, bullets: 7, color: '#c8e0ff' }],
+    finalPatterns: [{ type: 'deadend', name: '데드 엔드 아가트람', charge: 1.6, lockT: 0.35, width: 24, mult: 2.6, show: 0.4, step: 28, shock: 4, color: '#a0d0ff' }] }
 ];

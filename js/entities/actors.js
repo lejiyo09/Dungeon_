@@ -328,6 +328,9 @@ class Enemy extends Entity {
     if (this.negateT > 0 && this.state !== 'DEAD') { const R = this.radius + 8, t = performance.now() / 1000; ctx.save(); ctx.globalCompositeOperation = 'lighter'; /* 가레스의 부정: 하얀 빛의 막 */
       ctx.globalAlpha = 0.18; ctx.fillStyle = '#d8f0ff'; ctx.beginPath(); ctx.arc(x, y - 4, R, 0, TAU); ctx.fill();
       ctx.globalAlpha = 0.85; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y - 4, R + Math.sin(t * 12), 0, TAU); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; }
+    if (this.armOn && this.state !== 'DEAD' && this.state !== 'SPAWN') { const t = performance.now() / 1000, ax = x + (this.face < 0 ? -8 : 8), ay = y - 8; ctx.save(); ctx.globalCompositeOperation = 'lighter'; /* 베디비어: 켜진 은빛 팔 아가트람 */
+      ctx.globalAlpha = 0.35 + 0.2 * Math.sin(t * 8); ctx.fillStyle = '#a0d0ff'; ctx.beginPath(); ctx.arc(ax, ay, 7, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 0.8; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(ax, ay, 2.5, 0, TAU); ctx.fill(); ctx.restore(); }
     if (this.riposteT > 0 && this.state !== 'DEAD') { const t = performance.now() / 1000; ctx.save(); ctx.globalCompositeOperation = 'lighter'; /* 랜슬롯 반격 자세: 푸른 초승달 기운 + 깜박임 */
       ctx.globalAlpha = 0.5 + 0.4 * Math.sin(t * 18); ctx.strokeStyle = '#8ab8ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y - 6, this.radius + 7, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
       ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y - 6, this.radius + 10, Math.PI * 1.2, Math.PI * 1.8); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; }

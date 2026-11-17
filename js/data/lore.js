@@ -297,7 +297,32 @@ const CAMELOT7_TRIAL = {
     palette: CAMELOT_TRIAL.W.palette },
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
 };
-const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL, camelot6: CAMELOT6_TRIAL, camelot7: CAMELOT7_TRIAL };
+// [사용자 결정] 카멜롯 8층 보스: 충절의 기사 베디비어 — 2페이즈 '스위치 온 아가트람'(은빛 팔이 켜져 강화 + 패턴 추가), 3페이즈 '데드 엔드 아가트람' 해방(강력한 일격을 보구로)
+//  패턴·수치·대사는 Claude가 정한 [제안]/[임시]
+const MERLIN_BEDIVERE_LINES = [
+  '「아그라베인까지 넘었군. …다음 층에서 기다리는 자는, 내가 잘 아는 기사다.」',
+  '「베디비어. 왕의 곁을 가장 오래 지킨, 충절의 기사지.」',
+  '「그는 한쪽 팔을 잃고도 왕을 떠나지 않았다. 지금 그 자리에는 은빛 팔, 아가트람이 있다.」',
+  '「처음엔 검으로만 싸울 거다. 하지만 그가 은빛 팔을 깨우면 싸움은 달라지고 — 끝내 그 팔을 해방하면, 단 한 번의 일격에 모든 것이 끝날 수도 있다.」',
+  '「로드 투 카멜롯, 여덟 번째 층. 준비가 되면 말하게.」'
+];
+const BEDIVERE_WIN_LINES = [
+  '은빛 팔의 빛이 천천히 꺼져 간다.',
+  '「…그렇군요. 당신이라면, 끝까지 닿을 수 있을지도 모르겠습니다.」',
+  '「부디 멈추지 말고 가 주십시오. 저는 이 자리에서 기다리겠습니다.」',
+  '충절의 기사는 마지막까지 고개를 숙인 채, 은빛 속으로 사라진다.'
+];
+const CAMELOT8_TRIAL = {
+  id: 'camelot8', title: '로드 투 카멜롯 — 8층', color: '#c8e0ff', intro: '충절의 기사 베디비어가 기다리고 있습니다', reward: 1200, questDone: 20,
+  confirm: ['백악의 성 8층 — 성의 기사들을 뚫고 충절의 기사 베디비어와 싸웁니다', '아그라베인보다 강합니다. 3페이즈의 은빛 일격은 조준선이 붉게 바뀌어 고정되면 바로 옆으로 피하세요. 고른 진화 단계·축복과 +3 강화 무기 2개를 들고 갑니다'],
+  winText: '베디비어를 쓰러뜨리고 8층을 지났습니다', winSub: '결정석 1200개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => BEDIVERE_WIN_LINES,
+  world: 9,
+  W: { name: '백악의 성 카멜롯 — 8층', boss: 'boss_bedivere', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
+    enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 1]],
+    palette: CAMELOT_TRIAL.W.palette },
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+};
+const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL, camelot6: CAMELOT6_TRIAL, camelot7: CAMELOT7_TRIAL, camelot8: CAMELOT8_TRIAL };
 // 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
 const DEEP_ARRIVAL_LINES = [
   '발밑의 돌이 차갑게 식어 간다.',
@@ -331,7 +356,9 @@ const STORY_ARCHIVE = [
   { id: 'lancelot_road', name: '호수의 기사', kind: 'cut', lines: () => MERLIN_LANCELOT_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 15) },
   { id: 'lancelot', name: '땅에 닿은 검', kind: 'cut', lines: () => LANCELOT_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 16) },
   { id: 'agravain_road', name: '철완의 기사', kind: 'cut', lines: () => MERLIN_AGRAVAIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 17) },
-  { id: 'agravain', name: '감기는 눈', kind: 'cut', lines: () => AGRAVAIN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 18) }
+  { id: 'agravain', name: '감기는 눈', kind: 'cut', lines: () => AGRAVAIN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 18) },
+  { id: 'bedivere_road', name: '충절의 기사', kind: 'cut', lines: () => MERLIN_BEDIVERE_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 19) },
+  { id: 'bedivere', name: '꺼져 가는 은빛', kind: 'cut', lines: () => BEDIVERE_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 20) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 // [사용자 결정] 문지기 조건을 없애기 전에 이미 문지기를 잡아 둔 사람은 그 1번을 심층 보스 1마리로 쳐 줌 (한 번만 바꿈)
