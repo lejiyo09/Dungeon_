@@ -177,7 +177,31 @@ const CAMELOT2_TRIAL = {
     palette: CAMELOT_TRIAL.W.palette },
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
 };
-const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL };
+// [사용자 결정] 카멜롯 3층 보스: 폭주의 기사 모드레드. 보구 이름 '클래런트'(전승 속 모드레드가 든 검)·패턴·'폭주'(3페이즈부터 더 빨라짐)·수치·대사는 Claude가 정한 [제안]/[임시]
+const MERLIN_MORDRED_LINES = [
+  '「트리스탄까지 넘었나. …그렇다면 다음은 그 녀석이군.」',
+  '「모드레드. 원탁에 앉았던 기사이자, 왕에게 칼을 겨눈 반역의 기사다.」',
+  '「사람들은 그를 폭주의 기사라 부른다. 상처를 입을수록 멈추지 않고 날뛰지.」',
+  '「그가 클래런트를 들어 올리면 붉은 번개가 성을 가른다. 정면에 서 있지 말게.」',
+  '「로드 투 카멜롯, 세 번째 층. 준비가 되면 말하게.」'
+];
+const MORDRED_WIN_LINES = [
+  '붉은 번개가 잦아들고, 금이 간 투구가 바닥을 구른다.',
+  '「…쳇. 아직도 나를 막아서는 녀석이 있다니.」',
+  '「위로 가. 거기서 네가 찾는 게 있을지도 모르니까.」',
+  '반역의 기사는 끝까지 등을 보이지 않은 채 붉은 빛으로 흩어진다.'
+];
+const CAMELOT3_TRIAL = {
+  id: 'camelot3', title: '로드 투 카멜롯 — 3층', color: '#ff5a5a', intro: '폭주의 기사 모드레드가 기다리고 있습니다', reward: 700, questDone: 10,
+  confirm: ['백악의 성 3층 — 성의 기사들을 뚫고 폭주의 기사 모드레드와 싸웁니다', '트리스탄보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
+  winText: '모드레드를 쓰러뜨리고 3층을 지났습니다', winSub: '결정석 700개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => MORDRED_WIN_LINES,
+  world: 9,
+  W: { name: '백악의 성 카멜롯 — 3층', boss: 'boss_mordred', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
+    enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 1]],
+    palette: CAMELOT_TRIAL.W.palette },
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+};
+const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL };
 // 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
 const DEEP_ARRIVAL_LINES = [
   '발밑의 돌이 차갑게 식어 간다.',
@@ -201,7 +225,9 @@ const STORY_ARCHIVE = [
   { id: 'camelot', name: '로드 투 카멜롯', kind: 'cut', lines: () => MERLIN_CAMELOT_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 5) },
   { id: 'gawain', name: '태양의 기사', kind: 'cut', lines: () => GAWAIN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 6) },
   { id: 'tristan_road', name: '반전의 기사', kind: 'cut', lines: () => MERLIN_TRISTAN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 7) },
-  { id: 'tristan', name: '끊어진 활시위', kind: 'cut', lines: () => TRISTAN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 8) }
+  { id: 'tristan', name: '끊어진 활시위', kind: 'cut', lines: () => TRISTAN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 8) },
+  { id: 'mordred_road', name: '반역의 기사', kind: 'cut', lines: () => MERLIN_MORDRED_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 9) },
+  { id: 'mordred', name: '붉은 번개가 잦아들 때', kind: 'cut', lines: () => MORDRED_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 10) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 // [사용자 결정] 문지기 조건을 없애기 전에 이미 문지기를 잡아 둔 사람은 그 1번을 심층 보스 1마리로 쳐 줌 (한 번만 바꿈)

@@ -182,12 +182,13 @@ const AI_BEHAVIORS = {
   // 보스: 3페이즈(66% / 33%) — 페이즈마다 패턴이 추가되고 빨라짐, 3페이즈에는 궁극기를 주기적으로 사용
   boss(e, dt, world, ctx) {
     const def = e.def, phase = e.phase || 1;
-    const spd = [1, 1, 1.25, 1.5][phase];
+    const spd = [1, 1, 1.25, 1.5][phase] * (e.rampage ? def.rampage : 1); /* 모드레드 '폭주': 모든 행동이 빨라짐 */
     const ratio = e.hp / e.maxHp, want = ratio <= 0.33 ? 3 : ratio <= 0.66 ? 2 : 1;
     const channeling = e.pd && ((e.pd.tower && e.pd.tower.alive) || e.pd.lock); /* 롱고미니아드(빛의 탑)가 서 있는 동안은 페이즈도 넘기지 않고 다른 행동 없음 — 탑이 무너진 뒤에 넘어감 */
     if (want > phase && e.state !== 'INTRO' && !channeling) {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
+      if (def.rampage && want === 3) { e.rampage = true; world.announceBossSkill(e, '폭주 — 멈추지 않는 반역'); }
       if (def.rev && want === 3) { e.revAll = true; world.announceBossSkill(e, '반전 — 되돌아오는 화살'); } /* 트리스탄: 이제 화살이 지나간 뒤 되돌아옴 */
       if (def.noon && want === 3) { e.damage = Math.round(e.damage * (1 + def.noon)); e.dmg0 = e.damage; world.announceBossSkill(e, '정오 — 태양의 가호'); } /* 가웨인: 해가 가장 높이 뜸 */
       world.onBossPhase(e, want); e.setState('PHASE'); return;
@@ -405,6 +406,53 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 폭주 돌진 (모드레드): 짧게 노린 뒤 플레이어 쪽으로 돌진, 지나간 자리에 붉은 번개가 차례로 떨어지고 멈춘 곳에서 사방으로 탄 — 여러 번 연속
+  rampage: {
+    begin(e) { e.pd.n = 0; e.pd.phase = 'aim'; e.pd.pt = 0; },
+    update(e, dt, world, ctx, spd) {
+      const d = e.pd, P = e.pat, p = world.player; d.pt += dt;
+      if (d.phase === 'aim') {
+        const dx = p.x - e.x, dy = p.y - e.y, dd = Math.hypot(dx, dy) || 1; e.dashX = dx / dd; e.dashY = dy / dd;
+        if (d.pt >= P.aim / spd) { d.phase = 'dash'; d.pt = 0; d.went = 0; d.lastStep = 0; e.hits = null; world.effects.ring(e.x, e.y, 16, P.color); }
+        return false;
+      }
+      const mv = P.speed * dt, hit = moveAndCollide(e, e.dashX * mv, e.dashY * mv, world.map); d.went += mv;
+      world.eachTarget((q) => { if (Math.hypot(q.x - e.x, q.y - e.y) < e.radius + q.half + 3) world.hitOnce(e, 'hits', q, () => world.damagePlayer(Math.round(e.damage * 1.2))); });
+      if (d.went - d.lastStep >= P.step) { d.lastStep = d.went; world.hazards.push(new Hazard(e.x, e.y, { r: P.radius, delay: P.delay, damage: e.damage, bullets: 0, color: P.color })); /* 붉은 번개 자국 */
+        world.effects.part(e.x, e.y, randInt(-20, 20), -30, { color: '#ffb0b0', life: 0.3, size: 2, size2: 0, drag: 1, add: true }); }
+      if (hit.x || hit.y || d.went >= P.dist || d.pt > 0.7) {
+        for (let i = 0; i < P.burst; i++) world.enemyShoot(e.x, e.y, i * TAU / P.burst + Math.random() * 0.3, e.def.bulletSpeed, e.damage, P.color, 3);
+        world.addShake(0.15, 3); world.effects.ring(e.x, e.y, 26, P.color); d.n++; d.phase = 'aim'; d.pt = 0;
+      }
+      return d.n >= P.dashes;
+    }
+  },
+  // 클래런트 (모드레드의 보구): 검을 들어 붉은 번개를 모음(조준선 표시) → 플레이어를 천천히 따라가는 굵은 붉은 광선, 끝나면 광선 자리를 따라 번개가 차례로 떨어짐. 쓰는 동안 페이즈 전환 없음
+  clarent: {
+    begin(e, world, ctx) { const a = Math.atan2(ctx.dy, ctx.dx); e.pd.ang = a; e.laser = { angs: [a], width: e.pat.width, color: e.pat.color, live: false }; },
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;
+      const want = Math.atan2(p.y - e.y, p.x - e.x); let df = want - d.ang; while (df > Math.PI) df -= TAU; while (df < -Math.PI) df += TAU;
+      if (d.t < P.charge) { /* 붉은 번개를 모으는 동안 조준선이 플레이어를 따라감 */
+        d.ang += clamp(df, -2.5 * dt, 2.5 * dt); e.laser.angs[0] = d.ang; e.laser.live = false;
+        if (Math.random() < 0.8) { const a = Math.random() * TAU, q = 24 + Math.random() * 16; fx.part(e.x + Math.cos(a) * q, e.y - 6 + Math.sin(a) * q, -Math.cos(a) * q * 2.5, -Math.sin(a) * q * 2.5, { color: Math.random() < 0.5 ? '#ff3a3a' : '#ffffff', life: 0.3, size: 2, size2: 0, drag: 0, add: true }); }
+        return false;
+      }
+      if (d.t < P.charge + P.duration) { /* 광선: 천천히 따라감 */
+        if (!d.fired) { d.fired = true; world.addShake(0.4, 7); world.screenFlash = 0.2; world.flashColor = '255,60,60'; SFX.play('excal'); }
+        d.ang += clamp(df, -P.turn * dt, P.turn * dt); e.laser.angs[0] = d.ang; e.laser.live = true;
+        const len = beamLength(e, d.ang, world.map), ex = e.x + Math.cos(d.ang) * len, ey = e.y + Math.sin(d.ang) * len; d.len = len;
+        world.eachTarget((q) => { if (segmentCircleHit(e.x, e.y, ex, ey, q.x, q.y, P.width + q.half) >= 0) world.damagePlayer(Math.round(e.damage * 1.3)); });
+        if (Math.random() < 0.6) { const k = Math.random() * len; fx.part(e.x + Math.cos(d.ang) * k, e.y + Math.sin(d.ang) * k, randInt(-40, 40), randInt(-40, 40), { color: '#ffb0b0', life: 0.25, size: 2, size2: 0, drag: 2, add: true }); }
+        if (Math.floor(d.t * 10) !== Math.floor((d.t - dt) * 10)) SFX.play('beam', 0.08);
+        return false;
+      }
+      if (!d.struck) { d.struck = true; e.laser = null; /* 광선 자리를 따라 번개 */
+        for (let i = 1; i <= P.strikes; i++) { const k = (d.len || 200) * i / P.strikes; world.hazards.push(new Hazard(e.x + Math.cos(d.ang) * k, e.y + Math.sin(d.ang) * k, { r: P.radius, delay: P.delay + i * 0.04, damage: Math.round(e.damage * 1.1), bullets: P.bullets, color: P.color })); } }
+      if (d.t >= P.charge + P.duration + P.delay + 0.6) { d.lock = false; return true; }
+      return false;
+    }
+  },
   // 되돌아오는 고리 (트리스탄): 틈 있는 원형 화살을 쏘고, flip초 뒤 모든 화살이 방향을 뒤집어 보스 쪽으로 되돌아옴 (지나간 틈으로 다시 피해야 함)
   reverse: {
     update(e, dt, world, ctx, spd) {

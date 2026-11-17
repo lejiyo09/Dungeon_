@@ -608,5 +608,21 @@ const DATA_ENEMIES = [
       { type: 'orbit', count: 24, radius: 52, spinTime: 1, spin: 3.2, speed: 165, color: '#ff8aa0' },
       { type: 'lances', count: 24, delay: 0.6, speed: 340, color: '#d0a0ff' },
       { type: 'aimed', volleys: 9, count: 9, spread: 0.09, color: '#ff8aa0' }],
-    finalPatterns: [{ type: 'failnot', name: '페일노트', draw: 1.0, volleys: 5, homing: 6, fan: 9, spread: 0.5, speed: 190, turn: 3.2, homeT: 1.1, interval: 0.32, color: '#ff5a7a' }] }
+    finalPatterns: [{ type: 'failnot', name: '페일노트', draw: 1.0, volleys: 5, homing: 6, fan: 9, spread: 0.5, speed: 190, turn: 3.2, homeT: 1.1, interval: 0.32, color: '#ff5a7a' }] },
+  // [사용자 결정] 카멜롯 3층 보스: 폭주의 기사 모드레드 — 보구 '클래런트'·패턴·수치는 Claude가 정한 [제안]
+  //  rampage: 3페이즈 '폭주'부터 모든 행동 속도 ×rampage (회복 시간도 짧아짐)
+  { id: 'boss_mordred', name: '모드레드', title: '폭주의 기사', sprite: 'boss_mordred', color: '#8a1a1a', phaseColors: ['#8a1a1a', '#a81a1a', '#c81a2a'],
+    boss: true, aiType: 'boss', health: 5600, damage: 27, moveSpeed: 100, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.4, bulletSpeed: 190,
+    rewardGold: 0, ultFrom: 2, ultCd: 20, rampage: 1.25, patterns: [
+      { type: 'rampage', dashes: 4, aim: 0.35, speed: 560, dist: 190, step: 22, radius: 12, delay: 0.45, burst: 10, color: '#ff3a3a' },
+      { type: 'slam', radius: 64, chain: 2, color: '#ff5a5a' },
+      { type: 'aimed', volleys: 6, count: 8, spread: 0.12, color: '#ffb0b0' },
+      { type: 'zones', count: 10, radius: 28, delay: 0.65, bullets: 7, spreadAround: 110, stagger: 0.05, color: '#ff3a3a' },
+      { type: 'charge', dashes: 3, speed: 600, color: '#ff5a5a' }],
+    phase2Patterns: [{ type: 'rampage', dashes: 6, aim: 0.3, speed: 600, dist: 210, step: 20, radius: 13, delay: 0.42, burst: 14, color: '#ff3a3a' },
+      { type: 'meteor', count: 12, delay: 0.55, stagger: 0.16, radius: 30, bullets: 7, color: '#ff3a3a' },
+      { type: 'spiral', duration: 3, arms: 6, interval: 0.06, spin: -2.6, color: '#ffb0b0' },
+      { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.5, bullets: 0, color: '#ff5a5a' },
+      { type: 'ringOut', rings: 5, count: 32, gap: 4, speed: 160, interval: 0.38, color: '#ff3a3a' }],
+    finalPatterns: [{ type: 'clarent', name: '클래런트', charge: 1.1, duration: 2.0, width: 15, turn: 0.55, strikes: 12, radius: 18, delay: 0.5, bullets: 4, color: '#ff2a2a' }] }
 ];

@@ -20,7 +20,8 @@ class InputManager {
     window.addEventListener('keyup', (e) => this.down.delete(e.code));
     window.addEventListener('blur', () => { this.down.clear(); this.mouse.down = false; });
     window.addEventListener('mousemove', (e) => this.updatePointer(e));
-    canvas.addEventListener('mousedown', (e) => {
+    window.addEventListener('mousedown', (e) => { /* 캔버스 밖(화면 비율이 달라 생긴 검은 여백)을 눌러도 게임 클릭으로 — 로그인 화면은 제외 */
+      if (e.target && e.target.closest && e.target.closest('#login')) return;
       this.updatePointer(e);
       if (e.button === 0) { this.mouse.down = true; this.pressed.add('Mouse0'); }
       if (e.button === 2) this.pressed.add('Mouse2');
@@ -38,12 +39,13 @@ class InputManager {
       if (now - this.wheelT > 280 && Math.abs(this.wheelAcc) >= 50) { this.pressed.add(this.wheelAcc > 0 ? 'WheelPageDown' : 'WheelPageUp'); this.wheelAcc = 0; this.wheelT = now; }
       else if (now - this.wheelT <= 280) this.wheelAcc = 0;
     }, { passive: false, capture: true });
-    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    window.addEventListener('contextmenu', (e) => { if (!(e.target && e.target.closest && e.target.closest('#login'))) e.preventDefault(); });
   }
   updatePointer(e) {
     const r = this.canvas.getBoundingClientRect();
-    this.mouse.x = (e.clientX - r.left) * (VIEW_W / r.width);
-    this.mouse.y = (e.clientY - r.top) * (VIEW_H / r.height);
+    /* 화면 밖으로 나가도 조준선이 화면 가장자리에 남도록 (여백으로 마우스가 빠져나가 조준선이 사라지던 문제) */
+    this.mouse.x = clamp((e.clientX - r.left) * (VIEW_W / r.width), 0, VIEW_W - 1);
+    this.mouse.y = clamp((e.clientY - r.top) * (VIEW_H / r.height), 0, VIEW_H - 1);
   }
   isDown(c) { return this.down.has(c); }
   wasPressed(c) { return this.pressed.has(c); }
