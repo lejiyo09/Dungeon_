@@ -9,7 +9,7 @@ function weaponMods(player, w) {
   if (def.critBonus) m.critChance = player.stats.critChance + def.critBonus;
   return m;
 }
-/* 사수 3진 스킬(쌍탄 폭풍) 중: 총알이 2발씩 나란히 나감 */
+/* 사수 3진 스킬(탄환의 폭풍) 중: 총알이 2발씩 나란히 나감 */
 function odDouble(player) { return player.overdrive > 0 && player.odDouble; }
 function weaponTitle(w) { return w.def.name + (w.lv ? ` +${w.lv}` : ''); }
 class WeaponInstance {
