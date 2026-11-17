@@ -35,6 +35,10 @@ function coopPackRef(v) { // 적·플레이어 같은 큰 객체는 위치 정�
   if (v instanceof Enemy) return { $e: 1, x: r1(v.x), y: r1(v.y), alive: v.alive, chainT: r1(v.chainT || 0), radius: v.radius, half: v.half };
   return undefined;
 }
+function coopSafeDraw(ctx, fn) { // 그리다 오류가 나도 캔버스 상태(이동·혼합 방식 등)를 그리기 전으로 되돌림
+  trackCtxDepth(ctx);
+  const d0 = ctx.__d; ctx.save(); try { fn(); } catch (e) { /* 이것만 생략 */ } finally { while (ctx.__d > d0) ctx.restore(); }
+}
 function coopPack(o, full) {
   const out = { c: o.constructor.name, n: o.nid };
   for (const k of Object.keys(o)) {
@@ -226,13 +230,14 @@ Object.assign(Game.prototype, {
     C.plast = C.plast || {}; const STATIC = ['h', 'lk', 'mhp', 'msh', 'men', 'w', 'wl', 'sn', 'tr', 'ln', 'hy', 'skm', 'rk']; // 잘 안 바뀌는 값은 바뀔 때만
     for (const e of players) { const L = C.plast[e.id] || (C.plast[e.id] = {}); for (const k of STATIC) { const v = JSON.stringify(e[k] ?? null); if (!full && L[k] === v) delete e[k]; else L[k] = v; } }
     C.sent = C.sent || new Set(); const zs = [], seenZ = new Set();
-    C.zlast = C.zlast || new Map(); // 장판·소환물: 처음엔 전부, 그다음엔 바뀐 값만 (데이터 절약)
+    C.zlast = C.zlast || new Map(); let nFull = 0; // 장판·소환물: 처음엔 전부, 그다음엔 바뀐 값만 (데이터 절약)
     for (const z of [...this.zones, ...this.allies]) { if (!COOP_CLASSES[z.constructor.name]) continue; if (!z.nid) z.nid = ++C.nid; seenZ.add(z.nid);
-      const full = !C.sent.has(z.nid), pk = coopPack(z, full), last = full ? {} : C.zlast.get(z.nid) || {}, out = { c: pk.c, n: pk.n };
+      const isNew = !C.sent.has(z.nid); if (isNew && nFull >= 12) continue; // 한 번에 전부 보내는 건 12개까지 (메시지가 너무 커지지 않게, 나머지는 다음 번에)
+      const zfull = (full && nFull < 12) || isNew; if (zfull) nFull++; const pk = coopPack(z, zfull), last = zfull ? {} : C.zlast.get(z.nid) || {}, out = { c: pk.c, n: pk.n }; if (zfull) out.f = 1; // 처음·1.5초마다 전부 (f: 전부 보낸 것)
       const needRef = COOP_REF_RENDER.has(pk.c); // 그릴 때 주인·대상 위치가 필요한 것만 계속 보냄
-      for (const k of Object.keys(pk)) { if (k === 'c' || k === 'n') continue; if (!full && (k === 'cd' || k === 'next' || k === 'timer' || k === 't')) continue; /* 그림에 안 쓰는 내부 시간 (t는 참가자 쪽에서 흘러감) */ if (!full && !needRef && pk[k] && typeof pk[k] === 'object' && (pk[k].$p || pk[k].$e || (Array.isArray(pk[k]) && pk[k][0] && (pk[k][0].$p || pk[k][0].$e)))) continue; const v = JSON.stringify(pk[k]); if (full || last[k] !== v) { out[k] = pk[k]; last[k] = v; } }
+      for (const k of Object.keys(pk)) { if (k === 'c' || k === 'n') continue; if (!zfull && (k === 'cd' || k === 'next' || k === 'timer' || k === 't')) continue; /* 그림에 안 쓰는 내부 시간 (t는 참가자 쪽에서 흘러감) */ if (!zfull && !needRef && pk[k] && typeof pk[k] === 'object' && (pk[k].$p || pk[k].$e || (Array.isArray(pk[k]) && pk[k][0] && (pk[k][0].$p || pk[k][0].$e)))) continue; const v = JSON.stringify(pk[k]); if (zfull || last[k] !== v) { out[k] = pk[k]; last[k] = v; } }
       C.zlast.set(z.nid, last); zs.push(out); C.sent.add(z.nid); }
-    for (const id of [...C.sent]) if (!seenZ.has(id)) { C.sent.delete(id); C.zlast.delete(id); }
+    for (const id of [...C.sent]) if (!seenZ.has(id) && ![...this.zones, ...this.allies].some((z) => z.nid === id)) { C.sent.delete(id); C.zlast.delete(id); }
     C.eknown = C.eknown || new Set(); const enew = (e) => { const n = full || !C.eknown.has(e.nid); C.eknown.add(e.nid); return n; }; // 적 종류·최대 체력은 처음(과 1.5초마다)만
     const en = this.enemies.map((e) => { if (!e.nid) e.nid = ++C.nid; const nw = enew(e); return [e.nid, nw ? e.def.id : '', Math.round(e.x), Math.round(e.y), Math.ceil(e.hp), nw ? e.maxHp : 0, e.state, e.face, e.phase || 1, e.elite ? 1 : 0, e.hurtFlash > 0 ? 1 : 0, Math.round(e.jumpH || 0), r1(e.fade ?? 1), r1(e.aimAng || 0), r1(e.stateTime), e.laser ? [e.laser.angs.map(r1), e.laser.width, e.laser.color, e.laser.live ? 1 : 0] : 0, e.chainT > 0 ? [r1(e.chainT), r1(e.chainMax || e.chainT)] : 0, e.def.boss && e.pat && (e.state === 'TELEGRAPH' || e.state === 'ATTACK') ? [e.pat.type, e.pat.color || '', e.pat.radius || 0, Math.round((e.pd && e.pd.tx) || e.x), Math.round((e.pd && e.pd.ty) || e.y)] : 0]; }); // 보스 예고 표시용 패턴
     const pr = this.projectiles.filter((q) => !q.orbit).slice(0, 160).map((q) => [Math.round(q.x), Math.round(q.y), Math.round((q.dx || 0) * (q.speed || 0)), Math.round((q.dy || 0) * (q.speed || 0)), q.color, q.size || 1]);
@@ -330,11 +335,13 @@ Object.assign(Game.prototype, {
     for (const [i, v] of d.td || []) { this.map.tiles[i] = v; if (this.map.cache) this.map.redrawTile(i % this.map.width, Math.floor(i / this.map.width)); }
     for (const [name, ...a] of d.fx || []) if (typeof this.effects[name] === 'function') try { this.effects[name](...a); } catch (e) { /* 연출 하나가 실패해도 계속 */ }
     C.zones = C.zones || new Map(); const zl = [], al = [], seenZ = new Set(); // 장판·소환물
-    for (const z of d.zs || []) { const K = COOP_CLASSES[z.c]; if (!K) continue; seenZ.add(z.n); let o = C.zones.get(z.n);
-      if (!o) { o = Object.create(K.prototype); o.alive = true; C.zones.set(z.n, o); // 그림이 실패해도 게임은 계속
-        o.render = function (ctx) { try { K.prototype.render.call(this, ctx, window.__game); } catch (e) { ctx.restore && ctx.globalAlpha !== 1 && (ctx.globalAlpha = 1); } };
-        if (K.prototype.renderTop) o.renderTop = function (ctx) { try { K.prototype.renderTop.call(this, ctx, window.__game); } catch (e) { ctx.globalAlpha = 1; } }; }
-      Object.assign(o, coopUnpack(z)); (['Turret', 'Drone', 'SpiritWolf'].includes(z.c) ? al : zl).push(o); }
+    for (const z of d.zs || []) { const K = COOP_CLASSES[z.c]; if (!K) continue; let o = C.zones.get(z.n);
+      if (!o && !z.f) continue; // 전부 받은 적이 없으면(불러오는 중에 놓침) 다음 전부가 올 때까지 그리지 않음
+      seenZ.add(z.n);
+      if (!o) { o = Object.create(K.prototype); o.alive = true; C.zones.set(z.n, o); // 그림이 실패해도 게임은 계속 (그리기 상태는 따로 저장·복원 → 화면이 망가지지 않음)
+        o.render = function (ctx) { coopSafeDraw(ctx, () => K.prototype.render.call(this, ctx, window.__game)); };
+        if (K.prototype.renderTop) o.renderTop = function (ctx) { coopSafeDraw(ctx, () => K.prototype.renderTop.call(this, ctx, window.__game)); }; }
+      for (const [k, v] of Object.entries(coopUnpack(z))) { if (k === 'f') continue; try { o[k] = v; } catch (e) { /* 읽기 전용 값은 건너뜀 */ } } (['Turret', 'Drone', 'SpiritWolf'].includes(z.c) ? al : zl).push(o); }
     for (const id of [...C.zones.keys()]) if (!seenZ.has(id)) C.zones.delete(id);
     this.zones = zl; this.allies = al;
   },

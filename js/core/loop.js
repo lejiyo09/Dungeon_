@@ -14,6 +14,13 @@ const PERF = {
   },
   set(v) { this.low = v; this.lowT = 0; this.hiT = 0; if (this.onChange) this.onChange(v); }
 };
+// 캔버스 저장 깊이 추적: 그리다 오류가 나도 다음 프레임은 깨끗한 상태에서 시작 (혼합 방식·투명도·이동이 남지 않게)
+function trackCtxDepth(ctx) {
+  if (ctx.__depthTracked) return ctx; const S = ctx.save, R = ctx.restore; ctx.__d = 0;
+  ctx.save = function () { this.__d++; S.call(this); }; ctx.restore = function () { if (this.__d > 0) { this.__d--; R.call(this); } };
+  ctx.__depthTracked = true; return ctx;
+}
+function resetCtx(ctx) { trackCtxDepth(ctx); while (ctx.__d > 0) ctx.restore(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = 1; ctx.setLineDash && ctx.setLineDash([]); }
 class GameLoop {
   constructor(update, render) {
     this.update = update; this.render = render; this.acc = 0; this.last = 0;

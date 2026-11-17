@@ -1904,7 +1904,7 @@ class Game {
 
   // ── 렌더
   render() {
-    const ctx = this.ctx;
+    const ctx = this.ctx; resetCtx(ctx); // 지난 프레임에 오류로 남은 그리기 상태 정리
     const R = this.R || 1;
     ctx.imageSmoothingEnabled = false;
     ctx.setTransform(R, 0, 0, R, 0, 0);

@@ -170,7 +170,7 @@ function leave(ws) {
 }
 const clean = (s, n) => String(s || '').replace(/[\u0000-\u001f]/g, '').slice(0, n);
 
-const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 256 * 1024,
+const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 1024 * 1024, // 화면 공유 한 번이 커져도 연결이 끊기지 않게 (보통 수 KB)
   // 압축: 화면 공유(JSON)는 반복이 많아 크게 줄어듦 → Render 전송량 절약. 작은 메시지(위치·핑)는 압축하지 않음
   perMessageDeflate: { threshold: 512, zlibDeflateOptions: { level: 3, memLevel: 7 }, serverMaxWindowBits: 13, clientMaxWindowBits: 13, concurrencyLimit: 4 } });
 wss.on('connection', (ws) => {
