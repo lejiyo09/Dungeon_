@@ -660,12 +660,13 @@ class Game {
     if (this.coop && this.coop.host) { for (const e of this.enemies) this.withPlayer(this.nearestPlayer(e.x, e.y), () => updateEnemy(e, dt, this)); } // 적은 가장 가까운 플레이어를 노림
     else for (const e of this.enemies) updateEnemy(e, dt, this);
     separateEnemies(this.enemies, this.map);
-    for (const pr of this.projectiles) pr.update(dt, this);
+    for (const pr of this.projectiles) { if (this.coop && this.coop.host && pr.owner && pr.owner !== this.player) this.withPlayer(pr.owner, () => pr.update(dt, this)); else pr.update(dt, this); } // 멀티: 참가자의 탄은 그 사람 기준으로
     for (const b of this.enemyBullets) b.update(dt, this);
     for (const pk of this.pickups) pk.update(dt, this);
     for (const h of this.hazards) h.update(dt, this);
-    for (const a of this.allies) a.update(dt, this);
-    for (const z of this.zones) z.update(dt, this);
+    const asOwner = (o) => { const P = o.owner; if (this.coop && this.coop.host && P instanceof Player && P !== this.player) this.withPlayer(P, () => o.update(dt, this)); else o.update(dt, this); }; // 멀티: 참가자의 포탑·드론·장판은 그 사람 기준 (처치 보상·흡혈 등)
+    for (const a of this.allies) asOwner(a);
+    for (const z of this.zones) asOwner(z);
     for (const po of this.portals) po.t += dt;
     this.projectiles = this.projectiles.filter((x) => x.alive);
     this.enemyBullets = this.enemyBullets.filter((x) => x.alive);

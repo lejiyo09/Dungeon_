@@ -5,6 +5,7 @@
 class Projectile {
   constructor(o) {
     Object.assign(this, o);
+    if (!this.owner && typeof game !== 'undefined') this.owner = game.player; // 쏜 사람 (멀티: 참가자의 탄은 그 사람 기준으로 처리 — 처치 에너지·흡혈·부메랑 귀환 등)
     this.pierceLeft = o.pierce || 0; this.radius = o.flame ? 5 : 2; this.traveled = 0; this.alive = true;
     this.bouncesLeft = o.bounce || 0;
     this.hitTargets = new Set();
