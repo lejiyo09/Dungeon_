@@ -65,7 +65,7 @@ const AI_BEHAVIORS = {
         break;
       case 'TELEGRAPH': if (e.stateTime >= def.telegraphTime) e.setState('ATTACK'); break;
       case 'ATTACK':
-        if (ctx.playerAlive && inRange) world.damagePlayer(e.damage);
+        world.eachTarget((q) => { if (Math.hypot(q.x - e.x, q.y - e.y) <= def.attackRange + q.radius) world.damagePlayer(e.damage); }); // 멀티: 범위 안의 모두
         world.effects.ring(e.x, e.y, def.attackRange, '#ff7070'); traitOn(e, 'attack', world, ctx);
         e.attackCd = def.attackCooldown; e.setState('RECOVERY');
         break;
@@ -118,11 +118,10 @@ const AI_BEHAVIORS = {
           e.dashX = ctx.dx / ctx.dist; e.dashY = ctx.dy / ctx.dist; e.setState('TELEGRAPH');
         }
         break;
-      case 'TELEGRAPH': if (e.stateTime >= def.telegraphTime) { e.dashHit = false; e.setState('ATTACK'); } break;
+      case 'TELEGRAPH': if (e.stateTime >= def.telegraphTime) { e.dashHit = false; e.hits = null; e.setState('ATTACK'); } break;
       case 'ATTACK': {
         const hit = moveAndCollide(e, e.dashX * def.dashSpeed * dt, e.dashY * def.dashSpeed * dt, map); traitOn(e, 'dash', dt, world);
-        if (!e.dashHit && ctx.playerAlive && Math.hypot(p.x - e.x, p.y - e.y) < e.radius + p.half + 3)
-          if (world.damagePlayer(e.damage)) e.dashHit = true;
+        world.eachTarget((q) => { if (Math.hypot(q.x - e.x, q.y - e.y) < e.radius + q.half + 3) world.hitOnce(e, 'hits', q, () => world.damagePlayer(e.damage)); }); // 돌진 경로의 모두 (사람마다 한 번)
         if (hit.x || hit.y) {
           world.effects.spark(e.x + e.dashX * 8, e.y + e.dashY * 8, '#ffe08a'); world.addShake(0.1, 2);
           if (traitOn(e, 'dashEnd', world, ctx)) { e.setState('TELEGRAPH'); break; }
@@ -297,8 +296,8 @@ const ENEMY_TRAITS = {
       if (e.state === 'POUNCE') { if (e.stateTime >= 0.5) { e.setState('LEAP'); t.hit = false; } return true; }
       if (e.state === 'LEAP') {
         const hit = moveAndCollide(e, t.vx * dt, t.vy * dt, world.map);
-        if (!t.hit && ctx.playerAlive && Math.hypot(p.x - e.x, p.y - e.y) < e.radius + p.half + 4 && world.damagePlayer(e.damage)) t.hit = true;
-        if (e.stateTime >= 0.3 || hit.x || hit.y) { world.effects.ring(e.x, e.y, 14, e.def.color); t.cd = 3 + Math.random() * 1.5; e.setState('RECOVERY'); }
+        world.eachTarget((q) => { if (Math.hypot(q.x - e.x, q.y - e.y) < e.radius + q.half + 4) world.hitOnce(t, 'hits', q, () => world.damagePlayer(e.damage)); });
+        if (e.stateTime >= 0.3 || hit.x || hit.y) { world.effects.ring(e.x, e.y, 14, e.def.color); t.cd = 3 + Math.random() * 1.5; t.hits = null; e.setState('RECOVERY'); }
         return true;
       }
       t.cd -= dt;
@@ -544,8 +543,7 @@ const BOSS_PATTERNS = {
       e.jumpH = Math.sin(t * Math.PI) * 40;
       if (t < 1) return false;
       e.jumpH = 0;
-      const p = world.player;
-      if (ctx.playerAlive && Math.hypot(p.x - e.x, p.y - e.y) < P.radius + p.half) world.damagePlayer(Math.round(e.damage * 1.5));
+      world.eachTarget((q) => { if (Math.hypot(q.x - e.x, q.y - e.y) < P.radius + q.half) world.damagePlayer(Math.round(e.damage * 1.5)); }); // 내려찍기: 범위 안의 모두
       for (let i = 0; i < 14; i++) world.enemyShoot(e.x, e.y, i * TAU / 14, e.def.bulletSpeed * 0.9, e.damage, P.color, 4);
       world.effects.ring(e.x, e.y, P.radius, P.color); world.effects.ring(e.x, e.y, P.radius * 0.7, '#ffffff');
       world.addShake(0.25, 5); SFX.play('explode', 0.05);
@@ -563,12 +561,11 @@ const BOSS_PATTERNS = {
       d.pt += dt;
       if (d.phase === 'aim') {
         e.dashX = ctx.dx / ctx.dist; e.dashY = ctx.dy / ctx.dist;
-        if (d.pt >= 0.45 / enr) { d.phase = 'dash'; d.pt = 0; e.dashHit = false; }
+        if (d.pt >= 0.45 / enr) { d.phase = 'dash'; d.pt = 0; e.dashHit = false; e.hits = null; }
         return false;
       }
       const hit = moveAndCollide(e, e.dashX * P.speed * dt, e.dashY * P.speed * dt, world.map);
-      if (!e.dashHit && ctx.playerAlive && Math.hypot(p.x - e.x, p.y - e.y) < e.radius + p.half + 3)
-        if (world.damagePlayer(Math.round(e.damage * 1.2))) e.dashHit = true;
+      world.eachTarget((q) => { if (Math.hypot(q.x - e.x, q.y - e.y) < e.radius + q.half + 3) world.hitOnce(e, 'hits', q, () => world.damagePlayer(Math.round(e.damage * 1.2))); });
       if (hit.x || hit.y || d.pt > 0.9) {
         if (hit.x || hit.y) {
           world.addShake(0.2, 4);
@@ -606,10 +603,8 @@ const BOSS_PATTERNS = {
       d.t += dt;
       for (let i = 0; i < d.angs.length; i++) d.angs[i] += d.dir * P.sweep / P.duration * dt;
       e.laser.live = true;
-      if (ctx.playerAlive) for (const a of d.angs) {
-        const len = beamLength(e, a, world.map), ex = e.x + Math.cos(a) * len, ey = e.y + Math.sin(a) * len;
-        if (segmentCircleHit(e.x, e.y, ex, ey, p.x, p.y, P.width + p.half) >= 0) { world.damagePlayer(e.damage); break; }
-      }
+      const segs = d.angs.map((a) => { const len = beamLength(e, a, world.map); return [e.x + Math.cos(a) * len, e.y + Math.sin(a) * len]; });
+      world.eachTarget((q) => { for (const [ex, ey] of segs) if (segmentCircleHit(e.x, e.y, ex, ey, q.x, q.y, P.width + q.half) >= 0) { world.damagePlayer(e.damage); break; } }); // 광선: 닿은 모두
       if (Math.floor(d.t * 10) !== Math.floor((d.t - dt) * 10)) SFX.play('beam', 0.08);
       return d.t >= P.duration;
     }
@@ -669,7 +664,7 @@ const BOSS_PATTERNS = {
   vortex: {
     update(e, dt, world, ctx, spd) {
       const P = e.pat, d = e.pd, p = world.player;
-      if (ctx.playerAlive && p.state !== 'DASH') moveAndCollide(p, -ctx.dx / ctx.dist * P.pull * dt, -ctx.dy / ctx.dist * P.pull * dt, world.map);
+      world.eachTarget((q) => { if (q.state === 'DASH') return; const dx = q.x - e.x, dy = q.y - e.y, dd = Math.hypot(dx, dy) || 1; moveAndCollide(q, -dx / dd * P.pull * dt, -dy / dd * P.pull * dt, world.map); }); // 모두 끌어당김
       d.timer -= dt; d.a = (d.a || 0) + P.spin * dt * spd;
       while (d.timer <= 0) {
         for (let i = 0; i < P.arms; i++) world.enemyShoot(e.x, e.y, d.a + i * TAU / P.arms, e.def.bulletSpeed * 0.8, e.damage, P.color, 3);

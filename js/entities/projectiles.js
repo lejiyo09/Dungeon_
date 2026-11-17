@@ -849,22 +849,22 @@ class BossRhongoTower extends RhongoTower {
     super({ x: boss.x, y: boss.y + 6, mods: {} }, tx, ty, P); this.boss = boss; this.FLY = 0.75; this.end = this.FLY + P.duration; this.a = 0; this.timer = 0;
   }
   update(dt, world) {
-    const P = this.T, p = world.player, e = this.boss, alive = p.state !== 'DEAD', fx = world.effects; this.t += dt;
+    const P = this.T, e = this.boss, fx = world.effects; this.t += dt;
     if (!e.alive) { this.alive = false; return; }
-    const inR = (r) => alive && Math.hypot(p.x - this.x, p.y - this.y) < r + p.half;
+    const hitIn = (r, dmg) => world.eachTarget((q) => { if (Math.hypot(q.x - this.x, q.y - this.y) < r + q.half) world.damagePlayer(dmg); }); // 멀티: 범위 안의 모두
     if (this.t < this.FLY) return;
     if (!this.landed) { this.landed = true; this.next = P.tick;
-      if (inR(P.impact)) world.damagePlayer(Math.round(e.damage * 2.5));
+      hitIn(P.impact, Math.round(e.damage * 2.5));
       fx.skyBeam(this.x, this.y, '#ffffff', 0, 18); fx.rays(this.x, this.y, P.color, 20, 120, 0.8); fx.ring(this.x, this.y, P.radius, P.color);
       world.addShake(0.45, 7); world.screenFlash = 0.25; world.flashColor = '210,235,255'; SFX.play('excal'); }
     if (this.t >= this.end) { this.alive = false; // 붕괴: 반경 안이면 치명적
-      if (inR(P.radius)) world.damagePlayer(Math.round(e.damage * 3.5));
+      hitIn(P.radius, Math.round(e.damage * 3.5));
       for (let i = 0; i < 36; i++) world.enemyShoot(this.x, this.y, i * TAU / 36, e.def.bulletSpeed, e.damage, P.color, 4);
       fx.rays(this.x, this.y, '#ffffff', 24, P.radius * 2, 0.9); fx.ring(this.x, this.y, P.radius, '#ffffff'); fx.ring(this.x, this.y, P.radius * 1.3, P.color);
       for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; fx.skyBeam(this.x + Math.cos(a) * P.radius * 0.6, this.y + Math.sin(a) * P.radius * 0.4, '#ffffff', i * 0.03, 6); }
       world.addShake(0.6, 9); world.screenFlash = 0.35; world.flashColor = '220,240,255'; SFX.play('explode'); return; }
-    if (alive && p.state !== 'DASH') { const dx = this.x - p.x, dy = this.y - p.y, d = Math.hypot(dx, dy); if (d > 6 && d < P.radius * 1.8) moveAndCollide(p, dx / d * P.pull * dt, dy / d * P.pull * dt, world.map); }
-    this.next -= dt; if (this.next <= 0) { this.next += P.tick; if (inR(P.radius * 0.45)) world.damagePlayer(Math.round(e.damage * 0.6)); }
+    world.eachTarget((q) => { if (q.state === 'DASH') return; const dx = this.x - q.x, dy = this.y - q.y, d = Math.hypot(dx, dy); if (d > 6 && d < P.radius * 1.8) moveAndCollide(q, dx / d * P.pull * dt, dy / d * P.pull * dt, world.map); });
+    this.next -= dt; if (this.next <= 0) { this.next += P.tick; hitIn(P.radius * 0.45, Math.round(e.damage * 0.6)); }
     this.timer -= dt; this.a += P.spin * dt;
     while (this.timer <= 0) { for (let i = 0; i < P.arms; i++) world.enemyShoot(this.x, this.y, this.a + i * TAU / P.arms, e.def.bulletSpeed * 0.7, e.damage, P.color, 3); this.timer += P.interval; }
     if (Math.random() < 0.9) { const a = Math.random() * TAU, d = P.radius * (0.7 + Math.random() * 0.4);

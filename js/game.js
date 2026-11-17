@@ -1802,8 +1802,7 @@ class Game {
       }
     }
     if (o.hurtPlayer) {
-      const p = this.player;
-      if (p.state !== 'DEAD' && Math.hypot(p.x - x, p.y - y) < r + p.half) this.damagePlayer(o.damage);
+      this.eachTarget((p) => { if (Math.hypot(p.x - x, p.y - y) < r + p.half) this.damagePlayer(o.damage); }); // 멀티: 폭발 범위 안의 모두
     }
   }
   enemyExplode(e) {

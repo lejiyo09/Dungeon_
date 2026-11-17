@@ -29,6 +29,7 @@ const r1 = (v) => Math.round(v * 10) / 10;
 const COOP_CLASSES = {};
 ['RhongoTower', 'BossRhongoTower', 'ChainCircle', 'AvalonGarden', 'SkillAura', 'SkillCast', 'ExcaliburRaise', 'FxEmitter', 'DarkHole', 'ShadowStrike', 'Trap', 'Strike', 'Sanctuary', 'SpiritWolf', 'Turret', 'Drone', 'Puddle',
   'ThornBurst', 'BleedTicker', 'GaeBolgThrow'].forEach((n) => { try { const c = Function('return typeof ' + n + " !== 'undefined' ? " + n + ' : null')(); if (c) COOP_CLASSES[n] = c; } catch (e) { /* 없는 클래스 */ } });
+const COOP_REF_RENDER = new Set(['SkillCast', 'ExcaliburRaise', 'ShadowStrike', 'Drone']); // 그림에 주인(플레이어) 위치를 쓰는 장판·소환물
 function coopPackRef(v) { // 적·플레이어 같은 큰 객체는 위치 정도만
   if (v instanceof Player) return { $p: 1, x: r1(v.x), y: r1(v.y), aim: { x: r1(v.aim.x), y: r1(v.aim.y) }, half: v.half, radius: v.radius, state: v.state, faceVis: v.faceVis, hero: { id: v.hero.id } };
   if (v instanceof Enemy) return { $e: 1, x: r1(v.x), y: r1(v.y), alive: v.alive, chainT: r1(v.chainT || 0), radius: v.radius, half: v.half };
@@ -66,6 +67,11 @@ Object.assign(Game.prototype, {
     let best = null, bd = 1e9; for (const p of this.allPlayers()) { if (p.state === 'DEAD') continue; const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = p; } }
     return best || this.coop.me;
   },
+  eachTarget(fn) { // 적의 범위 공격(근접·돌진·내려찍기·광선·끌어당김 등): 멀티면 범위 안의 모든 플레이어에게 (각자 기준으로 피해)
+    if (!(this.coop && this.coop.host)) { if (this.player.state !== 'DEAD') fn(this.player); return; }
+    for (const p of this.allPlayers()) if (p.state !== 'DEAD') this.withPlayer(p, () => fn(p));
+  },
+  hitOnce(e, key, q, fn) { const S = e[key] || (e[key] = new Set()); if (!S.has(q) && fn()) S.add(q); }, // 한 번의 돌진에 같은 사람은 한 번만
   partyCount() { return this.coop && this.coop.host ? 1 + this.remotes.size : 1; },
   partyScale(kind) { return 1 + COOP.scale[kind] * (this.partyCount() - 1); },
   coopActors() { // 내 화면에 그릴 다른 플레이어들 (이름표 포함)
@@ -148,7 +154,7 @@ Object.assign(Game.prototype, {
   },
   coopSendMap(to) {
     const m = this.map, idx = new Map(m.rooms.map((r, i) => [r, i]));
-    this.coop.lastTiles = m.tiles.slice();
+    this.coop.lastTiles = m.tiles.slice(); this.coop.eknown = null; this.coop.slast = null; this.coop.snapN = 0; // 새 맵: 다음 화면 공유는 전부
     const spawn = {}; for (const R of this.remotes.values()) spawn[R.id] = { x: Math.round(R.p.x), y: Math.round(R.p.y) };
     Net.relay({ k: 'map', w: m.width, h: m.height, palette: m.palette, tiles: b64.enc(m.tiles), wi: this.worldIdx, li: this.levelIdx,
       rooms: m.rooms.map((r) => ({ x0: r.x0, y0: r.y0, w: r.w, h: r.h, cx: r.cx, cy: r.cy, gx: r.gx, gy: r.gy, type: r.type, doors: r.doors })),
@@ -212,27 +218,35 @@ Object.assign(Game.prototype, {
   coopNotifyEvolve(p) { if (!(this.coop && this.coop.host)) return; for (const R of this.remotes.values()) if (R.p === p) Net.relay({ k: 'msg', text: `${p.line.ranks[p.rank]}(으)로 진화! 새 스킬: ${p.skillName}` }, R.id); },
   coopHostSend(dt) {
     const C = this.coop; C.snapT -= dt; if (C.snapT > 0) return; C.snapT = 1 / COOP.snapHz; this.coopHostSendGev();
+    C.snapN = (C.snapN || 0) + 1; const full = C.snapN % 18 === 1; // 1.5초마다 전부 (중간에 놓친 값 보정), 그 사이엔 바뀐 것만
     const pl = (p, id, warp) => ({ id, x: Math.round(p.x), y: Math.round(p.y), h: p.hero.id, lk: p.line && p.line.look ? p.line.look : null, a: r1(p.aimVis), f: p.faceVis, st: p.state === 'DEAD' ? 'X' : p.state === 'DASH' ? 'D' : 'N', mv: p.moving ? 1 : 0,
       hp: Math.ceil(p.hp), mhp: p.maxHp, sh: Math.ceil(p.shield), msh: p.maxShield, en: Math.floor(p.energy), men: p.maxEnergy, w: p.weapons.map((x) => x.def.id), wl: p.weapons.map((x) => x.lv || 0), sl: p.slot,
       sk: r1(p.skillCooldown), skm: r1(p.skillCdMax), sn: p.skillName, tr: p.treasure ? p.treasure.id : null, tc: r1(p.treasureCd), rk: p.rank, ln: p.line ? p.line.id : null, wp: warp, inv: p.hurtInvuln > 0 ? 1 : 0, rv: r1((p.reviveT || 0) / COOP.reviveTime), hy: p.hybrid ? p.hybrid.title : null });
     const players = [pl(C.me, Net.id, 0), ...[...this.remotes.values()].map((R) => { const e = pl(R.p, R.id, R.warp); if (R.px || R.py) { e.px = r1(R.px); e.py = r1(R.py); R.px = 0; R.py = 0; } return e; })];
+    C.plast = C.plast || {}; const STATIC = ['h', 'lk', 'mhp', 'msh', 'men', 'w', 'wl', 'sn', 'tr', 'ln', 'hy', 'skm', 'rk']; // 잘 안 바뀌는 값은 바뀔 때만
+    for (const e of players) { const L = C.plast[e.id] || (C.plast[e.id] = {}); for (const k of STATIC) { const v = JSON.stringify(e[k] ?? null); if (!full && L[k] === v) delete e[k]; else L[k] = v; } }
     C.sent = C.sent || new Set(); const zs = [], seenZ = new Set();
     C.zlast = C.zlast || new Map(); // 장판·소환물: 처음엔 전부, 그다음엔 바뀐 값만 (데이터 절약)
     for (const z of [...this.zones, ...this.allies]) { if (!COOP_CLASSES[z.constructor.name]) continue; if (!z.nid) z.nid = ++C.nid; seenZ.add(z.nid);
       const full = !C.sent.has(z.nid), pk = coopPack(z, full), last = full ? {} : C.zlast.get(z.nid) || {}, out = { c: pk.c, n: pk.n };
-      for (const k of Object.keys(pk)) { if (k === 'c' || k === 'n') continue; const v = JSON.stringify(pk[k]); if (full || last[k] !== v) { out[k] = pk[k]; last[k] = v; } }
+      const needRef = COOP_REF_RENDER.has(pk.c); // 그릴 때 주인·대상 위치가 필요한 것만 계속 보냄
+      for (const k of Object.keys(pk)) { if (k === 'c' || k === 'n') continue; if (!full && (k === 'cd' || k === 'next' || k === 'timer' || k === 't')) continue; /* 그림에 안 쓰는 내부 시간 (t는 참가자 쪽에서 흘러감) */ if (!full && !needRef && pk[k] && typeof pk[k] === 'object' && (pk[k].$p || pk[k].$e || (Array.isArray(pk[k]) && pk[k][0] && (pk[k][0].$p || pk[k][0].$e)))) continue; const v = JSON.stringify(pk[k]); if (full || last[k] !== v) { out[k] = pk[k]; last[k] = v; } }
       C.zlast.set(z.nid, last); zs.push(out); C.sent.add(z.nid); }
     for (const id of [...C.sent]) if (!seenZ.has(id)) { C.sent.delete(id); C.zlast.delete(id); }
-    const en = this.enemies.map((e) => { if (!e.nid) e.nid = ++C.nid; return [e.nid, e.def.id, Math.round(e.x), Math.round(e.y), Math.ceil(e.hp), e.maxHp, e.state, e.face, e.phase || 1, e.elite ? 1 : 0, e.hurtFlash > 0 ? 1 : 0, Math.round(e.jumpH || 0), r1(e.fade ?? 1), r1(e.aimAng || 0), r1(e.stateTime), e.laser ? [e.laser.angs.map(r1), e.laser.width, e.laser.color, e.laser.live ? 1 : 0] : 0, e.chainT > 0 ? [r1(e.chainT), r1(e.chainMax || e.chainT)] : 0]; });
+    C.eknown = C.eknown || new Set(); const enew = (e) => { const n = full || !C.eknown.has(e.nid); C.eknown.add(e.nid); return n; }; // 적 종류·최대 체력은 처음(과 1.5초마다)만
+    const en = this.enemies.map((e) => { if (!e.nid) e.nid = ++C.nid; const nw = enew(e); return [e.nid, nw ? e.def.id : '', Math.round(e.x), Math.round(e.y), Math.ceil(e.hp), nw ? e.maxHp : 0, e.state, e.face, e.phase || 1, e.elite ? 1 : 0, e.hurtFlash > 0 ? 1 : 0, Math.round(e.jumpH || 0), r1(e.fade ?? 1), r1(e.aimAng || 0), r1(e.stateTime), e.laser ? [e.laser.angs.map(r1), e.laser.width, e.laser.color, e.laser.live ? 1 : 0] : 0, e.chainT > 0 ? [r1(e.chainT), r1(e.chainMax || e.chainT)] : 0]; });
     const pr = this.projectiles.filter((q) => !q.orbit).slice(0, 160).map((q) => [Math.round(q.x), Math.round(q.y), Math.round((q.dx || 0) * (q.speed || 0)), Math.round((q.dy || 0) * (q.speed || 0)), q.color, q.size || 1]);
     const eb = this.enemyBullets.slice(0, 240).map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.r, b.color]);
     const td = []; const T = this.map.tiles, L = C.lastTiles; if (L && L.length === T.length) for (let i = 0; i < T.length; i++) if (T[i] !== L[i]) { td.push([i, T[i]]); L[i] = T[i]; }
-    Net.relay({ k: 'snap', g: this.gold, kills: this.kills, wi: this.worldIdx, li: this.levelIdx, pl: players, en, pr, eb,
+    const msg = { k: 'snap', g: this.gold, kills: this.kills, wi: this.worldIdx, li: this.levelIdx, pl: players, en, pr, eb,
       pk: this.pickups.map((k) => [k.kind, Math.round(k.x), Math.round(k.y), k.def ? k.def.id : 0]),
       hz: this.hazards.map((h) => [Math.round(h.x), Math.round(h.y), h.r, r1(h.t), h.delay, h.color]),
       po: this.portals.map((p) => [Math.round(p.x), Math.round(p.y), p.label || '', p.color || null]),
       rv: this.map.rooms.map((r) => (r.visited ? 1 : 0)).join(''), td, fx: C.fx.splice(0), zs,
-      pp: this.props.map((o) => { let lb = ''; try { lb = o.label ? o.label(this) || '' : ''; } catch (e) { lb = ''; } return [o.constructor.name, Math.round(o.x), Math.round(o.y), lb, o.open ? 1 : 0, o.content || 0]; }) });
+      pp: this.props.map((o) => { let lb = ''; try { lb = o.label ? o.label(this) || '' : ''; } catch (e) { lb = ''; } return [o.constructor.name, Math.round(o.x), Math.round(o.y), lb, o.open ? 1 : 0, o.content || 0]; }) };
+    C.slast = C.slast || {}; for (const k of ['pk', 'po', 'rv', 'pp']) { const v = JSON.stringify(msg[k]); if (!full && C.slast[k] === v) delete msg[k]; else C.slast[k] = v; } // 그대로면 생략
+    if (!td.length) delete msg.td; if (!msg.fx.length) delete msg.fx; if (!msg.hz.length && C.lastHz === 0) delete msg.hz; C.lastHz = this.hazards.length;
+    Net.relay(msg);
   },
   coopHostSendGev() { for (const R of this.remotes.values()) if (R.gev && R.gev.length) { Net.relay({ k: 'gev', e: R.gev.splice(0, 200) }, R.id); } },
   coopHostEnd(victory) {
@@ -271,7 +285,9 @@ Object.assign(Game.prototype, {
     const C = this.coop; if (C.loading || !this.map) return;
     this.gold = d.g; this.kills = d.kills; this.worldIdx = d.wi; this.levelIdx = d.li;
     const seen = new Set();
-    for (const s of d.pl) {
+    C.pls = C.pls || {};
+    for (const s0 of d.pl) {
+      const s = Object.assign(C.pls[s0.id] || (C.pls[s0.id] = {}), s0); if (!s0.px && !s0.py) { delete s.px; delete s.py; } // 생략된 값은 지난번 값으로
       const mine = s.id === Net.id;
       let o = mine ? null : C.others.get(s.id);
       if (!mine && !o) { const hero = this.data.heroes.get(s.h) || DATA_HEROES[0]; o = { id: s.id, p: new Player(s.x, s.y, hero, this.data.base) }; C.others.set(s.id, o); }
@@ -291,10 +307,10 @@ Object.assign(Game.prototype, {
     for (const id of [...C.others.keys()]) if (!seen.has(id)) C.others.delete(id);
     const live = new Set();
     this.enemies = d.en.map(([nid, defId, x, y, hp, mhp, st, face, ph, el, fl, jh, fade, aim, stt, laser, chain]) => {
-      live.add(nid); let e = C.enemies.get(nid); const def = this.data.enemies.get(defId); if (!def) return null;
+      live.add(nid); let e = C.enemies.get(nid); const def = defId ? this.data.enemies.get(defId) : e && e.def; if (!def) return null; // 종류는 처음에만 옴
       if (!e) { e = new Enemy(x, y, def, { hp: 1, dmg: 1 }, null); e.pd = {}; C.enemies.set(nid, e); }
       e.tx = x; e.ty = y; if (Math.hypot(e.x - x, e.y - y) > 60) { e.x = x; e.y = y; }
-      e.hp = hp; e.maxHp = mhp; if (e.state !== st) e.stateTime = stt; e.state = st; e.face = face; e.phase = ph; e.elite = !!el; if (fl) e.hurtFlash = 0.08; e.jumpH = jh; e.fade = fade; e.aimAng = aim; e.pat = null;
+      e.hp = hp; if (mhp) e.maxHp = mhp; if (e.state !== st) e.stateTime = stt; e.state = st; e.face = face; e.phase = ph; e.elite = !!el; if (fl) e.hurtFlash = 0.08; e.jumpH = jh; e.fade = fade; e.aimAng = aim; e.pat = null;
       e.chainT = chain ? chain[0] : 0; e.chainMax = chain ? chain[1] : 0; // 황금 사슬 (묶인 모습)
       e.alive = st !== 'DEAD'; e.laser = laser ? { angs: laser[0], width: laser[1], color: laser[2], live: !!laser[3] } : null;
       return e;
@@ -303,16 +319,16 @@ Object.assign(Game.prototype, {
     const mover = (o) => { o.update = function (dt) { this.x += this.vx * dt; this.y += this.vy * dt; }; return o; };
     this.projectiles = d.pr.map(([x, y, vx, vy, c, s]) => mover({ x, y, vx, vy, render(ctx) { ctx.fillStyle = c; const z = Math.max(1, s); ctx.fillRect(Math.round(this.x) - z, Math.round(this.y) - z, z * 2, z * 2); } }));
     this.enemyBullets = d.eb.map(([x, y, vx, vy, r, c]) => mover(Object.assign(Object.create(EnemyBullet.prototype), { x, y, vx, vy, r, color: c, alive: true })));
-    this.pickups = d.pk.map(([kind, x, y, id]) => new Pickup(kind, x, y, { still: true, def: id ? this.data.weapons.get(id) : null }));
-    this.hazards = d.hz.map(([x, y, r, t, delay, color]) => Object.assign(Object.create(Hazard.prototype), { x, y, r, t, delay, color, alive: true }));
-    this.portals = d.po.map(([x, y, label, col]) => new Portal(x, y, () => {}, label, col || undefined));
-    this.props = (d.pp || []).map(([cls, x, y, label, open, content]) => { // 상자는 진짜 그림, 나머지는 표시 + 이름 (가까이 가면)
+    if (d.pk) this.pickups = d.pk.map(([kind, x, y, id]) => new Pickup(kind, x, y, { still: true, def: id ? this.data.weapons.get(id) : null }));
+    if (d.hz) this.hazards = d.hz.map(([x, y, r, t, delay, color]) => Object.assign(Object.create(Hazard.prototype), { x, y, r, t, delay, color, alive: true }));
+    if (d.po) this.portals = d.po.map(([x, y, label, col]) => new Portal(x, y, () => {}, label, col || undefined));
+    if (d.pp) this.props = d.pp.map(([cls, x, y, label, open, content]) => { // 상자는 진짜 그림, 나머지는 표시 + 이름 (가까이 가면)
       if (cls === 'Chest') { const c = new Chest(x, y, content); c.open = !!open; c.label = () => label || null; c.interact = () => {}; return c; }
       return { x, y, radius: 20, label: () => label || null, labelColor: '#c8b890', interact() {}, render(ctx) { const X = Math.round(this.x), Y = Math.round(this.y); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(X - 7, Y + 4, 14, 3); ctx.fillStyle = OUTLINE; ctx.fillRect(X - 6, Y - 9, 12, 13); ctx.fillStyle = '#8a7a5a'; ctx.fillRect(X - 5, Y - 8, 10, 11); ctx.fillStyle = '#ffd84a'; ctx.fillRect(X - 1, Y - 5, 2, 5); } };
     });
-    d.rv.split('').forEach((v, i) => { if (this.map.rooms[i]) this.map.rooms[i].visited = v === '1'; });
-    for (const [i, v] of d.td) { this.map.tiles[i] = v; if (this.map.cache) this.map.redrawTile(i % this.map.width, Math.floor(i / this.map.width)); }
-    for (const [name, ...a] of d.fx) if (typeof this.effects[name] === 'function') try { this.effects[name](...a); } catch (e) { /* 연출 하나가 실패해도 계속 */ }
+    if (d.rv) d.rv.split('').forEach((v, i) => { if (this.map.rooms[i]) this.map.rooms[i].visited = v === '1'; });
+    for (const [i, v] of d.td || []) { this.map.tiles[i] = v; if (this.map.cache) this.map.redrawTile(i % this.map.width, Math.floor(i / this.map.width)); }
+    for (const [name, ...a] of d.fx || []) if (typeof this.effects[name] === 'function') try { this.effects[name](...a); } catch (e) { /* 연출 하나가 실패해도 계속 */ }
     C.zones = C.zones || new Map(); const zl = [], al = [], seenZ = new Set(); // 장판·소환물
     for (const z of d.zs || []) { const K = COOP_CLASSES[z.c]; if (!K) continue; seenZ.add(z.n); let o = C.zones.get(z.n);
       if (!o) { o = Object.create(K.prototype); o.alive = true; C.zones.set(z.n, o); // 그림이 실패해도 게임은 계속
@@ -374,6 +390,7 @@ Object.assign(Game.prototype, {
     this.shake = Math.max(0, (this.shake || 0) - dt); if (this.shake === 0) this.shakeMag = 0;
     this.screenFlash = Math.max(0, (this.screenFlash || 0) - dt);
     for (const z of this.zones) if (typeof z.t === 'number') z.t += dt; // 장판 애니메이션
+    for (const z of this.allies) if (typeof z.t === 'number') z.t += dt; // 소환물 애니메이션 (방장은 1.5초마다만 보냄)
     this.updateCamera(dt);
     input0.endStep();
   },
