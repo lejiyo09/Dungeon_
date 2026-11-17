@@ -40,6 +40,23 @@ class InputManager {
       else if (now - this.wheelT <= 280) this.wheelAcc = 0;
     }, { passive: false, capture: true });
     window.addEventListener('contextmenu', (e) => { if (!(e.target && e.target.closest && e.target.closest('#login'))) e.preventDefault(); });
+    this.setupCursor();
+  }
+  /* 조준선을 진짜 마우스 커서(그림)로: 화면에 그리는 방식은 한두 프레임 늦게 따라와서, 운영체제가 바로 움직이는 커서로 바꿈 — 화면 배율에 맞춰 크기를 다시 만듦 */
+  setupCursor() {
+    let lastS = 0;
+    const apply = () => {
+      const r = this.canvas.getBoundingClientRect(); if (!r.width) return;
+      const s = clamp(Math.round(r.width / VIEW_W), 1, 5); if (s === lastS) return; lastS = s;
+      const n = 11 * s, c = document.createElement('canvas'); c.width = n; c.height = n; const g = c.getContext('2d'), m = 5 * s;
+      const arms = (col, pad) => { g.fillStyle = col; /* 가운데를 비운 십자 (예전 화면 조준선과 같은 모양) */
+        g.fillRect(m - 4 * s - pad, m - pad, 3 * s + pad * 2, s + pad * 2); g.fillRect(m + 2 * s - pad, m - pad, 3 * s + pad * 2, s + pad * 2);
+        g.fillRect(m - pad, m - 4 * s - pad, s + pad * 2, 3 * s + pad * 2); g.fillRect(m - pad, m + 2 * s - pad, s + pad * 2, 3 * s + pad * 2); };
+      arms('rgba(0,0,0,0.75)', Math.max(1, s >> 1)); arms('#ffffff', 0);
+      const css = `url(${c.toDataURL()}) ${m + (s >> 1)} ${m + (s >> 1)}, crosshair`;
+      document.body.style.cursor = css; this.canvas.style.cursor = css; document.documentElement.style.cursor = css;
+    };
+    apply(); setTimeout(apply, 150); window.addEventListener('resize', apply); setInterval(apply, 1000);
   }
   updatePointer(e) {
     const r = this.canvas.getBoundingClientRect();

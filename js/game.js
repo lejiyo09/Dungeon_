@@ -2091,10 +2091,7 @@ class Game {
     if (this.cutin && !this.overlay) HUD.cutin(ctx, this); else if (this.overlay) this.cutin = null; // 최종 스킬·보구 컷인
     if (this.treasureToast) HUD.treasureToast(ctx, this); // 보구 획득 알림 (결과 화면 위에도 보임)
 
-    const mx = Math.round(this.input.mouse.x), my = Math.round(this.input.mouse.y);
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(mx - 4, my, 3, 1); ctx.fillRect(mx + 2, my, 3, 1);
-    ctx.fillRect(mx, my - 4, 1, 3); ctx.fillRect(mx, my + 2, 1, 3);
+    /* 조준선은 진짜 마우스 커서로 그림 (InputManager.setupCursor) — 늦게 따라오지 않게 */
 
     if (this.transition) {
       const k = this.transition.t < 0.45 ? this.transition.t / 0.45 : 1 - (this.transition.t - 0.45) / 0.45;
