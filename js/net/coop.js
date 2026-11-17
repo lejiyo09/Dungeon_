@@ -234,7 +234,7 @@ Object.assign(Game.prototype, {
       C.zlast.set(z.nid, last); zs.push(out); C.sent.add(z.nid); }
     for (const id of [...C.sent]) if (!seenZ.has(id)) { C.sent.delete(id); C.zlast.delete(id); }
     C.eknown = C.eknown || new Set(); const enew = (e) => { const n = full || !C.eknown.has(e.nid); C.eknown.add(e.nid); return n; }; // 적 종류·최대 체력은 처음(과 1.5초마다)만
-    const en = this.enemies.map((e) => { if (!e.nid) e.nid = ++C.nid; const nw = enew(e); return [e.nid, nw ? e.def.id : '', Math.round(e.x), Math.round(e.y), Math.ceil(e.hp), nw ? e.maxHp : 0, e.state, e.face, e.phase || 1, e.elite ? 1 : 0, e.hurtFlash > 0 ? 1 : 0, Math.round(e.jumpH || 0), r1(e.fade ?? 1), r1(e.aimAng || 0), r1(e.stateTime), e.laser ? [e.laser.angs.map(r1), e.laser.width, e.laser.color, e.laser.live ? 1 : 0] : 0, e.chainT > 0 ? [r1(e.chainT), r1(e.chainMax || e.chainT)] : 0]; });
+    const en = this.enemies.map((e) => { if (!e.nid) e.nid = ++C.nid; const nw = enew(e); return [e.nid, nw ? e.def.id : '', Math.round(e.x), Math.round(e.y), Math.ceil(e.hp), nw ? e.maxHp : 0, e.state, e.face, e.phase || 1, e.elite ? 1 : 0, e.hurtFlash > 0 ? 1 : 0, Math.round(e.jumpH || 0), r1(e.fade ?? 1), r1(e.aimAng || 0), r1(e.stateTime), e.laser ? [e.laser.angs.map(r1), e.laser.width, e.laser.color, e.laser.live ? 1 : 0] : 0, e.chainT > 0 ? [r1(e.chainT), r1(e.chainMax || e.chainT)] : 0, e.def.boss && e.pat && (e.state === 'TELEGRAPH' || e.state === 'ATTACK') ? [e.pat.type, e.pat.color || '', e.pat.radius || 0, Math.round((e.pd && e.pd.tx) || e.x), Math.round((e.pd && e.pd.ty) || e.y)] : 0]; }); // 보스 예고 표시용 패턴
     const pr = this.projectiles.filter((q) => !q.orbit).slice(0, 160).map((q) => [Math.round(q.x), Math.round(q.y), Math.round((q.dx || 0) * (q.speed || 0)), Math.round((q.dy || 0) * (q.speed || 0)), q.color, q.size || 1]);
     const eb = this.enemyBullets.slice(0, 240).map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.r, b.color]);
     const td = []; const T = this.map.tiles, L = C.lastTiles; if (L && L.length === T.length) for (let i = 0; i < T.length; i++) if (T[i] !== L[i]) { td.push([i, T[i]]); L[i] = T[i]; }
@@ -306,11 +306,11 @@ Object.assign(Game.prototype, {
     }
     for (const id of [...C.others.keys()]) if (!seen.has(id)) C.others.delete(id);
     const live = new Set();
-    this.enemies = d.en.map(([nid, defId, x, y, hp, mhp, st, face, ph, el, fl, jh, fade, aim, stt, laser, chain]) => {
+    this.enemies = d.en.map(([nid, defId, x, y, hp, mhp, st, face, ph, el, fl, jh, fade, aim, stt, laser, chain, bp]) => {
       live.add(nid); let e = C.enemies.get(nid); const def = defId ? this.data.enemies.get(defId) : e && e.def; if (!def) return null; // 종류는 처음에만 옴
       if (!e) { e = new Enemy(x, y, def, { hp: 1, dmg: 1 }, null); e.pd = {}; C.enemies.set(nid, e); }
       e.tx = x; e.ty = y; if (Math.hypot(e.x - x, e.y - y) > 60) { e.x = x; e.y = y; }
-      e.hp = hp; if (mhp) e.maxHp = mhp; if (e.state !== st) e.stateTime = stt; e.state = st; e.face = face; e.phase = ph; e.elite = !!el; if (fl) e.hurtFlash = 0.08; e.jumpH = jh; e.fade = fade; e.aimAng = aim; e.pat = null;
+      e.hp = hp; if (mhp) e.maxHp = mhp; if (e.state !== st) e.stateTime = stt; e.state = st; e.face = face; e.phase = ph; e.elite = !!el; if (fl) e.hurtFlash = 0.08; e.jumpH = jh; e.fade = fade; e.aimAng = aim; e.pat = bp ? { type: bp[0], color: bp[1], radius: bp[2] } : null; if (bp) e.pd = Object.assign(e.pd || {}, { tx: bp[3], ty: bp[4] }); // 보스 예고 (내려찍기 자리 등)
       e.chainT = chain ? chain[0] : 0; e.chainMax = chain ? chain[1] : 0; // 황금 사슬 (묶인 모습)
       e.alive = st !== 'DEAD'; e.laser = laser ? { angs: laser[0], width: laser[1], color: laser[2], live: !!laser[3] } : null;
       return e;

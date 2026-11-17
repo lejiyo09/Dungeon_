@@ -2,8 +2,9 @@
 // ════════════════════════════════════════════
 // HUD / 오버레이
 // ════════════════════════════════════════════
+const HUD_FONTS = {}; // 글꼴 문자열은 크기마다 한 번만 만듦 (같은 문자열을 다시 지정하면 브라우저가 빠르게 처리)
 function hudText(ctx, str, x, y, color = '#fff', align = 'left', size = 10) {
-  ctx.font = `bold ${size}px 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif`; ctx.textAlign = align; ctx.textBaseline = 'top';
+  ctx.font = HUD_FONTS[size] || (HUD_FONTS[size] = `bold ${size}px 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif`); ctx.textAlign = align; ctx.textBaseline = 'top';
   ctx.fillStyle = '#000'; ctx.fillText(str, x + 1, y + 1);
   ctx.fillStyle = color; ctx.fillText(str, x, y);
 }

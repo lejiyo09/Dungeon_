@@ -7,7 +7,10 @@ const MAX_FX = 2600;
 class Effects {
   constructor() { this.list = []; }
   clear() { this.list.length = 0; }
-  push(fx) { if (this.list.length < MAX_FX) this.list.push(fx); }
+  push(fx) { // 가벼운 모드: 작은 파티클은 절반만, 전체 개수도 줄임
+    if (PERF.low) { if (fx.kind === 'p' && (this.skip = !this.skip)) return; if (this.list.length >= 700) return; }
+    if (this.list.length < MAX_FX) this.list.push(fx);
+  }
   // 범용 파티클
   part(x, y, vx, vy, o) {
     this.push(Object.assign({ kind: 'p', x, y, vx, vy, t: 0, life: 0.4, size: 2, size2: 0, color: '#fff', drag: 3, grav: 0, add: false }, o));
@@ -126,7 +129,7 @@ class Effects {
         fx.x += fx.vx * dt; fx.y += fx.vy * dt;
       }
     }
-    this.list = this.list.filter((fx) => fx.t < fx.life);
+    let n = 0; const L = this.list; for (let i = 0; i < L.length; i++) if (L[i].t < L[i].life) L[n++] = L[i]; L.length = n; // 새 배열을 만들지 않고 정리
   }
   render(ctx) {
     // 1) 일반 혼합

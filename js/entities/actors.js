@@ -288,7 +288,7 @@ class Enemy extends Entity {
         ctx.beginPath(); ctx.arc(x, y, def.explodeRadius, 0, TAU); ctx.fill();
         ctx.strokeStyle = 'rgba(255,120,60,0.9)'; ctx.stroke(); break;
       case 'boss':
-        if (this.pat.type === 'laser' || this.pat.type === 'teleport') break;
+        if (!this.pat || this.pat.type === 'laser' || this.pat.type === 'teleport') break; // 패턴 정보가 아직 없으면(멀티 참가자) 생략
         if (this.pat.type === 'grid' || this.pat.type === 'ringIn' || this.pat.type === 'vortex') { // 궁극기 예고: 커지는 고리
           ctx.strokeStyle = this.pat.color; ctx.globalAlpha = 0.5 + 0.4 * k; ctx.lineWidth = 2;
           ctx.beginPath(); ctx.arc(x, y, 20 + k * 40, 0, TAU); ctx.stroke(); ctx.lineWidth = 1; ctx.globalAlpha = 1;

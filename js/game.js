@@ -24,17 +24,20 @@ class Game {
     this.fitToScreen();
     this.enterLobby();
     window.addEventListener('resize', () => this.fitToScreen());
+    PERF.onChange = () => this.fitToScreen(); // 자동 품질이 바뀌면 해상도도 다시 맞춤
     new GameLoop((dt) => this.update(dt), () => this.render()).start();
   }
   // 캔버스 해상도를 실제 표시 픽셀(devicePixelRatio 포함)에 맞춤 → 글자/선은 선명, 도트는 nearest 확대
   fitToScreen() {
     const css = Math.max(0.5, Math.min(innerWidth / VIEW_W, innerHeight / VIEW_H));
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, PERF.low ? 1 : 2); // 2배 넘는 화면은 차이가 거의 없어 2까지만, 가벼운 모드는 1
     const cw = Math.round(VIEW_W * css), ch = Math.round(VIEW_H * css);
     this.canvas.style.width = cw + 'px';
     this.canvas.style.height = ch + 'px';
-    this.canvas.width = Math.round(cw * dpr);
-    this.canvas.height = Math.round(ch * dpr);
+    const k = Math.min(cw * dpr, VIEW_W * (PERF.low ? 2 : 4)) / cw; // 내부 해상도 상한: 보통 4배(2048×1152, 그 이상은 차이 없음), 가벼운 모드 2배(1024×576) // 가벼운 모드: 내부 해상도를 최대 2배(1024×576)로 → 큰 화면에서 그리는 픽셀이 크게 줄어듦 (브라우저가 확대)
+    this.canvas.width = Math.round(cw * k);
+    this.canvas.height = Math.round(ch * k);
+    this.canvas.style.imageRendering = PERF.low ? 'pixelated' : ''; // 확대할 때 도트가 번지지 않게
     this.R = this.canvas.width / VIEW_W;
   }
   heroDef(id) { return this.data.heroes.get(id) || DATA_HEROES[0]; }
