@@ -90,6 +90,7 @@ Object.assign(Game.prototype, {
       if (d.k === 'setup') this.coopAddRemote(m.from, d);
       else if (d.k === 'in') { const R = this.remotes.get(m.from); if (!R) return; if (d.wp === R.warp) { R.rx = d.x; R.ry = d.y; } /* 방장이 옮긴 뒤 참가자가 확인하기 전의 옛 위치는 무시 */ R.aim = { x: d.ax, y: d.ay }; R.vin.mouse.down = !!d.md; R.dash = !!d.d; for (const e of d.ev || []) if (COOP.events.includes(e)) R.vin.pressed.add(e); }
       else if (d.k === 'ov') { const R = this.remotes.get(m.from); if (R) this.coopRemoteOverlay(R, d); }
+      else if (d.k === 'trpick') { const R = this.remotes.get(m.from), T = DATA_TREASURES.find((t) => t.id === d.id); if (R && T && !R.p.treasure) { R.p.treasure = T; R.p.treasureCd = 0; } } // 성역에서 고른 보구를 이번 탐험부터
       else if (d.k === 'variant') { const R = this.remotes.get(m.from); const L = R && jobLines(R.p.hero.id).find((l) => l.id === d.id); if (L && (R.p.rank === 0 || this.runDeep) && !R.variantSet) { R.variantSet = true; const keep = R.p.weapons, rk = R.p.rank; this.withPlayer(R.p, () => { this.applyVariant(L); if (this.runDeep) { R.p.weapons = keep; this.setJob(R.p, L, rk); } }); } }
     } else if (m.from === this.coop.hostId) {
       if (d.k === 'map') this.coopGuestMap(d);
@@ -98,6 +99,9 @@ Object.assign(Game.prototype, {
       else if (d.k === 'msg') this.showBanner(d.text, null, '#7ad0ff');
       else if (d.k === 'cut') { this.cutscene = { lines: d.lines, i: 0, t: 0, lt: 0, focus: d.focus, id: null, done: null }; this.input.mouse.down = false; }
       else if (d.k === 'ov') this.coopGuestOverlay(d.o);
+      else if (d.k === 'gev') { for (const [st, a, t] of d.e || []) this.guildEvent(st, a, t); } // 함께 한 일 → 내 퀘스트·기록
+      else if (d.k === 'sanctum') this.coopGuestSanctum(d);
+      else if (d.k === 'herodrop' && Math.random() < (d.p || 0)) { const left = DATA_TREASURES.filter((t) => t.heroDrop && !this.save.treasures.includes(t.id)); if (left.length) { const T = pick(left); this.save.treasures.push(T.id); writeSave(this.save); this.treasureToast = { T, start: performance.now() }; } }
     }
   },
 
@@ -207,14 +211,18 @@ Object.assign(Game.prototype, {
   },
   coopNotifyEvolve(p) { if (!(this.coop && this.coop.host)) return; for (const R of this.remotes.values()) if (R.p === p) Net.relay({ k: 'msg', text: `${p.line.ranks[p.rank]}(으)로 진화! 새 스킬: ${p.skillName}` }, R.id); },
   coopHostSend(dt) {
-    const C = this.coop; C.snapT -= dt; if (C.snapT > 0) return; C.snapT = 1 / COOP.snapHz;
+    const C = this.coop; C.snapT -= dt; if (C.snapT > 0) return; C.snapT = 1 / COOP.snapHz; this.coopHostSendGev();
     const pl = (p, id, warp) => ({ id, x: Math.round(p.x), y: Math.round(p.y), h: p.hero.id, lk: p.line && p.line.look ? p.line.look : null, a: r1(p.aimVis), f: p.faceVis, st: p.state === 'DEAD' ? 'X' : p.state === 'DASH' ? 'D' : 'N', mv: p.moving ? 1 : 0,
       hp: Math.ceil(p.hp), mhp: p.maxHp, sh: Math.ceil(p.shield), msh: p.maxShield, en: Math.floor(p.energy), men: p.maxEnergy, w: p.weapons.map((x) => x.def.id), wl: p.weapons.map((x) => x.lv || 0), sl: p.slot,
       sk: r1(p.skillCooldown), skm: r1(p.skillCdMax), sn: p.skillName, tr: p.treasure ? p.treasure.id : null, tc: r1(p.treasureCd), rk: p.rank, ln: p.line ? p.line.id : null, wp: warp, inv: p.hurtInvuln > 0 ? 1 : 0, rv: r1((p.reviveT || 0) / COOP.reviveTime), hy: p.hybrid ? p.hybrid.title : null });
     const players = [pl(C.me, Net.id, 0), ...[...this.remotes.values()].map((R) => { const e = pl(R.p, R.id, R.warp); if (R.px || R.py) { e.px = r1(R.px); e.py = r1(R.py); R.px = 0; R.py = 0; } return e; })];
     C.sent = C.sent || new Set(); const zs = [], seenZ = new Set();
-    for (const z of [...this.zones, ...this.allies]) { if (!COOP_CLASSES[z.constructor.name]) continue; if (!z.nid) z.nid = ++C.nid; seenZ.add(z.nid); zs.push(coopPack(z, !C.sent.has(z.nid))); C.sent.add(z.nid); }
-    for (const id of [...C.sent]) if (!seenZ.has(id)) C.sent.delete(id);
+    C.zlast = C.zlast || new Map(); // 장판·소환물: 처음엔 전부, 그다음엔 바뀐 값만 (데이터 절약)
+    for (const z of [...this.zones, ...this.allies]) { if (!COOP_CLASSES[z.constructor.name]) continue; if (!z.nid) z.nid = ++C.nid; seenZ.add(z.nid);
+      const full = !C.sent.has(z.nid), pk = coopPack(z, full), last = full ? {} : C.zlast.get(z.nid) || {}, out = { c: pk.c, n: pk.n };
+      for (const k of Object.keys(pk)) { if (k === 'c' || k === 'n') continue; const v = JSON.stringify(pk[k]); if (full || last[k] !== v) { out[k] = pk[k]; last[k] = v; } }
+      C.zlast.set(z.nid, last); zs.push(out); C.sent.add(z.nid); }
+    for (const id of [...C.sent]) if (!seenZ.has(id)) { C.sent.delete(id); C.zlast.delete(id); }
     const en = this.enemies.map((e) => { if (!e.nid) e.nid = ++C.nid; return [e.nid, e.def.id, Math.round(e.x), Math.round(e.y), Math.ceil(e.hp), e.maxHp, e.state, e.face, e.phase || 1, e.elite ? 1 : 0, e.hurtFlash > 0 ? 1 : 0, Math.round(e.jumpH || 0), r1(e.fade ?? 1), r1(e.aimAng || 0), r1(e.stateTime), e.laser ? [e.laser.angs.map(r1), e.laser.width, e.laser.color, e.laser.live ? 1 : 0] : 0, e.chainT > 0 ? [r1(e.chainT), r1(e.chainMax || e.chainT)] : 0]; });
     const pr = this.projectiles.filter((q) => !q.orbit).slice(0, 160).map((q) => [Math.round(q.x), Math.round(q.y), Math.round((q.dx || 0) * (q.speed || 0)), Math.round((q.dy || 0) * (q.speed || 0)), q.color, q.size || 1]);
     const eb = this.enemyBullets.slice(0, 240).map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.r, b.color]);
@@ -226,10 +234,11 @@ Object.assign(Game.prototype, {
       rv: this.map.rooms.map((r) => (r.visited ? 1 : 0)).join(''), td, fx: C.fx.splice(0), zs,
       pp: this.props.map((o) => { let lb = ''; try { lb = o.label ? o.label(this) || '' : ''; } catch (e) { lb = ''; } return [o.constructor.name, Math.round(o.x), Math.round(o.y), lb, o.open ? 1 : 0, o.content || 0]; }) });
   },
+  coopHostSendGev() { for (const R of this.remotes.values()) if (R.gev && R.gev.length) { Net.relay({ k: 'gev', e: R.gev.splice(0, 200) }, R.id); } },
   coopHostEnd(victory) {
     const C = this.coop; if (!C) return;
     const stages = this.stageIndex + (victory ? 1 : 0), bosses = this.worldIdx + (victory ? 1 : 0);
-    Net.relay({ k: 'end', victory, stages, bosses, row: this.runScoreRow(victory) }); Net.raw({ t: 'start', on: false });
+    this.coopHostSendGev(); Net.relay({ k: 'end', victory, stages, bosses, deep: this.W && this.W.deep ? this.W.depth : 0, row: this.runScoreRow(victory) }); Net.raw({ t: 'start', on: false });
     for (const [name, orig] of Object.entries(C.fxOrig || {})) this.effects[name] = orig; // 연출 기록 해제
     this.player = C.me; this.coop = null; this.remotes = new Map();
   },
@@ -313,6 +322,10 @@ Object.assign(Game.prototype, {
     for (const id of [...C.zones.keys()]) if (!seenZ.has(id)) C.zones.delete(id);
     this.zones = zl; this.allies = al;
   },
+  coopGuestSanctum(d) { // 방장과 함께 10-4를 깸: 성역 도달·이 캐릭터 저장(심층 입장용)·보구 선택 (내 화면에서)
+    const sv = this.save; sv.sanctumReached = true; if (d.cp) { sv.deepCheckpoints = sv.deepCheckpoints || {}; sv.deepCheckpoints[sv.selected] = d.cp; } writeSave(sv);
+    this.overlay = { type: 'story', sanctum: true, lines: SANCTUM_LINES, i: 0, t: 0, done: () => { this.overlay = { type: 'treasure_pick', msg: null }; } }; this.input.mouse.down = false;
+  },
   coopGuestOverlay(o) { // 방장이 보내 준 내 창 (축복·전직·갈래)
     const p = this.player;
     if (!o) { if (this.overlay && this.overlay.remote) this.overlay = null; return; }
@@ -337,7 +350,7 @@ Object.assign(Game.prototype, {
     if (this.transition) { this.transition.t += dt; if (!this.transition.swapped && this.transition.t >= 0.45) { this.transition.swapped = true; this.transition.action(); } if (this.transition.t >= 0.9) this.transition = null; input.endStep(); return; }
     if (this.cutscene) { this.updateCutscene(dt, input); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } // 방장과 같은 컷신 (내 쪽에서 넘김)
     if (this.overlay && this.overlay.remote) { this.coopGuestOverlayInput(input); input = NULL_INPUT; } // 창을 띄운 채로도 세계는 계속 (캐릭터는 멈춤)
-    else if (this.overlay) { this.updateOverlay(input); input.endStep(); if (!this.coop || this.overlay) return; }
+    else if (this.overlay) { this.updateOverlay(input); input.endStep(); if (!this.coop || this.overlay) { if (this.coop && !C.loading) { C.inT -= dt; if (C.inT <= 0) { C.inT = 1 / COOP.inHz; Net.relay({ k: 'in', wp: C.warp, x: Math.round(this.player.x), y: Math.round(this.player.y), d: 0, md: 0, ax: 0, ay: 0, ev: [] }, C.hostId); } } return; } } // 창을 연 동안은 공격을 멈춤
     if (C.loading || !this.map) { input.endStep(); return; }
     if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; input.endStep(); return; }
     const p = this.player, mw = this.mouseWorld();
@@ -370,7 +383,9 @@ Object.assign(Game.prototype, {
     if (d.quit) Net.leave(); // 참가자가 스스로 나감
     const stages = d.stages || 0, bosses = d.bosses || 0, reward = stages * CUR.perStage + bosses * CUR.perBoss + (d.victory ? CUR.victory : 0);
     this.overlay = { type: 'result', victory: !!d.victory, stages, bosses, reward, coop: true, after: d.hostLeft ? '방장이 나가서 탐험이 끝났습니다' : d.quit ? '탐험에서 나왔습니다' : '함께한 탐험이 끝났습니다' };
-    if (d.victory) { this.save.clears++; writeSave(this.save); }
+    const sv = this.save; sv.bestStage = Math.max(sv.bestStage || 0, stages + (d.victory ? 0 : 1)); if (d.deep) sv.bestDeep = Math.max(sv.bestDeep || 0, d.deep); if (d.row) sv.bestKills = Math.max(sv.bestKills || 0, d.row.kills || 0); // 함께한 탐험도 내 최고 기록에
+    if (!d.hostLeft && !d.quit) this.guildEvent('runs');
+    if (d.victory) sv.clears++; writeSave(sv);
     if (d.row && this.profile && !this.admin) Net.submitScore(Object.assign({}, d.row, { name: this.profile.name, hero: this.save.selected })); // 함께한 탐험도 내 이름으로 랭킹에
   }
 });

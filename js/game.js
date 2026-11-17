@@ -88,6 +88,11 @@ class Game {
   }
   rollSupplies(day) { const r = guildSeedRand(day + 'shop'), pool = GUILD_SUPPLIES.map((x) => x.id), out = []; while (out.length < 3) out.push(pool.splice(Math.floor(r() * pool.length), 1)[0]); return out; }
   guildEvent(stat, amt = 1, target) { // 게임 중 행동 → 평생 기록 · 퀘스트 · 토벌 진행
+    if (this.coop && this.coop.host && this.remotes) { // 멀티: 함께 한 일(처치·보스·스테이지 등)은 참가자 기록에도, 참가자 혼자 한 일(스킬)은 그 사람 기록에만
+      const R = [...this.remotes.values()].find((q) => q.p === this.player);
+      if (R && stat === 'skills') { (R.gev = R.gev || []).push([stat, amt, target]); return; }
+      if (['kills', 'bosses', 'elites', 'stages', 'reactions', 'gold'].includes(stat)) for (const Q of this.remotes.values()) (Q.gev = Q.gev || []).push([stat, amt, target]);
+    }
     const sv = this.save; if (!sv) return;
     sv.stats = sv.stats || {}; sv.stats[stat] = (sv.stats[stat] || 0) + amt;
     const G = sv.guild; if (!G) return;
@@ -364,6 +369,7 @@ class Game {
     this.player = this.playerFromSnapshot(hero, r.p);
     this.loadStage();
     this.showBanner(`이어하기 · ${stageLabel(this.worldIdx, this.levelIdx)} ${this.W.name}`, '스테이지 시작 지점부터 다시 시작합니다', '#7ad0ff');
+    if (Net.inRoom && Net.isHost && Net.players.length > 1) this.coopHostStart(); // 멀티: 이어하기도 방 사람들과 함께
   }
   // 프롤로그 (첫 던전 입장 시 1회, 로비 일시정지 메뉴에서 다시 보기)
   showPrologue(then) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => { this.save.prologueSeen = true; writeSave(this.save); if (then) then(); } }; }
@@ -372,6 +378,8 @@ class Game {
     this.save.sanctumReached = true;
     if (!this.trialW && this.player) { const c = this.save.deepCheckpoints = this.save.deepCheckpoints || {}; c[this.player.hero.id] = Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() }); } // 10-4를 깬 캐릭터 저장 → 로비에서 심층 입장 시 그대로
     writeSave(this.save);
+    if (this.coop && this.coop.host) for (const R of this.remotes.values()) { // 멀티: 동료도 성역 도달·10-4 캐릭터 저장·보구 선택
+      const cp = this.withPlayer(R.p, () => Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() })); Net.relay({ k: 'sanctum', cp }, R.id); }
     SFX.stopMusic();
     this.overlay = { type: 'story', sanctum: true, lines: SANCTUM_LINES, i: 0, t: 0, done: () => { this.overlay = { type: 'treasure_pick', msg: null }; } };
   }
@@ -381,6 +389,7 @@ class Game {
     writeSave(s);
     const p = this.player;
     if (tr && !p.treasure) { p.treasure = tr; p.treasureCd = 0; } // 이번 탐험부터 바로 R로 사용
+    if (tr && this.coop && this.coop.guest) Net.relay({ k: 'trpick', id: tr.id }, this.coop.hostId); // 멀티 참가자: 방장 쪽 내 캐릭터에도 (보구가 없을 때)
     this.overlay = null; this.input.mouse.down = false;
     const c = this.portalSpot || { x: p.x, y: p.y - 30 }, next = worldDef(this.worldIdx + 1);
     this.portals = [];
@@ -620,8 +629,12 @@ class Game {
     this.shake = Math.max(0, this.shake - dt);
     if (this.shake === 0) this.shakeMag = 0;
 
+    if (this.mode === 'dungeon' && (p.state !== 'DEAD' || (this.coop && this.coop.host))) this.updateRooms(); // 멀티: 방장이 쓰러져 있어도 방 진행은 계속
+    if (this.coop && this.coop.host && !this.transition) for (const R of this.remotes.values()) { // 멀티: 참가자가 포탈을 밟아도 모두 함께 이동 (귀환 포탈은 방장만)
+      if (R.p.state === 'DEAD' || this.transition) continue;
+      for (const po of this.portals) if (!/귀환/.test(po.label || '') && Math.hypot(R.p.x - po.x, R.p.y - po.y) < 12) { this.transition = { t: 0, swapped: false, action: po.onEnter }; break; }
+    }
     if (p.state !== 'DEAD') {
-      if (this.mode === 'dungeon') this.updateRooms();
       this.updateInteraction(input);
       for (const po of this.portals)
         if (Math.hypot(p.x - po.x, p.y - po.y) < 12) {
@@ -1814,7 +1827,9 @@ class Game {
     if (enemy.def.boss) this.hitStop(0.3); else if (Math.random() < 0.35) this.hitStop(0.025);
     if (enemy.def.aiType === 'exploder') this.enemyExplode(enemy);
     if (enemy.def.traits && !enemy.def.boss) traitOn(enemy, 'death', this); // 심층 잡몹 특성 (단말마·분열)
-    if (enemy.def.boss && this.mode === 'dungeon' && this.W.deep && !this.trialW && !enemy.def.master && Math.random() < Math.min(HERO_TREASURE_DROP.max, HERO_TREASURE_DROP.base + HERO_TREASURE_DROP.perDepth * ((this.W.depth || 1) - 1))) { // 심층 보스: 낮은 확률로 영웅의 보구
+    const dropP = Math.min(HERO_TREASURE_DROP.max, HERO_TREASURE_DROP.base + HERO_TREASURE_DROP.perDepth * ((this.W.depth || 1) - 1));
+    if (enemy.def.boss && this.mode === 'dungeon' && this.W.deep && !this.trialW && !enemy.def.master && this.coop && this.coop.host) Net.relay({ k: 'herodrop', p: dropP }); // 멀티: 동료도 각자 확률로
+    if (enemy.def.boss && this.mode === 'dungeon' && this.W.deep && !this.trialW && !enemy.def.master && Math.random() < dropP) { // 심층 보스: 낮은 확률로 영웅의 보구
       const left = DATA_TREASURES.filter((t) => t.heroDrop && !this.save.treasures.includes(t.id));
       if (left.length) { const T = pick(left); this.save.treasures.push(T.id); writeSave(this.save); this.treasureToast = { T, start: performance.now() }; }
     }
