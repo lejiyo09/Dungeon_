@@ -554,7 +554,7 @@ const DATA_ENEMIES = [
   //  수치·패턴은 Claude가 정한 값. 2페이즈부터 궁극기, 쿨타임 짧음 (ultFrom / ultCd)
   { id: 'boss_rhongomyniad', name: '신령 롱고미니아드', title: '세상 끝에서 빛나는 창', sprite: 'boss_rhongo', color: '#2a4a9a', phaseColors: ['#2a4a9a', '#3a3aa8', '#5a2ab0'],
     boss: true, aiType: 'boss', health: 4200, damage: 30, moveSpeed: 72, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.5, bulletSpeed: 165,
-    rewardGold: 0, ultFrom: 2, ultCd: 7, patterns: [
+    rewardGold: 0, ultFrom: 2, ultCd: 20, patterns: [
       { type: 'charge', dashes: 4, speed: 520, color: '#bfe6ff' },
       { type: 'aimed', volleys: 6, count: 9, spread: 0.11, color: '#ffffff' },
       { type: 'lances', count: 24, delay: 0.55, speed: 380, color: '#bfe6ff' },
@@ -564,6 +564,7 @@ const DATA_ENEMIES = [
       { type: 'meteor', count: 12, delay: 0.6, stagger: 0.18, radius: 30, bullets: 7, color: '#bfe6ff' },
       { type: 'spiral', duration: 3, arms: 7, interval: 0.06, spin: 2.6, color: '#ffe9a0' },
       { type: 'ringOut', rings: 5, count: 32, gap: 4, speed: 150, interval: 0.4, color: '#bfe6ff' },
-      { type: 'grid', spacing: 3, delay: 0.9, radius: 22, bullets: 4, color: '#ffffff' }],
+      { type: 'grid', spacing: 3, delay: 0.9, radius: 22, bullets: 4, color: '#ffffff' },
+      { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.75, interval: 0.55, bullets: 0, color: '#bfe6ff' }],
     finalPatterns: [{ type: 'rhongo', name: '롱고미니아드', radius: 130, impact: 60, duration: 4.5, pull: 85, arms: 5, interval: 0.09, spin: 2.4, tick: 0.4, color: '#bfe6ff' }] }
 ];

@@ -186,7 +186,7 @@ const AI_BEHAVIORS = {
     const ratio = e.hp / e.maxHp, want = ratio <= 0.33 ? 3 : ratio <= 0.66 ? 2 : 1;
     if (want > phase && e.state !== 'INTRO') {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
-      e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = 1.5;
+      e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
       world.onBossPhase(e, want); e.setState('PHASE'); return;
     }
     e.finalCd = (e.finalCd ?? 0) - dt;
@@ -200,7 +200,7 @@ const AI_BEHAVIORS = {
         if (e.stateTime < def.attackCooldown * (e.cdMul || 1) / spd) break;
         let pat;
         if (phase >= (def.ultFrom || 3) && def.finalPatterns && e.finalCd <= 0) { // 궁극기: 규모를 키우고 피해 +20%, 끝나면 마무리 폭발
-          pat = boostUltimate(pick(def.finalPatterns)); e.finalCd = def.ultCd || 9;
+          pat = boostUltimate(pick(def.finalPatterns)); e.finalCd = def.ultCd || 9; e.ultUsed = true;
           e.ult = true; e.dmg0 = e.damage; e.damage = Math.round(e.damage * 1.2); if (world.onBossUltimate) world.onBossUltimate(e, pat);
         }
         else {
@@ -400,6 +400,20 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 십자 성창: 플레이어 자리를 중심으로 십자(+)·엑스(×) 모양 줄을 따라 빛의 창이 꽂힘 → 잠시 뒤 터짐 (줄 사이로 피해야 함), 매 파마다 플레이어를 다시 노림
+  cross: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, r = e.room; d.timer -= dt;
+      if (d.timer <= 0 && d.shots < P.waves) {
+        const cx = clamp(p.x, r.x0 * TILE + 12, (r.x0 + r.w) * TILE - 12), cy = clamp(p.y, r.y0 * TILE + 12, (r.y0 + r.h) * TILE - 12), off = d.shots % 2 ? Math.PI / 4 : 0;
+        const put = (x, y) => { if (!world.map.isSolidAt(x, y)) world.hazards.push(new Hazard(x, y, { r: P.radius, delay: P.delay, damage: Math.round(e.damage * 1.1), bullets: P.bullets || 0, color: P.color })); };
+        put(cx, cy);
+        for (let a = 0; a < 4; a++) { const ang = off + a * Math.PI / 2; for (let k = 1; k <= P.len; k++) put(cx + Math.cos(ang) * k * P.step, cy + Math.sin(ang) * k * P.step); }
+        world.effects.ring(e.x, e.y, 24, P.color); SFX.play('magic', 0.05); d.shots++; d.timer = P.interval / spd;
+      }
+      return d.shots >= P.waves && d.timer <= 0;
+    }
+  },
   // ── 심층 보스용 새 패턴
   // 탄막 벽: 방 한쪽 끝에서 반대쪽으로 밀려오는 탄의 벽, 매번 다른 자리에 빈틈
   wall: {
