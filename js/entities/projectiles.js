@@ -465,7 +465,7 @@ class ChainCircle {
       if (!e.targetable || this.got.includes(e) || Math.hypot(e.x - this.x, e.y - this.y) > this.r + e.radius) continue;
       e.chainT = Math.max(e.chainT || 0, Math.max(1.5, this.life - this.t)); e.chainMax = e.chainT; this.got.push(e);
       world.damageEnemy(e, { damage: this.T.damage * world.scale.hp, mods: this.owner.mods, knockback: 0, mark: { mult: this.T.weak, dur: e.chainT } }, 0, 0); // 묶으며 큰 피해 + 받는 피해 증가
-      world.effects.text(e.x, e.y - 18, '속박!', '#ffd84a', true); world.effects.goldBurst(e.x, e.y, 10); world.effects.ring(e.x, e.y, e.radius + 8, '#ffd84a');
+      world.effects.goldBurst(e.x, e.y, 10); world.effects.ring(e.x, e.y, e.radius + 8, '#ffd84a');
       if (this.t > 0.05) for (let k = 0; k < 2; k++) this.addSpear(this.gates[randInt(0, 9)], e.x + randInt(-3, 3), e.y, k * 0.05); // 나중에 묶인 적에게도 창
     }
   }
