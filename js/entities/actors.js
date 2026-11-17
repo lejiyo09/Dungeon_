@@ -238,6 +238,9 @@ class Enemy extends Entity {
   }
   renderTelegraph(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y), def = this.def;
+    if (this.slashWarn) { const W = this.slashWarn, full = W.arc >= TAU - 0.01; ctx.save(); /* 아서 왕 검술: 벨 자리 예고 (점점 진해짐) */
+      ctx.globalAlpha = 0.15 + 0.3 * W.k; ctx.fillStyle = '#ff4a3a'; ctx.beginPath(); if (full) ctx.arc(x, y, W.r, 0, TAU); else { ctx.moveTo(x, y); ctx.arc(x, y, W.r, W.ang - W.arc / 2, W.ang + W.arc / 2); ctx.closePath(); } ctx.fill();
+      ctx.globalAlpha = 0.9; ctx.strokeStyle = '#ffd0c0'; ctx.lineWidth = 1; ctx.beginPath(); if (full) ctx.arc(x, y, W.r * W.k, 0, TAU); else ctx.arc(x, y, W.r * W.k, W.ang - W.arc / 2, W.ang + W.arc / 2); ctx.stroke(); ctx.restore(); }
     if (this.laser) { // 보스 광선: 예고선(가늘게) → 발사(굵게)
       for (const a of this.laser.angs) {
         const len = beamLength(this, a, GAME_MAP()), ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len;

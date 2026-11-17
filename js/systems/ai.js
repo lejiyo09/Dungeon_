@@ -187,7 +187,7 @@ const AI_BEHAVIORS = {
     const channeling = e.pd && ((e.pd.tower && e.pd.tower.alive) || e.pd.lock); /* 롱고미니아드(빛의 탑)가 서 있는 동안은 페이즈도 넘기지 않고 다른 행동 없음 — 탑이 무너진 뒤에 넘어감 */
     if (want > phase && e.state !== 'INTRO' && !channeling) {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
-      e.riposteT = 0; e.riposteHit = false;
+      e.riposteT = 0; e.riposteHit = false; e.slashWarn = null;
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
       if (def.arm && want >= 2 && !e.armOn) { e.armOn = true; e.damage = Math.round(e.damage * (1 + def.arm)); e.dmg0 = e.damage; world.announceBossSkill(e, '스위치 온 — 아가트람'); world.effects.rays(e.x, e.y, '#a0d0ff', 16, 80, 0.7); } /* 베디비어: 은빛 팔이 켜짐 */
       if (def.arm && want === 3) world.announceBossSkill(e, '해방 — 데드 엔드 아가트람');
@@ -425,6 +425,26 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 왕의 검술 (아서 왕): 탄이 아니라 검으로 직접 베는 근접 연격 — 근접 무기로 지울 수 없음. 파고들어 → 부채꼴 예고(붉은 칸) → 베기를 연달아, 마지막은 크게 한 바퀴 베기
+  kingsblade: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, fx = world.effects;
+      if (d.n === undefined) { d.n = 0; d.st = 'close'; d.pt = 0; }
+      d.pt += dt; const last = d.n === P.combo - 1, R = last && P.spinR ? P.spinR : P.reach, A = last && P.spinR ? TAU : P.arc;
+      if (d.st === 'close') { /* 파고들기 */
+        const dx = p.x - e.x, dy = p.y - e.y, dd = Math.hypot(dx, dy) || 1;
+        if (dd > P.reach * 0.6 && d.pt < 0.4) { moveAndCollide(e, dx / dd * P.dash * dt, dy / dd * P.dash * dt, world.map); if (Math.random() < 0.5) fx.part(e.x, e.y + 4, 0, 0, { color: '#fff4c0', life: 0.2, size: 2, size2: 0, drag: 0, add: true }); return false; }
+        d.ang = Math.atan2(dy, dx); d.st = 'warn'; d.pt = 0; e.slashWarn = { ang: d.ang, arc: A, r: R, k: 0 }; return false; }
+      if (d.st === 'warn') { e.slashWarn.k = Math.min(1, d.pt / (P.tele / spd)); if (d.pt < P.tele / spd) return false;
+        e.slashWarn = null; /* 베기 */
+        world.eachTarget((q) => { const dx = q.x - e.x, dy = q.y - e.y, dd = Math.hypot(dx, dy), df = Math.abs(Math.atan2(Math.sin(Math.atan2(dy, dx) - d.ang), Math.cos(Math.atan2(dy, dx) - d.ang)));
+          if (dd < R + q.half && (A >= TAU - 0.01 || df < A / 2 + Math.atan2(q.half, Math.max(dd, 1)))) world.damagePlayer(Math.round(e.damage * (last ? P.lastMult || P.mult : P.mult))); });
+        fx.slash(e.x, e.y, d.ang, R, Math.min(A, TAU - 0.05), '#fff4c0'); if (A >= TAU - 0.01) { fx.ring(e.x, e.y, R, '#ffe9a0'); fx.ring(e.x, e.y, R * 0.6, '#ffffff'); }
+        world.addShake(last ? 0.3 : 0.12, last ? 6 : 3); SFX.play('swing', 0.03); if (last) SFX.play('heavy', 0.05);
+        d.n++; d.st = 'close'; d.pt = 0; return d.n >= P.combo; }
+      return false;
+    }
+  },
   // 엑스칼리버 엑셀수스 (아서 왕 마지막 페이즈 전용 보구): 하늘로 거대한 빛기둥들을 세우며 오래 빛을 모음(조준선이 따라오다 마지막에 붉게 고정) → 방 끝까지 관통하는 초거대 일격(맞으면 치명적)
   //  → 곧이어 양옆으로 비스듬히 빛의 충격파 두 줄기 + 원형 빛탄. 쓰는 동안 페이즈 전환 없음
   excelsus: {
