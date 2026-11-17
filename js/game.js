@@ -1803,6 +1803,7 @@ class Game {
     SFX.play(enemy.def.boss ? 'explode' : 'kill', 0.04);
     if (enemy.def.boss) this.hitStop(0.3); else if (Math.random() < 0.35) this.hitStop(0.025);
     if (enemy.def.aiType === 'exploder') this.enemyExplode(enemy);
+    if (enemy.def.traits && !enemy.def.boss) traitOn(enemy, 'death', this); // 심층 잡몹 특성 (단말마·분열)
     if (enemy.def.boss && this.mode === 'dungeon' && this.W.deep && !this.trialW && !enemy.def.master && Math.random() < Math.min(HERO_TREASURE_DROP.max, HERO_TREASURE_DROP.base + HERO_TREASURE_DROP.perDepth * ((this.W.depth || 1) - 1))) { // 심층 보스: 낮은 확률로 영웅의 보구
       const left = DATA_TREASURES.filter((t) => t.heroDrop && !this.save.treasures.includes(t.id));
       if (left.length) { const T = pick(left); this.save.treasures.push(T.id); writeSave(this.save); this.treasureToast = { T, start: performance.now() }; }

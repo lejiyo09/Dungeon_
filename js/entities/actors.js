@@ -246,6 +246,10 @@ class Enemy extends Entity {
       ctx.strokeStyle = lock ? 'rgba(255,60,60,0.95)' : 'rgba(255,90,90,0.45)'; ctx.lineWidth = lock ? 2 : 1;
       ctx.beginPath(); ctx.moveTo(x, y - 4); ctx.lineTo(x + Math.cos(this.aimAng) * 320, y - 4 + Math.sin(this.aimAng) * 320); ctx.stroke(); ctx.lineWidth = 1;
     }
+    if (this.state === 'POUNCE') { // 도약 예고: 뛰어들 방향
+      ctx.strokeStyle = `rgba(255,90,90,${0.35 + 0.6 * Math.min(1, this.stateTime / 0.5)})`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(this.aimAng) * 120, y + Math.sin(this.aimAng) * 120); ctx.stroke(); ctx.lineWidth = 1;
+    }
     if (def.aiType === 'teleporter' && this.state === 'TELEGRAPH') {
       ctx.strokeStyle = def.bulletColor; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(x, y, 4 + 10 * (1 - this.stateTime / def.telegraphTime), 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
     }

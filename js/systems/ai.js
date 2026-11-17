@@ -66,7 +66,7 @@ const AI_BEHAVIORS = {
       case 'TELEGRAPH': if (e.stateTime >= def.telegraphTime) e.setState('ATTACK'); break;
       case 'ATTACK':
         if (ctx.playerAlive && inRange) world.damagePlayer(e.damage);
-        world.effects.ring(e.x, e.y, def.attackRange, '#ff7070');
+        world.effects.ring(e.x, e.y, def.attackRange, '#ff7070'); traitOn(e, 'attack', world, ctx);
         e.attackCd = def.attackCooldown; e.setState('RECOVERY');
         break;
       case 'RECOVERY': if (e.stateTime >= def.recoveryTime) e.setState(ctx.playerAlive ? 'CHASE' : 'IDLE'); break;
@@ -96,7 +96,7 @@ const AI_BEHAVIORS = {
       case 'TELEGRAPH':
         if (e.stateTime < def.telegraphTime - 0.15) e.aimAng = Math.atan2(ctx.dy, ctx.dx);
         if (e.stateTime >= def.telegraphTime) {
-          const n = def.bulletCount || 1, sp = def.bulletSpread || 0;
+          const n = traitOn(e, 'fire', world, ctx) ? 0 : def.bulletCount || 1, sp = def.bulletSpread || 0;
           for (let i = 0; i < n; i++)
             world.enemyShoot(e.x, e.y, e.aimAng + (n > 1 ? (i / (n - 1) - 0.5) * sp * (n - 1) : 0), def.bulletSpeed, e.damage, def.bulletColor || '#ff6a4a', 3);
           e.attackCd = def.attackCooldown + Math.random() * 0.6;
@@ -120,14 +120,15 @@ const AI_BEHAVIORS = {
         break;
       case 'TELEGRAPH': if (e.stateTime >= def.telegraphTime) { e.dashHit = false; e.setState('ATTACK'); } break;
       case 'ATTACK': {
-        const hit = moveAndCollide(e, e.dashX * def.dashSpeed * dt, e.dashY * def.dashSpeed * dt, map);
+        const hit = moveAndCollide(e, e.dashX * def.dashSpeed * dt, e.dashY * def.dashSpeed * dt, map); traitOn(e, 'dash', dt, world);
         if (!e.dashHit && ctx.playerAlive && Math.hypot(p.x - e.x, p.y - e.y) < e.radius + p.half + 3)
           if (world.damagePlayer(e.damage)) e.dashHit = true;
         if (hit.x || hit.y) {
           world.effects.spark(e.x + e.dashX * 8, e.y + e.dashY * 8, '#ffe08a'); world.addShake(0.1, 2);
+          if (traitOn(e, 'dashEnd', world, ctx)) { e.setState('TELEGRAPH'); break; }
           e.attackCd = def.attackCooldown; e.setState('STUN'); break;
         }
-        if (e.stateTime >= def.dashDuration) { e.attackCd = def.attackCooldown; e.setState('RECOVERY'); }
+        if (e.stateTime >= def.dashDuration) { if (traitOn(e, 'dashEnd', world, ctx)) { e.setState('TELEGRAPH'); break; } e.attackCd = def.attackCooldown; e.setState('RECOVERY'); }
         break;
       }
       case 'STUN': if (e.stateTime >= def.stunTime) e.setState('CHASE'); break;
@@ -150,7 +151,7 @@ const AI_BEHAVIORS = {
       case 'TELEGRAPH':
         if (e.stateTime >= def.telegraphTime) {
           e.spin += 0.35;
-          for (let i = 0; i < def.bulletCount; i++)
+          if (!traitOn(e, 'fire', world, ctx)) for (let i = 0; i < def.bulletCount; i++)
             world.enemyShoot(e.x, e.y - 4, e.spin + i * TAU / def.bulletCount, def.bulletSpeed, e.damage, def.bulletColor || '#c070ff', 3);
           e.attackCd = def.attackCooldown; e.setState('RECOVERY');
         }
@@ -243,13 +244,13 @@ const AI_BEHAVIORS = {
             const a = Math.random() * TAU, r = 105 + Math.random() * 50, x = p.x + Math.cos(a) * r, y = p.y + Math.sin(a) * r;
             if (e.room && map.roomAtPoint(x, y) !== e.room) continue;
             if (overlapsSolid(x, y, e.half, map)) continue;
-            world.effects.ring(e.x, e.y, 10, def.bulletColor); e.x = x; e.y = y; world.effects.ring(x, y, 14, def.bulletColor);
+            const ox = e.x, oy = e.y; world.effects.ring(e.x, e.y, 10, def.bulletColor); e.x = x; e.y = y; world.effects.ring(x, y, 14, def.bulletColor); traitOn(e, 'teleport', world, ox, oy);
             break;
           }
           e.fade = 1;
           const base = Math.atan2(p.y - e.y, p.x - e.x), n = def.bulletCount;
-          for (let i = 0; i < n; i++) world.enemyShoot(e.x, e.y, base + (i - (n - 1) / 2) * def.bulletSpread, def.bulletSpeed, e.damage, def.bulletColor, 3);
-          e.attackCd = def.attackCooldown + Math.random() * 0.5; e.setState('RECOVERY');
+          if (!traitOn(e, 'fire', world, ctx)) for (let i = 0; i < n; i++) world.enemyShoot(e.x, e.y, base + (i - (n - 1) / 2) * def.bulletSpread, def.bulletSpeed, e.damage, def.bulletColor, 3);
+          e.attackCd = def.attackCooldown + Math.random() * 0.5; traitOn(e, 'attack', world, ctx); e.setState('RECOVERY');
         }
         break;
       case 'RECOVERY': if (e.stateTime >= def.recoveryTime) e.setState(ctx.playerAlive ? 'CHASE' : 'IDLE'); break;
@@ -268,13 +269,113 @@ const AI_BEHAVIORS = {
       case 'TELEGRAPH':
         if (e.stateTime < def.telegraphTime - 0.25) e.aimAng = Math.atan2(ctx.dy, ctx.dx);
         if (e.stateTime >= def.telegraphTime) {
-          for (let i = 0; i < def.bulletCount; i++) world.enemyShoot(e.x, e.y - 4, e.aimAng, def.bulletSpeed * (1 + i * 0.09), e.damage, '#d8a0ff', 3);
+          if (!traitOn(e, 'fire', world, ctx)) for (let i = 0; i < def.bulletCount; i++) world.enemyShoot(e.x, e.y - 4, e.aimAng, def.bulletSpeed * (1 + i * 0.09), e.damage, '#d8a0ff', 3);
           e.attackCd = def.attackCooldown; e.setState('RECOVERY');
         }
         break;
       case 'RECOVERY': if (e.stateTime >= def.recoveryTime) e.setState('CHASE'); break;
     }
   }
+};
+
+// ── 몬스터 특성: 기본 AI 위에 얹는 추가 패턴 (심층 잡몹). 적 데이터에 traits: ['pounce', ...]
+//  tick: 매 프레임 (true면 이번 프레임 기본 AI를 건너뜀) / attack: 근접 공격 직후 / fire: 원거리 발사 직전 (true면 기본 발사 대신)
+//  dash·dashEnd: 돌진 중·끝 (dashEnd가 true면 다시 돌진) / teleport: 순간이동 직후 / death: 처치될 때
+function traitOn(e, hook, ...a) {
+  const T = e.def.traits; if (!T) return false; let r = false;
+  for (const k of T) { const f = ENEMY_TRAITS[k] && ENEMY_TRAITS[k][hook]; if (f && f(e, ...a)) r = true; }
+  return r;
+}
+function traitRing(world, e, n, speed, col, dmgMul = 0.8, off = Math.random()) {
+  for (let i = 0; i < n; i++) world.enemyShoot(e.x, e.y, off + i * TAU / n, speed, Math.round(e.damage * dmgMul), col || e.def.bulletColor || e.def.color, 3);
+}
+const ENEMY_TRAITS = {
+  // 도약: 거리를 두면 잠깐 웅크렸다가(조준선 표시) 플레이어 자리로 뛰어듦
+  pounce: {
+    tick(e, dt, world, ctx) {
+      const t = e.tp || (e.tp = { cd: 1.2 + Math.random() * 2 }), p = world.player;
+      if (e.state === 'POUNCE') { if (e.stateTime >= 0.5) { e.setState('LEAP'); t.hit = false; } return true; }
+      if (e.state === 'LEAP') {
+        const hit = moveAndCollide(e, t.vx * dt, t.vy * dt, world.map);
+        if (!t.hit && ctx.playerAlive && Math.hypot(p.x - e.x, p.y - e.y) < e.radius + p.half + 4 && world.damagePlayer(e.damage)) t.hit = true;
+        if (e.stateTime >= 0.3 || hit.x || hit.y) { world.effects.ring(e.x, e.y, 14, e.def.color); t.cd = 3 + Math.random() * 1.5; e.setState('RECOVERY'); }
+        return true;
+      }
+      t.cd -= dt;
+      if (e.state === 'CHASE' && t.cd <= 0 && ctx.playerAlive && ctx.dist > 45 && ctx.dist < 130 && hasLineOfSight(e, p, world.map)) {
+        const sp = Math.min(440, (ctx.dist + 12) / 0.3); e.aimAng = Math.atan2(ctx.dy, ctx.dx); t.vx = Math.cos(e.aimAng) * sp; t.vy = Math.sin(e.aimAng) * sp;
+        e.setState('POUNCE'); return true;
+      }
+      return false;
+    }
+  },
+  // 충격파: 근접 공격과 함께 느린 탄 고리
+  shockwave: { attack(e, world) { traitRing(world, e, 8, 90, null, 0.6); } },
+  // 단말마: 처치되면 탄이 사방으로 흩어짐
+  deathBurst: { death(e, world) { traitRing(world, e, 8, 105, null, 0.7); } },
+  // 분열: 처치되면 작은 개체 둘로 갈라짐 (작은 개체는 다시 갈라지지 않음)
+  splitDeath: {
+    death(e, world) {
+      if (e.small || !world.spawnEnemy) return;
+      for (const s of [-1, 1]) { const c = world.spawnEnemy(e.def.id, e.x + s * 8, e.y, e.room); c.small = true; c.maxHp = c.hp = Math.max(1, Math.round(e.maxHp * 0.3)); c.state = 'CHASE'; c.attackCd = 0.8; }
+    }
+  },
+  // 덫 놓기: 지나간 자리에 잠시 뒤 터지는 장판
+  minelay: {
+    tick(e, dt, world, ctx) {
+      e.mineT = (e.mineT ?? 1 + Math.random() * 2) - dt;
+      if (e.mineT <= 0 && ctx.playerAlive) { e.mineT = 2.6 + Math.random(); world.hazards.push(new Hazard(e.x, e.y, { r: 16, delay: 1.4, damage: Math.round(e.damage * 0.8), bullets: 0, color: e.def.bulletColor || e.def.color })); }
+      return false;
+    }
+  },
+  // 돌진 자국: 돌진하는 동안 양옆으로 느린 탄을 흘림
+  dashTrail: {
+    dash(e, dt, world) {
+      e.trailT = (e.trailT || 0) - dt; if (e.trailT > 0) return;
+      e.trailT = 0.07; const a = Math.atan2(e.dashY, e.dashX), col = e.def.bulletColor || e.def.color;
+      for (const s of [-1, 1]) world.enemyShoot(e.x, e.y, a + s * Math.PI / 2, 60, Math.round(e.damage * 0.6), col, 3);
+    }
+  },
+  // 돌진 끝 폭발: 멈추는 자리에서 탄 고리
+  dashBurst: { dashEnd(e, world) { traitRing(world, e, 10, 115, null, 0.7); return false; } },
+  // 연속 돌진: 한 번 더 방향을 바꿔 돌진
+  redash: {
+    dashEnd(e, world, ctx) {
+      if ((e.redashN || 0) >= 1 || !ctx.playerAlive) { e.redashN = 0; return false; }
+      e.redashN = (e.redashN || 0) + 1; e.dashX = ctx.dx / ctx.dist; e.dashY = ctx.dy / ctx.dist; return true;
+    }
+  },
+  // 섞어 쓰기 (술사): 원형 탄막 → 조준 부채꼴 → 발밑 장판 순서로 번갈아
+  castMix: {
+    fire(e, world, ctx) {
+      const n = e.castN = ((e.castN || 0) + 1) % 3, col = e.def.bulletColor, p = world.player;
+      if (n === 1) { const a = Math.atan2(ctx.dy, ctx.dx); for (let i = 0; i < 5; i++) world.enemyShoot(e.x, e.y - 4, a + (i - 2) * 0.16, e.def.bulletSpeed * 1.5, e.damage, col, 3); return true; }
+      if (n === 2) { for (let i = 0; i < 3; i++) { const a = Math.random() * TAU, r = i ? 26 + Math.random() * 20 : 0; world.hazards.push(new Hazard(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r, { r: 20, delay: 0.9, damage: e.damage, bullets: 0, color: col })); } return true; }
+      return false;
+    }
+  },
+  // 장판 시전: 탄막과 함께 플레이어 발밑에 장판 하나
+  zoneCast: { fire(e, world) { const p = world.player; world.hazards.push(new Hazard(p.x, p.y, { r: 22, delay: 1.1, damage: e.damage, bullets: 0, color: e.def.bulletColor || e.def.color })); return false; } },
+  // 부채 쓸기 (포탑): 두 번에 한 번은 넓은 부채꼴로
+  turretSweep: {
+    fire(e, world) {
+      if ((e.fireN = (e.fireN || 0) + 1) % 2) return false;
+      for (let i = 0; i < 11; i++) world.enemyShoot(e.x, e.y - 4, e.aimAng + (i - 5) * 0.12, e.def.bulletSpeed * 0.75, e.damage, e.def.bulletColor, 3);
+      return true;
+    }
+  },
+  // 고리 (포탑): 세 번에 한 번은 사방으로 두 겹 고리
+  turretRing: {
+    fire(e, world) {
+      if ((e.fireN = (e.fireN || 0) + 1) % 3) return false;
+      traitRing(world, e, 14, e.def.bulletSpeed * 0.55, e.def.bulletColor, 1); traitRing(world, e, 14, e.def.bulletSpeed * 0.42, e.def.bulletColor, 1, Math.PI / 14);
+      return true;
+    }
+  },
+  // 잔상: 순간이동한 원래 자리가 잠시 뒤 터짐
+  afterimage: { teleport(e, world, ox, oy) { world.hazards.push(new Hazard(ox, oy, { r: 22, delay: 0.6, damage: e.damage, bullets: 6, color: e.def.bulletColor })); } },
+  // 연속 이동: 사격 뒤 곧바로 한 번 더 순간이동해 쏨
+  doubleTap: { attack(e) { e.tap2 = !e.tap2; if (e.tap2) e.attackCd = 0.55; } }
 };
 
 // update()가 true를 돌려주면 패턴 종료
@@ -624,5 +725,6 @@ function updateEnemy(e, dt, world) {
   e.attackCd = Math.max(0, e.attackCd - sdt * (e.blind > 0 ? (e.def.boss ? 0.8 : 0.55) : 1)); // 실명: 공격 준비가 느려짐
   const behavior = AI_BEHAVIORS[e.def.aiType];
   if (!behavior) throw new Error('알 수 없는 aiType: ' + e.def.aiType);
+  if (e.def.traits && e.state !== 'DEAD' && traitOn(e, 'tick', sdt, world, ctx)) return; // 특성이 이번 프레임 행동을 맡음 (도약 등)
   behavior(e, sdt, world, ctx);
 }
