@@ -6,7 +6,7 @@
 //  · 게임 계산은 방장 브라우저가 맡을 예정 (2단계). 지금은 위치·외형만 주고받음
 // ════════════════════════════════════════════
 const NET_CONFIG = {
-  server: 'wss://project-dungeon.onrender.com/ws', // Render 서버 (아티팩트 등 다른 주소에서 열어도 이 서버로 연결·랭킹 기록)
+  server: 'wss://project-dungeon-sg.onrender.com/ws', // Render 서버 — 싱가포르 (아티팩트·GitHub Pages 등 다른 주소에서 열어도 이 서버로 연결·랭킹 기록)
   maxPlayers: 4,
   sendHz: 10, // 위치를 보내는 최대 횟수 (초당) — 가만히 있으면 2초에 한 번만 보냄 (데이터 절약)
   idleSend: 2

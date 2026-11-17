@@ -1,5 +1,11 @@
 # 변경 내역
 
+## Render 서버를 싱가포르로 (2단계: 게임 주소 바꾸기)
+- 새 서버 https://project-dungeon-sg.onrender.com 확인: 상태 정상, 랭킹 영구 저장 켜짐(GH_TOKEN), 예전 랭킹 기록 그대로 불러옴
+- 게임의 서버 주소(NET_CONFIG.server)를 새 서버로 → GitHub Pages·아티팩트에서 열어도 싱가포르 서버로 연결
+- 확인: GitHub Pages처럼 다른 주소에서 열어 방 만들기 → 참가 → 함께 던전 입장, 랭킹 불러오기
+- 예전 서버(project-dungeon, 오리건)는 대시보드에서 지우면 됨
+
 ## Render 서버를 싱가포르로 (1단계: 새 서버 만들기)
 - render.yaml: 서비스 이름 project-dungeon → project-dungeon-sg, 지역 singapore (만든 서비스의 지역은 바꿀 수 없어 새로 만듦), GH_REPO를 바뀐 저장소 이름으로
 - 게임의 서버 주소(NET_CONFIG.server)는 새 서버가 켜진 것을 확인한 뒤 2단계에서 바꿈
