@@ -317,7 +317,7 @@ const ENEMY_TRAITS = {
   splitDeath: {
     death(e, world) {
       if (e.small || !world.spawnEnemy) return;
-      for (const s of [-1, 1]) { const c = world.spawnEnemy(e.def.id, e.x + s * 8, e.y, e.room); c.small = true; c.maxHp = c.hp = Math.max(1, Math.round(e.maxHp * 0.3)); c.state = 'CHASE'; c.attackCd = 0.8; }
+      for (const s of [-1, 1]) { const ox = overlapsSolid(e.x + s * 8, e.y, e.half, world.map) ? 0 : s * 8, c = world.spawnEnemy(e.def.id, e.x + ox, e.y, e.room); /* 벽 속에 생기지 않게 */ c.small = true; c.maxHp = c.hp = Math.max(1, Math.round(e.maxHp * 0.3)); c.state = 'CHASE'; c.attackCd = 0.8; }
     }
   },
   // 덫 놓기: 지나간 자리에 잠시 뒤 터지는 장판

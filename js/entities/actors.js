@@ -251,10 +251,10 @@ class Enemy extends Entity {
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(this.aimAng) * 120, y + Math.sin(this.aimAng) * 120); ctx.stroke(); ctx.lineWidth = 1;
     }
     if (def.aiType === 'teleporter' && this.state === 'TELEGRAPH') {
-      ctx.strokeStyle = def.bulletColor; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(x, y, 4 + 10 * (1 - this.stateTime / def.telegraphTime), 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.strokeStyle = def.bulletColor; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(x, y, Math.max(1, 4 + 10 * (1 - this.stateTime / def.telegraphTime)), 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
     }
     if (this.state === 'SPAWN') {
-      const k = this.stateTime / SPAWN_TIME;
+      const k = Math.min(1, this.stateTime / SPAWN_TIME);
       ctx.strokeStyle = `rgba(255,80,80,${0.4 + 0.5 * k})`;
       ctx.beginPath(); ctx.arc(x, y, 3 + (1 - k) * 10, 0, TAU); ctx.stroke();
       ctx.fillStyle = `rgba(255,80,80,${0.25 * k})`; ctx.beginPath(); ctx.arc(x, y, def.hitboxHalf + 2, 0, TAU); ctx.fill();

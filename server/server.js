@@ -11,6 +11,9 @@ const path = require('path');
 const zlib = require('zlib');
 const crypto = require('crypto');
 const { WebSocketServer } = require('ws');
+// 마지막 안전장치: 예상 못 한 오류가 나도 서버(방·랭킹)가 통째로 꺼지지 않게 기록만 하고 계속
+process.on('uncaughtException', (e) => { console.error('uncaught', e && e.stack || e); });
+process.on('unhandledRejection', (e) => { console.error('unhandled', e && e.stack || e); });
 
 const ROOT = path.resolve(__dirname, '..');
 const PORT = process.env.PORT || 8080;
@@ -106,7 +109,7 @@ ghLoad();
 
 // ── 정적 파일
 const server = http.createServer((req, res) => {
-  let p = decodeURIComponent((req.url || '/').split('?')[0]);
+  let p; try { p = decodeURIComponent((req.url || '/').split('?')[0]); } catch (e) { res.writeHead(400); res.end('bad request'); return; } // 잘못된 주소(%가 깨진 것 등)로 서버가 꺼지지 않게
   if (p === '/health') { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('ok ' + rooms.size + ' rooms'); return; }
   if (p === '/api/scores') { // 랭킹판
     const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
@@ -174,8 +177,8 @@ wss.on('connection', (ws) => {
   ws.on('message', (buf) => {
     const now = Date.now(); if (now - ws.winAt >= 1000) { ws.winAt = now; ws.win = 0; } if (++ws.win > LIMIT.msgPerSec) return; // 너무 많이 보내면 버림
     let m; try { m = JSON.parse(buf); } catch (e) { return; }
+    if (!m || typeof m !== 'object' || typeof m.t !== 'string') return; // null·숫자 같은 이상한 메시지는 무시 (서버가 꺼지지 않게)
     if (ws.room && m.t !== 'ping') ws.room.last = now;
-    if (!m || typeof m.t !== 'string') return;
     if (m.t === 'create' || m.t === 'join') {
       leave(ws);
       ws.name = clean(m.name, 12) || '모험가'; ws.hero = clean(m.hero, 32);
@@ -199,6 +202,7 @@ wss.on('connection', (ws) => {
     } else if (m.t === 'ping') send(ws, { t: 'pong', at: m.at });
   });
   ws.on('close', () => leave(ws));
+  ws.on('error', () => { /* 깨진 연결: close가 뒤따름 */ });
   send(ws, { t: 'hello', id: ws.id });
 });
 // 정리 (30초마다): 끊긴 연결 · 방에 안 들어간 채 오래된 연결 · 오래 조용한 방
