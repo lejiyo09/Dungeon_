@@ -14,8 +14,13 @@ const NET_CONFIG = {
 const Net = {
   ws: null, status: 'off', id: null, code: null, players: [], peers: new Map(), error: null, ping: null, handlers: [],
   url() {
-    if (/^https?:$/.test(location.protocol) && !/claude/.test(location.hostname)) return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws'; // 게임을 서버 주소에서 열었으면 그 서버
-    return NET_CONFIG.server || null; // 아티팩트 등 다른 곳에서 열었으면 Render 서버
+    if (this.onServer()) return (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws'; // 게임을 서버 주소에서 열었으면 그 서버
+    return NET_CONFIG.server || null; // GitHub Pages·아티팩트 등 다른 곳에서 열었으면 Render 서버
+  },
+  onServer() { // 게임 서버(server/server.js)가 직접 연 페이지인지: Render 주소 또는 내 컴퓨터·같은 와이파이에서 띄운 서버
+    if (!/^https?:$/.test(location.protocol)) return false;
+    const h = location.hostname, S = NET_CONFIG.server; let sh = ''; try { sh = new URL(S.replace(/^ws/, 'http')).hostname; } catch (e) { /* 주소 없음 */ }
+    return h === sh || /\.onrender\.com$/.test(h) || /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h);
   },
   get inRoom() { return !!this.code; },
   get isHost() { const me = this.players.find((p) => p.id === this.id); return !!(me && me.host); },
@@ -60,7 +65,7 @@ const Net = {
     for (const fn of this.handlers) fn(m);
   },
   httpBase() { // 랭킹판 API 주소 (게임을 연 주소, 또는 NET_CONFIG.server에서)
-    if (/^https?:$/.test(location.protocol) && !/claude/.test(location.hostname)) return location.origin;
+    if (this.onServer()) return location.origin;
     return NET_CONFIG.server ? NET_CONFIG.server.replace(/^ws/, 'http').replace(/\/ws$/, '') : null;
   },
   async fetchScores() { // 브라우저가 ETag로 다시 확인 → 바뀌지 않았으면 서버는 내용 없이 응답 (데이터 절약)
@@ -93,9 +98,7 @@ const Net = {
   },
   scoreErr(e) { // 연결 실패를 알아보기 쉬운 말로
     if (e && /랭킹|서버 주소/.test(e.message)) return e.message;
-    const here = /^https?:$/.test(location.protocol) && !/claude/.test(location.hostname);
-    return here ? '랭킹 서버에 연결하지 못했어요 (무료 서버가 깨어나는 중일 수 있어요 — 30초~1분 뒤 다시 열어 주세요)'
-      : '이 페이지에서는 랭킹 서버에 연결할 수 없어요 → ' + this.httpBase() + ' 에서 열어 주세요';
+    return '랭킹 서버에 연결하지 못했어요 (무료 서버가 깨어나는 중일 수 있어요 — 30초~1분 뒤 다시 열어 주세요. 계속 안 되면 ' + this.httpBase() + ' 에서 열어 주세요)';
   },
   nameOf(id) { const p = this.players.find((q) => q.id === id); return p ? p.name : '?'; }
 };
