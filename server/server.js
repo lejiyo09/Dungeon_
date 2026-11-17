@@ -190,7 +190,7 @@ wss.on('connection', (ws) => {
         room = rooms.get(clean(m.code, 4).toUpperCase());
         if (!room) { send(ws, { t: 'error', msg: '없는 방 코드입니다' }); return; }
         if (room.players.length >= MAX_PLAYERS) { send(ws, { t: 'error', msg: `방이 가득 찼습니다 (최대 ${MAX_PLAYERS}명)` }); return; }
-        if (room.started) { send(ws, { t: 'error', msg: '이미 탐험을 시작한 방입니다' }); return; }
+        if (room.started && !m.rejoin) { send(ws, { t: 'error', msg: '이미 탐험을 시작한 방입니다' }); return; } // 연결이 끊겼던 사람은 진행 중인 방에 다시 들어올 수 있음
       }
       room.players.push(ws); ws.room = room; room.last = Date.now();
       broadcastPlayers(room);
@@ -219,6 +219,6 @@ setInterval(() => {
     for (const p of room.players) { send(p, { t: 'error', msg: '오랫동안 움직임이 없어 방이 닫혔습니다' }); p.room = null; p.close(4001, 'room idle'); }
     rooms.delete(room.code);
   }
-}, 30000);
+}, 10000); // 10초마다 확인 → 끊긴 연결을 20초 안에 정리 (동료 화면이 오래 멈춰 있지 않게)
 
 server.listen(PORT, () => console.log(`PROJECT: DUNGEON server on :${PORT}`));

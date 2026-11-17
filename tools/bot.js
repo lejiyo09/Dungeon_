@@ -14,7 +14,9 @@ window.Bot = {
     p.slot = best;
   },
   // 한 프레임 입력을 만들고 game.update까지 호출
-  step(g, st) {
+  step(g, st) { this.think(g, st); g.update(STEP); },
+  // 입력만 만듦 (g.player·g.input 기준) — 멀티 시뮬레이션에서 여러 캐릭터를 움직일 때
+  think(g, st) {
     const p = g.player, I = g.input;
     I.down.clear();
     if (st.t++ % 30 === 0) this.chooseWeapon(p);
@@ -55,6 +57,5 @@ window.Bot = {
     const R = /^whirlwind|spellblade/.test(sk) ? 40 : ['frost_nova', 'flamestorm', 'thorns', 'radiance', 'quake', 'descent', 'execution', 'bloodstorm', 'voidcollapse', 'worldtree', 'plaguecloud', 'bladeorbit', 'bladestorm', 'shout', 'shout2', 'earthshatter', 'ancientroot', 'barrier', 'barrier2', 'fortress', 'bless', 'bless2', 'miracle', 'bloodpact', 'bloodpact2', 'bloodmoon', 'bearform', 'bearform2', 'primal', 'thornburst'].includes(sk) ? 95 : 160;
     const near = en.filter((e) => Math.hypot(e.x - p.x, e.y - p.y) < R).length;
     if (p.skillCooldown <= 0 && (near >= 2 || (near >= 1 && en.some((e) => e.def.boss)) || (/^whirlwind|spellblade/.test(sk) && danger))) I.pressed.add('KeyF');
-    g.update(STEP);
   }
 };

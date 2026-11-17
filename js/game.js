@@ -25,7 +25,9 @@ class Game {
     this.enterLobby();
     window.addEventListener('resize', () => this.fitToScreen());
     PERF.onChange = () => this.fitToScreen(); // 자동 품질이 바뀌면 해상도도 다시 맞춤
-    new GameLoop((dt) => this.update(dt), () => this.render()).start();
+    this.loop = new GameLoop((dt) => this.update(dt), () => this.render());
+    this.loop.runHidden = () => !!(this.coop && this.coop.host); // 멀티 방장은 창을 내려도 계산 계속
+    this.loop.start();
   }
   // 캔버스 해상도를 실제 표시 픽셀(devicePixelRatio 포함)에 맞춤 → 글자/선은 선명, 도트는 nearest 확대
   fitToScreen() {
@@ -1970,6 +1972,7 @@ class Game {
     ctx.setTransform(R, 0, 0, R, 0, 0);
     this.renderScreenFx(ctx, cx, cy);
     if (this.cutscene) HUD.cutscene(ctx, this); else this.hud.render(ctx, this); // 컷신 중에는 HUD 대신 검은 띠와 대사
+    if (this.coop) this.coopStatusDraw(ctx); // 멀티 연결 상태 (끊김·다시 연결·방장 기다림)
     if (this.cutin && !this.overlay) HUD.cutin(ctx, this); else if (this.overlay) this.cutin = null; // 최종 스킬·보구 컷인
     if (this.treasureToast) HUD.treasureToast(ctx, this); // 보구 획득 알림 (결과 화면 위에도 보임)
 

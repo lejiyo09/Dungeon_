@@ -35,6 +35,11 @@ function coopPackRef(v) { // 적·플레이어 같은 큰 객체는 위치 정�
   if (v instanceof Enemy) return { $e: 1, x: r1(v.x), y: r1(v.y), alive: v.alive, chainT: r1(v.chainT || 0), radius: v.radius, half: v.half };
   return undefined;
 }
+function coopVel(o, x, y, now) { // 받은 위치 두 개로 속도를 구해 둠 → 사이 시간은 앞으로 예측해서 그림 (뒤따라오는 느낌 줄임)
+  if (o.snapT && o.tx !== undefined) { const dt = (now - o.snapT) / 1000; if (dt > 0.02 && dt < 0.5) { const vx = (x - o.tx) / dt, vy = (y - o.ty) / dt, sp = Math.hypot(vx, vy); const k = sp > 320 ? 320 / sp : 1; o.vx = vx * k; o.vy = vy * k; } }
+  o.tx = x; o.ty = y; o.snapT = now;
+}
+function coopSmooth(o, dt, now) { if (o.tx === undefined) return; const age = Math.min(0.12, (now - (o.snapT || now)) / 1000), gx = o.tx + (o.vx || 0) * age, gy = o.ty + (o.vy || 0) * age, k = Math.min(1, dt * 15); o.x += (gx - o.x) * k; o.y += (gy - o.y) * k; }
 function coopSafeDraw(ctx, fn) { // 그리다 오류가 나도 캔버스 상태(이동·혼합 방식 등)를 그리기 전으로 되돌림
   trackCtxDepth(ctx);
   const d0 = ctx.__d; ctx.save(); try { fn(); } catch (e) { /* 이것만 생략 */ } finally { while (ctx.__d > d0) ctx.restore(); }
@@ -88,16 +93,19 @@ Object.assign(Game.prototype, {
   },
   coopOnNet(m) {
     if (!this.coop) { if (m.t === 'relay' && m.data && m.data.k === 'start' && this.mode === 'lobby' && !this.transition) this.coopGuestStart(m.from, !!m.data.deep); return; }
+    if (m.t === 'dropped' || m.t === 'rejoined' || m.t === 'lost') { this.coopNetEvent(m.t); return; } // 내 연결이 끊김 / 다시 연결됨 / 포기
     if (m.t === 'players') {
-      if (this.coop.host) { for (const id of [...this.remotes.keys()]) if (!Net.players.some((p) => p.id === id)) this.remotes.delete(id); }
-      else if (!Net.players.some((p) => p.id === this.coop.hostId)) this.coopGuestEnd({ victory: false, hostLeft: true });
+      if (this.coop.host) { for (const id of [...this.remotes.keys()]) if (!Net.players.some((p) => p.id === id)) this.coopRemoteGone(id); }
+      else if (!Net.players.some((p) => p.id === this.coop.hostId) && !this.coop.hostLostAt && !Net.rejoin) { this.coop.hostLostAt = performance.now(); } // 방장이 끊김 → 25초 기다림 (다시 연결되면 이어서)
       return;
     }
-    if (m.t === 'left') { if (this.coop.host) this.remotes.delete(m.id); return; }
+    if (m.t === 'left') { if (this.coop.host) this.coopRemoteGone(m.id); return; }
+    if (m.t === 'relay' && m.data && m.data.k === 'host' && this.coop.guest) { this.coop.hostId = m.from; this.coop.hostLostAt = 0; this.coop.lastSnap = performance.now(); this.showBanner('방장이 다시 연결되었습니다', null, '#7affc0'); return; }
     if (m.t !== 'relay' || !m.data) return;
     const d = m.data;
     if (this.coop.host) {
-      if (d.k === 'setup') this.coopAddRemote(m.from, d);
+      if (d.k === 'setup') { if (!this.coopRestoreRemote(m.from, d)) this.coopAddRemote(m.from, d); }
+      else if (d.k === 'rf') { this.coop.snapN = 0; } // 참가자가 전부 다시 요청 (불러오는 중·순서 어긋남) → 다음 화면 공유는 전부
       else if (d.k === 'in') { const R = this.remotes.get(m.from); if (!R) return; if (d.wp === R.warp) { R.rx = d.x; R.ry = d.y; } /* 방장이 옮긴 뒤 참가자가 확인하기 전의 옛 위치는 무시 */ R.aim = { x: d.ax, y: d.ay }; R.vin.mouse.down = !!d.md; R.dash = !!d.d; for (const e of d.ev || []) if (COOP.events.includes(e)) R.vin.pressed.add(e); }
       else if (d.k === 'ov') { const R = this.remotes.get(m.from); if (R) this.coopRemoteOverlay(R, d); }
       else if (d.k === 'trpick') { const R = this.remotes.get(m.from), T = DATA_TREASURES.find((t) => t.id === d.id); if (R && T && !R.p.treasure) { R.p.treasure = T; R.p.treasureCd = 0; } } // 성역에서 고른 보구를 이번 탐험부터
@@ -136,8 +144,38 @@ Object.assign(Game.prototype, {
     const L0 = jobLines(hero.id)[0]; if (L0) this.withPlayer(p, () => this.setJob(p, L0, 0));
     if (this.runDeep && d.cp && typeof d.cp === 'object') { this.playerFromSnapshot(hero, d.cp, p); this.useCheckpoint(p, d.cp, tr); } // 심층: 동료가 10-4를 깬 그대로
     else if (this.runDeep) this.withPlayer(p, () => this.applyDeepKit(p)); // 기록이 없으면 기본 심층 장비
-    this.remotes.set(id, { id, p, vin: new VirtualInput(), aim: { x: p.x + 20, y: p.y }, warp: 0 });
+    this.remotes.set(id, { id, p, vin: new VirtualInput(), aim: { x: p.x + 20, y: p.y }, warp: 0, name: Net.nameOf(id) });
     this.coopSendMap(id);
+  },
+  coopRemoteGone(id) { // 참가자 연결이 끊김: 캐릭터를 2분 동안 보관 → 같은 이름으로 다시 들어오면 그대로 이어서
+    const R = this.remotes.get(id); if (!R) return; this.remotes.delete(id);
+    const C = this.coop; C.ghosts = C.ghosts || new Map(); C.ghosts.set(R.name, { p: R.p, at: performance.now() });
+    this.showBanner(`${R.name} 연결 끊김`, '다시 연결되면 그대로 이어서 합니다', '#ffb070');
+  },
+  coopRestoreRemote(id, d) {
+    const C = this.coop, name = Net.nameOf(id), g = C.ghosts && C.ghosts.get(name); if (!d.rejoin || !g || performance.now() - g.at > 120000 || this.remotes.has(id)) return false;
+    C.ghosts.delete(name); const p = g.p, me = C.me; p.x = me.x + 14; p.y = me.y + 10; p.hurtInvuln = 2;
+    this.remotes.set(id, { id, p, vin: new VirtualInput(), aim: { x: p.x + 20, y: p.y }, warp: 1, name });
+    this.coop.snapN = 0; this.coopSendMap(id); this.showBanner(`${name} 다시 연결됨`, null, '#7affc0'); return true;
+  },
+  coopNetEvent(t) { // 내 연결 상태 변화
+    const C = this.coop; if (!C) return;
+    if (t === 'dropped') { C.netLostAt = performance.now(); return; }
+    if (t === 'rejoined') { C.netLostAt = 0;
+      if (C.host) { Net.relay({ k: 'host' }); C.snapN = 0; this.coopSendMap(); this.showBanner('다시 연결되었습니다', null, '#7affc0'); } // 동료들에게 방장이 돌아왔다고 알리고 맵부터 다시
+      else { C.loading = true; C.lastSnap = performance.now(); Net.relay({ k: 'setup', rejoin: true, hero: this.save.selected, treasure: this.save.treasureEquipped, loadout: this.save.loadout, jobLv: this.jobLevel(this.save.selected) }, C.hostId); this.showBanner('다시 연결되었습니다', null, '#7affc0'); }
+      return; }
+    if (t === 'lost') {
+      if (C.guest) this.coopGuestEnd({ victory: false, disconnected: true });
+      else { for (const [name, orig] of Object.entries(C.fxOrig || {})) this.effects[name] = orig; this.player = C.me; this.coop = null; this.remotes = new Map(); this.showBanner('서버와 연결이 끊겨 혼자 계속합니다', null, '#ffb070'); } // 방장: 탐험은 계속
+    }
+  },
+  coopStatusDraw(ctx) { // 연결 상태 안내 (화면 가운데 위)
+    const C = this.coop; if (!C) return; const now = performance.now(); let msg = null;
+    if (C.netLostAt || Net.rejoin) msg = `서버 연결이 끊겼습니다 — 다시 연결하는 중… (${Math.max(0, Math.ceil((Net.REJOIN_MS - (now - (Net.rejoin ? Net.rejoin.since : now))) / 1000))}초)`;
+    else if (C.guest && C.hostLostAt) msg = `방장 연결이 끊겼습니다 — 기다리는 중… (${Math.max(0, Math.ceil((25000 - (now - C.hostLostAt)) / 1000))}초)`;
+    else if (C.guest && !C.loading && C.lastSnap && now - C.lastSnap > 2500) msg = '방장 화면 응답을 기다리는 중…';
+    if (!msg) return; ctx.fillStyle = 'rgba(0,0,0,0.65)'; ctx.fillRect(VIEW_W / 2 - 150, 40, 300, 18); hudText(ctx, msg, VIEW_W / 2, 44, '#ffd27a', 'center', 8);
   },
   coopGather(r, leader) { // 전투가 시작된 방 밖의 플레이어를 앞장선 사람 곁(방 안)으로 옮김
     const map = this.map, c = map.tileCenter(r.cx, r.cy), base = leader && map.isFullyInside(leader, r) ? leader : c; let i = 0;
@@ -243,7 +281,8 @@ Object.assign(Game.prototype, {
     const pr = this.projectiles.filter((q) => !q.orbit).slice(0, 160).map((q) => [Math.round(q.x), Math.round(q.y), Math.round((q.dx || 0) * (q.speed || 0)), Math.round((q.dy || 0) * (q.speed || 0)), q.color, q.size || 1]);
     const eb = this.enemyBullets.slice(0, 240).map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.r, b.color]);
     const td = []; const T = this.map.tiles, L = C.lastTiles; if (L && L.length === T.length) for (let i = 0; i < T.length; i++) if (T[i] !== L[i]) { td.push([i, T[i]]); L[i] = T[i]; }
-    const msg = { k: 'snap', g: this.gold, kills: this.kills, wi: this.worldIdx, li: this.levelIdx, pl: players, en, pr, eb,
+    C.seq = (C.seq || 0) + 1;
+    const msg = { k: 'snap', q: C.seq, g: this.gold, kills: this.kills, wi: this.worldIdx, li: this.levelIdx, pl: players, en, pr, eb,
       pk: this.pickups.map((k) => [k.kind, Math.round(k.x), Math.round(k.y), k.def ? k.def.id : 0]),
       hz: this.hazards.map((h) => [Math.round(h.x), Math.round(h.y), h.r, r1(h.t), h.delay, h.color]),
       po: this.portals.map((p) => [Math.round(p.x), Math.round(p.y), p.label || '', p.color || null]),
@@ -281,13 +320,14 @@ Object.assign(Game.prototype, {
     const m = new DungeonMap(d.w, d.h, d.palette); m.tiles = b64.dec(d.tiles);
     m.rooms = d.rooms.map((r) => Object.assign({ visited: false, state: 'idle' }, r)); m.edges = d.edges.map(([a, b]) => [m.rooms[a], m.rooms[b]]); m.startRoom = m.rooms[d.start];
     this.worldIdx = d.wi; this.levelIdx = d.li;
-    this.resetWorldLists(m); this.coop.enemies.clear(); this.coop.loading = false;
+    this.resetWorldLists(m); this.coop.enemies.clear(); this.coop.loading = false; this.coop.lastSnap = performance.now(); this.coop.zones && this.coop.zones.clear(); this.coop.seq = 0; Net.relay({ k: 'rf' }, this.coop.hostId); // 맵을 받았으면 화면 공유도 전부 다시
     const sp = d.spawn && d.spawn[Net.id], c = sp || this.map.tileCenter(m.startRoom.cx, m.startRoom.cy);
     this.player.x = c.x; this.player.y = c.y; this.player.state = 'NORMAL';
     this.snapCamera(); this.showBanner(`${stageLabel(this.worldIdx, this.levelIdx)}  ${this.W.name}`, '방장과 함께하는 탐험', '#7affc0');
   },
   coopGuestSnap(d) {
-    const C = this.coop; if (C.loading || !this.map) return;
+    const C = this.coop, nowS = performance.now(); C.lastSnap = nowS; if (C.loading || !this.map) return;
+    if (C.seq && d.q !== C.seq + 1 && nowS - (C.rfAt || 0) > 1000) { C.rfAt = nowS; Net.relay({ k: 'rf' }, C.hostId); } C.seq = d.q; // 화면 공유가 빠졌으면 전부 다시 요청
     this.gold = d.g; this.kills = d.kills; this.worldIdx = d.wi; this.levelIdx = d.li;
     const seen = new Set();
     C.pls = C.pls || {};
@@ -297,7 +337,7 @@ Object.assign(Game.prototype, {
       let o = mine ? null : C.others.get(s.id);
       if (!mine && !o) { const hero = this.data.heroes.get(s.h) || DATA_HEROES[0]; o = { id: s.id, p: new Player(s.x, s.y, hero, this.data.base) }; C.others.set(s.id, o); }
       const p = mine ? this.player : o.p; if (!mine) seen.add(s.id);
-      if (!mine) { p.tx = s.x; p.ty = s.y; if (Math.hypot(p.x - s.x, p.y - s.y) > 80) { p.x = s.x; p.y = s.y; } p.aimVis = s.a; p.faceVis = s.f; p.moving = !!s.mv; p.hurtInvuln = s.inv ? 0.1 : 0; const base = this.data.heroes.get(s.h); if (base) p.hero = s.lk ? heroWithLook(base, s.lk) : base; }
+      if (!mine) { coopVel(p, s.x, s.y, nowS); if (Math.hypot(p.x - s.x, p.y - s.y) > 80) { p.x = s.x; p.y = s.y; p.vx = p.vy = 0; } p.aimVis = s.a; p.faceVis = s.f; p.moving = !!s.mv; p.hurtInvuln = s.inv ? 0.1 : 0; const base = this.data.heroes.get(s.h); if (base) p.hero = s.lk ? heroWithLook(base, s.lk) : base; }
       else if (s.wp !== C.warp) { p.x = s.x; p.y = s.y; C.warp = s.wp; } // 방장이 옮겼을 때만 내 위치를 맞춤
       else if (s.px || s.py) moveAndCollide(p, s.px || 0, s.py || 0, this.map); // 끌려감·밀림
       p.reviveT = s.rv * COOP.reviveTime; p.hybridTitle = s.hy;
@@ -314,7 +354,7 @@ Object.assign(Game.prototype, {
     this.enemies = d.en.map(([nid, defId, x, y, hp, mhp, st, face, ph, el, fl, jh, fade, aim, stt, laser, chain, bp]) => {
       live.add(nid); let e = C.enemies.get(nid); const def = defId ? this.data.enemies.get(defId) : e && e.def; if (!def) return null; // 종류는 처음에만 옴
       if (!e) { e = new Enemy(x, y, def, { hp: 1, dmg: 1 }, null); e.pd = {}; C.enemies.set(nid, e); }
-      e.tx = x; e.ty = y; if (Math.hypot(e.x - x, e.y - y) > 60) { e.x = x; e.y = y; }
+      coopVel(e, x, y, nowS); if (Math.hypot(e.x - x, e.y - y) > 60) { e.x = x; e.y = y; e.vx = e.vy = 0; }
       e.hp = hp; if (mhp) e.maxHp = mhp; if (e.state !== st) e.stateTime = stt; e.state = st; e.face = face; e.phase = ph; e.elite = !!el; if (fl) e.hurtFlash = 0.08; e.jumpH = jh; e.fade = fade; e.aimAng = aim; e.pat = bp ? { type: bp[0], color: bp[1], radius: bp[2] } : null; if (bp) e.pd = Object.assign(e.pd || {}, { tx: bp[3], ty: bp[4] }); // 보스 예고 (내려찍기 자리 등)
       e.chainT = chain ? chain[0] : 0; e.chainMax = chain ? chain[1] : 0; // 황금 사슬 (묶인 모습)
       e.alive = st !== 'DEAD'; e.laser = laser ? { angs: laser[0], width: laser[1], color: laser[2], live: !!laser[3] } : null;
@@ -367,7 +407,10 @@ Object.assign(Game.prototype, {
     this.input.mouse.down = false;
   },
   coopGuestUpdate(dt, input0) {
-    let input = input0; const C = this.coop;
+    let input = input0; const C = this.coop, now = performance.now();
+    if (C.hostLostAt && now - C.hostLostAt > 25000) { this.coopGuestEnd({ victory: false, hostLeft: true }); input0.endStep(); return; } // 방장이 돌아오지 않음
+    if (!C.loading && C.lastSnap && now - C.lastSnap > 2500 && now - (C.rfAt || 0) > 3000) { C.rfAt = now; Net.relay({ k: 'rf' }, C.hostId); } // 오래 안 오면 전부 다시 요청
+    if (!C.loading && C.lastSnap && now - C.lastSnap > 30000 && Net.status === 'online' && !document.hidden) { this.coopGuestEnd({ victory: false, disconnected: true }); input0.endStep(); return; } // 연결은 됐지만 30초 동안 화면이 안 옴
     if (this.banner) this.banner.t += dt;
     this.hurtFlash = Math.max(0, this.hurtFlash - dt);
     if (this.transition) { this.transition.t += dt; if (!this.transition.swapped && this.transition.t >= 0.45) { this.transition.swapped = true; this.transition.action(); } if (this.transition.t >= 0.9) this.transition = null; input.endStep(); return; }
@@ -382,11 +425,14 @@ Object.assign(Game.prototype, {
       for (const k of COOP.events) if (input.wasPressed(k)) C.ev.push(k);
       if (input.wasPressed('Mouse0') && this.minimapClick(input.mouse)) input.mouse.down = false;
     }
+    const md = input.mouse.down && p.state !== 'DEAD' ? 1 : 0; if (C.ev.length || md !== C.lastMd) C.inT = 0; C.lastMd = md; // 누르기·떼기·스킬은 바로 보냄 (공격이 늦게 나가는 느낌 줄임)
+    C.fireCd = (C.fireCd || 0) - dt; const w = p.weapons[p.slot]; // 내 공격 소리는 바로 (실제 판정은 방장)
+    if (md && w && C.fireCd <= 0 && (w.def.type === 'gun' || w.def.type === 'melee') && p.energy >= (w.def.energyCost || 0)) { C.fireCd = 1 / Math.max(0.5, w.def.fireRate || 2); SFX.play(w.def.type === 'melee' ? 'melee' : weaponSound(w.def), w.def.fireRate > 8 ? 0.06 : 0.03); }
     C.inT -= dt;
     if (C.inT <= 0) { C.inT = 1 / COOP.inHz; Net.relay({ k: 'in', wp: C.warp, x: Math.round(p.x), y: Math.round(p.y), d: p.state === 'DASH' ? 1 : 0, md: input.mouse.down ? 1 : 0, ax: Math.round(mw.x), ay: Math.round(mw.y), ev: C.ev.splice(0) }, C.hostId); }
     const k = Math.min(1, dt * 12);
-    for (const o of C.others.values()) { if (o.p.tx !== undefined) { o.p.x += (o.p.tx - o.p.x) * k; o.p.y += (o.p.ty - o.p.y) * k; } o.p.time += dt; }
-    for (const e of this.enemies) { if (e.tx !== undefined) { e.x += (e.tx - e.x) * k; e.y += (e.ty - e.y) * k; } e.stateTime += dt; e.hurtFlash = Math.max(0, e.hurtFlash - dt); }
+    for (const o of C.others.values()) { coopSmooth(o.p, dt, now); o.p.time += dt; }
+    for (const e of this.enemies) { coopSmooth(e, dt, now); e.stateTime += dt; e.hurtFlash = Math.max(0, e.hurtFlash - dt); }
     for (const q of this.projectiles) q.update(dt);
     for (const b of this.enemyBullets) { b.x += b.vx * dt; b.y += b.vy * dt; }
     for (const h of this.hazards) h.t += dt;
@@ -406,7 +452,7 @@ Object.assign(Game.prototype, {
     this.coop = null; SFX.stopMusic(); SFX.play(d.victory ? 'victory' : 'hurt');
     if (d.quit) Net.leave(); // 참가자가 스스로 나감
     const stages = d.stages || 0, bosses = d.bosses || 0, reward = stages * CUR.perStage + bosses * CUR.perBoss + (d.victory ? CUR.victory : 0);
-    this.overlay = { type: 'result', victory: !!d.victory, stages, bosses, reward, coop: true, after: d.hostLeft ? '방장이 나가서 탐험이 끝났습니다' : d.quit ? '탐험에서 나왔습니다' : '함께한 탐험이 끝났습니다' };
+    this.overlay = { type: 'result', victory: !!d.victory, stages, bosses, reward, coop: true, after: d.disconnected ? '연결이 끊겨 탐험이 끝났습니다' : d.hostLeft ? '방장이 나가서 탐험이 끝났습니다' : d.quit ? '탐험에서 나왔습니다' : '함께한 탐험이 끝났습니다' };
     const sv = this.save; sv.bestStage = Math.max(sv.bestStage || 0, stages + (d.victory ? 0 : 1)); if (d.deep) sv.bestDeep = Math.max(sv.bestDeep || 0, d.deep); if (d.row) sv.bestKills = Math.max(sv.bestKills || 0, d.row.kills || 0); // 함께한 탐험도 내 최고 기록에
     if (!d.hostLeft && !d.quit) this.guildEvent('runs');
     if (d.victory) sv.clears++; writeSave(sv);
@@ -414,3 +460,8 @@ Object.assign(Game.prototype, {
   }
 });
 Net.on((m) => { if (window.__game) window.__game.coopOnNet(m); });
+Net.wantRejoin = () => !!(window.__game && window.__game.coop); // 탐험 중에 끊기면 자동으로 다시 연결
+document.addEventListener('visibilitychange', () => { // 참가자가 창을 내리면 공격·입력을 멈춤 (방장 쪽 내 캐릭터가 계속 쏘지 않게)
+  const g = window.__game; if (!document.hidden || !g || !g.coop || !g.coop.guest) return;
+  const p = g.player; Net.relay({ k: 'in', wp: g.coop.warp, x: Math.round(p.x), y: Math.round(p.y), d: 0, md: 0, ax: 0, ay: 0, ev: [] }, g.coop.hostId);
+});
