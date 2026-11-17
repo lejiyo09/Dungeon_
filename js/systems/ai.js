@@ -406,10 +406,11 @@ const BOSS_PATTERNS = {
     update(e, dt, world, ctx, spd) {
       const P = e.pat, d = e.pd, r = e.room; d.timer -= dt;
       if (d.timer <= 0 && d.shots < P.waves) {
-        const side = ((d.side0 ??= randInt(0, 3)) + d.shots) % 4, horiz = side < 2, n = horiz ? r.w : r.h, gap = randInt(1, n - P.gap - 1), sp = P.speed;
+        const s0 = ((d.side0 ??= randInt(0, 3)) + d.shots) % 4, sides = P.pair ? [s0, s0 ^ 1] : [s0], sp = P.speed; /* pair: 마주 보는 두 벽에서 동시에 (닫히는 문) */
+        for (const side of sides) { const horiz = side < 2, n = horiz ? r.w : r.h, gap = randInt(1, n - P.gap - 1);
         for (let i = 0; i < n; i++) { if (i >= gap && i < gap + P.gap) continue;
           const t = i + 0.5, x = horiz ? (r.x0 + t) * TILE : side === 2 ? (r.x0 + 0.6) * TILE : (r.x0 + r.w - 0.6) * TILE, y = horiz ? (side === 0 ? (r.y0 + 0.6) * TILE : (r.y0 + r.h - 0.6) * TILE) : (r.y0 + t) * TILE;
-          const b = new EnemyBullet(x, y, horiz ? 0 : side === 2 ? sp : -sp, horiz ? (side === 0 ? sp : -sp) : 0, e.damage, P.color, 4); b.life = (horiz ? r.h : r.w) * TILE / sp + 0.3; world.enemyBullets.push(b); }
+          const b = new EnemyBullet(x, y, horiz ? 0 : side === 2 ? sp : -sp, horiz ? (side === 0 ? sp : -sp) : 0, e.damage, P.color, 4); b.life = (horiz ? r.h : r.w) * TILE / sp + 0.3; world.enemyBullets.push(b); } }
         world.effects.ring(e.x, e.y, 26, P.color); d.shots++; d.timer = P.interval / spd;
       }
       return d.shots >= P.waves && d.timer <= 0;
