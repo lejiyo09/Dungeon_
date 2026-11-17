@@ -137,7 +137,7 @@ const STORY_ARCHIVE = [
   { id: 'spear_trial', name: '왕의 창', kind: 'cut', lines: () => MERLIN_SPEAR_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 3) },
   { id: 'rhongomyniad', name: '창의 인정', kind: 'cut', lines: () => RHONGO_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 4) }
 ];
-const MERLIN_TRIAL = { gate: 1, deep: 2 }; // 시련: 무명의 문지기 다시 처치 1번 + 심층 보스 2마리 처치 [제안]
+const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 const MERLIN_CHATTER = ['「꽃은 금방 시든다. 그래서 아름답지.」', '「탑 위에서 보면, 이 던전도 꽤 볼만하다네.」', '「왕은 잘 지내려나… 아니, 혼잣말일세.」'];
 // 성역에서 고르는 첫 보구 목록: 시련 보상(questOnly)·심층 보스 전리품(heroDrop)은 제외
 function treasurePickList() { return DATA_TREASURES.filter((t) => !t.questOnly && !t.heroDrop); }

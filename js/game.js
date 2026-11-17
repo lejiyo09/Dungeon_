@@ -149,14 +149,14 @@ class Game {
   talkMerlin(npc) {
     const sv = this.save, M = sv.merlin = sv.merlin || { quest: 0, gate: 0, deep: 0 };
     if (!(sv.treasures || []).length) { npc.bubble = { text: '…', t: 2 }; return; }
-    if (!M.revealed) { this.playCutscene(MERLIN_REVEAL_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.revealed = true; M.quest = 1; writeSave(sv); this.showBanner('멀린의 시련', `무명의 문지기 다시 쓰러뜨리기 (${M.gate}/${MERLIN_TRIAL.gate}) · 심층 보스 처치 (${M.deep}/${MERLIN_TRIAL.deep})`, '#ffb0d8'); } }); return; }
+    if (!M.revealed) { this.playCutscene(MERLIN_REVEAL_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.revealed = true; M.quest = 1; writeSave(sv); this.showBanner('멀린의 시련', `${MERLIN_TRIAL.gate ? `무명의 문지기 다시 쓰러뜨리기 (${M.gate}/${MERLIN_TRIAL.gate}) · ` : ''}심층 보스 처치 (${M.deep}/${MERLIN_TRIAL.deep})`, '#ffb0d8'); } }); return; }
     if (M.quest === 1) {
       if ((M.gate || 0) >= MERLIN_TRIAL.gate && (M.deep || 0) >= MERLIN_TRIAL.deep) {
         this.playCutscene(MERLIN_REWARD_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => {
           M.quest = 2; const T = DATA_TREASURES.find((t) => t.id === 'treasure_garden_of_avalon');
           if (!sv.treasures.includes(T.id)) sv.treasures.push(T.id); writeSave(sv); this.treasureToast = { T, start: performance.now() };
           this.effects.rays(npc.x, npc.y, '#ffb0d8', 16, 70, 1); for (let i = 0; i < 24; i++) this.effects.part(npc.x + randInt(-30, 30), npc.y + randInt(-10, 10), randInt(-10, 10), -30 - Math.random() * 30, { color: i % 2 ? '#ffb0d8' : '#ffffff', life: 1.2, size: 2, size2: 0, drag: 1, add: true }); } });
-      } else npc.bubble = { text: `시련: 문지기 ${M.gate || 0}/${MERLIN_TRIAL.gate} · 심층 보스 ${M.deep || 0}/${MERLIN_TRIAL.deep}`, t: 3 };
+      } else npc.bubble = { text: `시련: ${MERLIN_TRIAL.gate ? `문지기 ${M.gate || 0}/${MERLIN_TRIAL.gate} · ` : ''}심층 보스 ${M.deep || 0}/${MERLIN_TRIAL.deep}`, t: 3 };
       return;
     }
     if (M.quest === 2) { // 두 번째 시련: 롱고미니아드의 인정 → 보스전 (도전 여부 선택)
