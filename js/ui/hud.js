@@ -317,12 +317,12 @@ class HUD {
       hudText(ctx, '클릭 또는 1 / 2 / 3', VIEW_W / 2, 200, '#888', 'center', 9);
     } else if (o.type === 'variant') {
       hudText(ctx, `${game.player.hero.name} — ${o.title}`, VIEW_W / 2, 28, '#ffd84a', 'center', 14);
-      hudText(ctx, o.final ? '롱고미니아드의 시련 — 고른 갈래의 최종 진화(3단계)로 싸웁니다' : o.branch ? '진화할 갈래를 고르세요. 고른 갈래로 두 번 진화하며 스킬이 바뀝니다.' : '이번 탐험의 갈래를 고르세요. 전직의 방에서 두 번 진화하며 스킬이 바뀝니다.', VIEW_W / 2, 48, '#bbb', 'center', 8);
+      hudText(ctx, o.trialRank != null ? `롱고미니아드의 시련 — 고른 갈래의 ${o.trialRank === 2 ? '최종 진화(3진)' : (o.trialRank + 1) + '진'}으로 싸웁니다` : o.branch ? '진화할 갈래를 고르세요. 고른 갈래로 두 번 진화하며 스킬이 바뀝니다.' : '이번 탐험의 갈래를 고르세요. 전직의 방에서 두 번 진화하며 스킬이 바뀝니다.', VIEW_W / 2, 48, '#bbb', 'center', 8);
       o.lines.forEach((L, i) => { const r = HUD.variantRect(i, o.lines.length), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
         ctx.fillStyle = on ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = L.color || '#ffd84a'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
-        hudText(ctx, `${i + 1}  ${o.final ? L.ranks[2] + ' (최종 진화)' : L.name}`, r.x + 6, r.y + 5, L.color || '#ffd84a', 'left', 11); // 시련: 최종 진화 이름
+        hudText(ctx, `${i + 1}  ${o.trialRank != null ? L.ranks[o.trialRank] + (o.trialRank === 2 ? ' (최종 진화)' : ` (${o.trialRank + 1}진)`) : L.name}`, r.x + 6, r.y + 5, L.color || '#ffd84a', 'left', 11); // 시련: 최종 진화 이름
         hudText(ctx, L.desc, r.x + 6, r.y + 21, '#ccc', 'left', 7);
-        hudText(ctx, o.final ? `최종 스킬: ${L.skills[2].name}` : L.skills.map((s) => s.name).join(' → '), r.x + 6, r.y + 34, '#ffe9a0', 'left', 7);
+        hudText(ctx, o.trialRank != null ? `스킬: ${L.skills[o.trialRank].name}` : L.skills.map((s) => s.name).join(' → '), r.x + 6, r.y + 34, '#ffe9a0', 'left', 7);
         hudText(ctx, L.ranks.join(' → '), r.x + 6, r.y + 46, '#8a8a9a', 'left', 7); });
       hudText(ctx, o.branch ? '숫자 키 / 클릭: 선택   ·   E / Esc: 닫기' : '숫자 키 / 클릭: 선택', VIEW_W / 2, VIEW_H - 16, '#888', 'center', 8);
     } else if (o.type === 'evolve') {
@@ -428,12 +428,13 @@ class HUD {
     } else if (o.type === 'trial_confirm') { // 롱고미니아드의 시련 도전 확인
       hudText(ctx, '롱고미니아드의 시련', VIEW_W / 2, 60, '#bfe6ff', 'center', 16);
       hudText(ctx, '창에 깃든 신령 — 신령 롱고미니아드와 1:1로 싸웁니다', VIEW_W / 2, 86, '#e8e0f0', 'center', 10);
-      hudText(ctx, '지금까지의 어떤 보스보다 강합니다. 최종 진화·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다', VIEW_W / 2, 104, '#aaa', 'center', 8);
+      hudText(ctx, '지금까지의 어떤 보스보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다', VIEW_W / 2, 104, '#aaa', 'center', 8);
       hudText(ctx, '지거나 그만둬도 잃는 것은 없고, 언제든 멀린에게 다시 도전할 수 있습니다', VIEW_W / 2, 118, '#aaa', 'center', 8);
-      ['1  도전한다', '2  나중에'].forEach((t, i) => { const r = HUD.trialBtn(i), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
-        ctx.fillStyle = on ? 'rgba(191,230,255,0.22)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = i ? '#777' : '#bfe6ff'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
-        hudText(ctx, t, r.x + r.w / 2, r.y + 7, i ? '#ccc' : '#ffffff', 'center', 11); });
-      hudText(ctx, 'Enter: 도전   ·   Esc: 나중에', VIEW_W / 2, VIEW_H - 20, '#888', 'center', 8);
+      hudText(ctx, '어느 진화 단계로 싸울지 고르세요', VIEW_W / 2, 130, '#bfe6ff', 'center', 8);
+      ['1  1진', '2  2진', '3  3진 (최종)', '4  나중에'].forEach((t, i) => { const r = HUD.trialBtn(i), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        ctx.fillStyle = on ? 'rgba(191,230,255,0.22)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = i === 3 ? '#777' : '#bfe6ff'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        hudText(ctx, t, r.x + r.w / 2, r.y + 7, i === 3 ? '#ccc' : '#ffffff', 'center', 11); });
+      hudText(ctx, '1~3: 진화 단계 골라 도전 (Enter: 3진)   ·   Esc: 나중에', VIEW_W / 2, VIEW_H - 20, '#888', 'center', 8);
     } else if (o.type === 'resume') {
       const r = game.save.run, hero = r && game.data.heroes.get(r.hero), W = r && worldDef(r.worldIdx);
       hudText(ctx, '진행 중인 탐험이 있습니다', VIEW_W / 2, 70, '#7ad0ff', 'center', 16);
@@ -537,7 +538,7 @@ class HUD {
     btn();
   }
   static rankTab(i) { return { x: 40 + i * 110, y: 22, w: 104, h: 16 }; }
-  static trialBtn(i) { return { x: VIEW_W / 2 - 130 + i * 140, y: 140, w: 120, h: 26 }; }
+  static trialBtn(i) { return { x: VIEW_W / 2 - 214 + i * 108, y: 142, w: 100, h: 26 }; }
   static guildTab(i) { return { x: 60 + i * 134, y: 22, w: 126, h: 16 }; }
   static adminRow(i) { return { x: 60, y: 32 + i * 24, w: VIEW_W - 120, h: 21 }; }
   static archiveRow(i) { return { x: 40, y: 32 + i * 21, w: VIEW_W - 80, h: 18 }; }

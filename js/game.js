@@ -167,27 +167,28 @@ class Game {
   }
   // ── 롱고미니아드의 시련: 따로 준비된 장비로 신령 롱고미니아드와 1:1 (진행 중인 탐험·보상·기록에는 영향 없음)
   askRhongoTrial() { this.overlay = { type: 'trial_confirm' }; this.input.mouse.down = false; }
-  startRhongoTrial() {
+  startRhongoTrial(rank = 2) { /* rank: 고른 진화 단계 0~2 (1진·2진·3진) */
+    rank = clamp(rank | 0, 0, 2); this.trialRank = rank;
     this.mode = 'dungeon'; this.trialW = Object.assign({}, worldDef(RHONGO_TRIAL.world), RHONGO_TRIAL.W);
     this.worldIdx = RHONGO_TRIAL.world; this.levelIdx = STAGES_PER_WORLD - 1; this.gold = 0; this.kills = 0;
     const p = this.player = this.makePlayer(0, 0), K = RHONGO_TRIAL.kit;
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) { p.treasure = tr; if (tr.apply) tr.apply(p); }
-    const kit = () => { // 시련 장비: 최종 진화 + 영웅·전설 무기(강화) + 체력·버프
-      if (p.line) this.setJob(p, p.line, 2); p.skillCooldown = 0;
-      p.maxHp += K.hp + EVOLUTION.hp[0] + EVOLUTION.hp[1]; p.hp = p.maxHp; p.maxEnergy += EVOLUTION.energy[0] + EVOLUTION.energy[1]; p.energy = p.maxEnergy;
+    const kit = () => { /* 시련 장비: 고른 진화 단계 + 영웅·전설 무기(강화) + 체력·버프 */
+      if (p.line) this.setJob(p, p.line, rank); p.skillCooldown = 0;
+      p.maxHp += K.hp; for (let i = 0; i < rank; i++) { p.maxHp += EVOLUTION.hp[i]; p.maxEnergy += EVOLUTION.energy[i]; } p.hp = p.maxHp; p.energy = p.maxEnergy;
       p.weapons = K.rarity.map((r) => new WeaponInstance(pick(DATA_WEAPONS.filter((d) => d.rarity === r && !d.questOnly)), K.lv)); p.slot = 0; // 기본값 (테스트 도구용)
       for (const b of shuffled(DATA_BUFFS).slice(0, K.buffs)) { b.apply(p); p.buffs.push(b.id); }
       if (window.__toolMode) return;
       this.overlay = { type: 'trial_weapons', tab: 0, page: 0, picked: [], msg: null }; this.input.mouse.down = false; // 보스전 전에 무기 2개 고르기
     };
     this.loadStage();
-    this.askVariant(kit, true); // 갈래 창도 최종 진화(3단계) 이름·스킬로
+    this.askVariant(kit, rank); /* 갈래 창도 고른 진화 단계의 이름·스킬로 */
   }
   pickTrialWeapons(ids) { // 고른 무기 (도감에서 발견한 것 중 최대 2개, 모두 +강화)
     const p = this.player, K = RHONGO_TRIAL.kit;
     p.weapons = ids.map((id) => new WeaponInstance(this.data.weapons.get(id), K.lv)); p.slot = 0;
     this.overlay = null; this.input.mouse.down = false;
-    this.showBanner(RHONGO_TRIAL.W.name, `${p.line ? p.line.ranks[p.rank] + '(최종 진화) · ' + p.skillName + ' · ' : ''}${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv})`, '#bfe6ff');
+    this.showBanner(RHONGO_TRIAL.W.name, `${p.line ? p.line.ranks[p.rank] + (p.rank === 2 ? '(최종 진화)' : `(${p.rank + 1}진)`) + ' · ' + p.skillName + ' · ' : ''}${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv})`, '#bfe6ff');
   }
   endRhongoTrial(win) {
     const M = this.save.merlin; SFX.stopMusic();
@@ -800,7 +801,7 @@ class Game {
       if (input.wasPressed('Mouse0')) o.lines.forEach((_, i) => { const r = HUD.variantRect(i, o.lines.length), m = input.mouse; if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) ch = i; });
       if (o.branch && (input.wasPressed('Escape') || input.wasPressed('KeyE'))) { this.overlay = null; return; }
       if (ch >= 0 && o.onPick) { this.overlay = null; this.input.mouse.down = false; o.onPick(o.lines[ch]); }
-      else if (ch >= 0) { this.overlay = null; this.input.mouse.down = false; this.applyVariant(o.lines[ch]); const L = o.lines[ch], R = o.final ? 2 : 0; this.showBanner(`${L.ranks[R]}`, `스킬: ${L.skills[R].name} — ${L.skills[R].desc}`, L.color); /* 시련은 최종 진화로 안내 */ if (o.after) o.after(); }
+      else if (ch >= 0) { this.overlay = null; this.input.mouse.down = false; this.applyVariant(o.lines[ch]); const L = o.lines[ch], R = o.trialRank != null ? o.trialRank : 0; this.showBanner(`${L.ranks[R]}`, `스킬: ${L.skills[R].name} — ${L.skills[R].desc}`, L.color); /* 시련은 최종 진화로 안내 */ if (o.after) o.after(); }
     } else if (o.type === 'evolve') {
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
       if (input.wasPressed('Digit1')) { this.overlay = null; this.input.mouse.down = false; this.startTrial(o.npc); }
@@ -839,8 +840,10 @@ class Game {
       if (input.wasPressed('Mouse0')) for (let i = 0; i < 3; i++) { const r = HUD.guildTab(i), m = input.mouse; if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) o.tab = i; }
     } else if (o.type === 'trial_confirm') { // 롱고미니아드의 시련: 도전 / 나중에
       const m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h, click = input.wasPressed('Mouse0');
-      if (input.wasPressed('Enter') || input.wasPressed('Digit1') || (click && hit(HUD.trialBtn(0)))) { this.overlay = null; this.input.mouse.down = false; this.transition = { t: 0, swapped: false, action: () => this.startRhongoTrial() }; }
-      else if (input.wasPressed('Escape') || input.wasPressed('Digit2') || input.wasPressed('KeyE') || (click && hit(HUD.trialBtn(1)))) { this.overlay = null; this.input.mouse.down = false; const mt = this.props.find((x) => x instanceof MerlinTable); if (mt) mt.bubble = { text: '「준비가 되면 다시 오게.」', t: 3 }; }
+      let rk = input.wasPressed('Enter') ? 2 : -1; /* 1·2·3: 1진·2진·3진으로 도전, Enter는 3진 */
+      for (let i = 0; i < 3; i++) if (input.wasPressed('Digit' + (i + 1)) || (click && hit(HUD.trialBtn(i)))) rk = i;
+      if (rk >= 0) { this.overlay = null; this.input.mouse.down = false; this.transition = { t: 0, swapped: false, action: () => this.startRhongoTrial(rk) }; }
+      else if (input.wasPressed('Escape') || input.wasPressed('Digit4') || input.wasPressed('KeyE') || (click && hit(HUD.trialBtn(3)))) { this.overlay = null; this.input.mouse.down = false; const mt = this.props.find((x) => x instanceof MerlinTable); if (mt) mt.bubble = { text: '「준비가 되면 다시 오게.」', t: 3 }; }
     } else if (o.type === 'resume') {
       if (input.wasPressed('Enter')) { this.overlay = null; this.transition = { t: 0, swapped: false, action: () => this.resumeRun() }; }
       else if (input.wasPressed('KeyN')) { this.overlay = null; this.save.run = null; writeSave(this.save); this.transition = { t: 0, swapped: false, action: () => this.startRun() }; }
@@ -1015,7 +1018,7 @@ class Game {
     const lines = jobLines(this.player.hero.id);
     if (lines.length === 1 || branchesAtEvolve(this.player.hero.id)) { this.setJob(this.player, lines[0], 0); if (after) after(); return; } // 갈래가 하나이거나 진화 때 고르는 직업
     if (window.__toolMode) { this.applyVariant(lines[0]); if (after) after(); return; } // 테스트 도구: 첫 갈래
-    this.overlay = { type: 'variant', lines, title: JOB_LINES[this.player.hero.id].title, after, final };
+    this.overlay = { type: 'variant', lines, title: JOB_LINES[this.player.hero.id].title, after, trialRank: final === true ? 2 : typeof final === 'number' ? final : null };
   }
   applyVariant(line) {
     const p = this.player;
