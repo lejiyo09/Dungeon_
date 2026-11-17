@@ -86,7 +86,11 @@ const DATA_TREASURES = [
     desc: '4초간 방패를 둘러 어떤 피해도 받지 않고, 몸에 닿는 적 탄을 쏜 쪽으로 그대로 되돌려 보냄 (되돌린 탄은 적에게 큰 피해)' },
   { id: 'treasure_golden_fleece', name: '황금 양털', origin: '이아손', use: 'fleece', cooldown: 70, sfx: 'solomon', icon: 'fleece', questOnly: true, heroDrop: true,
     heal: 0.5, guardDur: 20, endureHp: 0.3, endureMax: 2, color: '#ffd870',
-    desc: '체력 50% 회복, 그 뒤 20초 안에 쓰러질 피해를 받으면 체력 30%로 버팀 (버티기는 한 판에 2번까지)' }
+    desc: '체력 50% 회복, 그 뒤 20초 안에 쓰러질 피해를 받으면 체력 30%로 버팀 (버티기는 한 판에 2번까지)' },
+  // [사용자 결정] 아서 왕(로드 로그레스) 처치 보상: 성검의 칼집 (전승: 엑스칼리버의 칼집은 지닌 자를 다치지 않게 지킴) — 수치는 Claude가 정한 [제안]
+  { id: 'treasure_scabbard', name: '성검의 칼집', origin: '아서 왕', use: 'scabbard', cooldown: 90, sfx: 'solomon', icon: 'scabbard', questOnly: true,
+    invuln: 5, guardDur: 15, guard: 0.3, color: '#ffe9a0',
+    desc: '체력을 모두 회복하고 5초간 어떤 피해도 받지 않음, 그 뒤 10초 동안 받는 피해 -30% — 왕이 101번째 원탁의 기사에게 맡긴 칼집' }
 ];
 // 심층 보스를 쓰러뜨리면 아직 없는 영웅의 보구(heroDrop) 하나를 얻을 확률: 낮게 시작해 깊이 내려갈수록 조금씩 오름 [사용자 결정], 수치는 [제안]
 //  확률 = min(max, base + perDepth × (심층 깊이 - 1)) → 심층 1: 3% · 5: 9% · 10: 16.5% · 13 이후: 20%
@@ -332,16 +336,19 @@ const MERLIN_ARTHUR_LINES = [
   '「솔직히 말하마. 나는 네가 이길 거라 생각하지 않는다. 그 검, 엑스칼리버의 빛 앞에서 살아남은 자는 없었다.」',
   '「그래도 가겠다면… 로드 투 카멜롯, 왕좌로. 준비가 되면 말하게.」'
 ];
+// [사용자 결정] 승리하면 아서 왕이 플레이어를 '101번째 원탁의 기사'로 인정 (대사는 [임시])
 const ARTHUR_WIN_LINES = [
   '왕좌 앞에, 빛을 잃은 성검이 천천히 내려앉는다.',
   '「…그런가. 이상은, 언젠가 넘어서야 하는 것이었군.」',
-  '「잘 왔다, 이름 없는 탐험가여. 이 성의 끝은 네 것이다.」',
+  '「원탁의 자리는 백. 그러나 오늘, 하나를 더 놓겠다.」',
+  '「일어나라, 이름 없는 탐험가여. 그대를 101번째 원탁의 기사로 인정한다.」',
+  '「이 칼집을 가져가라. 그대가 쓰러지지 않도록 — 왕으로서 주는 선물이다.」',
   '백악의 성에 처음으로 고요가 내려앉는다.'
 ];
 const CAMELOT9_TRIAL = {
-  id: 'camelot9', title: '로드 투 카멜롯 — 왕좌', color: '#ffe9a0', intro: '이상적인 왕이 왕좌에서 기다리고 있습니다', reward: 3000, questDone: 22,
+  id: 'camelot9', title: '로드 투 카멜롯 — 왕좌', color: '#ffe9a0', intro: '이상적인 왕이 왕좌에서 기다리고 있습니다', reward: 3000, questDone: 22, treasure: 'treasure_scabbard',
   confirm: ['백악의 성 왕좌 — 로드 로그레스, 아서 왕과 싸웁니다 (체력바 5개 · 모든 행동 방해 면역)', '지금까지의 어떤 적과도 비교할 수 없습니다. 이길 수 있다고 생각하지 마세요. 고른 진화 단계·축복과 +3 강화 무기 2개를 들고 갑니다'],
-  winText: '아서 왕을 쓰러뜨렸습니다 — 카멜롯 정복', winSub: '결정석 3000개를 받았습니다 — 이상적인 왕을 넘어선 탐험가', winLines: () => ARTHUR_WIN_LINES,
+  winText: '101번째 원탁의 기사로 인정받았습니다', winSub: '보구 성검의 칼집 · 칭호 「101번째 원탁의 기사」 · 결정석 3000개 — 칭호는 탐험가 길드에서 장착', winLines: () => ARTHUR_WIN_LINES,
   world: 9,
   W: { name: '백악의 성 카멜롯 — 왕좌', boss: 'boss_arthur', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
     enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 2]],
@@ -386,7 +393,7 @@ const STORY_ARCHIVE = [
   { id: 'bedivere_road', name: '충절의 기사', kind: 'cut', lines: () => MERLIN_BEDIVERE_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 19) },
   { id: 'bedivere', name: '꺼져 가는 은빛', kind: 'cut', lines: () => BEDIVERE_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 20) },
   { id: 'arthur_road', name: '왕좌로', kind: 'cut', lines: () => MERLIN_ARTHUR_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 21) },
-  { id: 'arthur', name: '이상을 넘어서', kind: 'cut', lines: () => ARTHUR_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 22) }
+  { id: 'arthur', name: '101번째 원탁의 기사', kind: 'cut', lines: () => ARTHUR_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 22) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 // [사용자 결정] 문지기 조건을 없애기 전에 이미 문지기를 잡아 둔 사람은 그 1번을 심층 보스 1마리로 쳐 줌 (한 번만 바꿈)

@@ -41,7 +41,7 @@ class Player extends Entity {
     this.weapons = []; this.slot = 0; this.buffs = [];
   }
   get weapon() { return this.weapons[this.slot] || null; }
-  get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0 || this.aegisT > 0; }
+  get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0 || this.aegisT > 0 || this.scabbardT > 0; }
   get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.35 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hadesT > 0 ? this.treasure.atk : 0) + (this.avalonT > 0 ? this.avalonAtk : 0) + (this.buffT > 0 ? this.buffAtk || 0 : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
 
   update(dt, input, map, mouseWorld) {
@@ -52,7 +52,8 @@ class Player extends Entity {
     this.dashInvuln = Math.max(0, this.dashInvuln - dt);
     this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
     if (this.denyT > 0) this.denyT -= dt; /* 가레스의 부정 장판 */
-    if (this.aegisT > 0) this.aegisT = Math.max(0, this.aegisT - dt); if (this.fleeceT > 0) this.fleeceT = Math.max(0, this.fleeceT - dt); /* 아킬레우스의 방패 · 황금 양털 */
+    if (this.aegisT > 0) this.aegisT = Math.max(0, this.aegisT - dt);
+    if (this.scabbardT > 0) this.scabbardT -= dt; if (this.scabGuardT > 0) this.scabGuardT -= dt; /* 성검의 칼집 */ if (this.fleeceT > 0) this.fleeceT = Math.max(0, this.fleeceT - dt); /* 아킬레우스의 방패 · 황금 양털 */
     this.overdrive = Math.max(0, this.overdrive - dt); this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt); this.treasureCd = Math.max(0, this.treasureCd - dt); this.solomon = Math.max(0, this.solomon - dt); this.hadesT = Math.max(0, (this.hadesT || 0) - dt);
     this.castLock = Math.max(0, this.castLock - dt); this.blinkWindowT = Math.max(0, this.blinkWindowT - dt); this.sancBoost = Math.max(0, this.sancBoost - dt); this.hasteT = Math.max(0, (this.hasteT || 0) - dt); this.avalonT = Math.max(0, (this.avalonT || 0) - dt); this.buffT = Math.max(0, (this.buffT || 0) - dt);
     if (this.swing) { this.swing.t += dt; if (this.swing.t >= this.swing.dur) this.swing = null; }
@@ -102,7 +103,7 @@ class Player extends Entity {
   }
   takeDamage(amount) {
     if (this.state === 'DEAD' || this.isInvulnerable) return false;
-    amount = Math.max(1, Math.round(amount * (1 - this.damageReduction) * (this.solomon > 0 ? 1 - this.treasure.guard : 1) * (this.avalonT > 0 ? 1 - this.avalonGuard : 1) * (this.buffT > 0 ? 1 - (this.buffGuard || 0) : 1)));
+    amount = Math.max(1, Math.round(amount * (1 - this.damageReduction) * (this.solomon > 0 ? 1 - this.treasure.guard : 1) * (this.avalonT > 0 ? 1 - this.avalonGuard : 1) * (this.buffT > 0 ? 1 - (this.buffGuard || 0) : 1) * (this.scabGuardT > 0 && this.treasure && this.treasure.use === 'scabbard' ? 1 - this.treasure.guard : 1)));
     this.sinceHit = 0;
     const absorbed = Math.min(this.shield, amount);
     this.shield -= absorbed;
@@ -124,6 +125,9 @@ class Player extends Entity {
   }
   render(ctx) { // 하데스의 투구: 거의 투명하게 + 일렁이는 그림자
     if (this.aegisT > 0 && this.state !== 'DEAD') this.renderAegis(ctx);
+    if (this.scabbardT > 0 && this.state !== 'DEAD') { const x = Math.round(this.x), y = Math.round(this.y) - 2, t = this.time || 0; if (!(this.scabbardT < 1 && Math.sin(t * 30) < 0)) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; /* 성검의 칼집: 금빛 가호 */
+      ctx.globalAlpha = 0.2; ctx.fillStyle = '#ffe9a0'; ctx.beginPath(); ctx.ellipse(x, y, this.half + 7, this.half + 10, 0, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 0.8; ctx.strokeStyle = '#fff4c0'; ctx.lineWidth = 1; for (let i = 0; i < 4; i++) { const a = t * 2.5 + i * TAU / 4; ctx.beginPath(); ctx.arc(x, y, this.half + 7, a, a + 0.6); ctx.stroke(); } ctx.restore(); } }
     if (this.denyT > 0 && this.state !== 'DEAD') { const x = Math.round(this.x), y = Math.round(this.y) - 22; ctx.save(); ctx.strokeStyle = '#ff6a6a'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.9; /* 공격 금지 표시 */
       ctx.beginPath(); ctx.arc(x, y, 4, 0, TAU); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x - 3, y + 3); ctx.lineTo(x + 3, y - 3); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; }
     if (!(this.hadesT > 0) || this.state === 'DEAD') { this.renderBody(ctx); return; }

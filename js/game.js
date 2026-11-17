@@ -1003,6 +1003,10 @@ class Game {
     } else if (T.use === 'reflect') { /* 아킬레우스의 방패: 피해 없음 + 닿는 적 탄 반사 */
       p.aegisT = T.duration;
       this.effects.ring(p.x, p.y, 18, T.color); this.effects.ring(p.x, p.y, 30, '#ffffff'); this.addShake(0.15, 3); this.screenFlash = 0.1; this.flashColor = '255,200,80';
+    } else if (T.use === 'scabbard') { /* 성검의 칼집: 체력 전부 회복 + 무적 → 이어서 피해 감소 */
+      const h = p.maxHp - p.hp; p.hp = p.maxHp; p.scabbardT = T.invuln; p.scabGuardT = T.guardDur; this.effects.heal(p.x, p.y);
+      this.effects.text(p.x, p.y - 34, `+${Math.round(h)}  ·  무적 ${T.invuln}초`, T.color); this.effects.skyBeam(p.x, p.y, '#fff4c0', 0, 10);
+      this.effects.ring(p.x, p.y, 30, '#ffffff'); this.effects.ring(p.x, p.y, 20, T.color); this.screenFlash = 0.15; this.flashColor = '255,240,190';
     } else if (T.use === 'fleece') { /* 황금 양털: 체력 회복 + 잠시 동안 버티기 */
       const h = Math.min(p.maxHp - p.hp, Math.round(p.maxHp * T.heal)); p.hp += h; p.fleeceT = T.guardDur; this.effects.heal(p.x, p.y);
       const left = T.endureMax - (p.fleeceUsed || 0);
