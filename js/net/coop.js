@@ -204,7 +204,7 @@ Object.assign(Game.prototype, {
     C.sent = C.sent || new Set(); const zs = [], seenZ = new Set();
     for (const z of [...this.zones, ...this.allies]) { if (!COOP_CLASSES[z.constructor.name]) continue; if (!z.nid) z.nid = ++C.nid; seenZ.add(z.nid); zs.push(coopPack(z, !C.sent.has(z.nid))); C.sent.add(z.nid); }
     for (const id of [...C.sent]) if (!seenZ.has(id)) C.sent.delete(id);
-    const en = this.enemies.map((e) => { if (!e.nid) e.nid = ++C.nid; return [e.nid, e.def.id, Math.round(e.x), Math.round(e.y), Math.ceil(e.hp), e.maxHp, e.state, e.face, e.phase || 1, e.elite ? 1 : 0, e.hurtFlash > 0 ? 1 : 0, Math.round(e.jumpH || 0), r1(e.fade ?? 1), r1(e.aimAng || 0), r1(e.stateTime), e.laser ? [e.laser.angs.map(r1), e.laser.width, e.laser.color, e.laser.live ? 1 : 0] : 0]; });
+    const en = this.enemies.map((e) => { if (!e.nid) e.nid = ++C.nid; return [e.nid, e.def.id, Math.round(e.x), Math.round(e.y), Math.ceil(e.hp), e.maxHp, e.state, e.face, e.phase || 1, e.elite ? 1 : 0, e.hurtFlash > 0 ? 1 : 0, Math.round(e.jumpH || 0), r1(e.fade ?? 1), r1(e.aimAng || 0), r1(e.stateTime), e.laser ? [e.laser.angs.map(r1), e.laser.width, e.laser.color, e.laser.live ? 1 : 0] : 0, e.chainT > 0 ? [r1(e.chainT), r1(e.chainMax || e.chainT)] : 0]; });
     const pr = this.projectiles.filter((q) => !q.orbit).slice(0, 160).map((q) => [Math.round(q.x), Math.round(q.y), Math.round((q.dx || 0) * (q.speed || 0)), Math.round((q.dy || 0) * (q.speed || 0)), q.color, q.size || 1]);
     const eb = this.enemyBullets.slice(0, 240).map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.r, b.color]);
     const td = []; const T = this.map.tiles, L = C.lastTiles; if (L && L.length === T.length) for (let i = 0; i < T.length; i++) if (T[i] !== L[i]) { td.push([i, T[i]]); L[i] = T[i]; }
@@ -270,11 +270,12 @@ Object.assign(Game.prototype, {
     }
     for (const id of [...C.others.keys()]) if (!seen.has(id)) C.others.delete(id);
     const live = new Set();
-    this.enemies = d.en.map(([nid, defId, x, y, hp, mhp, st, face, ph, el, fl, jh, fade, aim, stt, laser]) => {
+    this.enemies = d.en.map(([nid, defId, x, y, hp, mhp, st, face, ph, el, fl, jh, fade, aim, stt, laser, chain]) => {
       live.add(nid); let e = C.enemies.get(nid); const def = this.data.enemies.get(defId); if (!def) return null;
       if (!e) { e = new Enemy(x, y, def, { hp: 1, dmg: 1 }, null); e.pd = {}; C.enemies.set(nid, e); }
       e.tx = x; e.ty = y; if (Math.hypot(e.x - x, e.y - y) > 60) { e.x = x; e.y = y; }
       e.hp = hp; e.maxHp = mhp; if (e.state !== st) e.stateTime = stt; e.state = st; e.face = face; e.phase = ph; e.elite = !!el; if (fl) e.hurtFlash = 0.08; e.jumpH = jh; e.fade = fade; e.aimAng = aim; e.pat = null;
+      e.chainT = chain ? chain[0] : 0; e.chainMax = chain ? chain[1] : 0; // 황금 사슬 (묶인 모습)
       e.alive = st !== 'DEAD'; e.laser = laser ? { angs: laser[0], width: laser[1], color: laser[2], live: !!laser[3] } : null;
       return e;
     }).filter(Boolean);

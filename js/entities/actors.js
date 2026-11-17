@@ -325,10 +325,13 @@ class Enemy extends Entity {
     if (this.blind > 0) { ctx.fillStyle = '#fff8d8'; ctx.fillRect(x - h - 2, y - h - 3, 2, 2); }
     if (this.curse > 0) { ctx.fillStyle = '#b070ff'; ctx.fillRect(x - 1, y - h - 4, 2, 2); }
     if (this.stunT > 0) { const t = performance.now() / 150; ctx.fillStyle = '#fff4c0'; for (let i = 0; i < 3; i++) { const a = t + i * TAU / 3; ctx.fillRect(Math.round(x + Math.cos(a) * (h + 2)) - 1, Math.round(y - h - 6 + Math.sin(a) * 2), 2, 2); } } // 경직: 머리 위를 도는 빛
-    if (this.chainT > 0) { // 황금 사슬에 묶임
-      ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(x - h - 2, y - h); ctx.lineTo(x + h + 2, y + h); ctx.moveTo(x + h + 2, y - h); ctx.lineTo(x - h - 2, y + h); ctx.stroke();
-      ctx.fillStyle = '#fff4c0'; for (let i = -1; i <= 1; i++) { ctx.fillRect(x + i * 4 - 1, y + i * 4 - 1, 2, 2); ctx.fillRect(x - i * 4 - 1, y + i * 4 - 1, 2, 2); }
+    if (this.chainT > 0) { // 황금 사슬에 묶임: 몸을 감은 사슬 두 줄 + 발밑 금빛 고리 + 머리 위 자물쇠 + 남은 시간
+      const t = performance.now() / 1000, w = h + 3, link = (px, py, v) => { ctx.fillStyle = '#3a2a10'; ctx.fillRect(px - 1, py - 1, v ? 3 : 4, v ? 4 : 3); ctx.fillStyle = (Math.floor(t * 8 + px) % 5) ? '#ffd84a' : '#ffffff'; ctx.fillRect(px, py, v ? 1 : 2, v ? 2 : 1); };
+      ctx.strokeStyle = `rgba(255,216,74,${0.55 + 0.35 * Math.sin(t * 8)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y + h, w + 2, (w + 2) * 0.4, 0, 0, TAU); ctx.stroke(); ctx.lineWidth = 1;
+      for (const by of [-h * 0.35, h * 0.35]) for (let i = 0; i <= 6; i++) { const px = Math.round(x - w + i * (w * 2) / 6), py = Math.round(y + by + (i - 3) * 0.6); link(px, py, i % 2); }
+      const ly = y - h - 14 + Math.sin(t * 4); ctx.fillStyle = '#3a2a10'; ctx.fillRect(x - 4, ly - 1, 9, 8); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 3, ly + 2, 7, 4); // 자물쇠
+      ctx.strokeStyle = '#ffd84a'; ctx.beginPath(); ctx.arc(x + 0.5, ly + 2, 2.5, Math.PI, 0); ctx.stroke(); ctx.fillStyle = '#3a2a10'; ctx.fillRect(x, ly + 3, 1, 2);
+      if (this.chainMax) { const bw = h * 2 + 2, k = Math.max(0, Math.min(1, this.chainT / this.chainMax)); ctx.fillStyle = '#3a2a10'; ctx.fillRect(x - bw / 2, y + h + 4, bw, 2); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - bw / 2, y + h + 4, Math.round(bw * k), 2); }
     }
     if (this.markT > 0) { ctx.fillStyle = '#ff5a5a'; ctx.fillRect(x - 1, y - h - 11, 3, 1); ctx.fillRect(x, y - h - 12, 1, 3); } // 약점 표시
     if (!def.boss && !def.dummy && this.hp < this.maxHp) {

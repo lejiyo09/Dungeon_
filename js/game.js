@@ -865,13 +865,7 @@ class Game {
     if (T.use === 'chains') { // 게이트 오브 바빌론: 조준 지점(최대 사거리)에 원형 범위 → 황금 사슬로 묶음
       const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
       const cx = p.x + dx * k, cy = p.y + dy * k;
-      const caught = [];
-      for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - cx, e.y - cy) < T.radius + e.radius) {
-        e.chainT = T.duration; e.chainMax = T.duration; caught.push(e);
-        this.damageEnemy(e, { damage: T.damage * this.scale.hp, mods: p.mods, knockback: 0, mark: { mult: T.weak, dur: T.duration } }, 0, 0); } // 묶으며 큰 피해 + 받는 피해 증가
-      this.zones.push(new ChainCircle(cx, cy, T, caught));
-      for (const e of caught) this.effects.goldBurst(e.x, e.y, 10);
-      for (let i = 0; i < 12; i++) { const a = Math.random() * TAU, d = Math.sqrt(Math.random()) * T.radius; this.effects.skyBeam(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.7, i % 2 ? '#ffd84a' : '#fff4c0', i * 0.04, 3); } // 하늘에서 쏟아지는 황금 창
+      this.zones.push(new ChainCircle(cx, cy, T, p, this)); // 범위 안의 적을 묶고 큰 피해 (범위가 남아 있는 동안 들어오는 적도 묶음)
       this.effects.rays(cx, cy, '#ffd84a', 16, T.radius + 20, 0.7);
       this.effects.ring(cx, cy, T.radius, '#ffd84a'); this.effects.ring(cx, cy, T.radius * 0.6, '#fff4c0');
       this.addShake(0.25, 4); this.screenFlash = 0.08; this.flashColor = '255,216,74'; this.hitStop(0.05);

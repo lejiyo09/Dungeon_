@@ -445,53 +445,84 @@ class SpiritWolf {
   }
 }
 
-// 게이트 오브 바빌론: 바닥에 회전하는 금빛 문양, 공중에 열린 금빛 문들에서 사슬이 뻗어 묶인 적을 감음 (묶는 처리는 game.useTreasure)
+// 게이트 오브 바빌론: 바닥에 회전하는 금빛 문양, 공중에 열린 금빛 문들에서 창이 날아가 꽂히고 사슬이 뻗어 적을 묶음
+//  범위 안의 적은 사용한 순간뿐 아니라 범위가 남아 있는 동안 계속 묶음 (막 나타나는 적·페이즈 전환 중인 보스·나중에 들어온 적 포함)
 class ChainCircle {
-  constructor(x, y, T, caught) {
-    this.x = x; this.y = y; this.r = T.radius; this.life = T.duration; this.t = 0; this.alive = true; this.caught = caught || [];
-    this.gates = Array.from({ length: 10 }, (_, i) => { const a = i / 10 * TAU + 0.3; return { x: x + Math.cos(a) * (this.r + 8), y: y - 22 + Math.sin(a) * (this.r * 0.5), ph: Math.random() * TAU }; });
+  constructor(x, y, T, owner, world) {
+    this.x = x; this.y = y; this.r = T.radius; this.life = T.duration; this.t = 0; this.alive = true; this.T = T; this.owner = owner; this.got = []; this.spears = [];
+    this.gates = Array.from({ length: 10 }, (_, i) => { const a = i / 10 * TAU + 0.3; return { x: x + Math.cos(a) * (this.r + 6), y: y - 48 + Math.sin(a) * (this.r * 0.35), ph: Math.random() * TAU }; });
+    if (world) this.capture(world);
+    for (let i = 0; i < 16; i++) { // 첫 일제 사격: 묶인 적에게 먼저, 나머지는 범위 안 아무 곳
+      const e = this.got[i % Math.max(1, this.got.length)], a = Math.random() * TAU, d = Math.sqrt(Math.random()) * this.r * 0.9;
+      const tx = e && i < this.got.length * 2 ? e.x + randInt(-4, 4) : x + Math.cos(a) * d, ty = e && i < this.got.length * 2 ? e.y + randInt(-4, 2) : y + Math.sin(a) * d * 0.6;
+      this.addSpear(this.gates[i % 10], tx, ty, i * 0.03);
+    }
+  }
+  addSpear(g, tx, ty, delay) { this.spears.push({ sx: g.x, sy: g.y, tx, ty, d: this.t + delay, hit: false }); if (this.spears.length > 60) this.spears.shift(); }
+  capture(world) {
+    if (this.t >= this.life - 0.3) return;
+    for (const e of world.enemies) {
+      if (!e.targetable || this.got.includes(e) || Math.hypot(e.x - this.x, e.y - this.y) > this.r + e.radius) continue;
+      e.chainT = Math.max(e.chainT || 0, Math.max(1.5, this.life - this.t)); e.chainMax = e.chainT; this.got.push(e);
+      world.damageEnemy(e, { damage: this.T.damage * world.scale.hp, mods: this.owner.mods, knockback: 0, mark: { mult: this.T.weak, dur: e.chainT } }, 0, 0); // 묶으며 큰 피해 + 받는 피해 증가
+      world.effects.text(e.x, e.y - 18, '속박!', '#ffd84a', true); world.effects.goldBurst(e.x, e.y, 10); world.effects.ring(e.x, e.y, e.radius + 8, '#ffd84a');
+      if (this.t > 0.05) for (let k = 0; k < 2; k++) this.addSpear(this.gates[randInt(0, 9)], e.x + randInt(-3, 3), e.y, k * 0.05); // 나중에 묶인 적에게도 창
+    }
   }
   update(dt, world) {
     this.t += dt;
-    if (this.t >= this.life) { this.alive = false; for (const e of this.caught) if (e.alive) world.effects.goldBurst(e.x, e.y, 8); return; } // 풀릴 때 사슬이 금가루로 부서짐
+    for (const s of this.spears) if (!s.hit && this.t >= s.d + 0.2) { s.hit = true; world.effects.spark(s.tx, s.ty, '#ffffff'); if (Math.random() < 0.5) world.effects.goldBurst(s.tx, s.ty, 4); }
+    if (this.t >= this.life) { this.alive = false; for (const e of this.got) if (e.alive) { world.effects.goldBurst(e.x, e.y, 8); e.chainT = Math.min(e.chainT || 0, 0.05); } return; } // 풀릴 때 사슬이 금가루로 부서짐
+    this.capture(world);
     if (Math.random() < 0.5) { const a = Math.random() * TAU, d = Math.random() * this.r;
       world.effects.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.6, 0, -20 - Math.random() * 20, { color: '#ffd84a', life: 0.6, size: 1.5, size2: 0, drag: 1, add: true }); }
   }
   render(ctx) {
     const k = Math.min(1, this.t / 0.15, (this.life - this.t) / 0.4), grow = Math.min(1, this.t / 0.3), rot = this.t * 1.2;
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    // 바닥 문양: 이중 원 + 회전하는 눈금 + 안쪽 사각 문양
     ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.6);
     ctx.globalAlpha = 0.18 * k; ctx.fillStyle = '#ffd84a'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill();
     ctx.globalAlpha = 0.9 * k; ctx.strokeStyle = '#ffe9a0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, this.r * grow, 0, TAU); ctx.stroke();
     ctx.lineWidth = 1; ctx.strokeStyle = '#c8a050'; ctx.beginPath(); ctx.arc(0, 0, this.r * 0.75 * grow, 0, TAU); ctx.stroke();
     for (let i = 0; i < 16; i++) { const a = rot + i * TAU / 16; ctx.fillStyle = i % 4 ? '#c8a050' : '#fff4c0'; ctx.fillRect(Math.cos(a) * this.r * 0.88 - 1, Math.sin(a) * this.r * 0.88 - 1, 2, 2); }
     ctx.rotate(-rot); ctx.strokeStyle = '#ffd84a'; ctx.strokeRect(-this.r * 0.4, -this.r * 0.4, this.r * 0.8, this.r * 0.8); ctx.rotate(Math.PI / 4); ctx.strokeRect(-this.r * 0.4, -this.r * 0.4, this.r * 0.8, this.r * 0.8);
-    ctx.restore(); ctx.restore();
+    ctx.restore();
+    for (const s of this.spears) if (s.hit && this.t < s.d + 0.9) { // 바닥에 꽂힌 창 (잠시 남았다가 사라짐)
+      const a = Math.atan2(s.ty - s.sy, s.tx - s.sx), f = 1 - (this.t - s.d - 0.2) / 0.7; ctx.globalAlpha = Math.max(0, f) * k;
+      ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(s.tx, s.ty); ctx.lineTo(s.tx - Math.cos(a) * 10, s.ty - Math.sin(a) * 10); ctx.stroke(); ctx.lineWidth = 1;
+    }
+    ctx.restore();
   }
   renderTop(ctx) { // 캐릭터보다 위에 그림
     const k = Math.min(1, this.t / 0.15, (this.life - this.t) / 0.4), grow = Math.min(1, this.t / 0.3);
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    // 공중의 금빛 문 (일렁이는 물결)
-    for (const g of this.gates) {
+    for (const g of this.gates) { // 공중의 금빛 문 (일렁이는 물결)
       const s = grow * (1 + 0.12 * Math.sin(this.t * 6 + g.ph));
-      ctx.globalAlpha = 0.85 * k; ctx.strokeStyle = '#ffe9a0'; ctx.beginPath(); ctx.ellipse(g.x, g.y, 6 * s, 3 * s, 0, 0, TAU); ctx.stroke();
-      ctx.globalAlpha = 0.5 * k; ctx.strokeStyle = '#ffd84a'; ctx.beginPath(); ctx.ellipse(g.x, g.y, 9 * s, 4.5 * s, 0, 0, TAU); ctx.stroke();
-      ctx.fillStyle = `rgba(255,240,180,${0.6 * k})`; ctx.beginPath(); ctx.ellipse(g.x, g.y, 3 * s, 1.5 * s, 0, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 0.9 * k; ctx.strokeStyle = '#ffe9a0'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(g.x, g.y, 8 * s, 4 * s, 0, 0, TAU); ctx.stroke(); ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.5 * k; ctx.strokeStyle = '#ffd84a'; ctx.beginPath(); ctx.ellipse(g.x, g.y, 12 * s, 6 * s, 0, 0, TAU); ctx.stroke();
+      ctx.fillStyle = `rgba(255,240,180,${0.7 * k})`; ctx.beginPath(); ctx.ellipse(g.x, g.y, 4 * s, 2 * s, 0, 0, TAU); ctx.fill();
     }
-    // 사슬: 문 → 묶인 적 (사슬 고리 + 흐르는 빛)
-    ctx.globalAlpha = k;
-    this.caught.forEach((e, ei) => {
-      if (!e.alive || !(e.chainT > 0)) return;
+    for (const s of this.spears) { // 날아가는 창: 금빛 자루 + 흰 창끝 + 빛 꼬리
+      const q = (this.t - s.d) / 0.2; if (q < 0 || q > 1) continue;
+      const hx = s.sx + (s.tx - s.sx) * q, hy = s.sy + (s.ty - s.sy) * q, a = Math.atan2(s.ty - s.sy, s.tx - s.sx), c = Math.cos(a), n = Math.sin(a);
+      ctx.globalAlpha = 0.35; ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(hx - c * 26, hy - n * 26); ctx.lineTo(hx, hy); ctx.stroke(); // 꼬리
+      ctx.globalAlpha = 1; ctx.strokeStyle = '#ffe9a0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx - c * 13, hy - n * 13); ctx.lineTo(hx, hy); ctx.stroke(); ctx.lineWidth = 1; // 자루
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(hx + c * 5, hy + n * 5); ctx.lineTo(hx - n * 2.5, hy + c * 2.5); ctx.lineTo(hx + n * 2.5, hy - c * 2.5); ctx.closePath(); ctx.fill(); // 창끝
+    }
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k;
+    const list = (typeof game !== 'undefined' ? game.enemies : this.got) || []; let ei = 0;
+    for (const e of list) { // 사슬: 문 → 묶인 적 (굵은 고리 + 흐르는 빛)
+      if (!e.alive || !(e.chainT > 0) || Math.hypot(e.x - this.x, e.y - this.y) > this.r + 40) continue;
       for (let gi = 0; gi < 2; gi++) {
-        const g = this.gates[(ei * 2 + gi) % this.gates.length], dx = e.x - g.x, dy = e.y - 4 - g.y, n = Math.max(4, Math.floor(Math.hypot(dx, dy) / 4));
+        const g = this.gates[(ei * 3 + gi * 5) % this.gates.length], dx = e.x - g.x, dy = e.y - 4 - g.y, n = Math.max(4, Math.floor(Math.hypot(dx, dy) / 4));
         for (let i = 0; i < n * grow; i++) {
-          const t = i / n, px = g.x + dx * t, py = g.y + dy * t + Math.sin(t * Math.PI) * 4, glint = Math.abs(((this.t * 1.5) % 1) - t) < 0.08;
-          ctx.fillStyle = glint ? '#ffffff' : i % 2 ? '#c8a050' : '#ffd84a';
-          if (i % 2) ctx.fillRect(Math.round(px) - 1, Math.round(py), 3, 1); else ctx.fillRect(Math.round(px), Math.round(py) - 1, 1, 3);
+          const t = i / n, px = Math.round(g.x + dx * t), py = Math.round(g.y + dy * t + Math.sin(t * Math.PI) * 5), glint = Math.abs(((this.t * 1.5) % 1) - t) < 0.08;
+          ctx.fillStyle = '#3a2a10'; if (i % 2) ctx.fillRect(px - 2, py - 1, 5, 3); else ctx.fillRect(px - 1, py - 2, 3, 5);
+          ctx.fillStyle = glint ? '#ffffff' : i % 2 ? '#e8b040' : '#ffd84a'; if (i % 2) ctx.fillRect(px - 1, py, 3, 1); else ctx.fillRect(px, py - 1, 1, 3);
         }
       }
-    });
+      ei++;
+    }
     ctx.restore();
   }
 }
