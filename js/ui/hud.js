@@ -461,7 +461,7 @@ class HUD {
       const all = pick ? treasurePickList() : DATA_TREASURES.filter((t) => sv.treasures.includes(t.id)), pages = Math.max(1, Math.ceil(all.length / 3)), pg = Math.min(o.page || 0, pages - 1);
       const list = all.slice(pg * 3, pg * 3 + 3); // 한 쪽에 3개 (휠·←→로 넘김)
       hudText(ctx, pick ? '보구 선택' : '보구 보관대', VIEW_W / 2, 30, '#ffe9a0', 'center', 16);
-      hudText(ctx, pick ? '하나를 골라 영원히 간직합니다. 사망해도 사라지지 않습니다.' : '보유한 보구 중 하나를 골라 탐험에 들고 갑니다 (다시 누르면 해제)', VIEW_W / 2, 54, '#bbb', 'center', 9);
+      hudText(ctx, pick ? '하나를 골라 영원히 간직합니다. 사망해도 사라지지 않습니다. (효과는 로비의 보구 보관대에서 볼 수 있습니다)' : '보유한 보구 중 하나를 골라 탐험에 들고 갑니다 (다시 누르면 해제)', VIEW_W / 2, 54, '#bbb', 'center', 9);
       const had = pick && sv.treasures.length > 0 && !o.picked;
       if (had) hudText(ctx, '이미 첫 보구를 받았습니다. 추가 보구를 얻는 방법은 아직 정해지지 않았습니다.', VIEW_W / 2, 130, '#aaa', 'center', 9);
       else if (!list.length) hudText(ctx, pick ? '제시될 보구가 아직 정해지지 않았습니다 (기획 미정)' : '아직 보유한 보구가 없습니다', VIEW_W / 2, 130, '#888', 'center', 10);
@@ -473,8 +473,9 @@ class HUD {
         drawTreasureIcon(ctx, t, r.x + r.w / 2, r.y + 24, 2);
         hudText(ctx, t.name, r.x + r.w / 2, r.y + 44, '#ffe9a0', 'center', 11);
         if (t.origin) hudText(ctx, t.origin, r.x + r.w / 2, r.y + 59, '#a898c0', 'center', 8);
-        if (t.desc) hudWrap(ctx, t.desc, r.x + r.w / 2, r.y + 73, r.w - 12, '#ddd', 8, 11);
-        if (t.cooldown) hudText(ctx, `R키 · 쿨타임 ${t.cooldown}초`, r.x + r.w / 2, r.y + r.h - 28, '#c8b890', 'center', 8);
+        if (pick) hudText(ctx, '?', r.x + r.w / 2, r.y + 86, '#a898c0', 'center', 16); // [사용자 결정] 성역의 보구 선택에서는 효과를 보여 주지 않음 (보관대에서 확인)
+        else { if (t.desc) hudWrap(ctx, t.desc, r.x + r.w / 2, r.y + 73, r.w - 12, '#ddd', 8, 11);
+          if (t.cooldown) hudText(ctx, `R키 · 쿨타임 ${t.cooldown}초`, r.x + r.w / 2, r.y + r.h - 28, '#c8b890', 'center', 8); }
         if (eq) hudText(ctx, '장착됨', r.x + r.w / 2, r.y + r.h - 14, '#ffd84a', 'center', 8);
       });
       if (pages > 1 && !had) { for (const d of [0, 1]) { const r = HUD.treasurePageBtn(d), on = d ? pg < pages - 1 : pg > 0; ctx.fillStyle = on ? 'rgba(255,233,160,0.18)' : 'rgba(255,255,255,0.04)'; ctx.fillRect(r.x, r.y, r.w, r.h); hudText(ctx, d ? '▶' : '◀', r.x + r.w / 2, r.y + r.h / 2 - 6, on ? '#ffe9a0' : '#555', 'center', 12); }
