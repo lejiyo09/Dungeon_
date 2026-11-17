@@ -707,5 +707,26 @@ const DATA_ENEMIES = [
       { type: 'meteor', count: 10, delay: 0.55, stagger: 0.17, radius: 30, bullets: 7, color: '#c8e0ff' },
       { type: 'pincer', sweeps: 4, arc: 2.6, time: 0.8, interval: 0.028, gapW: 0.07, speed: 235, ring: 24, color: '#a0d0ff' },
       { type: 'silverchase', blinks: 6, ring: 110, width: 17, gapN: 3, step: 11, speed: 175, interval: 0.5, color: '#a0d0ff' }],
-    finalPatterns: [{ type: 'deadend', name: '데드 엔드 아가트람', charge: 1.6, lockT: 0.35, width: 24, mult: 2.6, show: 0.4, step: 28, shock: 4, color: '#a0d0ff' }] }
+    finalPatterns: [{ type: 'deadend', name: '데드 엔드 아가트람', charge: 1.6, lockT: 0.35, width: 24, mult: 2.6, show: 0.4, step: 28, shock: 4, color: '#a0d0ff' }] },
+  // [사용자 결정] 카멜롯 왕좌 보스: 로드 로그레스 [아서 왕] — 이상적인 왕. 체력 = 다른 보스(베디비어 8000)의 5/3, 체력바 5개, 엑스칼리버, 사실상 못 깨는 난이도, 모든 행동 방해 면역
+  //  원탁 기사들의 기술(가웨인의 작은 태양·트리스탄의 되돌아오는 화살·모드레드의 폭주 돌진·가레스의 부정의 원·베디비어의 협공·은빛 연격 등)과 롱고미니아드까지 씀 [제안]
+  //  phaseAt: 체력바 3개째(60%)에서 2페이즈, 마지막 1개(20%)에서 3페이즈 '이상적인 왕'(모든 행동 1.25배)
+  { id: 'boss_arthur', name: '로드 로그레스', title: '아서 왕 — 이상적인 왕', sprite: 'boss_arthur', color: '#2a3a8a', phaseColors: ['#2a3a8a', '#2a2a9a', '#3a2aaa'],
+    boss: true, aiType: 'boss', health: 13300, damage: 40, moveSpeed: 100, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.3, bulletSpeed: 210,
+    rewardGold: 0, ultFrom: 2, ultCd: 14, bars: 5, phaseAt: [0.6, 0.2], ccImmune: true, rampage: 1.25, rampageName: '이상적인 왕 — 꺼지지 않는 빛', patterns: [
+      { type: 'charge', dashes: 4, speed: 650, color: '#ffe9a0' },
+      { type: 'aimed', volleys: 8, count: 11, spread: 0.09, color: '#ffe9a0' },
+      { type: 'laser', beams: 3, spreadAng: Math.PI * 2 / 3, sweep: 1.8, duration: 2.2, width: 9, telegraph: 0.5, color: '#ffe9a0' },
+      { type: 'solar', duration: 3, speed: 60, interval: 0.25, bullets: 12, radius: 60, burst: 20, color: '#ffd870' },
+      { type: 'reverse', rings: 4, count: 36, gap: 4, speed: 175, flip: 0.7, interval: 0.4, color: '#7ab8ff' },
+      { type: 'cross', waves: 4, len: 9, step: 22, radius: 13, delay: 0.65, interval: 0.45, bullets: 0, color: '#ffe9a0' }],
+    phase2Patterns: [{ type: 'rampage', dashes: 6, aim: 0.28, speed: 620, dist: 220, step: 20, radius: 13, delay: 0.4, burst: 14, color: '#ffe9a0' },
+      { type: 'pincer', sweeps: 4, arc: 2.6, time: 0.75, interval: 0.026, gapW: 0.07, speed: 240, ring: 26, color: '#7ab8ff' },
+      { type: 'silverchase', blinks: 6, ring: 110, width: 17, gapN: 3, step: 11, speed: 180, interval: 0.48, color: '#ffe9a0' },
+      { type: 'denyfield', zones: 4, zr: 34, life: 4.5, around: 100, volleys: 5, count: 9, spread: 0.11, color: '#ffffff' },
+      { type: 'meteor', count: 14, delay: 0.5, stagger: 0.14, radius: 30, bullets: 8, color: '#ffe9a0' },
+      { type: 'spiral', duration: 3.2, arms: 7, interval: 0.055, spin: 2.8, color: '#7ab8ff' },
+      { type: 'ringOut', rings: 6, count: 34, gap: 4, speed: 165, interval: 0.36, color: '#ffe9a0' }],
+    finalPatterns: [{ type: 'excalibur', name: '엑스칼리버', charge: 1.4, lockT: 0.4, duration: 1.3, width: 26, turn: 0.45, mult: 1.7, radius: 90, bullets: 26, color: '#ffe9a0' },
+      { type: 'rhongo', name: '롱고미니아드', radius: 130, impact: 60, duration: 4.5, pull: 85, arms: 5, interval: 0.09, spin: 2.4, tick: 0.4, color: '#bfe6ff' }] }
 ];

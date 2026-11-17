@@ -49,8 +49,14 @@ class HUD {
       hudText(ctx, `${boss.def.name}  ·  ${boss.def.title || ''}`, VIEW_W / 2, 20, '#ffb0e0', 'center', 9);
       hudText(ctx, ['', 'Ⅰ', 'Ⅱ', 'Ⅲ'][ph], VIEW_W / 2 + 108, 30, cols[ph - 1], 'left', 9);
       ctx.fillStyle = OUTLINE; ctx.fillRect(VIEW_W / 2 - 101, 31, 202, 8);
+      if (boss.def.bars) { /* 체력바 여러 개 (아서 왕: 5개) — 지금 바를 다 깎으면 아래 색 바가 드러남, 오른쪽에 남은 바 수 */
+        const n = boss.def.bars, fr = Math.max(0, boss.hp / boss.maxHp) * n, left = Math.max(1, Math.ceil(fr - 1e-6)), BC = ['#ff3a4a', '#ff9a3a', '#ffd84a', '#5ad0a0', '#7ab8ff'];
+        if (left > 1) { ctx.fillStyle = BC[left - 2]; ctx.fillRect(VIEW_W / 2 - 100, 32, 200, 6); ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(VIEW_W / 2 - 100, 32, 200, 6); }
+        ctx.fillStyle = BC[left - 1]; ctx.fillRect(VIEW_W / 2 - 100, 32, Math.round(200 * Math.min(1, fr - (left - 1))), 6);
+        hudText(ctx, `×${left}`, VIEW_W / 2 + 122, 30, BC[left - 1], 'left', 9);
+      } else {
       hudBar(ctx, VIEW_W / 2 - 100, 32, 200, 6, boss.hp / boss.maxHp, cols[ph - 1]);
-      ctx.fillStyle = '#fff'; ctx.fillRect(VIEW_W / 2 - 100 + 66, 31, 1, 8); ctx.fillRect(VIEW_W / 2 - 100 + 132, 31, 1, 8); // 페이즈 경계
+      ctx.fillStyle = '#fff'; ctx.fillRect(VIEW_W / 2 - 100 + 66, 31, 1, 8); ctx.fillRect(VIEW_W / 2 - 100 + 132, 31, 1, 8); } // 페이즈 경계
       if (boss.state === 'PHASE') { ctx.fillStyle = `rgba(255,255,255,${0.4 + 0.4 * Math.sin(game.time * 20)})`; ctx.fillRect(VIEW_W / 2 - 100, 32, 200, 6); }
     }
     if (game.cinematic) this.cinematic(ctx, game);

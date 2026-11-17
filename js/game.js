@@ -187,7 +187,10 @@ class Game {
     if (M.quest === 18) { /* 카멜롯 8층: 충절의 기사 베디비어 */
       this.playCutscene(MERLIN_BEDIVERE_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 19; writeSave(sv); this.askTrial('camelot8'); } }); return; }
     if (M.quest === 19) { this.askTrial('camelot8'); return; }
-    if (this.admin) { this.askTrial(M.quest >= 19 ? 'camelot8' : M.quest >= 17 ? 'camelot7' : M.quest >= 15 ? 'camelot6' : M.quest >= 13 ? 'camelot5' : M.quest >= 11 ? 'camelot4' : M.quest >= 9 ? 'camelot3' : M.quest >= 7 ? 'camelot2' : M.quest >= 5 ? 'camelot' : 'rhongo'); return; } // 관리자는 시련을 마친 뒤에도 언제든 다시 도전
+    if (M.quest === 20) { /* 카멜롯 왕좌: 로드 로그레스 [아서 왕] */
+      this.playCutscene(MERLIN_ARTHUR_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 21; writeSave(sv); this.askTrial('camelot9'); } }); return; }
+    if (M.quest === 21) { this.askTrial('camelot9'); return; }
+    if (this.admin) { this.askTrial(M.quest >= 21 ? 'camelot9' : M.quest >= 19 ? 'camelot8' : M.quest >= 17 ? 'camelot7' : M.quest >= 15 ? 'camelot6' : M.quest >= 13 ? 'camelot5' : M.quest >= 11 ? 'camelot4' : M.quest >= 9 ? 'camelot3' : M.quest >= 7 ? 'camelot2' : M.quest >= 5 ? 'camelot' : 'rhongo'); return; } // 관리자는 시련을 마친 뒤에도 언제든 다시 도전
     npc.bubble = { text: pick(MERLIN_CHATTER), t: 3 };
   }
   // ── 롱고미니아드의 시련: 따로 준비된 장비로 신령 롱고미니아드와 1:1 (진행 중인 탐험·보상·기록에는 영향 없음)
@@ -258,7 +261,8 @@ class Game {
       { name: '카멜롯 5층 (갤러해드) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot5') }; } },
       { name: '카멜롯 6층 (랜슬롯) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot6') }; } },
       { name: '카멜롯 7층 (아그라베인) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot7') }; } },
-      { name: '카멜롯 8층 (베디비어) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot8') }; } }
+      { name: '카멜롯 8층 (베디비어) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot8') }; } },
+      { name: '카멜롯 왕좌 (아서 왕) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot9') }; } }
     ];
   }
   // ── 멀티 (1단계): 내 위치를 보내고, 다른 사람 위치를 부드럽게 따라감
@@ -1969,6 +1973,7 @@ class Game {
     if (Math.random() < B.killHpChance) this.pickups.push(new Pickup('hp', enemy.x, enemy.y, { value: B.killHpValue }));
   }
   trapRoot(e, dur) { /* 덫에 묶임: 보스는 3번 묶이면 그 뒤로 덫에 면역 (피해는 그대로) */
+    if (e.def.ccImmune) { if (!(e.trapMsgT > this.time)) { this.effects.text(e.x, e.y - e.radius - 10, '면역', '#ffe9a0'); e.trapMsgT = this.time + 1.5; } return; } /* 아서 왕: 덫에 아예 묶이지 않음 */
     if (!e.def.boss) { e.stunT = Math.max(e.stunT || 0, dur); return; }
     e.trapN = e.trapN || 0;
     if (e.trapN >= 3) { if (!(e.trapMsgT > this.time)) { this.effects.text(e.x, e.y - e.radius - 10, '덫 면역', '#aaaaaa'); e.trapMsgT = this.time + 1.5; } return; }

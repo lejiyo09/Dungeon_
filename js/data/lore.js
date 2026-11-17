@@ -322,7 +322,33 @@ const CAMELOT8_TRIAL = {
     palette: CAMELOT_TRIAL.W.palette },
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
 };
-const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL, camelot6: CAMELOT6_TRIAL, camelot7: CAMELOT7_TRIAL, camelot8: CAMELOT8_TRIAL };
+// [사용자 결정] 카멜롯 마지막 층(왕좌) 보스: 로드 로그레스 [아서 왕] — 이상적인 왕. 체력은 다른 보스의 5/3, 체력바 5개, 엑스칼리버 사용, 롱고미니아드보다 훨씬 어렵게(사실상 못 깨게)
+//  [사용자 결정] 롱고미니아드가 연속 덫으로 격파됨 → 아서 왕은 모든 행동 방해(덫·경직·사슬·빙결·둔화·실명 등)에 면역
+//  원탁 기사들의 기술을 모두 쓰는 구성·롱고미니아드(전승 속 아서 왕의 창)도 함께 쓰는 것·3페이즈 '이상적인 왕'·수치·대사·보상은 Claude가 정한 [제안]/[임시]
+const MERLIN_ARTHUR_LINES = [
+  '「…여기까지 왔나. 베디비어가 길을 열어 주었군.」',
+  '「마지막 층, 백악의 성의 왕좌. 그곳에 계신 분이 누구인지는 너도 이미 알고 있겠지.」',
+  '「아서 왕 — 로드 로그레스. 사람들이 꿈꾼 이상적인 왕이다. 원탁의 기사들이 쓰던 모든 검술이 그분의 것이었지.」',
+  '「솔직히 말하마. 나는 네가 이길 거라 생각하지 않는다. 그 검, 엑스칼리버의 빛 앞에서 살아남은 자는 없었다.」',
+  '「그래도 가겠다면… 로드 투 카멜롯, 왕좌로. 준비가 되면 말하게.」'
+];
+const ARTHUR_WIN_LINES = [
+  '왕좌 앞에, 빛을 잃은 성검이 천천히 내려앉는다.',
+  '「…그런가. 이상은, 언젠가 넘어서야 하는 것이었군.」',
+  '「잘 왔다, 이름 없는 탐험가여. 이 성의 끝은 네 것이다.」',
+  '백악의 성에 처음으로 고요가 내려앉는다.'
+];
+const CAMELOT9_TRIAL = {
+  id: 'camelot9', title: '로드 투 카멜롯 — 왕좌', color: '#ffe9a0', intro: '이상적인 왕이 왕좌에서 기다리고 있습니다', reward: 3000, questDone: 22,
+  confirm: ['백악의 성 왕좌 — 로드 로그레스, 아서 왕과 싸웁니다 (체력바 5개 · 모든 행동 방해 면역)', '지금까지의 어떤 적과도 비교할 수 없습니다. 이길 수 있다고 생각하지 마세요. 고른 진화 단계·축복과 +3 강화 무기 2개를 들고 갑니다'],
+  winText: '아서 왕을 쓰러뜨렸습니다 — 카멜롯 정복', winSub: '결정석 3000개를 받았습니다 — 이상적인 왕을 넘어선 탐험가', winLines: () => ARTHUR_WIN_LINES,
+  world: 9,
+  W: { name: '백악의 성 카멜롯 — 왕좌', boss: 'boss_arthur', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
+    enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 2]],
+    palette: CAMELOT_TRIAL.W.palette },
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+};
+const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL, camelot6: CAMELOT6_TRIAL, camelot7: CAMELOT7_TRIAL, camelot8: CAMELOT8_TRIAL, camelot9: CAMELOT9_TRIAL };
 // 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
 const DEEP_ARRIVAL_LINES = [
   '발밑의 돌이 차갑게 식어 간다.',
@@ -358,7 +384,9 @@ const STORY_ARCHIVE = [
   { id: 'agravain_road', name: '철완의 기사', kind: 'cut', lines: () => MERLIN_AGRAVAIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 17) },
   { id: 'agravain', name: '감기는 눈', kind: 'cut', lines: () => AGRAVAIN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 18) },
   { id: 'bedivere_road', name: '충절의 기사', kind: 'cut', lines: () => MERLIN_BEDIVERE_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 19) },
-  { id: 'bedivere', name: '꺼져 가는 은빛', kind: 'cut', lines: () => BEDIVERE_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 20) }
+  { id: 'bedivere', name: '꺼져 가는 은빛', kind: 'cut', lines: () => BEDIVERE_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 20) },
+  { id: 'arthur_road', name: '왕좌로', kind: 'cut', lines: () => MERLIN_ARTHUR_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 21) },
+  { id: 'arthur', name: '이상을 넘어서', kind: 'cut', lines: () => ARTHUR_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 22) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 // [사용자 결정] 문지기 조건을 없애기 전에 이미 문지기를 잡아 둔 사람은 그 1번을 심층 보스 1마리로 쳐 줌 (한 번만 바꿈)

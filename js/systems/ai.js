@@ -183,7 +183,7 @@ const AI_BEHAVIORS = {
   boss(e, dt, world, ctx) {
     const def = e.def, phase = e.phase || 1;
     const spd = [1, 1, 1.25, 1.5][phase] * (e.rampage ? def.rampage : 1); /* 모드레드 '폭주': 모든 행동이 빨라짐 */
-    const ratio = e.hp / e.maxHp, want = ratio <= 0.33 ? 3 : ratio <= 0.66 ? 2 : 1;
+    const ratio = e.hp / e.maxHp, PA = def.phaseAt || [0.66, 0.33], want = ratio <= PA[1] ? 3 : ratio <= PA[0] ? 2 : 1; /* phaseAt: 페이즈가 바뀌는 체력 비율 (아서 왕: 체력바 3개째·마지막 1개) */
     const channeling = e.pd && ((e.pd.tower && e.pd.tower.alive) || e.pd.lock); /* 롱고미니아드(빛의 탑)가 서 있는 동안은 페이즈도 넘기지 않고 다른 행동 없음 — 탑이 무너진 뒤에 넘어감 */
     if (want > phase && e.state !== 'INTRO' && !channeling) {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
@@ -195,7 +195,7 @@ const AI_BEHAVIORS = {
       if (def.fierce && want === 3) { e.fierce = true; world.announceBossSkill(e, '치열 — 멈추지 않는 검'); }
       if (def.wall && want === 3) { e.wallCone = def.wall.cone3; e.wallMult = def.wall.mult3; world.announceBossSkill(e, '철벽 — 무너지지 않는 성채'); }
       if (def.negate && want === 3) { e.negateOn = true; e.negCd = 1.5; world.announceBossSkill(e, '부정 — 모든 칼날을 거부하는 빛'); }
-      if (def.rampage && want === 3) { e.rampage = true; world.announceBossSkill(e, '폭주 — 멈추지 않는 반역'); }
+      if (def.rampage && want === 3) { e.rampage = true; world.announceBossSkill(e, def.rampageName || '폭주 — 멈추지 않는 반역'); }
       if (def.rev && want === 3) { e.revAll = true; world.announceBossSkill(e, '반전 — 되돌아오는 화살'); } /* 트리스탄: 이제 화살이 지나간 뒤 되돌아옴 */
       if (def.noon && want === 3) { e.damage = Math.round(e.damage * (1 + def.noon)); e.dmg0 = e.damage; world.announceBossSkill(e, '정오 — 태양의 가호'); } /* 가웨인: 해가 가장 높이 뜸 */
       world.onBossPhase(e, want); e.setState('PHASE'); return;
@@ -424,6 +424,34 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 엑스칼리버 (아서 왕의 보구): 하늘로 빛기둥을 세우며 검에 빛을 모음(조준선이 따라오다 마지막에 고정) → 굵은 황금 광선이 플레이어를 천천히 쫓으며 휩쓸고, 끝나면 광선 끝에서 대폭발. 쓰는 동안 페이즈 전환 없음
+  excalibur: {
+    begin(e, world, ctx) { const a = Math.atan2(ctx.dy, ctx.dx); e.pd.ang = a; e.laser = { angs: [a], width: 6, color: e.pat.color, live: false }; },
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;
+      if (!e.laser) e.laser = { angs: [d.ang], width: 6, color: P.color, live: false };
+      const want = Math.atan2(p.y - e.y, p.x - e.x); let df = want - d.ang; df = Math.atan2(Math.sin(df), Math.cos(df));
+      if (d.t < P.charge) {
+        if (!d.pillar) { d.pillar = true; fx.skyBeam(e.x, e.y, '#fff4c0', 0, 12); fx.rays(e.x, e.y, P.color, 18, 90, 0.8); SFX.play('excal'); }
+        if (d.t < P.charge - P.lockT) d.ang += clamp(df, -2.5 * dt, 2.5 * dt);
+        e.laser.angs[0] = d.ang; e.laser.width = 6 + 10 * d.t / P.charge; e.laser.live = false; e.laser.color = d.t >= P.charge - P.lockT ? '#ff5a5a' : P.color;
+        if (Math.random() < 0.9) { const a = Math.random() * TAU, q = 26 + Math.random() * 20; fx.part(e.x + Math.cos(a) * q, e.y - 10 + Math.sin(a) * q, -Math.cos(a) * q * 3, -Math.sin(a) * q * 3, { color: Math.random() < 0.5 ? '#ffffff' : P.color, life: 0.3, size: 2, size2: 0, drag: 0, add: true }); }
+        return false;
+      }
+      if (d.t < P.charge + P.duration) {
+        if (!d.fired) { d.fired = true; world.screenFlash = 0.35; world.flashColor = '255,240,190'; world.addShake(0.6, 9); world.hitStop(0.08); SFX.play('excal'); }
+        d.ang += clamp(df, -P.turn * dt, P.turn * dt); e.laser.angs[0] = d.ang; e.laser.width = P.width; e.laser.live = true; e.laser.color = P.color;
+        const len = beamLength(e, d.ang, world.map), ex = e.x + Math.cos(d.ang) * len, ey = e.y + Math.sin(d.ang) * len; d.ex = ex; d.ey = ey;
+        world.eachTarget((q) => { if (segmentCircleHit(e.x, e.y, ex, ey, q.x, q.y, P.width + q.half) >= 0) world.damagePlayer(Math.round(e.damage * P.mult)); });
+        if (Math.random() < 0.7) { const k = Math.random() * len; fx.part(e.x + Math.cos(d.ang) * k, e.y + Math.sin(d.ang) * k, randInt(-50, 50), randInt(-50, 50), { color: '#fff4c0', life: 0.3, size: 2, size2: 0, drag: 2, add: true }); }
+        if (Math.floor(d.t * 10) !== Math.floor((d.t - dt) * 10)) SFX.play('beam', 0.08);
+        return false;
+      }
+      if (!d.boom) { d.boom = true; e.laser = null; world.hazards.push(new Hazard(d.ex || e.x, d.ey || e.y, { r: P.radius, delay: 0.35, damage: Math.round(e.damage * 1.5), bullets: P.bullets, color: P.color })); }
+      if (d.t >= P.charge + P.duration + 0.8) { d.lock = false; return true; }
+      return false;
+    }
+  },
   // 협공 (베디비어 2페이즈~): 은빛 팔과 검에서 두 줄기의 탄이 부채꼴 양 끝에서 동시에 출발해 플레이어 쪽으로 좁혀 옴 — 줄기마다 짧은 틈이 있어 그 틈으로 빠져나가야 함, 끝날 때 원형 탄
   pincer: {
     update(e, dt, world, ctx, spd) {
@@ -1080,6 +1108,7 @@ function updateEnemy(e, dt, world) {
   if (e.burn > 0 && Math.random() < 0.25) world.effects.status(e.x, e.y, 'burn');
   if (e.slow > 0 && Math.random() < 0.12) world.effects.status(e.x, e.y, 'freeze');
   if (e.poison > 0 && Math.random() < 0.08) world.effects.status(e.x, e.y, 'poison');
+  if (e.def.ccImmune) { e.stunT = 0; e.chainT = 0; e.slow = 0; e.blind = 0; e.shock = 0; } /* 아서 왕: 모든 행동 방해 면역 (덫·경직·사슬·빙결·둔화·실명·감전) */
   if (e.stunT > 0) { e.stunT -= dt; return; } // 엑스칼리버 빛에 맞아 경직
   if (e.chainT > 0) { e.chainT -= dt; return; } // 황금 사슬에 묶임: 이동·공격 정지 (지속 피해는 계속)
   const sdt = dt * e.speedMul; // 빙결 시 이동/행동 모두 느려짐
