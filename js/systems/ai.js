@@ -195,6 +195,7 @@ const AI_BEHAVIORS = {
       if (def.fierce && want === 3) { e.fierce = true; world.announceBossSkill(e, '치열 — 멈추지 않는 검'); }
       if (def.wall && want === 3) { e.wallCone = def.wall.cone3; e.wallMult = def.wall.mult3; world.announceBossSkill(e, '철벽 — 무너지지 않는 성채'); }
       if (def.negate && want === 3) { e.negateOn = true; e.negCd = 1.5; world.announceBossSkill(e, '부정 — 모든 칼날을 거부하는 빛'); }
+      if (def.final3Patterns && want === 3) e.finalCd = 2.2; /* 마지막 페이즈에 들어서면 곧바로 전용 보구 */
       if (def.rampage && want === 3) { e.rampage = true; world.announceBossSkill(e, def.rampageName || '폭주 — 멈추지 않는 반역'); }
       if (def.rev && want === 3) { e.revAll = true; world.announceBossSkill(e, '반전 — 되돌아오는 화살'); } /* 트리스탄: 이제 화살이 지나간 뒤 되돌아옴 */
       if (def.noon && want === 3) { e.damage = Math.round(e.damage * (1 + def.noon)); e.dmg0 = e.damage; world.announceBossSkill(e, '정오 — 태양의 가호'); } /* 가웨인: 해가 가장 높이 뜸 */
@@ -221,7 +222,7 @@ const AI_BEHAVIORS = {
         if (e.stateTime < def.attackCooldown * (e.cdMul || 1) / spd) break;
         let pat;
         if (phase >= (def.ultFrom || 3) && def.finalPatterns && e.finalCd <= 0) { // 궁극기: 규모를 키우고 피해 +20%, 끝나면 마무리 폭발
-          pat = boostUltimate(pick(def.finalPatterns)); e.finalCd = def.ultCd || 9; e.ultUsed = true;
+          pat = boostUltimate(pick(phase >= 3 && def.final3Patterns ? def.final3Patterns : def.finalPatterns)); e.finalCd = (phase >= 3 && def.ult3Cd) || def.ultCd || 9; e.ultUsed = true; /* final3Patterns: 마지막 페이즈 전용 보구 (아서 왕: 엑스칼리버 엑셀수스) */
           e.ult = true; e.dmg0 = e.damage; e.damage = Math.round(e.damage * 1.2); if (world.onBossUltimate) world.onBossUltimate(e, pat);
         }
         else {
@@ -424,6 +425,33 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 엑스칼리버 엑셀수스 (아서 왕 마지막 페이즈 전용 보구): 하늘로 거대한 빛기둥들을 세우며 오래 빛을 모음(조준선이 따라오다 마지막에 붉게 고정) → 방 끝까지 관통하는 초거대 일격(맞으면 치명적)
+  //  → 곧이어 양옆으로 비스듬히 빛의 충격파 두 줄기 + 원형 빛탄. 쓰는 동안 페이즈 전환 없음
+  excelsus: {
+    begin(e, world, ctx) { const a = Math.atan2(ctx.dy, ctx.dx); e.pd.ang = a; e.laser = { angs: [a], width: 8, color: e.pat.color, live: false }; },
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;
+      if (!e.laser && !d.fired) e.laser = { angs: [d.ang], width: 8, color: P.color, live: false };
+      if (d.t < P.charge) {
+        if (!d.pillars) { d.pillars = true; fx.skyBeam(e.x, e.y, '#ffffff', 0, 16); for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; fx.skyBeam(e.x + Math.cos(a) * 60, e.y + Math.sin(a) * 40, '#fff4c0', 0.1 + i * 0.12, 6); } world.screenFlash = 0.15; world.flashColor = '255,240,190'; SFX.play('excal'); }
+        if (d.t < P.charge - P.lockT) { const want = Math.atan2(p.y - e.y, p.x - e.x); let df = want - d.ang; df = Math.atan2(Math.sin(df), Math.cos(df)); d.ang += clamp(df, -2.2 * dt, 2.2 * dt); }
+        e.laser.angs[0] = d.ang; e.laser.width = 8 + 14 * d.t / P.charge; e.laser.live = false; e.laser.color = d.t >= P.charge - P.lockT ? '#ff3a3a' : P.color;
+        world.addShake(0.05, 1 + 3 * d.t / P.charge);
+        for (let k = 0; k < 2; k++) if (Math.random() < 0.9) { const a = Math.random() * TAU, q = 30 + Math.random() * 40; fx.part(e.x + Math.cos(a) * q, e.y - 12 + Math.sin(a) * q, -Math.cos(a) * q * 3, -Math.sin(a) * q * 3, { color: Math.random() < 0.5 ? '#ffffff' : P.color, life: 0.3, size: 2.5, size2: 0, drag: 0, add: true }); }
+        return false;
+      }
+      if (!d.fired) { d.fired = true; e.laser.live = true; e.laser.width = P.width; e.laser.color = '#ffffff'; /* 초거대 일격 */
+        const len = beamLength(e, d.ang, world.map), ex = e.x + Math.cos(d.ang) * len, ey = e.y + Math.sin(d.ang) * len;
+        world.eachTarget((q) => { if (segmentCircleHit(e.x, e.y, ex, ey, q.x, q.y, P.width + q.half) >= 0) world.damagePlayer(Math.round(e.damage * P.mult)); });
+        for (let k = 30; k < len; k += 30) world.hazards.push(new Hazard(e.x + Math.cos(d.ang) * k, e.y + Math.sin(d.ang) * k, { r: 22, delay: 0.2 + k / len * 0.25, damage: e.damage, bullets: 4, color: P.color }));
+        fx.rays(e.x, e.y, '#ffffff', 28, 160, 1); fx.ring(e.x, e.y, 80, '#ffffff'); world.screenFlash = 0.5; world.flashColor = '255,250,220'; world.addShake(0.9, 14); world.hitStop(0.14); SFX.play('excal'); SFX.play('explode'); }
+      if (!d.side && d.t >= P.charge + P.show) { d.side = true; e.laser = null; /* 양옆 충격파 + 원형 빛탄 */
+        for (const s of [-1, 1]) { const a = d.ang + s * P.sideAng, len = beamLength(e, a, world.map); for (let k = P.sideStep; k < len; k += P.sideStep) world.hazards.push(new Hazard(e.x + Math.cos(a) * k, e.y + Math.sin(a) * k, { r: 20, delay: 0.5 + k / len * 0.3, damage: Math.round(e.damage * 1.3), bullets: 3, color: P.color })); }
+        for (let i = 0; i < P.ring; i++) world.enemyShoot(e.x, e.y, i * TAU / P.ring + 0.05, e.def.bulletSpeed * 0.9, e.damage, i % 2 ? P.color : '#ffffff', 4); }
+      if (d.t >= P.charge + P.show + 1.4) { d.lock = false; return true; }
+      return false;
+    }
+  },
   // 엑스칼리버 (아서 왕의 보구): 하늘로 빛기둥을 세우며 검에 빛을 모음(조준선이 따라오다 마지막에 고정) → 굵은 황금 광선이 플레이어를 천천히 쫓으며 휩쓸고, 끝나면 광선 끝에서 대폭발. 쓰는 동안 페이즈 전환 없음
   excalibur: {
     begin(e, world, ctx) { const a = Math.atan2(ctx.dy, ctx.dx); e.pd.ang = a; e.laser = { angs: [a], width: 6, color: e.pat.color, live: false }; },

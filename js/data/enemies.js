@@ -713,7 +713,9 @@ const DATA_ENEMIES = [
   //  phaseAt: 체력바 3개째(60%)에서 2페이즈, 마지막 1개(20%)에서 3페이즈 '이상적인 왕'(모든 행동 1.25배)
   { id: 'boss_arthur', name: '로드 로그레스', title: '아서 왕 — 이상적인 왕', sprite: 'boss_arthur', color: '#2a3a8a', phaseColors: ['#2a3a8a', '#2a2a9a', '#3a2aaa'],
     boss: true, aiType: 'boss', health: 13300, damage: 40, moveSpeed: 100, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.3, bulletSpeed: 210,
-    rewardGold: 0, ultFrom: 2, ultCd: 14, bars: 5, phaseAt: [0.6, 0.2], ccImmune: true, rampage: 1.25, rampageName: '이상적인 왕 — 꺼지지 않는 빛', patterns: [
+    rewardGold: 0, ultFrom: 2, ultCd: 14, bars: 5, phaseAt: [0.6, 0.2], ccImmune: true, rampage: 1.25, rampageName: '이상적인 왕 — 꺼지지 않는 빛', ult3Cd: 15,
+    final3Patterns: [{ type: 'excelsus', name: '엑스칼리버 엑셀수스', charge: 2.2, lockT: 0.5, width: 40, mult: 3.2, show: 0.6, sideAng: 0.55, sideStep: 26, ring: 40, color: '#ffe9a0' }], /* [사용자 결정] 마지막 페이즈: 엑스칼리버 엑셀수스로 강력한 일격 */
+    patterns: [
       { type: 'charge', dashes: 4, speed: 650, color: '#ffe9a0' },
       { type: 'aimed', volleys: 8, count: 11, spread: 0.09, color: '#ffe9a0' },
       { type: 'laser', beams: 3, spreadAng: Math.PI * 2 / 3, sweep: 1.8, duration: 2.2, width: 9, telegraph: 0.5, color: '#ffe9a0' },
