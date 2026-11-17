@@ -184,10 +184,11 @@ const AI_BEHAVIORS = {
     const def = e.def, phase = e.phase || 1;
     const spd = [1, 1, 1.25, 1.5][phase];
     const ratio = e.hp / e.maxHp, want = ratio <= 0.33 ? 3 : ratio <= 0.66 ? 2 : 1;
-    const channeling = e.pd && e.pd.tower && e.pd.tower.alive; /* 롱고미니아드(빛의 탑)가 서 있는 동안은 페이즈도 넘기지 않고 다른 행동 없음 — 탑이 무너진 뒤에 넘어감 */
+    const channeling = e.pd && ((e.pd.tower && e.pd.tower.alive) || e.pd.lock); /* 롱고미니아드(빛의 탑)가 서 있는 동안은 페이즈도 넘기지 않고 다른 행동 없음 — 탑이 무너진 뒤에 넘어감 */
     if (want > phase && e.state !== 'INTRO' && !channeling) {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
+      if (def.noon && want === 3) { e.damage = Math.round(e.damage * (1 + def.noon)); e.dmg0 = e.damage; world.announceBossSkill(e, '정오 — 태양의 가호'); } /* 가웨인: 해가 가장 높이 뜸 */
       world.onBossPhase(e, want); e.setState('PHASE'); return;
     }
     e.finalCd = (e.finalCd ?? 0) - dt;
@@ -401,6 +402,48 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 작은 태양 (가웨인): 보스 위에 생긴 태양이 플레이어를 천천히 쫓으며 사방으로 탄을 뿌리다가, 멈춘 자리에서 터짐
+  solar: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, fx = world.effects; d.t = (d.t || 0) + dt;
+      if (!d.sun) { d.sun = { x: e.x, y: e.y - 14 }; d.timer = 0.2; fx.ring(e.x, e.y - 14, 18, P.color); }
+      const s = d.sun;
+      if (d.t < P.duration) {
+        const dx = p.x - s.x, dy = p.y - s.y, dd = Math.hypot(dx, dy) || 1; s.x += dx / dd * P.speed * spd * dt; s.y += dy / dd * P.speed * spd * dt;
+        d.timer -= dt; if (d.timer <= 0) { d.timer += P.interval / spd; const a0 = Math.random() * TAU; for (let i = 0; i < P.bullets; i++) world.enemyShoot(s.x, s.y, a0 + i * TAU / P.bullets, e.def.bulletSpeed * 0.7, e.damage, P.color, 3); }
+        fx.part(s.x, s.y, 0, 0, { color: '#ffffff', life: 0.08, size: 5, size2: 3, drag: 0, add: true }); fx.part(s.x, s.y, 0, 0, { color: P.color, life: 0.12, size: 9, size2: 6, drag: 0, add: true });
+        if (Math.random() < 0.5) { const a = Math.random() * TAU; fx.part(s.x + Math.cos(a) * 8, s.y + Math.sin(a) * 8, Math.cos(a) * 30, Math.sin(a) * 30, { color: '#ffe9a0', life: 0.3, size: 1.5, size2: 0, drag: 1, add: true }); }
+        return false;
+      }
+      world.hazards.push(new Hazard(s.x, s.y, { r: P.radius, delay: 0.55, damage: Math.round(e.damage * 1.3), bullets: P.burst, color: P.color }));
+      fx.ring(s.x, s.y, P.radius, '#ffffff'); return true;
+    }
+  },
+  // 갈라틴 (가웨인의 보구): 검을 들어 머리 위에 큰 태양을 만듦(이동 없음) → 플레이어 쪽으로 불꽃 부채꼴 3파 + 태양이 플레이어 자리에 떨어져 대폭발. 쓰는 동안 페이즈 전환 없음
+  galatine: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;
+      const r = e.room, tx = clamp(p.x, r.x0 * TILE + 16, (r.x0 + r.w) * TILE - 16), ty = clamp(p.y, r.y0 * TILE + 16, (r.y0 + r.h) * TILE - 16);
+      if (d.t < P.charge) { /* 태양을 모음 */
+        const k = d.t / P.charge, sy = e.y - 30, R = 4 + k * 14; d.tx = tx; d.ty = ty;
+        fx.part(e.x, sy, 0, 0, { color: '#ffffff', life: 0.08, size: R * 0.7, size2: R * 0.5, drag: 0, add: true }); fx.part(e.x, sy, 0, 0, { color: P.color, life: 0.1, size: R * 1.3, size2: R, drag: 0, add: true });
+        if (Math.random() < 0.7) { const a = Math.random() * TAU, q = 30 + Math.random() * 20; fx.part(e.x + Math.cos(a) * q, sy + Math.sin(a) * q, -Math.cos(a) * q * 2, -Math.sin(a) * q * 2, { color: '#ffd870', life: 0.4, size: 2, size2: 0, drag: 0, add: true }); }
+        d.warn = (d.warn || 0) - dt; if (d.warn <= 0) { d.warn = 0.25; fx.ring(tx, ty, P.radius, '#ff7a3a'); }
+        return false;
+      }
+      if (!d.dropped) { d.dropped = true; d.timer = 0; /* 태양이 떨어짐 */
+        world.hazards.push(new Hazard(d.tx, d.ty, { r: P.radius, delay: 0.95, damage: Math.round(e.damage * 1.6), bullets: P.bullets, color: P.color }));
+        fx.rays(e.x, e.y - 30, '#ffd870', 18, 90, 0.7); world.addShake(0.3, 5); SFX.play('excal'); }
+      d.timer -= dt;
+      if (d.timer <= 0 && d.shots < P.waves) { /* 불꽃 부채꼴 */
+        const base = Math.atan2(p.y - e.y, p.x - e.x), n = P.count;
+        for (let i = 0; i < n; i++) world.enemyShoot(e.x, e.y, base + (i / (n - 1) - 0.5) * P.fan + (d.shots % 2 ? P.fan / n / 2 : 0), P.speed * (1 + d.shots * 0.12), Math.round(e.damage * 1.1), i % 3 ? P.color : '#ffffff', 4);
+        fx.ring(e.x, e.y, 30, P.color); d.shots++; d.timer = P.interval / spd;
+      }
+      if (d.shots >= P.waves && d.t >= P.charge + 1.1) { d.lock = false; return true; }
+      return false;
+    }
+  },
   // 십자 성창: 플레이어 자리를 중심으로 십자(+)·엑스(×) 모양 줄을 따라 빛의 창이 꽂힘 → 잠시 뒤 터짐 (줄 사이로 피해야 함), 매 파마다 플레이어를 다시 노림
   cross: {
     update(e, dt, world, ctx, spd) {

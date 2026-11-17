@@ -162,16 +162,25 @@ class Game {
     if (M.quest === 2) { // 두 번째 시련: 롱고미니아드의 인정 → 보스전 (도전 여부 선택)
       this.playCutscene(MERLIN_SPEAR_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 3; writeSave(sv); this.askRhongoTrial(); } }); return;
     }
-    if (M.quest === 3 || this.admin) { this.askRhongoTrial(); return; } // 관리자는 시련을 마친 뒤에도 언제든 다시 도전
+    if (M.quest === 3) { this.askTrial('rhongo'); return; }
+    if (M.quest === 4) { /* 세 번째 퀘스트: 로드 투 카멜롯 */
+      this.playCutscene(MERLIN_CAMELOT_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 5; writeSave(sv); this.askTrial('camelot'); } }); return; }
+    if (M.quest === 5) { this.askTrial('camelot'); return; }
+    if (this.admin) { this.askTrial(M.quest >= 5 ? 'camelot' : 'rhongo'); return; } // 관리자는 시련을 마친 뒤에도 언제든 다시 도전
     npc.bubble = { text: pick(MERLIN_CHATTER), t: 3 };
   }
   // ── 롱고미니아드의 시련: 따로 준비된 장비로 신령 롱고미니아드와 1:1 (진행 중인 탐험·보상·기록에는 영향 없음)
-  askRhongoTrial() { this.overlay = { type: 'trial_confirm' }; this.input.mouse.down = false; }
-  startRhongoTrial(rank = 2) { /* rank: 고른 진화 단계 0~2 (1진·2진·3진) */
+  //  (로드 투 카멜롯도 같은 방식: TRIALS[id]에 이름·던전·장비·대사)
+  get trialDef() { return TRIALS[this.trialId] || RHONGO_TRIAL; }
+  askRhongoTrial() { this.askTrial('rhongo'); }
+  askTrial(id) { this.overlay = { type: 'trial_confirm', id }; this.input.mouse.down = false; }
+  startRhongoTrial(rank = 2) { this.startQuestTrial('rhongo', rank); }
+  startQuestTrial(id, rank = 2) { /* rank: 고른 진화 단계 0~2 (1진·2진·3진) */
+    const T = TRIALS[id] || RHONGO_TRIAL; this.trialId = T.id;
     rank = clamp(rank | 0, 0, 2); this.trialRank = rank;
-    this.mode = 'dungeon'; this.trialW = Object.assign({}, worldDef(RHONGO_TRIAL.world), RHONGO_TRIAL.W);
-    this.worldIdx = RHONGO_TRIAL.world; this.levelIdx = STAGES_PER_WORLD - 1; this.gold = 0; this.kills = 0;
-    const p = this.player = this.makePlayer(0, 0), K = RHONGO_TRIAL.kit;
+    this.mode = 'dungeon'; this.trialW = Object.assign({}, worldDef(T.world), T.W);
+    this.worldIdx = T.world; this.levelIdx = STAGES_PER_WORLD - 1; this.gold = 0; this.kills = 0;
+    const p = this.player = this.makePlayer(0, 0), K = T.kit;
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) { p.treasure = tr; if (tr.apply) tr.apply(p); }
     const kit = () => { /* 시련 장비: 고른 진화 단계 + 영웅·전설 무기(강화) + 체력·버프 */
       if (p.line) this.setJob(p, p.line, rank); p.skillCooldown = 0;
@@ -185,16 +194,18 @@ class Game {
     this.askVariant(kit, rank); /* 갈래 창도 고른 진화 단계의 이름·스킬로 */
   }
   pickTrialWeapons(ids) { // 고른 무기 (도감에서 발견한 것 중 최대 2개, 모두 +강화)
-    const p = this.player, K = RHONGO_TRIAL.kit;
+    const p = this.player, T = this.trialDef, K = T.kit;
     p.weapons = ids.map((id) => new WeaponInstance(this.data.weapons.get(id), K.lv)); p.slot = 0;
     this.overlay = null; this.input.mouse.down = false;
-    this.showBanner(RHONGO_TRIAL.W.name, `${p.line ? p.line.ranks[p.rank] + (p.rank === 2 ? '(최종 진화)' : `(${p.rank + 1}진)`) + ' · ' + p.skillName + ' · ' : ''}${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv})`, '#bfe6ff');
+    this.showBanner(T.W.name, `${p.line ? p.line.ranks[p.rank] + (p.rank === 2 ? '(최종 진화)' : `(${p.rank + 1}진)`) + ' · ' + p.skillName + ' · ' : ''}${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv})`, T.color);
   }
-  endRhongoTrial(win) {
-    const M = this.save.merlin; SFX.stopMusic();
-    if (win) { M.quest = 4; const T = DATA_TREASURES.find((t) => t.id === 'treasure_rhongomyniad'); if (!this.save.treasures.includes(T.id)) this.save.treasures.push(T.id); this.treasureToast = { T, start: performance.now() }; }
+  endRhongoTrial(win) { this.endTrial(win); }
+  endTrial(win) {
+    const M = this.save.merlin, T = this.trialDef; SFX.stopMusic();
+    if (win && T.id === 'camelot') { M.quest = Math.max(M.quest || 0, 6); this.save.bank += T.reward || 0; }
+    else if (win) { M.quest = Math.max(M.quest || 0, 4); const T = DATA_TREASURES.find((t) => t.id === 'treasure_rhongomyniad'); if (!this.save.treasures.includes(T.id)) this.save.treasures.push(T.id); this.treasureToast = { T, start: performance.now() }; }
     this.guildEvent('runs'); writeSave(this.save);
-    this.overlay = { type: 'result', victory: win, stages: 0, bosses: 0, reward: 0, trial: true };
+    this.overlay = { type: 'result', victory: win, stages: 0, bosses: 0, reward: 0, trial: true, trialId: T.id };
   }
   // ── 관리자 계정: 직업·무기·보구·이야기·직업 레벨 전부 해금, 결정석 넉넉히 (로그인할 때마다 다시 채움)
   applyAdmin() {
@@ -218,7 +229,8 @@ class Game {
       { name: '이 필드의 보스 스테이지로', ok: d && !this.trialW && !this.isBossStage, run: () => { this.levelIdx = STAGES_PER_WORLD - 1; this.loadStage(); } },
       { name: `다음 필드로 (${stageLabel(this.worldIdx + 1, 0)})`, ok: d && !this.trialW, run: () => { this.worldIdx++; this.levelIdx = 0; this.loadStage(); } },
       { name: '결정석 999,999로 채우기', run: () => { this.save.bank = 999999; writeSave(this.save); } },
-      { name: '롱고미니아드의 시련 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startRhongoTrial() }; } }
+      { name: '롱고미니아드의 시련 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('rhongo') }; } },
+      { name: '로드 투 카멜롯 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot') }; } }
     ];
   }
   // ── 멀티 (1단계): 내 위치를 보내고, 다른 사람 위치를 부드럽게 따라감
@@ -462,7 +474,7 @@ class Game {
   loadStage() {
     const W = this.W;
     if (W.deep && !W.trial) this.save.bestDeep = Math.max(this.save.bestDeep || 0, W.depth); // 가장 깊이 내려간 심층
-    const map = W.trial ? generateDungeon({ roomCount: 2, specials: ['boss'], waves: 0, palette: W.palette }) // 시련: 시작 방 + 보스 방
+    const map = W.trial ? generateDungeon({ roomCount: W.rooms || 2, specials: ['boss'], waves: W.waves || 0, palette: W.palette }) // 시련: 시작 방 + 보스 방 (카멜롯은 전투 방도)
       : this.isBossStage
       ? generateDungeon({ roomCount: 4, specials: ['boss'], waves: W.waves, palette: W.palette })
       : generateDungeon({ roomCount: Math.min(15, 9 + this.worldIdx), specials: ['exit', 'treasure', 'shop'].concat(this.rollSpecialRoom()), waves: W.waves, palette: W.palette }); // 특수방 하나
@@ -483,7 +495,7 @@ class Game {
     if (W.sanctum && this.levelIdx === 0) this.playCutscene(ORIGIN_ARRIVAL_LINES, { id: 'origin_arrival', focus: null });
     if (W.deep && !W.trial && W.depth === 1 && this.levelIdx === 0) this.playCutscene(DEEP_ARRIVAL_LINES, { id: 'deep_arrival', focus: null }); // 심층에 처음 들어설 때 (한 번만)
     if (this.coop && this.coop.host) this.coopOnStage(); // 멀티: 동료 배치·부활 + 새 맵 보내기
-    if (W.trial) { this.showBanner(W.name, '롱고미니아드가 기다리고 있습니다', '#bfe6ff'); return; }
+    if (W.trial) { this.showBanner(W.name, this.trialDef.intro, this.trialDef.color); return; }
     this.showBanner(`${stageLabel(this.worldIdx, this.levelIdx)}  ${W.name}`, this.isBossStage ? '보스가 기다리고 있습니다' : W.deep && this.levelIdx === 0 ? `심층 ${W.depth}번째 필드 — 던전은 더 깊은 곳으로 이어진다` : '출구 포탈을 찾으세요', W.deep ? '#9ad8ff' : undefined);
   }
   advanceStage() {
@@ -558,7 +570,7 @@ class Game {
     return true;
   }
   endRun(victory) {
-    if (this.trialW) { this.endRhongoTrial(victory); return; }
+    if (this.trialW) { this.endTrial(victory); return; }
     if (this.coop && this.coop.guest) { this.coopGuestEnd({ victory: false, quit: true }); return; }
     this.submitRunScore(victory); // 랭킹판에 기록
     if (this.coop && this.coop.host) this.coopHostEnd(victory);
@@ -842,7 +854,7 @@ class Game {
       const m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h, click = input.wasPressed('Mouse0');
       let rk = input.wasPressed('Enter') ? 2 : -1; /* 1·2·3: 1진·2진·3진으로 도전, Enter는 3진 */
       for (let i = 0; i < 3; i++) if (input.wasPressed('Digit' + (i + 1)) || (click && hit(HUD.trialBtn(i)))) rk = i;
-      if (rk >= 0) { this.overlay = null; this.input.mouse.down = false; this.transition = { t: 0, swapped: false, action: () => this.startRhongoTrial(rk) }; }
+      if (rk >= 0) { this.overlay = null; this.input.mouse.down = false; const tid = o.id || 'rhongo'; this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial(tid, rk) }; }
       else if (input.wasPressed('Escape') || input.wasPressed('Digit4') || input.wasPressed('KeyE') || (click && hit(HUD.trialBtn(3)))) { this.overlay = null; this.input.mouse.down = false; const mt = this.props.find((x) => x instanceof MerlinTable); if (mt) mt.bubble = { text: '「준비가 되면 다시 오게.」', t: 3 }; }
     } else if (o.type === 'resume') {
       if (input.wasPressed('Enter')) { this.overlay = null; this.transition = { t: 0, swapped: false, action: () => this.resumeRun() }; }
@@ -1415,6 +1427,7 @@ class Game {
       const boss = this.spawnEnemy(id, c.x, c.y, r);
       boss.setState('INTRO'); boss.jumpH = 160; boss.phase = 1;
       this.cinematic = { t: 0, boss, landed: false, roared: false, grand: !!(this.W.sanctum || this.W.trial) };
+      if (this.W.trial && this.W.rooms) for (const q of this.allPlayers()) if (q.state !== 'DEAD') { q.hp = q.maxHp; q.shield = q.maxShield; q.energy = q.maxEnergy; this.effects.heal(q.x, q.y); } /* 카멜롯: 성문 앞에서 체력·에너지 모두 회복 (보스전은 가득 찬 상태로) */
       if (this.W.sanctum && this.sanctumGate) this.playCutscene(GATEKEEPER_INTRO_LINES, { id: 'gatekeeper_intro', focus: { x: this.sanctumGate.x, y: this.sanctumGate.y - 20 } });
       this.banner = null; this.input.mouse.down = false;
       SFX.play('door');
@@ -1500,7 +1513,7 @@ class Game {
     this.map.setDoors(r, false);
     const c0 = this.map.tileCenter(r.cx, r.cy), c = this.freeSpot(r, c0.x, c0.y, 8);
     if (r.type === 'boss' && this.trialW) { // 시련 승리: 인정을 받고 로비로
-      this.playCutscene(RHONGO_WIN_LINES, { always: true, force: true, done: () => this.endRhongoTrial(true) }); return;
+      this.playCutscene(this.trialDef.winLines(), { always: true, force: true, done: () => this.endTrial(true) }); return;
     }
     if (r.type === 'boss') {
       for (let i = 0; i < 12; i++) this.pickups.push(new Pickup('coin', c.x, c.y));

@@ -118,12 +118,42 @@ const RHONGO_WIN_LINES = [
 ];
 // 시련 설정 [제안]: 10필드 보스 단계의 강화 배율 + 따로 준비된 장비 (최종 진화 · 전설/영웅 무기 +3 · 체력 · 축복 4개)
 const RHONGO_TRIAL = {
+  id: 'rhongo', title: '롱고미니아드의 시련', color: '#bfe6ff', intro: '롱고미니아드가 기다리고 있습니다',
+  confirm: ['창에 깃든 신령 — 신령 롱고미니아드와 1:1로 싸웁니다', '지금까지의 어떤 보스보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
+  winText: '롱고미니아드가 당신을 인정했습니다', winSub: '보구 롱고미니아드를 얻었습니다 — 로비의 보구 보관대에서 장착할 수 있습니다', winLines: () => RHONGO_WIN_LINES,
   world: 9,
   W: { name: '롱고미니아드의 시련', boss: 'boss_rhongomyniad', trial: true, sanctum: false, deep: false, waves: 0, enemies: [['enemy_ghost_001', 1]],
     palette: { style: 'sanctum', accent: '#bfe6ff', floor: ['#3e4458', '#41475b'], corridor: ['#2c3142', '#2e3344'], wall: '#4a5268', wallTop: '#5c647a',
       wallFace: '#7e8aa4', faceLine: '#6c7892', deco: 'rgba(191,230,255,0.35)' } },
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
 };
+// [사용자 결정] 멀린의 세 번째 퀘스트 '로드 투 카멜롯': 아서왕과 원탁의 기사들이 있던 브리튼의 성 카멜롯(이명: 백악의 성)을 던전으로 — 첫 보스는 태양의 원탁의 기사 가웨인
+//  대사는 모두 [임시] 연출 문구. 던전 구성(방 4개: 시작·전투 2·보스)·장비·보상(결정석)은 Claude가 정한 [제안]
+const MERLIN_CAMELOT_LINES = [
+  '「창이 너를 인정했군. 그렇다면 이제 길을 알려 줄 때가 됐다.」',
+  '「백악의 성, 카멜롯. 왕과 원탁의 기사들이 머물던 브리튼의 성이다.」',
+  '「그 성으로 가는 길이 던전 깊은 곳에 열렸다. 성은 아직도 기사들이 지키고 있지.」',
+  '「성문 앞에는 태양의 기사 가웨인이 서 있을 거다. 해가 높이 뜰수록 강해지는 사내지.」',
+  '「로드 투 카멜롯. 준비가 되면 말하게.」'
+];
+const GAWAIN_WIN_LINES = [
+  '햇빛을 머금은 검이 바닥에 꽂힌다.',
+  '「…훌륭하다. 태양이 진 것은 오랜만이군.」',
+  '「성문은 열렸다. 하지만 성 안의 기사들은 나만큼 너그럽지 않을 것이다.」',
+  '기사의 모습이 햇살 속으로 흩어진다. 백악의 성 깊은 곳에서 또 다른 기척이 느껴진다.'
+];
+const CAMELOT_TRIAL = {
+  id: 'camelot', title: '로드 투 카멜롯', color: '#ffd870', intro: '태양의 기사 가웨인이 성문을 지키고 있습니다', reward: 500,
+  confirm: ['백악의 성 카멜롯 — 성의 기사들을 뚫고 성문을 지키는 태양의 기사 가웨인과 싸웁니다', '롱고미니아드보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
+  winText: '가웨인을 쓰러뜨리고 성문을 열었습니다', winSub: '결정석 500개를 받았습니다 — 카멜롯 깊은 곳의 이야기는 다음에 이어집니다', winLines: () => GAWAIN_WIN_LINES,
+  world: 9,
+  W: { name: '백악의 성 카멜롯', boss: 'boss_gawain', trial: true, rooms: 4, sanctum: false, deep: false, waves: 2,
+    enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 1]],
+    palette: { style: 'sanctum', accent: '#ffd870', floor: ['#b8b2a6', '#bcb6aa'], corridor: ['#a49e92', '#a8a296'], wall: '#d8d4ca', wallTop: '#ece8de',
+      wallFace: '#c4beb0', faceLine: '#aea896', deco: 'rgba(255,216,112,0.4)' } },
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+};
+const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL };
 // 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
 const DEEP_ARRIVAL_LINES = [
   '발밑의 돌이 차갑게 식어 간다.',
@@ -143,7 +173,9 @@ const STORY_ARCHIVE = [
   { id: 'merlin', name: '후드를 쓴 마법사', kind: 'cut', lines: () => MERLIN_REVEAL_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.revealed) },
   { id: 'avalon', name: '아발론의 정원', kind: 'cut', lines: () => MERLIN_REWARD_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 2) },
   { id: 'spear_trial', name: '왕의 창', kind: 'cut', lines: () => MERLIN_SPEAR_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 3) },
-  { id: 'rhongomyniad', name: '창의 인정', kind: 'cut', lines: () => RHONGO_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 4) }
+  { id: 'rhongomyniad', name: '창의 인정', kind: 'cut', lines: () => RHONGO_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 4) },
+  { id: 'camelot', name: '로드 투 카멜롯', kind: 'cut', lines: () => MERLIN_CAMELOT_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 5) },
+  { id: 'gawain', name: '태양의 기사', kind: 'cut', lines: () => GAWAIN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 6) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 // [사용자 결정] 문지기 조건을 없애기 전에 이미 문지기를 잡아 둔 사람은 그 1번을 심층 보스 1마리로 쳐 줌 (한 번만 바꿈)

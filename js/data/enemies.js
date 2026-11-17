@@ -398,6 +398,16 @@ const DATA_ENEMIES = [
     finalPatterns: [{ type: 'ringIn', name: '닫힌 문', rings: 3, count: 44, gap: 5, speed: 78, interval: 0.95, color: '#ffe9a0' },
       { type: 'grid', name: '봉인', spacing: 3, delay: 1.1, radius: 22, bullets: 4, color: '#fff4d0' },
       { type: 'vortex', name: '문의 인력', duration: 3.0, pull: 26, arms: 4, interval: 0.11, spin: 1.7, color: '#ffe9a0' }] },
+  // ── 로드 투 카멜롯 [사용자 결정: 백악의 성 카멜롯 던전] — 성을 지키는 병사들 (외형·능력치는 [제안])
+  { id: 'enemy_camguard_001', name: '카멜롯 근위병', sprite: 'camguard', color: '#d8dce8', aiType: 'melee_chase',
+    health: 210, damage: 17, moveSpeed: 52, hitboxHalf: 8, attackRange: 26, telegraphTime: 0.55,
+    attackCooldown: 1.4, recoveryTime: 0.5, knockbackResist: 0.75, rewardGold: 0 },
+  { id: 'enemy_camxbow_001', name: '카멜롯 석궁병', sprite: 'camxbow', color: '#c8ccd8', aiType: 'ranged_kite',
+    health: 75, damage: 15, moveSpeed: 58, hitboxHalf: 6, preferredRange: 140, attackRange: 260,
+    telegraphTime: 0.6, attackCooldown: 1.8, recoveryTime: 0.3, bulletSpeed: 220, bulletCount: 1, bulletSpread: 0, bulletColor: '#ffe9a0', rewardGold: 0 },
+  { id: 'enemy_cammonk_001', name: '원탁의 수도사', sprite: 'cammonk', color: '#e8e4da', aiType: 'caster',
+    health: 150, damage: 18, moveSpeed: 32, hitboxHalf: 6, attackRange: 250, telegraphTime: 0.65,
+    attackCooldown: 2.4, recoveryTime: 0.4, bulletSpeed: 120, bulletCount: 12, bulletColor: '#ffd870', rewardGold: 0 },
   // 심층 보스 (임시 디자인, 대사 없음)
   { id: 'boss_abyss_maw', name: '심연 포식자', title: '끝없는 허기', sprite: 'boss_maw', color: '#2a3a3a', phaseColors: ['#2a3a3a', '#1a3a38', '#0a3a34'],
     boss: true, aiType: 'boss', health: 1500, damage: 21, moveSpeed: 32, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.05, bulletSpeed: 135,
@@ -566,5 +576,21 @@ const DATA_ENEMIES = [
       { type: 'ringOut', rings: 5, count: 32, gap: 4, speed: 150, interval: 0.4, color: '#bfe6ff' },
       { type: 'grid', spacing: 3, delay: 0.9, radius: 22, bullets: 4, color: '#ffffff' },
       { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.75, interval: 0.55, bullets: 0, color: '#bfe6ff' }],
-    finalPatterns: [{ type: 'rhongo', name: '롱고미니아드', radius: 130, impact: 60, duration: 4.5, pull: 85, arms: 5, interval: 0.09, spin: 2.4, tick: 0.4, color: '#bfe6ff' }] }
+    finalPatterns: [{ type: 'rhongo', name: '롱고미니아드', radius: 130, impact: 60, duration: 4.5, pull: 85, arms: 5, interval: 0.09, spin: 2.4, tick: 0.4, color: '#bfe6ff' }] },
+  // [사용자 결정] 로드 투 카멜롯 첫 보스: 태양의 원탁의 기사 가웨인 — 롱고미니아드보다 살짝 어렵게. 패턴·보구(갈라틴)·'정오' 강화는 Claude가 정한 [제안]
+  //  정오(noon): 3페이즈에 들어서면 해가 가장 높이 떠 공격력 +15% (전승: 해가 높을수록 힘이 세짐)
+  { id: 'boss_gawain', name: '가웨인', title: '태양의 원탁의 기사', sprite: 'boss_gawain', color: '#3a5aa8', phaseColors: ['#3a5aa8', '#c88a30', '#e0602a'],
+    boss: true, aiType: 'boss', health: 5000, damage: 33, moveSpeed: 76, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.5, bulletSpeed: 170,
+    rewardGold: 0, ultFrom: 2, ultCd: 20, noon: 0.15, patterns: [
+      { type: 'charge', dashes: 3, speed: 540, color: '#ffd870' },
+      { type: 'slam', radius: 62, chain: 2, color: '#ffb040' },
+      { type: 'aimed', volleys: 5, count: 9, spread: 0.12, color: '#ffe9a0' },
+      { type: 'laser', beams: 2, spreadAng: Math.PI, sweep: 1.5, duration: 2.2, width: 9, telegraph: 0.6, color: '#ffb040' },
+      { type: 'solar', duration: 2.6, speed: 46, interval: 0.34, bullets: 10, radius: 56, burst: 16, color: '#ffb040' }],
+    phase2Patterns: [{ type: 'meteor', count: 10, delay: 0.6, stagger: 0.2, radius: 30, bullets: 7, color: '#ff9a3a' },
+      { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.75, interval: 0.55, bullets: 0, color: '#ffd870' },
+      { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 150, interval: 0.42, color: '#ffb040' },
+      { type: 'spiral', duration: 3, arms: 6, interval: 0.06, spin: 2.4, color: '#ffe9a0' },
+      { type: 'solar', duration: 3.2, speed: 58, interval: 0.28, bullets: 12, radius: 60, burst: 20, color: '#ff9a3a' }],
+    finalPatterns: [{ type: 'galatine', name: '갈라틴', charge: 1.3, waves: 3, fan: 2.0, count: 24, speed: 210, interval: 0.3, radius: 84, bullets: 22, color: '#ffb040' }] }
 ];

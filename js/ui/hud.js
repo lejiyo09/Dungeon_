@@ -156,7 +156,7 @@ class HUD {
     } else if (o.type === 'codex' || o.type === 'armory' || o.type === 'trial_weapons') {
       const sv = game.save, disc = new Set(sv.discovered), armory = o.type === 'armory', tw = o.type === 'trial_weapons';
       const m = game.input.mouse;
-      const title = tw ? `롱고미니아드의 시련 — 들고 갈 무기 2개 (모두 +${RHONGO_TRIAL.kit.lv} 강화)   ·   ${o.picked.map((id, i) => `${i + 1}. ${game.data.weapons.get(id).name}`).join('   ') || '아직 고르지 않음'}` : armory ? `무기고  ·  보유 ${CUR.name} ${sv.bank}  ·  시작 보조 무기: ${sv.loadout ? game.data.weapons.get(sv.loadout).name : '없음'}`
+      const title = tw ? `${game.trialDef.title} — 들고 갈 무기 2개 (모두 +${game.trialDef.kit.lv} 강화)   ·   ${o.picked.map((id, i) => `${i + 1}. ${game.data.weapons.get(id).name}`).join('   ') || '아직 고르지 않음'}` : armory ? `무기고  ·  보유 ${CUR.name} ${sv.bank}  ·  시작 보조 무기: ${sv.loadout ? game.data.weapons.get(sv.loadout).name : '없음'}`
         : `무기 도감  (${DATA_WEAPONS.filter((d) => disc.has(d.id)).length}/${DATA_WEAPONS.length})`;
       hudText(ctx, title, VIEW_W / 2, 7, '#ffd84a', 'center', 11);
       let hover = null;
@@ -317,7 +317,7 @@ class HUD {
       hudText(ctx, '클릭 또는 1 / 2 / 3', VIEW_W / 2, 200, '#888', 'center', 9);
     } else if (o.type === 'variant') {
       hudText(ctx, `${game.player.hero.name} — ${o.title}`, VIEW_W / 2, 28, '#ffd84a', 'center', 14);
-      hudText(ctx, o.trialRank != null ? `롱고미니아드의 시련 — 고른 갈래의 ${o.trialRank === 2 ? '최종 진화(3진)' : (o.trialRank + 1) + '진'}으로 싸웁니다` : o.branch ? '진화할 갈래를 고르세요. 고른 갈래로 두 번 진화하며 스킬이 바뀝니다.' : '이번 탐험의 갈래를 고르세요. 전직의 방에서 두 번 진화하며 스킬이 바뀝니다.', VIEW_W / 2, 48, '#bbb', 'center', 8);
+      hudText(ctx, o.trialRank != null ? `${game.trialDef.title} — 고른 갈래의 ${o.trialRank === 2 ? '최종 진화(3진)' : (o.trialRank + 1) + '진'}으로 싸웁니다` : o.branch ? '진화할 갈래를 고르세요. 고른 갈래로 두 번 진화하며 스킬이 바뀝니다.' : '이번 탐험의 갈래를 고르세요. 전직의 방에서 두 번 진화하며 스킬이 바뀝니다.', VIEW_W / 2, 48, '#bbb', 'center', 8);
       o.lines.forEach((L, i) => { const r = HUD.variantRect(i, o.lines.length), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
         ctx.fillStyle = on ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = L.color || '#ffd84a'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
         hudText(ctx, `${i + 1}  ${o.trialRank != null ? L.ranks[o.trialRank] + (o.trialRank === 2 ? ' (최종 진화)' : ` (${o.trialRank + 1}진)`) : L.name}`, r.x + 6, r.y + 5, L.color || '#ffd84a', 'left', 11); // 시련: 최종 진화 이름
@@ -425,10 +425,11 @@ class HUD {
         T('반응 피해는 깊이 내려갈수록 적 체력에 맞춰 커짐 · 같은 적에게는 0.8초에 한 번만 반응', 40, 76 + RX.length * 15 + 4, '#888', 'left', 7);
       }
       T('1~3 / 클릭: 탭   ·   I / Esc: 뒤로', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
-    } else if (o.type === 'trial_confirm') { // 롱고미니아드의 시련 도전 확인
-      hudText(ctx, '롱고미니아드의 시련', VIEW_W / 2, 60, '#bfe6ff', 'center', 16);
-      hudText(ctx, '창에 깃든 신령 — 신령 롱고미니아드와 1:1로 싸웁니다', VIEW_W / 2, 86, '#e8e0f0', 'center', 10);
-      hudText(ctx, '지금까지의 어떤 보스보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다', VIEW_W / 2, 104, '#aaa', 'center', 8);
+    } else if (o.type === 'trial_confirm') { // 시련 도전 확인 (롱고미니아드의 시련 · 로드 투 카멜롯)
+      const TR = TRIALS[o.id] || RHONGO_TRIAL;
+      hudText(ctx, TR.title, VIEW_W / 2, 60, TR.color, 'center', 16);
+      hudText(ctx, TR.confirm[0], VIEW_W / 2, 86, '#e8e0f0', 'center', 10);
+      hudText(ctx, TR.confirm[1], VIEW_W / 2, 104, '#aaa', 'center', 8);
       hudText(ctx, '지거나 그만둬도 잃는 것은 없고, 언제든 멀린에게 다시 도전할 수 있습니다', VIEW_W / 2, 118, '#aaa', 'center', 8);
       hudText(ctx, '어느 진화 단계로 싸울지 고르세요', VIEW_W / 2, 130, '#bfe6ff', 'center', 8);
       ['1  1진', '2  2진', '3  3진 (최종)', '4  나중에'].forEach((t, i) => { const r = HUD.trialBtn(i), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
@@ -499,8 +500,9 @@ class HUD {
       else if (!canRevive) hudText(ctx, '결정석이 부족해 부활할 수 없습니다.', VIEW_W / 2, 201, '#ff9a9a', 'center', 8);
       hudText(ctx, '1 / 클릭: 부활   ·   2 / Enter / Esc: 탐험 종료', VIEW_W / 2, VIEW_H - 18, '#888', 'center', 8);
     } else if (o.type === 'result' && o.trial) {
-      hudText(ctx, o.victory ? '롱고미니아드가 당신을 인정했습니다' : '시련 실패', VIEW_W / 2, 90, o.victory ? '#bfe6ff' : '#ff7070', 'center', 16);
-      hudText(ctx, o.victory ? '보구 롱고미니아드를 얻었습니다 — 로비의 보구 보관대에서 장착할 수 있습니다' : '잃은 것은 없습니다. 멀린에게 말을 걸면 다시 도전할 수 있습니다', VIEW_W / 2, 116, '#ddd', 'center', 9);
+      const TR = TRIALS[o.trialId] || RHONGO_TRIAL;
+      hudText(ctx, o.victory ? TR.winText : '시련 실패', VIEW_W / 2, 90, o.victory ? TR.color : '#ff7070', 'center', 16);
+      hudText(ctx, o.victory ? TR.winSub : '잃은 것은 없습니다. 멀린에게 말을 걸면 다시 도전할 수 있습니다', VIEW_W / 2, 116, '#ddd', 'center', 9);
       hudText(ctx, 'Enter: 로비로', VIEW_W / 2, 150, '#fff', 'center', 10);
     } else if (o.type === 'result') {
       hudText(ctx, o.victory ? '던전 정복!' : '사망했습니다', VIEW_W / 2, 70, o.victory ? '#ffd84a' : '#ff7070', 'center', 18);
