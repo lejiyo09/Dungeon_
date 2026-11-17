@@ -424,6 +424,36 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 협공 (베디비어 2페이즈~): 은빛 팔과 검에서 두 줄기의 탄이 부채꼴 양 끝에서 동시에 출발해 플레이어 쪽으로 좁혀 옴 — 줄기마다 짧은 틈이 있어 그 틈으로 빠져나가야 함, 끝날 때 원형 탄
+  pincer: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player;
+      if (d.k === undefined) { d.k = 0; d.st = 0; d.fire = 0; d.base = Math.atan2(p.y - e.y, p.x - e.x); d.gap = 0.3 + Math.random() * 0.4; }
+      d.st += dt * spd; d.fire -= dt;
+      const u = Math.min(1, d.st / P.time), off = (1 - u) * P.arc / 2, inGap = Math.abs(u - d.gap) < P.gapW;
+      while (d.fire <= 0) { d.fire += P.interval; if (inGap) continue;
+        world.enemyShoot(e.x, e.y, d.base - off, P.speed, e.damage, P.color, 3); world.enemyShoot(e.x, e.y, d.base + off, P.speed, e.damage, '#ffffff', 3); }
+      if (u >= 1) { for (let i = 0; i < P.ring; i++) world.enemyShoot(e.x, e.y, i * TAU / P.ring + d.k * 0.2, e.def.bulletSpeed * 0.85, e.damage, P.color, 3);
+        world.effects.ring(e.x, e.y, 22, P.color); d.k++; d.st = 0; d.base = Math.atan2(p.y - e.y, p.x - e.x); d.gap = 0.25 + Math.random() * 0.5; }
+      return d.k >= P.sweeps;
+    }
+  },
+  // 은빛 연격 (베디비어 2페이즈~): 플레이어 둘레 여기저기로 순간이동하며, 나타날 때마다 플레이어 쪽으로 빈틈 하나 있는 탄의 벽을 날림 — 사방에서 연달아 날아오는 벽
+  silverchase: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, r = e.room, fx = world.effects; d.timer -= dt;
+      if (d.timer <= 0 && d.shots < P.blinks) {
+        d.a0 = d.a0 ?? Math.random() * TAU; const a = d.a0 + d.shots * (TAU * 0.38) + Math.random() * 0.5;
+        const x = clamp(p.x + Math.cos(a) * P.ring, r.x0 * TILE + 20, (r.x0 + r.w) * TILE - 20), y = clamp(p.y + Math.sin(a) * P.ring, r.y0 * TILE + 20, (r.y0 + r.h) * TILE - 20);
+        fx.ring(e.x, e.y, 14, '#ffffff'); if (!world.map.isSolidAt(x, y)) { e.x = x; e.y = y; } fx.ring(e.x, e.y, 22, P.color);
+        const ang = Math.atan2(p.y - e.y, p.x - e.x), nx = -Math.sin(ang), ny = Math.cos(ang), h = (P.width - 1) / 2, gap = randInt(1, P.width - P.gapN - 1);
+        for (let i = 0; i < P.width; i++) { if (i >= gap && i < gap + P.gapN) continue; const o = (i - h) * P.step;
+          const b = new EnemyBullet(e.x + nx * o, e.y + ny * o, Math.cos(ang) * P.speed, Math.sin(ang) * P.speed, e.damage, i % 2 ? P.color : '#ffffff', 4); b.life = 3.5; world.enemyBullets.push(b); }
+        SFX.play('swing', 0.04); d.shots++; d.timer = P.interval / spd;
+      }
+      return d.shots >= P.blinks && d.timer <= 0;
+    }
+  },
   // 은빛 팔 휩쓸기 (베디비어 2페이즈~): 은빛 팔을 휘둘러, 플레이어 쪽 부채꼴을 쓸고 지나가며 탄을 흩뿌림 — 쓸 때마다 방향이 바뀜
   armsweep: {
     update(e, dt, world, ctx, spd) {

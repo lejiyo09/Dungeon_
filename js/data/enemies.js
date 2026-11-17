@@ -704,6 +704,8 @@ const DATA_ENEMIES = [
       { type: 'laser', beams: 1, spreadAng: 0, sweep: 2.2, duration: 1.6, width: 9, telegraph: 0.55, color: '#a0d0ff' },
       { type: 'armsweep', sweeps: 5, arc: 2.6, time: 0.6, interval: 0.03, speed: 230, color: '#ffffff' },
       { type: 'orbit', count: 24, radius: 52, spinTime: 1, spin: 3, speed: 165, color: '#a0d0ff' },
-      { type: 'meteor', count: 10, delay: 0.55, stagger: 0.17, radius: 30, bullets: 7, color: '#c8e0ff' }],
+      { type: 'meteor', count: 10, delay: 0.55, stagger: 0.17, radius: 30, bullets: 7, color: '#c8e0ff' },
+      { type: 'pincer', sweeps: 4, arc: 2.6, time: 0.8, interval: 0.028, gapW: 0.07, speed: 235, ring: 24, color: '#a0d0ff' },
+      { type: 'silverchase', blinks: 6, ring: 110, width: 17, gapN: 3, step: 11, speed: 175, interval: 0.5, color: '#a0d0ff' }],
     finalPatterns: [{ type: 'deadend', name: '데드 엔드 아가트람', charge: 1.6, lockT: 0.35, width: 24, mult: 2.6, show: 0.4, step: 28, shock: 4, color: '#a0d0ff' }] }
 ];
