@@ -213,9 +213,9 @@ class HUD {
           hudText(ctx, (eq ? '★ ' : '') + T.name, r.x + 6, r.y + 3, got ? (eq ? '#ffd84a' : '#fff') : '#666', 'left', 9); hudText(ctx, T.desc, r.x + 6, r.y + 15, got ? '#aaa' : '#555', 'left', 7); });
       } else if (o.type === 'hunt') {
         hudText(ctx, `오늘의 의뢰 (클릭: 수락, 동시에 ${GUILD_HUNT.maxActive}개까지)`, 40, 36, '#ffb08a', 'left', 8);
-        G.offers.forEach((h, i) => { const r = HUD.guildRow(i), taken = G.active.some((a) => a.id === h.id && a.day === G.day); box(r, on(r) && !taken, h.kind === 'boss' ? '#a04040' : '#4a6a3a');
+        G.offers.forEach((h, i) => { const r = HUD.guildRow(i), fin = !!(G.huntDone && G.huntDone.ids.includes(h.id)), taken = fin || G.active.some((a) => a.id === h.id && a.day === G.day); box(r, on(r) && !taken, h.kind === 'boss' ? '#a04040' : '#4a6a3a');
           hudText(ctx, (h.kind === 'boss' ? '[보스] ' : '[처치] ') + h.name, r.x + 8, r.y + 4, taken ? '#777' : '#fff', 'left', 9); hudText(ctx, h.where, r.x + 8, r.y + 15, '#888', 'left', 7);
-          hudText(ctx, taken ? '수락함' : `보상 ${CUR.name} ${h.reward}`, r.x + r.w - 8, r.y + 9, taken ? '#777' : CUR.color, 'right', 9); });
+          hudText(ctx, fin ? '완료' : taken ? '수락함' : `보상 ${CUR.name} ${h.reward}`, r.x + r.w - 8, r.y + 9, taken ? '#777' : CUR.color, 'right', 9); });
         hudText(ctx, '수락한 의뢰 (완료하면 클릭해서 보상)', 40, HUD.guildRow(5).y - 12, '#ffb08a', 'left', 8);
         if (!G.active.length) hudText(ctx, '수락한 의뢰가 없습니다', VIEW_W / 2, HUD.guildRow(5).y + 6, '#666', 'center', 9);
         G.active.forEach((h, i) => { const r = HUD.guildRow(5 + i); box(r, on(r), h.done ? '#ffd84a' : null); hudText(ctx, h.name, r.x + 8, r.y + 4, '#fff', 'left', 9);
@@ -317,12 +317,12 @@ class HUD {
       hudText(ctx, '클릭 또는 1 / 2 / 3', VIEW_W / 2, 200, '#888', 'center', 9);
     } else if (o.type === 'variant') {
       hudText(ctx, `${game.player.hero.name} — ${o.title}`, VIEW_W / 2, 28, '#ffd84a', 'center', 14);
-      hudText(ctx, o.branch ? '진화할 갈래를 고르세요. 고른 갈래로 두 번 진화하며 스킬이 바뀝니다.' : '이번 탐험의 갈래를 고르세요. 전직의 방에서 두 번 진화하며 스킬이 바뀝니다.', VIEW_W / 2, 48, '#bbb', 'center', 8);
+      hudText(ctx, o.final ? '롱고미니아드의 시련 — 고른 갈래의 최종 진화(3단계)로 싸웁니다' : o.branch ? '진화할 갈래를 고르세요. 고른 갈래로 두 번 진화하며 스킬이 바뀝니다.' : '이번 탐험의 갈래를 고르세요. 전직의 방에서 두 번 진화하며 스킬이 바뀝니다.', VIEW_W / 2, 48, '#bbb', 'center', 8);
       o.lines.forEach((L, i) => { const r = HUD.variantRect(i, o.lines.length), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
         ctx.fillStyle = on ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = L.color || '#ffd84a'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
-        hudText(ctx, `${i + 1}  ${L.name}`, r.x + 6, r.y + 5, L.color || '#ffd84a', 'left', 11);
+        hudText(ctx, `${i + 1}  ${o.final ? L.ranks[2] + ' (최종 진화)' : L.name}`, r.x + 6, r.y + 5, L.color || '#ffd84a', 'left', 11); // 시련: 최종 진화 이름
         hudText(ctx, L.desc, r.x + 6, r.y + 21, '#ccc', 'left', 7);
-        hudText(ctx, L.skills.map((s) => s.name).join(' → '), r.x + 6, r.y + 34, '#ffe9a0', 'left', 7);
+        hudText(ctx, o.final ? `최종 스킬: ${L.skills[2].name}` : L.skills.map((s) => s.name).join(' → '), r.x + 6, r.y + 34, '#ffe9a0', 'left', 7);
         hudText(ctx, L.ranks.join(' → '), r.x + 6, r.y + 46, '#8a8a9a', 'left', 7); });
       hudText(ctx, o.branch ? '숫자 키 / 클릭: 선택   ·   E / Esc: 닫기' : '숫자 키 / 클릭: 선택', VIEW_W / 2, VIEW_H - 16, '#888', 'center', 8);
     } else if (o.type === 'evolve') {
@@ -458,7 +458,8 @@ class HUD {
       hudText(ctx, `${Math.min(o.i + 1, o.lines.length)} / ${o.lines.length}    클릭 · Enter: 다음    Esc: 건너뛰기`, VIEW_W / 2, VIEW_H - 16, '#6a6080', 'center', 8);
     } else if (o.type === 'treasure_pick' || o.type === 'treasures') {
       const pick = o.type === 'treasure_pick', sv = game.save;
-      const list = pick ? DATA_TREASURES.filter((t) => !t.questOnly) : DATA_TREASURES.filter((t) => sv.treasures.includes(t.id));
+      const all = pick ? treasurePickList() : DATA_TREASURES.filter((t) => sv.treasures.includes(t.id)), pages = Math.max(1, Math.ceil(all.length / 3)), pg = Math.min(o.page || 0, pages - 1);
+      const list = all.slice(pg * 3, pg * 3 + 3); // 한 쪽에 3개 (휠·←→로 넘김)
       hudText(ctx, pick ? '보구 선택' : '보구 보관대', VIEW_W / 2, 30, '#ffe9a0', 'center', 16);
       hudText(ctx, pick ? '하나를 골라 영원히 간직합니다. 사망해도 사라지지 않습니다.' : '보유한 보구 중 하나를 골라 탐험에 들고 갑니다 (다시 누르면 해제)', VIEW_W / 2, 54, '#bbb', 'center', 9);
       const had = pick && sv.treasures.length > 0 && !o.picked;
@@ -476,7 +477,9 @@ class HUD {
         if (t.cooldown) hudText(ctx, `R키 · 쿨타임 ${t.cooldown}초`, r.x + r.w / 2, r.y + r.h - 28, '#c8b890', 'center', 8);
         if (eq) hudText(ctx, '장착됨', r.x + r.w / 2, r.y + r.h - 14, '#ffd84a', 'center', 8);
       });
-      hudText(ctx, pick ? (list.length && !had ? '클릭: 선택' : 'Enter: 계속') : '클릭: 장착/해제   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 20, '#999', 'center', 9);
+      if (pages > 1 && !had) { for (const d of [0, 1]) { const r = HUD.treasurePageBtn(d), on = d ? pg < pages - 1 : pg > 0; ctx.fillStyle = on ? 'rgba(255,233,160,0.18)' : 'rgba(255,255,255,0.04)'; ctx.fillRect(r.x, r.y, r.w, r.h); hudText(ctx, d ? '▶' : '◀', r.x + r.w / 2, r.y + r.h / 2 - 6, on ? '#ffe9a0' : '#555', 'center', 12); }
+        hudText(ctx, `${pg + 1} / ${pages}   ·   휠 · ←→ 로 넘기기`, VIEW_W / 2, VIEW_H - 34, '#c8b890', 'center', 8); }
+      hudText(ctx, pick ? (all.length && !had ? '클릭: 선택' : 'Enter: 계속') : '클릭: 장착/해제   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 20, '#999', 'center', 9);
     } else if (o.type === 'revive') {
       const cost = 200, bank = game.save.bank, canRevive = bank >= cost;
       hudText(ctx, '쓰러졌습니다', VIEW_W / 2, 65, '#ff7070', 'center', 17);
@@ -595,5 +598,6 @@ class HUD {
     ctx.globalAlpha = 1;
   }
   static treasureRect(i, n) { const w = 140, h = 150, gap = 10, cols = Math.min(n, 3), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % 3) * (w + gap), y: 74 + Math.floor(i / 3) * (h + gap), w, h }; }
+  static treasurePageBtn(d) { return { x: d ? VIEW_W - 34 : 10, y: 74 + 55, w: 24, h: 40 }; } // 보구 창 쪽 넘기기 버튼
   static buffRect(i) { const w = 140, h = 80, gap = 12, total = w * 3 + gap * 2; return { x: (VIEW_W - total) / 2 + i * (w + gap), y: 90, w, h }; }
 }

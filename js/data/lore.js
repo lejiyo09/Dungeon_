@@ -139,3 +139,5 @@ const STORY_ARCHIVE = [
 ];
 const MERLIN_TRIAL = { gate: 1, deep: 2 }; // 시련: 무명의 문지기 다시 처치 1번 + 심층 보스 2마리 처치 [제안]
 const MERLIN_CHATTER = ['「꽃은 금방 시든다. 그래서 아름답지.」', '「탑 위에서 보면, 이 던전도 꽤 볼만하다네.」', '「왕은 잘 지내려나… 아니, 혼잣말일세.」'];
+// 성역에서 고르는 첫 보구 목록: 시련 보상(questOnly)·심층 보스 전리품(heroDrop)은 제외
+function treasurePickList() { return DATA_TREASURES.filter((t) => !t.questOnly && !t.heroDrop); }

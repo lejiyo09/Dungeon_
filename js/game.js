@@ -79,16 +79,21 @@ class Game {
       while (out.length < 3 && pool.length) { const q = pool.splice(Math.floor(r() * pool.length), 1)[0], [n, reward] = q[kind]; out.push({ stat: q.stat, name: q.name.replace('{n}', n.toLocaleString()), n, reward, prog: 0, claimed: false }); }
       return out; };
     if (G.day !== day) { G.day = day; G.daily = roll(day, 'daily'); G.offers = this.rollHunts(day); G.stock = this.rollSupplies(day); G.bought = []; }
+    if (G.hv !== 2) { G.hv = 2; G.offers = this.rollHunts(day); } // 예전 방식(같은 의뢰가 겹침)으로 만든 오늘 의뢰는 한 번 다시 뽑음
+    if (!G.huntDone || G.huntDone.day !== day) G.huntDone = { day, ids: [] }; // 오늘 보상을 받은 의뢰 (같은 날 다시 수락 못 함)
     if (G.week !== week) { G.week = week; G.weekly = roll(week, 'weekly'); }
     G.active = G.active || [];
     return G;
   }
-  rollHunts(day) { // 가 본 필드 안에서 보스 토벌 2개 + 몬스터 처치 2개
+  rollHunts(day) { // 가 본 필드 안에서 보스 토벌 최대 2개 + 몬스터 처치 — 같은 대상은 겹치지 않게 (예전엔 같은 보스 의뢰가 두 번 나와 한 번 잡으면 둘 다 완료됨)
     const r = guildSeedRand(day + 'hunt'), maxW = Math.max(0, Math.min(DATA_WORLDS.length - 1, Math.floor(((this.save.bestStage || 1) - 1) / STAGES_PER_WORLD))), H = GUILD_HUNT, out = [];
-    for (let i = 0; i < 2; i++) { const w = Math.floor(r() * (maxW + 1)), W = DATA_WORLDS[w], bd = this.data.enemies.get(W.boss);
-      out.push({ id: 'h' + i, kind: 'boss', target: W.boss, name: `${bd.name} 토벌`, where: W.name, n: 1, reward: H.bossReward[0] + H.bossReward[1] * w }); }
-    for (let i = 0; i < 2; i++) { const w = Math.floor(r() * (maxW + 1)), W = DATA_WORLDS[w], id = W.enemies[Math.floor(r() * W.enemies.length)][0], ed = this.data.enemies.get(id), n = H.mobCount[0] + Math.floor(r() * (H.mobCount[1] - H.mobCount[0]));
-      out.push({ id: 'h' + (i + 2), kind: 'mob', target: id, name: `${ed.name} ${n}마리 처치`, where: W.name, n, reward: H.mobReward + 3 * w }); }
+    const take = (arr) => arr.splice(Math.floor(r() * arr.length), 1)[0];
+    const worlds = Array.from({ length: maxW + 1 }, (_, w) => w), nBoss = Math.min(2, worlds.length);
+    for (let i = 0; i < nBoss; i++) { const w = take(worlds), W = DATA_WORLDS[w], bd = this.data.enemies.get(W.boss);
+      out.push({ id: 'h' + out.length, kind: 'boss', target: W.boss, name: `${bd.name} 토벌`, where: W.name, n: 1, reward: H.bossReward[0] + H.bossReward[1] * w }); }
+    const mobs = []; for (let w = 0; w <= maxW; w++) for (const [id] of DATA_WORLDS[w].enemies) if (!mobs.some((m) => m.id === id)) mobs.push({ id, w });
+    while (out.length < H.offers && mobs.length) { const { id, w } = take(mobs), W = DATA_WORLDS[w], ed = this.data.enemies.get(id), n = H.mobCount[0] + Math.floor(r() * (H.mobCount[1] - H.mobCount[0]));
+      out.push({ id: 'h' + out.length, kind: 'mob', target: id, name: `${ed.name} ${n}마리 처치`, where: W.name, n, reward: H.mobReward + 3 * w }); }
     return out;
   }
   rollSupplies(day) { const r = guildSeedRand(day + 'shop'), pool = GUILD_SUPPLIES.map((x) => x.id), out = []; while (out.length < 3) out.push(pool.splice(Math.floor(r() * pool.length), 1)[0]); return out; }
@@ -108,10 +113,11 @@ class Game {
   claimQuest(q) { if (q.claimed) return ['이미 받은 보상입니다', '#888']; if (q.prog < q.n) return ['아직 완료하지 않았습니다', '#ff9a9a']; q.claimed = true; this.guildEvent('quests'); return this.guildPay(q.reward, '퀘스트 완료'); }
   acceptHunt(o) {
     const G = this.guild(); if (G.active.some((h) => h.id === o.id && h.day === G.day)) return ['이미 수락한 의뢰입니다', '#888'];
+    if (G.huntDone.ids.includes(o.id)) return ['오늘 이미 완료한 의뢰입니다 (내일 새 의뢰가 붙어요)', '#888'];
     if (G.active.filter((h) => !h.claimed).length >= GUILD_HUNT.maxActive) return [`의뢰는 동시에 ${GUILD_HUNT.maxActive}개까지 수락할 수 있습니다`, '#ff9a9a'];
     G.active.push(Object.assign({}, o, { day: G.day, prog: 0, done: false, claimed: false })); writeSave(this.save); SFX.play('ui'); return [`수락: ${o.name}`, '#9fe89f'];
   }
-  claimHunt(h) { if (!h.done) return ['아직 토벌하지 못했습니다', '#ff9a9a']; h.claimed = true; const G = this.guild(); G.active = G.active.filter((x) => x !== h); this.guildEvent('hunts'); return this.guildPay(h.reward, '토벌 완료'); }
+  claimHunt(h) { if (!h.done) return ['아직 토벌하지 못했습니다', '#ff9a9a']; h.claimed = true; const G = this.guild(); if (h.day === G.day && !G.huntDone.ids.includes(h.id)) G.huntDone.ids.push(h.id); G.active = G.active.filter((x) => x !== h); this.guildEvent('hunts'); return this.guildPay(h.reward, '토벌 완료'); }
   buySupply(id) {
     const G = this.guild(), S = GUILD_SUPPLIES.find((x) => x.id === id), sv = this.save;
     if (G.bought.includes(id)) return ['오늘은 이미 샀습니다', '#888']; if (sv.bank < S.price) { SFX.play('deny'); return [`${CUR.name}이 부족합니다`, '#ff9a9a']; }
@@ -175,13 +181,13 @@ class Game {
       this.overlay = { type: 'trial_weapons', tab: 0, page: 0, picked: [], msg: null }; this.input.mouse.down = false; // 보스전 전에 무기 2개 고르기
     };
     this.loadStage();
-    this.askVariant(kit);
+    this.askVariant(kit, true); // 갈래 창도 최종 진화(3단계) 이름·스킬로
   }
   pickTrialWeapons(ids) { // 고른 무기 (도감에서 발견한 것 중 최대 2개, 모두 +강화)
     const p = this.player, K = RHONGO_TRIAL.kit;
     p.weapons = ids.map((id) => new WeaponInstance(this.data.weapons.get(id), K.lv)); p.slot = 0;
     this.overlay = null; this.input.mouse.down = false;
-    this.showBanner(RHONGO_TRIAL.W.name, `최종 진화 · ${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv}) · 축복을 받은 상태로 싸웁니다`, '#bfe6ff');
+    this.showBanner(RHONGO_TRIAL.W.name, `${p.line ? p.line.ranks[p.rank] + '(최종 진화) · ' + p.skillName + ' · ' : ''}${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv})`, '#bfe6ff');
   }
   endRhongoTrial(win) {
     const M = this.save.merlin; SFX.stopMusic();
@@ -418,6 +424,13 @@ class Game {
       const cp = this.withPlayer(R.p, () => Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() })); Net.relay({ k: 'sanctum', cp }, R.id); }
     SFX.stopMusic();
     this.overlay = { type: 'story', sanctum: true, lines: SANCTUM_LINES, i: 0, t: 0, done: () => { this.overlay = { type: 'treasure_pick', msg: null }; } };
+  }
+  treasurePage(o, all, input) { // 보구 창 쪽 넘기기 (휠·←→·A/D·화살표 버튼) → 이번 쪽의 보구 3개 (버튼을 눌렀으면 null)
+    const pages = Math.max(1, Math.ceil(all.length / 3)), m = input.mouse, hit = (r) => input.wasPressed('Mouse0') && m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+    let pg = Math.min(o.page || 0, pages - 1);
+    if (input.wasPressed('WheelPageDown') || input.wasPressed('ArrowRight') || input.wasPressed('KeyD') || (pages > 1 && hit(HUD.treasurePageBtn(1)))) { o.page = Math.min(pages - 1, pg + 1); return null; }
+    if (input.wasPressed('WheelPageUp') || input.wasPressed('ArrowLeft') || input.wasPressed('KeyA') || (pages > 1 && hit(HUD.treasurePageBtn(0)))) { o.page = Math.max(0, pg - 1); return null; }
+    o.page = pg; return all.slice(pg * 3, pg * 3 + 3);
   }
   pickTreasure(tr) {
     const s = this.save;
@@ -775,7 +788,7 @@ class Game {
       if (input.wasPressed('Mouse0')) o.lines.forEach((_, i) => { const r = HUD.variantRect(i, o.lines.length), m = input.mouse; if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) ch = i; });
       if (o.branch && (input.wasPressed('Escape') || input.wasPressed('KeyE'))) { this.overlay = null; return; }
       if (ch >= 0 && o.onPick) { this.overlay = null; this.input.mouse.down = false; o.onPick(o.lines[ch]); }
-      else if (ch >= 0) { this.overlay = null; this.input.mouse.down = false; this.applyVariant(o.lines[ch]); const L = o.lines[ch]; this.showBanner(`${L.ranks[0]}`, `스킬: ${L.skills[0].name} — ${L.skills[0].desc}`, L.color); if (o.after) o.after(); }
+      else if (ch >= 0) { this.overlay = null; this.input.mouse.down = false; this.applyVariant(o.lines[ch]); const L = o.lines[ch], R = o.final ? 2 : 0; this.showBanner(`${L.ranks[R]}`, `스킬: ${L.skills[R].name} — ${L.skills[R].desc}`, L.color); /* 시련은 최종 진화로 안내 */ if (o.after) o.after(); }
     } else if (o.type === 'evolve') {
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
       if (input.wasPressed('Digit1')) { this.overlay = null; this.input.mouse.down = false; this.startTrial(o.npc); }
@@ -827,8 +840,9 @@ class Game {
       else if (next && o.t > 0.35) { o.i++; o.t = 0; }
       if (o.i >= o.lines.length) { this.overlay = null; this.input.mouse.down = false; o.done(); }
     } else if (o.type === 'treasure_pick') {
-      const list = DATA_TREASURES.filter((t) => !t.questOnly); // 시련으로만 얻는 보구는 제외
-      if (!list.length || this.save.treasures.length) { if (input.wasPressed('Enter') || input.wasPressed('Mouse0')) this.pickTreasure(null); return; } // 첫 보구는 한 번만 (추가 획득 방법은 미정)
+      const all = treasurePickList(); // 시련으로만 얻는 보구·심층 보스에게서만 나오는 보구는 제외
+      if (!all.length || this.save.treasures.length) { if (input.wasPressed('Enter') || input.wasPressed('Mouse0')) this.pickTreasure(null); return; } // 첫 보구는 한 번만
+      const list = this.treasurePage(o, all, input); if (!list) return;
       if (input.wasPressed('Mouse0')) { const m = input.mouse, i = list.findIndex((_, i) => { const r = HUD.treasureRect(i, list.length); return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; }); if (i >= 0) this.pickTreasure(list[i]); }
     } else if (o.type === 'archive') { // 이야기 기록: 고른 장면을 다시 재생
       if (o.msg) o.msg.t -= STEP;
@@ -898,7 +912,7 @@ class Game {
       if (pickI >= 0) { const [text, color] = this.levelUpJob(DATA_HEROES[pickI]); o.msg = { text, color, t: 2 }; this.input.mouse.down = false; }
     } else if (o.type === 'treasures') { // 로비 보구 보관대: 1개 장착
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
-      const own = DATA_TREASURES.filter((t) => this.save.treasures.includes(t.id));
+      const own = this.treasurePage(o, DATA_TREASURES.filter((t) => this.save.treasures.includes(t.id)), input); if (!own) return;
       if (input.wasPressed('Mouse0')) { const m = input.mouse, i = own.findIndex((_, i) => { const r = HUD.treasureRect(i, own.length); return m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; });
         if (i >= 0) { const id = own[i].id; this.save.treasureEquipped = this.save.treasureEquipped === id ? null : id; writeSave(this.save); } }
     }
@@ -985,11 +999,11 @@ class Game {
     p.line = line; p.rank = rank; p.skillId = sk.id; p.skillName = sk.name; p.skillDesc = sk.desc;
     p.skillBaseCd = sk.cd; p.skillCdMax = sk.cd * ratio; p.skillCooldown = Math.min(p.skillCooldown, p.skillCdMax);
   }
-  askVariant(after) { // 갈래가 여럿인 직업은 판을 시작할 때 고름
+  askVariant(after, final = false) { // 갈래가 여럿인 직업은 판을 시작할 때 고름 (final: 롱고미니아드 시련 — 최종 진화로 보여 줌)
     const lines = jobLines(this.player.hero.id);
     if (lines.length === 1 || branchesAtEvolve(this.player.hero.id)) { this.setJob(this.player, lines[0], 0); if (after) after(); return; } // 갈래가 하나이거나 진화 때 고르는 직업
     if (window.__toolMode) { this.applyVariant(lines[0]); if (after) after(); return; } // 테스트 도구: 첫 갈래
-    this.overlay = { type: 'variant', lines, title: JOB_LINES[this.player.hero.id].title, after };
+    this.overlay = { type: 'variant', lines, title: JOB_LINES[this.player.hero.id].title, after, final };
   }
   applyVariant(line) {
     const p = this.player;
