@@ -426,7 +426,7 @@ const BOSS_PATTERNS = {
       return d.shots >= P.waves && d.timer <= 0;
     }
   },
-  // 시즈 페릴러스 (갤러해드의 보구): 방패를 세우고 성채가 됨 — 그동안 모든 피해 무효, 방 가장자리에서 틈 있는 고리가 계속 좁혀 오고 보스에게서도 탄이 퍼짐 → 끝날 때 크게 터짐. 쓰는 동안 페이즈 전환 없음
+  // 로드 카멜롯 (갤러해드의 보구): 방패를 세우고 성채가 됨 — 그동안 모든 피해 무효, 방 가장자리에서 틈 있는 고리가 계속 좁혀 오고 보스에게서도 탄이 퍼짐 → 끝날 때 크게 터짐. 쓰는 동안 페이즈 전환 없음
   perilous: {
     update(e, dt, world, ctx, spd) {
       const P = e.pat, d = e.pd, r = e.room, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;

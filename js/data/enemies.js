@@ -641,7 +641,7 @@ const DATA_ENEMIES = [
       { type: 'meteor', count: 10, delay: 0.6, stagger: 0.18, radius: 30, bullets: 7, color: '#d8f0ff' },
       { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 155, interval: 0.4, color: '#bfe0ff' }],
     finalPatterns: [{ type: 'beaumains', name: '보마인', charge: 0.8, blinks: 6, ring: 80, interval: 0.38, count: 7, spread: 0.5, speed: 200, final: 30, color: '#d8f0ff' }] },
-  // [사용자 결정] 카멜롯 5층 보스: 철벽의 기사 갤러해드 — 보구 '시즈 페릴러스'·패턴·수치는 Claude가 정한 [제안]
+  // [사용자 결정] 카멜롯 5층 보스: 철벽의 기사 갤러해드 — 보구 '로드 카멜롯' [사용자 결정]·패턴·수치는 Claude가 정한 [제안]
   //  wall: 방패가 향한 쪽 ±cone(라디안) 안에서 들어온 공격은 피해 ×mult. 방패는 쫓는 동안만 turn(라디안/초)으로 천천히 돌고, 공격 중에는 멈춤 → 그 틈에 옆·뒤로
   //  3페이즈 '철벽': 원뿔이 넓어지고(cone3) 더 단단해짐(mult3)
   { id: 'boss_galahad', name: '갤러해드', title: '철벽의 기사', sprite: 'boss_galahad', color: '#5a6a9a', phaseColors: ['#5a6a9a', '#4a5a8a', '#3a4a7a'],
@@ -657,5 +657,5 @@ const DATA_ENEMIES = [
       { type: 'grid', spacing: 3, delay: 0.95, radius: 22, bullets: 4, color: '#ffd8d8' },
       { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.5, bullets: 0, color: '#e8ecff' },
       { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 150, interval: 0.42, color: '#ffd8d8' }],
-    finalPatterns: [{ type: 'perilous', name: '시즈 페릴러스', charge: 0.8, duration: 4.5, rings: 4, count: 44, gap: 6, ringSpeed: 85, ringEvery: 1.05, burstEvery: 0.6, burst: 14, final: 36, color: '#e8ecff' }] }
+    finalPatterns: [{ type: 'perilous', name: '로드 카멜롯', charge: 0.8, duration: 4.5, rings: 4, count: 44, gap: 6, ringSpeed: 85, ringEvery: 1.05, burstEvery: 0.6, burst: 14, final: 36, color: '#e8ecff' }] }
 ];
