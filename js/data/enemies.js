@@ -380,7 +380,7 @@ const DATA_ENEMIES = [
     finalPatterns: [{ type: 'laser', name: '수정 굴절', beams: 6, spreadAng: Math.PI / 3, sweep: 0.9, duration: 2.4, width: 6, telegraph: 1.0, color: '#ff7ad0' }] },
   // 제10 필드 보스. 정체·관계·대사는 미정(기획서 6.3) — 외형과 패턴은 호칭의 인상으로 만든 임시 디자인
   { id: 'boss_nameless_gatekeeper', name: '무명의 문지기', title: 'The Nameless Gatekeeper', sprite: 'boss_gatekeeper', color: '#2a2834', phaseColors: ['#2a2834', '#24222e', '#1a1824'],
-    boss: true, aiType: 'boss', health: 1550, damage: 21, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 140,
+    boss: true, aiType: 'boss', health: 1620, damage: 21, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 140,
     rewardGold: 260, patterns: [
       { type: 'laser', beams: 2, spreadAng: Math.PI, sweep: 1.0, duration: 2.0, width: 7, telegraph: 0.85, color: '#ffe9a0' },
       { type: 'slam', radius: 48, color: '#ffe9a0' },
