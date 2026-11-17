@@ -218,6 +218,7 @@ class EnemyBullet {
   }
   update(dt, world) {
     this.life -= dt;
+    if (this.flipT !== undefined) { this.flipT -= dt; if (this.flipT <= 0) { this.flipT = undefined; this.vx = -this.vx; this.vy = -this.vy; this.life = Math.max(this.life, 2.5); this.flipped = true; } } /* 반전 화살: 되돌아옴 */
     this.x += this.vx * dt; this.y += this.vy * dt;
     if (this.life <= 0) { this.alive = false; return; }
     if (world.map.isSolidAt(this.x, this.y)) { world.hitTile(this.x, this.y); this.alive = false; world.effects.impact(this.x, this.y, this.color); return; }

@@ -120,7 +120,7 @@ const RHONGO_WIN_LINES = [
 const RHONGO_TRIAL = {
   id: 'rhongo', title: '롱고미니아드의 시련', color: '#bfe6ff', intro: '롱고미니아드가 기다리고 있습니다',
   confirm: ['창에 깃든 신령 — 신령 롱고미니아드와 1:1로 싸웁니다', '지금까지의 어떤 보스보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
-  winText: '롱고미니아드가 당신을 인정했습니다', winSub: '보구 롱고미니아드를 얻었습니다 — 로비의 보구 보관대에서 장착할 수 있습니다', winLines: () => RHONGO_WIN_LINES,
+  questDone: 4, treasure: 'treasure_rhongomyniad', winText: '롱고미니아드가 당신을 인정했습니다', winSub: '보구 롱고미니아드를 얻었습니다 — 로비의 보구 보관대에서 장착할 수 있습니다', winLines: () => RHONGO_WIN_LINES,
   world: 9,
   W: { name: '롱고미니아드의 시련', boss: 'boss_rhongomyniad', trial: true, sanctum: false, deep: false, waves: 0, enemies: [['enemy_ghost_001', 1]],
     palette: { style: 'sanctum', accent: '#bfe6ff', floor: ['#3e4458', '#41475b'], corridor: ['#2c3142', '#2e3344'], wall: '#4a5268', wallTop: '#5c647a',
@@ -143,7 +143,7 @@ const GAWAIN_WIN_LINES = [
   '기사의 모습이 햇살 속으로 흩어진다. 백악의 성 깊은 곳에서 또 다른 기척이 느껴진다.'
 ];
 const CAMELOT_TRIAL = {
-  id: 'camelot', title: '로드 투 카멜롯', color: '#ffd870', intro: '태양의 기사 가웨인이 성문을 지키고 있습니다', reward: 500,
+  id: 'camelot', title: '로드 투 카멜롯', color: '#ffd870', intro: '태양의 기사 가웨인이 성문을 지키고 있습니다', reward: 500, questDone: 6,
   confirm: ['백악의 성 카멜롯 — 성의 기사들을 뚫고 성문을 지키는 태양의 기사 가웨인과 싸웁니다', '롱고미니아드보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
   winText: '가웨인을 쓰러뜨리고 성문을 열었습니다', winSub: '결정석 500개를 받았습니다 — 카멜롯 깊은 곳의 이야기는 다음에 이어집니다', winLines: () => GAWAIN_WIN_LINES,
   world: 9,
@@ -153,7 +153,31 @@ const CAMELOT_TRIAL = {
       wallFace: '#c4beb0', faceLine: '#aea896', deco: 'rgba(255,216,112,0.4)' } },
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
 };
-const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL };
+// [사용자 결정] 카멜롯 2층 보스: 반전의 기사 트리스탄 (궁수), 보구 페일노트. 패턴·'반전'(3페이즈부터 화살이 지나간 뒤 되돌아옴)·수치·대사는 Claude가 정한 [제안]/[임시]
+const MERLIN_TRISTAN_LINES = [
+  '「성문을 넘었다지. 가웨인이 길을 내준 건 오랜만일 거다.」',
+  '「성 안 두 번째 층에는 트리스탄이 있다. 활 솜씨로 그를 따를 기사는 없었지.」',
+  '「사람들은 그를 반전의 기사라 부른다. 그의 화살은 지나간 뒤에도 돌아온다 — 등 뒤를 조심하게.」',
+  '「그가 페일노트를 당기면, 화살은 결코 빗나가지 않는다.」',
+  '「로드 투 카멜롯, 두 번째 층. 준비가 되면 말하게.」'
+];
+const TRISTAN_WIN_LINES = [
+  '활시위가 끊어지는 소리가 성 안에 길게 울린다.',
+  '「…슬픈 일이군. 내 화살이 빗나가다니.」',
+  '「길은 위로 이어진다. 그 끝에서 무엇을 보게 될지는… 직접 확인하게.」',
+  '기사의 모습이 희미한 선율과 함께 흩어진다.'
+];
+const CAMELOT2_TRIAL = {
+  id: 'camelot2', title: '로드 투 카멜롯 — 2층', color: '#ff8aa0', intro: '반전의 기사 트리스탄이 기다리고 있습니다', reward: 600, questDone: 8,
+  confirm: ['백악의 성 2층 — 성의 기사들을 뚫고 반전의 기사 트리스탄과 싸웁니다', '가웨인보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
+  winText: '트리스탄을 쓰러뜨리고 2층을 지났습니다', winSub: '결정석 600개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => TRISTAN_WIN_LINES,
+  world: 9,
+  W: { name: '백악의 성 카멜롯 — 2층', boss: 'boss_tristan', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
+    enemies: [['enemy_camguard_001', 2], ['enemy_camxbow_001', 3], ['enemy_cammonk_001', 1]],
+    palette: CAMELOT_TRIAL.W.palette },
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+};
+const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL };
 // 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
 const DEEP_ARRIVAL_LINES = [
   '발밑의 돌이 차갑게 식어 간다.',
@@ -175,7 +199,9 @@ const STORY_ARCHIVE = [
   { id: 'spear_trial', name: '왕의 창', kind: 'cut', lines: () => MERLIN_SPEAR_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 3) },
   { id: 'rhongomyniad', name: '창의 인정', kind: 'cut', lines: () => RHONGO_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 4) },
   { id: 'camelot', name: '로드 투 카멜롯', kind: 'cut', lines: () => MERLIN_CAMELOT_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 5) },
-  { id: 'gawain', name: '태양의 기사', kind: 'cut', lines: () => GAWAIN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 6) }
+  { id: 'gawain', name: '태양의 기사', kind: 'cut', lines: () => GAWAIN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 6) },
+  { id: 'tristan_road', name: '반전의 기사', kind: 'cut', lines: () => MERLIN_TRISTAN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 7) },
+  { id: 'tristan', name: '끊어진 활시위', kind: 'cut', lines: () => TRISTAN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 8) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 // [사용자 결정] 문지기 조건을 없애기 전에 이미 문지기를 잡아 둔 사람은 그 1번을 심층 보스 1마리로 쳐 줌 (한 번만 바꿈)

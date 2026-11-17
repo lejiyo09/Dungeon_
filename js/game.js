@@ -166,7 +166,10 @@ class Game {
     if (M.quest === 4) { /* 세 번째 퀘스트: 로드 투 카멜롯 */
       this.playCutscene(MERLIN_CAMELOT_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 5; writeSave(sv); this.askTrial('camelot'); } }); return; }
     if (M.quest === 5) { this.askTrial('camelot'); return; }
-    if (this.admin) { this.askTrial(M.quest >= 5 ? 'camelot' : 'rhongo'); return; } // 관리자는 시련을 마친 뒤에도 언제든 다시 도전
+    if (M.quest === 6) { /* 카멜롯 2층: 반전의 기사 트리스탄 */
+      this.playCutscene(MERLIN_TRISTAN_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 7; writeSave(sv); this.askTrial('camelot2'); } }); return; }
+    if (M.quest === 7) { this.askTrial('camelot2'); return; }
+    if (this.admin) { this.askTrial(M.quest >= 7 ? 'camelot2' : M.quest >= 5 ? 'camelot' : 'rhongo'); return; } // 관리자는 시련을 마친 뒤에도 언제든 다시 도전
     npc.bubble = { text: pick(MERLIN_CHATTER), t: 3 };
   }
   // ── 롱고미니아드의 시련: 따로 준비된 장비로 신령 롱고미니아드와 1:1 (진행 중인 탐험·보상·기록에는 영향 없음)
@@ -202,8 +205,8 @@ class Game {
   endRhongoTrial(win) { this.endTrial(win); }
   endTrial(win) {
     const M = this.save.merlin, T = this.trialDef; SFX.stopMusic();
-    if (win && T.id === 'camelot') { M.quest = Math.max(M.quest || 0, 6); this.save.bank += T.reward || 0; }
-    else if (win) { M.quest = Math.max(M.quest || 0, 4); const T = DATA_TREASURES.find((t) => t.id === 'treasure_rhongomyniad'); if (!this.save.treasures.includes(T.id)) this.save.treasures.push(T.id); this.treasureToast = { T, start: performance.now() }; }
+    if (win) { M.quest = Math.max(M.quest || 0, T.questDone || 0); this.save.bank += T.reward || 0;
+      const TT = T.treasure && DATA_TREASURES.find((t) => t.id === T.treasure); if (TT) { if (!this.save.treasures.includes(TT.id)) this.save.treasures.push(TT.id); this.treasureToast = { T: TT, start: performance.now() }; } }
     this.guildEvent('runs'); writeSave(this.save);
     this.overlay = { type: 'result', victory: win, stages: 0, bosses: 0, reward: 0, trial: true, trialId: T.id };
   }
@@ -230,7 +233,8 @@ class Game {
       { name: `다음 필드로 (${stageLabel(this.worldIdx + 1, 0)})`, ok: d && !this.trialW, run: () => { this.worldIdx++; this.levelIdx = 0; this.loadStage(); } },
       { name: '결정석 999,999로 채우기', run: () => { this.save.bank = 999999; writeSave(this.save); } },
       { name: '롱고미니아드의 시련 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('rhongo') }; } },
-      { name: '로드 투 카멜롯 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot') }; } }
+      { name: '로드 투 카멜롯 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot') }; } },
+      { name: '카멜롯 2층 (트리스탄) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot2') }; } }
     ];
   }
   // ── 멀티 (1단계): 내 위치를 보내고, 다른 사람 위치를 부드럽게 따라감

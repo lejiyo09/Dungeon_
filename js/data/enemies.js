@@ -592,5 +592,21 @@ const DATA_ENEMIES = [
       { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 150, interval: 0.42, color: '#ffb040' },
       { type: 'spiral', duration: 3, arms: 6, interval: 0.06, spin: 2.4, color: '#ffe9a0' },
       { type: 'solar', duration: 3.2, speed: 58, interval: 0.28, bullets: 12, radius: 60, burst: 20, color: '#ff9a3a' }],
-    finalPatterns: [{ type: 'galatine', name: '갈라틴', charge: 1.3, waves: 3, fan: 2.0, count: 24, speed: 210, interval: 0.3, radius: 84, bullets: 22, color: '#ffb040' }] }
+    finalPatterns: [{ type: 'galatine', name: '갈라틴', charge: 1.3, waves: 3, fan: 2.0, count: 24, speed: 210, interval: 0.3, radius: 84, bullets: 22, color: '#ffb040' }] },
+  // [사용자 결정] 카멜롯 2층 보스: 반전의 기사 트리스탄 (궁수) · 보구 페일노트 — 패턴·수치는 Claude가 정한 [제안]
+  //  rev: 3페이즈 '반전'부터 트리스탄이 쏜 화살이 rev초 뒤 방향을 뒤집어 되돌아옴 (추적 화살 제외)
+  { id: 'boss_tristan', name: '트리스탄', title: '반전의 기사', sprite: 'boss_tristan', color: '#4a3a8a', phaseColors: ['#4a3a8a', '#6a3a8a', '#8a2a5a'],
+    boss: true, aiType: 'boss', health: 6600, damage: 44, moveSpeed: 92, hitboxHalf: 13, knockbackResist: 1, attackCooldown: 0.45, bulletSpeed: 215,
+    rewardGold: 0, ultFrom: 2, ultCd: 20, rev: 0.85, patterns: [
+      { type: 'aimed', volleys: 7, count: 7, spread: 0.08, color: '#ff8aa0' },
+      { type: 'split', volleys: 3, count: 3, spread: 0.28, speed: 200, splitAfter: 0.45, splitN: 8, color: '#d0a0ff' },
+      { type: 'rain', duration: 2.4, interval: 0.045, speed: 200, slant: 0.5, color: '#ff8aa0' },
+      { type: 'reverse', rings: 3, count: 32, gap: 4, speed: 150, flip: 0.75, interval: 0.5, color: '#d0a0ff' },
+      { type: 'teleport', bullets: 22, color: '#ff8aa0' }],
+    phase2Patterns: [{ type: 'reverse', rings: 4, count: 36, gap: 4, speed: 170, flip: 0.7, interval: 0.45, color: '#ff8aa0' },
+      { type: 'wall', waves: 3, gap: 3, speed: 130, interval: 0.8, color: '#d0a0ff' },
+      { type: 'orbit', count: 24, radius: 52, spinTime: 1, spin: 3.2, speed: 165, color: '#ff8aa0' },
+      { type: 'lances', count: 24, delay: 0.6, speed: 340, color: '#d0a0ff' },
+      { type: 'aimed', volleys: 9, count: 9, spread: 0.09, color: '#ff8aa0' }],
+    finalPatterns: [{ type: 'failnot', name: '페일노트', draw: 1.0, volleys: 5, homing: 6, fan: 9, spread: 0.5, speed: 190, turn: 3.2, homeT: 1.1, interval: 0.32, color: '#ff5a7a' }] }
 ];

@@ -188,6 +188,7 @@ const AI_BEHAVIORS = {
     if (want > phase && e.state !== 'INTRO' && !channeling) {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
+      if (def.rev && want === 3) { e.revAll = true; world.announceBossSkill(e, '반전 — 되돌아오는 화살'); } /* 트리스탄: 이제 화살이 지나간 뒤 되돌아옴 */
       if (def.noon && want === 3) { e.damage = Math.round(e.damage * (1 + def.noon)); e.dmg0 = e.damage; world.announceBossSkill(e, '정오 — 태양의 가호'); } /* 가웨인: 해가 가장 높이 뜸 */
       world.onBossPhase(e, want); e.setState('PHASE'); return;
     }
@@ -221,7 +222,9 @@ const AI_BEHAVIORS = {
         if (e.stateTime >= (e.pat.telegraph || (e.pat.type === 'slam' ? 0.8 : 0.5)) / spd) { e.pd.sx = e.x; e.pd.sy = e.y; e.setState('ATTACK'); }
         break;
       case 'ATTACK':
-        if (BOSS_PATTERNS[e.pat.type].update(e, dt, world, ctx, spd)) { e.laser = null; e.fade = 1; if (e.ult) endUltimate(e, world); e.setState('RECOVERY'); }
+        { const n0 = world.enemyBullets.length, fin = BOSS_PATTERNS[e.pat.type].update(e, dt, world, ctx, spd);
+          if (e.revAll) for (let i = n0; i < world.enemyBullets.length; i++) { const b = world.enemyBullets[i]; if (b.flipT === undefined && !b.noFlip) b.flipT = def.rev; } /* 반전: 새로 쏜 화살에 되돌아올 시간 */
+          if (fin) { e.laser = null; e.fade = 1; if (e.ult) endUltimate(e, world); e.setState('RECOVERY'); } }
         break;
       case 'RECOVERY': if (e.stateTime >= (e.pat && e.pat.name ? 1.1 : 0.6) / spd) e.setState('CHASE'); break;
     }
@@ -402,6 +405,44 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 되돌아오는 고리 (트리스탄): 틈 있는 원형 화살을 쏘고, flip초 뒤 모든 화살이 방향을 뒤집어 보스 쪽으로 되돌아옴 (지나간 틈으로 다시 피해야 함)
+  reverse: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd; d.timer -= dt;
+      if (d.timer <= 0 && d.shots < P.rings) {
+        const gapAt = randInt(0, P.count - 1);
+        for (let i = 0; i < P.count; i++) { if (((i - gapAt) % P.count + P.count) % P.count < P.gap) continue;
+          const a = i * TAU / P.count + d.shots * 0.11, b = new EnemyBullet(e.x, e.y, Math.cos(a) * P.speed, Math.sin(a) * P.speed, e.damage, P.color, 3); b.flipT = P.flip / spd; b.life = 5; world.enemyBullets.push(b); }
+        world.effects.ring(e.x, e.y, 22, P.color); d.shots++; d.timer = (P.interval || 0.5) / spd;
+      }
+      return d.shots >= P.rings && d.timer <= 0;
+    }
+  },
+  // 페일노트 (트리스탄의 보구): 활을 당겨 플레이어를 조준(이동 없음) → 부채꼴 화살 + 플레이어를 끝까지 쫓는 필중의 화살을 여러 번. 쓰는 동안 페이즈 전환 없음
+  failnot: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true; d.list = d.list || [];
+      if (d.t < P.draw) { /* 조준: 플레이어 위에 붉은 조준선 */
+        d.warn = (d.warn || 0) - dt; if (d.warn <= 0) { d.warn = 0.15; fx.ring(p.x, p.y, 14 - d.t * 6, P.color); }
+        if (Math.random() < 0.6) { const a = Math.random() * TAU; fx.part(e.x + Math.cos(a) * 20, e.y + Math.sin(a) * 20, -Math.cos(a) * 50, -Math.sin(a) * 50, { color: P.color, life: 0.35, size: 1.5, size2: 0, drag: 0, add: true }); }
+        return false;
+      }
+      d.timer -= dt;
+      if (d.timer <= 0 && d.shots < P.volleys) {
+        const base = Math.atan2(p.y - e.y, p.x - e.x);
+        for (let i = 0; i < P.fan; i++) world.enemyShoot(e.x, e.y, base + (i / (P.fan - 1) - 0.5) * P.spread, P.speed * 1.2, e.damage, '#ffffff', 3);
+        for (let i = 0; i < P.homing; i++) { const a = base + (i / (P.homing - 1) - 0.5) * 2.4, b = new EnemyBullet(e.x, e.y, Math.cos(a) * P.speed, Math.sin(a) * P.speed, Math.round(e.damage * 1.1), P.color, 4);
+          b.homeT = P.homeT; b.noFlip = true; b.life = 4; world.enemyBullets.push(b); d.list.push(b); }
+        fx.ring(e.x, e.y, 26, P.color); SFX.play('magic', 0.05); d.shots++; d.timer = P.interval / spd;
+      }
+      for (const b of d.list) if (b.alive && b.homeT > 0) { /* 필중: 플레이어 쪽으로 휘어 들어감 */
+        b.homeT -= dt; const want = Math.atan2(p.y - b.y, p.x - b.x), cur = Math.atan2(b.vy, b.vx), sp = Math.hypot(b.vx, b.vy);
+        let df = want - cur; while (df > Math.PI) df -= TAU; while (df < -Math.PI) df += TAU;
+        const na = cur + clamp(df, -P.turn * dt, P.turn * dt); b.vx = Math.cos(na) * sp; b.vy = Math.sin(na) * sp; }
+      if (d.shots >= P.volleys && d.list.every((b) => !b.alive || !(b.homeT > 0))) { d.lock = false; return true; }
+      return false;
+    }
+  },
   // 작은 태양 (가웨인): 보스 위에 생긴 태양이 플레이어를 천천히 쫓으며 사방으로 탄을 뿌리다가, 멈춘 자리에서 터짐
   solar: {
     update(e, dt, world, ctx, spd) {
