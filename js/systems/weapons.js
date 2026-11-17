@@ -9,9 +9,8 @@ function weaponMods(player, w) {
   if (def.critBonus) m.critChance = player.stats.critChance + def.critBonus;
   return m;
 }
-/* 사수 3진 스킬(관통 폭풍) 중: 관통 안 되는 탄도 관통, 원래 관통하는 무기는 공격력 +20% */
-function odPierce(player) { return player.overdrive > 0 && player.odPierce; }
-function piercerMods(m) { return Object.assign({}, m, { attackBonus: m.attackBonus + 0.2 }); }
+/* 사수 3진 스킬(쌍탄 폭풍) 중: 총알이 2발씩 나란히 나감 */
+function odDouble(player) { return player.overdrive > 0 && player.odDouble; }
 function weaponTitle(w) { return w.def.name + (w.lv ? ` +${w.lv}` : ''); }
 class WeaponInstance {
   constructor(def, lv = 0) { this.lv = lv; this.def = def; this.cooldown = 0; this.charge = 0; this.burstLeft = 0; this.burstTimer = 0; this.beamTick = 0; this.beamActive = false; this.beamEnd = null; }
@@ -155,7 +154,11 @@ class WeaponSystem {
         explodeRadius: def.explodeRadius || 0, color: def.bulletColor, size: def.bulletSize || 1,
         homing: def.homing || 0, bounce: def.bounce || 0, chain: def.chain || null, status: def.status || null, flame: !!def.flame
       }, override);
-      if (odPierce(player) && !opt.mine) { if (opt.pierce > 0) opt.mods = piercerMods(opt.mods); else opt.pierce = opt.explodeRadius ? 2 : 99; } /* 폭발탄은 2번까지만 뚫고 터짐 */
+      if (odDouble(player) && !opt.mine) { /* 같은 탄을 옆으로 조금 벌려 한 발 더 */
+        const px = -Math.sin(base) * 3, py = Math.cos(base) * 3;
+        this.world.projectiles.push(new Projectile(Object.assign({}, opt, { x: opt.x + px, y: opt.y + py })));
+        opt.x -= px; opt.y -= py;
+      }
       this.world.projectiles.push(new Projectile(opt));
     }
     const L = weaponLength(def) + 4; // 총구 위치에 섬광
@@ -248,7 +251,7 @@ class WeaponSystem {
       if (t >= 0 && t <= wall) hits.push([t, e]);
     }
     hits.sort((a, b) => a[0] - b[0]);
-    const od = odPierce(player), pc = def.pierce || (od ? 99 : 0), bm = od && def.pierce ? piercerMods(weaponMods(player, w)) : weaponMods(player, w);
+    const pc = def.pierce || 0, bm = weaponMods(player, w);
     const target = hits.length ? hits[0][1] : null, extra = pc ? hits.slice(1, 1 + pc).map((h) => h[1]) : []; // 관통: 뒤에 있는 적도 함께 지짐
     const limit = !target ? wall : pc && hits.length > 1 + pc ? hits[pc][0] : pc ? wall : hits[0][0];
     w.beamEnd = { sx, sy, x: sx + (ex - sx) * limit, y: sy + (ey - sy) * limit };

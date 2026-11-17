@@ -438,7 +438,7 @@ const DATA_WEAPONS = [
     damage: 86, fireRate: 1.5, energyCost: 1.5, chargeTime: 0.5, range: 600, projectileSpeed: 900, explodeRadius: 22,
     status: { type: 'blind', chance: 1, duration: 3 }, chain: { count: 3, range: 90, falloff: 0.75 }, pierce: 3, knockback: 8, color: '#3a4270', len: 13, bulletColor: '#dff8ff', bulletSize: 2 },
   { id: 'weapon_aurora_001', name: '오로라 소총', rarity: 'legendary', type: 'gun', shape: 'gun',
-    damage: 22, fireRate: 5, energyCost: 0.5, range: 480, projectileSpeed: 820, projectileCount: 1, spreadDeg: 2, pierce: 2, bounce: 1,
+    damage: 20, fireRate: 5, energyCost: 0.5, range: 480, projectileSpeed: 820, projectileCount: 1, spreadDeg: 2, pierce: 2, bounce: 1,
     status: { type: 'freeze', chance: 0.3, duration: 1.4, slow: 0.5 }, mark: { mult: 1.15, dur: 2 }, knockback: 3, color: '#3a5a7a', len: 16, bulletColor: '#9affe0', bulletSize: 2 },
   // ── 한 방이 강한 전설
   { id: 'weapon_dragonslayer_001', name: '용살자의 대검', rarity: 'legendary', type: 'melee', shape: 'sword',
