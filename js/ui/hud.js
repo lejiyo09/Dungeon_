@@ -227,13 +227,20 @@ class HUD {
         const pend = (sv.supplies || []).map((id) => GUILD_SUPPLIES.find((x) => x.id === id).name);
         hudText(ctx, pend.length ? `다음 탐험에 적용: ${pend.join(', ')}` : '준비된 보급품 없음', VIEW_W / 2, 150, pend.length ? '#9fe89f' : '#666', 'center', 8);
       } else if (o.type === 'gamble') {
-        hudText(ctx, '판돈을 고르세요 — 꽝 60% · 2배 30% · 3배 8% · 5배 2%', VIEW_W / 2, 36, '#aaa', 'center', 8);
-        const cx = VIEW_W / 2, cy = 100;
-        for (let i = 0; i < 3; i++) { const spin = o.roll > 0, a = (spin ? game.time * 18 : 0) + i * 2.1, x = cx + (i - 1) * 46, y = cy + (spin ? Math.sin(a) * 6 : 0); // 결정석 세 개
-          ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.moveTo(x, y - 16); ctx.lineTo(x + 11, y); ctx.lineTo(x, y + 16); ctx.lineTo(x - 11, y); ctx.closePath(); ctx.fill();
-          const lit = !spin && o.result && o.result.mult > 1; ctx.fillStyle = lit ? '#ffd84a' : !spin && o.result ? '#5a6a7a' : CUR.color; ctx.beginPath(); ctx.moveTo(x, y - 14); ctx.lineTo(x + 9, y); ctx.lineTo(x, y + 14); ctx.lineTo(x - 9, y); ctx.closePath(); ctx.fill();
-          ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillRect(x - 3, y - 8, 2, 7); }
-        GUILD_GAMBLE.bets.forEach((b, i) => { const r = HUD.betRect(i); box(r, on(r), sv.bank >= b ? CUR.color : '#555'); hudText(ctx, `${i + 1}  ${b} ${CUR.name}`, r.x + r.w / 2, r.y + 6, sv.bank >= b ? '#fff' : '#666', 'center', 10); });
+        const G = GUILD_GAMBLE, picking = !!sv.gambleCards, res = o.result, spin = o.roll > 0, shuf = o.shuffle > 0;
+        hudText(ctx, `${G.bet} ${CUR.name}을 걸고 뒤집힌 결정석 3개 중 하나를 고르세요 — ${G.prizes.join(' · ')}`, VIEW_W / 2, 36, '#aaa', 'center', 8);
+        for (let i = 0; i < 3; i++) { const r = HUD.gemRect(i), x = r.x + r.w / 2, y = r.y + r.h / 2 + (spin && o.pending && o.pending.pick === i ? Math.sin(game.time * 40) * 2 : 0) + (shuf ? Math.sin(game.time * 20 + i * 2) * 5 : 0);
+          const hov = picking && !spin && on(r), prize = res && res.cards[i], mine = res && res.pick === i;
+          const col = !res || spin ? (hov ? '#bfe6ff' : CUR.color) : prize >= 300 ? '#ffd84a' : prize > 0 ? '#9ad8ff' : '#5a6a7a';
+          ctx.globalAlpha = res && !spin && !mine ? 0.45 : 1;
+          ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.moveTo(x, y - 18); ctx.lineTo(x + 13, y); ctx.lineTo(x, y + 18); ctx.lineTo(x - 13, y); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x, y - 16); ctx.lineTo(x + 11, y); ctx.lineTo(x, y + 16); ctx.lineTo(x - 11, y); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillRect(x - 3, y - 9, 2, 8); ctx.globalAlpha = 1;
+          if (hov || (mine && !spin)) { ctx.strokeStyle = '#fff'; ctx.strokeRect(r.x - 2.5, r.y - 2.5, r.w + 5, r.h + 5); }
+          if (res && !spin) hudText(ctx, String(prize), x, r.y + r.h + 4, mine ? col : '#777', 'center', mine ? 11 : 9);
+          else if (picking) hudText(ctx, String(i + 1), x, r.y + r.h + 4, '#ccc', 'center', 9); }
+        if (picking && !spin) hudText(ctx, '결정석을 고르세요  (1~3 / 클릭)', VIEW_W / 2, 156, '#bfe6ff', 'center', 10);
+        else if (!spin) { const r = HUD.betRect(), ok = sv.bank >= G.bet; box(r, on(r), ok ? CUR.color : '#555'); hudText(ctx, `${res ? '다시 ' : ''}${G.bet} ${CUR.name} 걸기  (1)`, r.x + r.w / 2, r.y + 6, ok ? '#fff' : '#666', 'center', 10); }
       }
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 28, o.msg.color, 'center', 10);
       hudText(ctx, 'E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
@@ -531,7 +538,8 @@ class HUD {
   static archiveRow(i) { return { x: 40, y: 32 + i * 21, w: VIEW_W - 80, h: 18 }; }
   static guildRow(i) { return { x: 40, y: 46 + i * 28, w: VIEW_W - 80, h: 25 }; }
   static titleCell(i) { return { x: 40 + (i % 2) * 218, y: 46 + Math.floor(i / 2) * 30, w: 212, h: 27 }; }
-  static betRect(i) { return { x: VIEW_W / 2 - 150 + i * 104, y: 150, w: 92, h: 22 }; }
+  static betRect() { return { x: VIEW_W / 2 - 70, y: 150, w: 140, h: 22 }; }
+  static gemRect(i) { return { x: VIEW_W / 2 + (i - 1) * 64 - 16, y: 70, w: 32, h: 44 }; }
   static reviveRect(i) { return { x: VIEW_W / 2 - 154 + i * 160, y: 151, w: 148, h: 30 }; }
   static jobRowRect(i) { return { x: 36, y: 36 + i * 27, w: VIEW_W - 72, h: 24 }; }
   static heroBranchRect(i, n) { return { x: 18 + (i % 2) * 240, y: 85 + Math.floor(i / 2) * 29, w: 236, h: 26 }; }

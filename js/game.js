@@ -118,12 +118,16 @@ class Game {
     }
     sv.supplies = []; writeSave(sv);
   }
-  gamble(bet) {
-    const sv = this.save; if (sv.bank < bet) { SFX.play('deny'); return { text: `${CUR.name}이 부족합니다`, color: '#ff9a9a' }; }
-    sv.bank -= bet; let r = Math.random(), res = GUILD_GAMBLE.outcomes[0];
-    for (const o of GUILD_GAMBLE.outcomes) { if (r < o[0]) { res = o; break; } r -= o[0]; }
-    const win = Math.round(bet * res[1]); sv.bank += win; if (res[1] > 1) { this.guildEvent('gambleWins'); SFX.play('victory'); } else SFX.play('deny');
-    writeSave(sv); return { text: res[1] ? `${res[2]}! ${CUR.name} +${win}` : `${res[2]}… ${CUR.name} -${bet}`, color: res[1] > 1 ? '#ffd84a' : '#ff9a9a', mult: res[1] };
+  gambleStart() { // 판돈을 내고 결정석 3개를 섞어 둠 (고르기 전에 창을 닫거나 새로고침해도 결과는 그대로 → 다음에 열면 이어서 고름)
+    const sv = this.save, B = GUILD_GAMBLE.bet; if (sv.bank < B) { SFX.play('deny'); return false; }
+    sv.bank -= B; sv.gambleCards = shuffled(GUILD_GAMBLE.prizes.slice()); writeSave(sv); SFX.play('ui'); return true;
+  }
+  gamblePick(i) {
+    const sv = this.save, cards = sv.gambleCards; if (!cards) return null;
+    const prize = cards[i], B = GUILD_GAMBLE.bet; sv.bank += prize; sv.gambleCards = null;
+    if (prize > B) { this.guildEvent('gambleWins'); SFX.play('victory'); } else SFX.play(prize > 0 ? 'coin' : 'deny');
+    writeSave(sv);
+    return { pick: i, cards, prize, text: prize > B ? `대박! ${CUR.name} ${prize}개 (+${prize - B})` : prize > 0 ? `${CUR.name} ${prize}개 (-${B - prize})` : `꽝… ${CUR.name} -${B}`, color: prize > B ? '#ffd84a' : prize > 0 ? '#9ad8ff' : '#ff9a9a' };
   }
   // 멀린: 보구가 없으면 '…'만, 보구를 얻은 뒤 처음 말을 걸면 정체가 드러나며 시련을 줌 → 시련을 마치면 가든 오브 아발론
   talkMerlin(npc) {
@@ -788,7 +792,9 @@ class Game {
       else this.overlay = { type: 'story', sanctum: S.kind === 'sanctum', lines: S.lines(), i: 0, t: 0, done: back };
     } else if (o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble') { // 탐험가 길드 창들
       if (o.msg) o.msg.t -= STEP; if (o.roll > 0) { o.roll -= STEP; if (o.roll <= 0 && o.pending) { o.msg = { text: o.pending.text, color: o.pending.color, t: 2.5 }; o.result = o.pending; o.pending = null; } return; }
-      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
+      if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { // 도박: 고르는 중에 닫으면 무작위로 하나를 고름
+        if (o.type === 'gamble' && this.save.gambleCards) { const r = this.gamblePick(randInt(0, 2)); this.showBanner('결정석 도박', r.text + ' (자동 선택)', r.color); }
+        this.overlay = null; return; }
       const m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h, say = (res) => { o.msg = { text: res[0], color: res[1], t: 2.2 }; this.input.mouse.down = false; };
       const G = this.guild(), click = input.wasPressed('Mouse0');
       if (o.type === 'guild') {
@@ -804,8 +810,12 @@ class Game {
       } else if (o.type === 'trade') {
         if (click) G.stock.forEach((id, i) => { if (hit(HUD.guildRow(i))) say(this.buySupply(id)); });
       } else if (o.type === 'gamble') {
-        let bet = null; GUILD_GAMBLE.bets.forEach((b, i) => { if (input.wasPressed('Digit' + (i + 1)) || (click && hit(HUD.betRect(i)))) bet = b; });
-        if (bet !== null) { if (this.save.bank < bet) say([`${CUR.name}이 부족합니다`, '#ff9a9a']); else { o.pending = this.gamble(bet); o.roll = 0.9; o.msg = null; o.result = null; SFX.play('ui'); } }
+        if (this.save.gambleCards) { // 결정석 고르기
+          for (let i = 0; i < 3; i++) if (input.wasPressed('Digit' + (i + 1)) || (click && hit(HUD.gemRect(i)))) { o.pending = this.gamblePick(i); o.roll = 0.7; o.msg = null; this.input.mouse.down = false; return; }
+        } else if (input.wasPressed('Digit1') || input.wasPressed('Space') || (click && hit(HUD.betRect()))) {
+          if (this.save.bank < GUILD_GAMBLE.bet) say([`${CUR.name}이 부족합니다`, '#ff9a9a']); else if (this.gambleStart()) { o.result = null; o.msg = null; o.shuffle = 0.6; this.input.mouse.down = false; }
+        }
+        if (o.shuffle > 0) o.shuffle -= STEP;
       }
     } else if (o.type === 'hero_info') { // 캐릭터 상세: 패시브·직업 계열·진화 스킬
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
