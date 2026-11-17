@@ -657,5 +657,21 @@ const DATA_ENEMIES = [
       { type: 'grid', spacing: 3, delay: 0.95, radius: 22, bullets: 4, color: '#ffd8d8' },
       { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.5, bullets: 0, color: '#e8ecff' },
       { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 150, interval: 0.42, color: '#ffd8d8' }],
-    finalPatterns: [{ type: 'perilous', name: '로드 카멜롯', charge: 0.8, duration: 4.5, rings: 4, count: 44, gap: 6, ringSpeed: 85, ringEvery: 1.05, burstEvery: 0.6, burst: 14, final: 36, color: '#e8ecff' }] }
+    finalPatterns: [{ type: 'perilous', name: '로드 카멜롯', charge: 0.8, duration: 4.5, rings: 4, count: 44, gap: 6, ringSpeed: 85, ringEvery: 1.05, burstEvery: 0.6, burst: 14, final: 36, color: '#e8ecff' }] },
+  // [사용자 결정] 카멜롯 6층 보스: 치열의 기사 랜슬롯 — 보구 '아론다이트'·패턴·수치는 Claude가 정한 [제안]
+  //  반격 자세(riposte): 검을 세우고 멈춘 동안 맞으면 피해 절반 + 플레이어 뒤로 순간이동해 반격 / fierce: 3페이즈 '치열'부터 패턴이 끝날 때마다 바로 검기를 날리고 거의 쉬지 않음
+  { id: 'boss_lancelot', name: '랜슬롯', title: '치열의 기사', sprite: 'boss_lancelot', color: '#2a3a6a', phaseColors: ['#2a3a6a', '#2a2a5a', '#3a1a5a'],
+    boss: true, aiType: 'boss', health: 6800, damage: 32, moveSpeed: 95, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.4, bulletSpeed: 200,
+    rewardGold: 0, ultFrom: 2, ultCd: 20, fierce: 0.35, patterns: [
+      { type: 'riposte', stance: 1.3, burst: 18, radius: 30, fan: 9, color: '#8ab8ff' },
+      { type: 'charge', dashes: 4, speed: 620, color: '#bcd8ff' },
+      { type: 'slam', radius: 62, chain: 2, color: '#8ab8ff' },
+      { type: 'aimed', volleys: 6, count: 9, spread: 0.1, color: '#bcd8ff' },
+      { type: 'split', volleys: 3, count: 3, spread: 0.3, speed: 190, splitAfter: 0.45, splitN: 7, color: '#8ab8ff' }],
+    phase2Patterns: [{ type: 'riposte', stance: 1.6, burst: 24, radius: 34, fan: 13, color: '#8ab8ff' },
+      { type: 'meteor', count: 10, delay: 0.55, stagger: 0.17, radius: 30, bullets: 7, color: '#8ab8ff' },
+      { type: 'spiral', duration: 3, arms: 6, interval: 0.06, spin: 2.6, color: '#bcd8ff' },
+      { type: 'orbit', count: 24, radius: 52, spinTime: 1, spin: -3.2, speed: 170, color: '#8ab8ff' },
+      { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.48, bullets: 0, color: '#bcd8ff' }],
+    finalPatterns: [{ type: 'arondight', name: '아론다이트', charge: 0.9, dashes: 3, speed: 640, dist: 220, step: 20, radius: 12, delay: 0.42, fan: 9, beams: 4, beamTime: 1.7, spin: 1.2, width: 8, color: '#8ab8ff' }] }
 ];

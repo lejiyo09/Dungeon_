@@ -249,7 +249,31 @@ const CAMELOT5_TRIAL = {
     palette: CAMELOT_TRIAL.W.palette },
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
 };
-const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL };
+// [사용자 결정] 카멜롯 6층 보스: 치열의 기사 랜슬롯. 보구 '아론다이트'(전승 속 랜슬롯의 검)·'치열'(반격 자세 + 3페이즈부터 쉬지 않는 연격)·수치·대사는 Claude가 정한 [제안]/[임시]
+const MERLIN_LANCELOT_LINES = [
+  '「갤러해드의 방패까지 넘었나. …이제 그가 나설 차례겠지.」',
+  '「랜슬롯. 호수의 기사, 원탁에서 가장 강하다고 불린 사내다.」',
+  '「사람들은 그를 치열의 기사라 부른다. 싸움이 길어질수록 그의 검은 더 빨라지지.」',
+  '「그가 검을 세우고 멈춰 서면 섣불리 베지 말게. 그건 틈이 아니라 반격의 자세다.」',
+  '「로드 투 카멜롯, 여섯 번째 층. 준비가 되면 말하게.」'
+];
+const LANCELOT_WIN_LINES = [
+  '푸른 빛을 머금은 검이 처음으로 땅에 닿는다.',
+  '「…훌륭하군. 이토록 치열한 싸움은 오랜만이었다.」',
+  '「위로 가라. 그 끝에 무엇이 있든, 너라면 마주할 자격이 있다.」',
+  '호수의 기사는 검을 거두고, 물안개처럼 흩어진다.'
+];
+const CAMELOT6_TRIAL = {
+  id: 'camelot6', title: '로드 투 카멜롯 — 6층', color: '#8ab8ff', intro: '치열의 기사 랜슬롯이 기다리고 있습니다', reward: 1000, questDone: 16,
+  confirm: ['백악의 성 6층 — 성의 기사들을 뚫고 치열의 기사 랜슬롯과 싸웁니다', '갤러해드보다 강합니다. 그가 검을 세우고 멈추면(반격 자세) 공격을 멈추세요. 고른 진화 단계·축복과 +3 강화 무기 2개를 들고 갑니다'],
+  winText: '랜슬롯을 쓰러뜨리고 6층을 지났습니다', winSub: '결정석 1000개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => LANCELOT_WIN_LINES,
+  world: 9,
+  W: { name: '백악의 성 카멜롯 — 6층', boss: 'boss_lancelot', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
+    enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 1]],
+    palette: CAMELOT_TRIAL.W.palette },
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+};
+const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL, camelot6: CAMELOT6_TRIAL };
 // 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
 const DEEP_ARRIVAL_LINES = [
   '발밑의 돌이 차갑게 식어 간다.',
@@ -279,7 +303,9 @@ const STORY_ARCHIVE = [
   { id: 'gareth_road', name: '부정의 기사', kind: 'cut', lines: () => MERLIN_GARETH_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 11) },
   { id: 'gareth', name: '고운 손', kind: 'cut', lines: () => GARETH_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 12) },
   { id: 'galahad_road', name: '철벽의 기사', kind: 'cut', lines: () => MERLIN_GALAHAD_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 13) },
-  { id: 'galahad', name: '무너진 방패', kind: 'cut', lines: () => GALAHAD_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 14) }
+  { id: 'galahad', name: '무너진 방패', kind: 'cut', lines: () => GALAHAD_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 14) },
+  { id: 'lancelot_road', name: '호수의 기사', kind: 'cut', lines: () => MERLIN_LANCELOT_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 15) },
+  { id: 'lancelot', name: '땅에 닿은 검', kind: 'cut', lines: () => LANCELOT_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 16) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 // [사용자 결정] 문지기 조건을 없애기 전에 이미 문지기를 잡아 둔 사람은 그 1번을 심층 보스 1마리로 쳐 줌 (한 번만 바꿈)

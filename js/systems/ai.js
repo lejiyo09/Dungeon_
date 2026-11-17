@@ -187,7 +187,9 @@ const AI_BEHAVIORS = {
     const channeling = e.pd && ((e.pd.tower && e.pd.tower.alive) || e.pd.lock); /* 롱고미니아드(빛의 탑)가 서 있는 동안은 페이즈도 넘기지 않고 다른 행동 없음 — 탑이 무너진 뒤에 넘어감 */
     if (want > phase && e.state !== 'INTRO' && !channeling) {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
+      e.riposteT = 0; e.riposteHit = false;
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
+      if (def.fierce && want === 3) { e.fierce = true; world.announceBossSkill(e, '치열 — 멈추지 않는 검'); }
       if (def.wall && want === 3) { e.wallCone = def.wall.cone3; e.wallMult = def.wall.mult3; world.announceBossSkill(e, '철벽 — 무너지지 않는 성채'); }
       if (def.negate && want === 3) { e.negateOn = true; e.negCd = 1.5; world.announceBossSkill(e, '부정 — 모든 칼날을 거부하는 빛'); }
       if (def.rampage && want === 3) { e.rampage = true; world.announceBossSkill(e, '폭주 — 멈추지 않는 반역'); }
@@ -232,9 +234,10 @@ const AI_BEHAVIORS = {
       case 'ATTACK':
         { const n0 = world.enemyBullets.length, fin = BOSS_PATTERNS[e.pat.type].update(e, dt, world, ctx, spd);
           if (e.revAll) for (let i = n0; i < world.enemyBullets.length; i++) { const b = world.enemyBullets[i]; if (b.flipT === undefined && !b.noFlip) b.flipT = def.rev; } /* 반전: 새로 쏜 화살에 되돌아올 시간 */
-          if (fin) { e.laser = null; e.fade = 1; if (e.ult) endUltimate(e, world); e.setState('RECOVERY'); } }
+          if (fin) { e.laser = null; e.fade = 1; if (e.ult) endUltimate(e, world); e.setState('RECOVERY');
+            if (e.fierce) { const p = world.player, a = Math.atan2(p.y - e.y, p.x - e.x); for (let i = 0; i < 7; i++) world.enemyShoot(e.x, e.y, a + (i - 3) * 0.12, e.def.bulletSpeed * 1.15, e.damage, '#bcd8ff', 3); world.effects.ring(e.x, e.y, 18, '#bcd8ff'); } } } /* 치열: 패턴이 끝날 때마다 검기 */
         break;
-      case 'RECOVERY': if (e.stateTime >= (e.pat && e.pat.name ? 1.1 : 0.6) / spd) e.setState('CHASE'); break;
+      case 'RECOVERY': if (e.stateTime >= (e.pat && e.pat.name ? 1.1 : 0.6) * (e.fierce ? def.fierce : 1) / spd) e.setState('CHASE'); break;
     }
   },
 
@@ -413,6 +416,52 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 반격 자세 (랜슬롯): 검을 세우고 멈춤 — 그동안 맞으면 피해 절반 + 플레이어 뒤로 순간이동해 사방 검기와 발밑 베기로 반격, 아무도 안 때리면 앞으로 부채꼴 검기만
+  riposte: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, r = e.room, fx = world.effects; d.t = (d.t || 0) + dt;
+      if (!d.init) { d.init = true; e.riposteT = P.stance; e.riposteHit = false; fx.text(e.x, e.y - e.radius - 14, '반격 자세', '#bcd8ff'); SFX.play('shield', 0.1); }
+      if (!d.done && e.riposteHit) { d.done = true; e.riposteT = 0; e.riposteHit = false; /* 반격 */
+        const a = Math.atan2(p.y - e.y, p.x - e.x), x = clamp(p.x + Math.cos(a) * 30, r.x0 * TILE + 16, (r.x0 + r.w) * TILE - 16), y = clamp(p.y + Math.sin(a) * 30, r.y0 * TILE + 16, (r.y0 + r.h) * TILE - 16);
+        fx.ring(e.x, e.y, 18, '#ffffff'); if (!world.map.isSolidAt(x, y)) { e.x = x; e.y = y; } fx.ring(e.x, e.y, 26, P.color); fx.text(e.x, e.y - e.radius - 14, '반격!', '#ffffff', true);
+        world.hazards.push(new Hazard(p.x, p.y, { r: P.radius, delay: 0.3, damage: Math.round(e.damage * 1.4), bullets: 0, color: P.color }));
+        for (let i = 0; i < P.burst; i++) world.enemyShoot(e.x, e.y, i * TAU / P.burst, e.def.bulletSpeed * 1.1, e.damage, P.color, 3);
+        world.addShake(0.25, 4); SFX.play('heavy', 0.05); d.endAt = d.t + 0.55; }
+      if (!d.done && d.t >= P.stance / spd) { d.done = true; e.riposteT = 0; /* 아무도 안 때림: 앞으로 검기 */
+        const base = Math.atan2(p.y - e.y, p.x - e.x), h = (P.fan - 1) / 2; for (let i = 0; i < P.fan; i++) world.enemyShoot(e.x, e.y, base + (i - h) * 0.09, e.def.bulletSpeed, e.damage, '#bcd8ff', 3);
+        d.endAt = d.t + 0.3; }
+      return !!d.endAt && d.t >= d.endAt;
+    }
+  },
+  // 아론다이트 (랜슬롯의 보구): 푸른 빛을 모은 뒤 플레이어 쪽으로 세 번 돌진(지나간 자리에 푸른 칼날이 차례로 솟고 멈출 때 부채꼴 검기) → 방 가운데서 X자 광선을 돌림. 쓰는 동안 페이즈 전환 없음
+  arondight: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, r = e.room, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;
+      if (!d.st) { d.st = 'charge'; d.pt = 0; d.n = 0; }
+      d.pt += dt;
+      if (d.st === 'charge') { if (Math.random() < 0.8) { const a = Math.random() * TAU; fx.part(e.x + Math.cos(a) * 24, e.y + Math.sin(a) * 24, -Math.cos(a) * 60, -Math.sin(a) * 60, { color: Math.random() < 0.5 ? P.color : '#ffffff', life: 0.35, size: 2, size2: 0, drag: 0, add: true }); }
+        if (d.pt >= P.charge) { d.st = 'aim'; d.pt = 0; } return false; }
+      if (d.st === 'aim') { const dx = p.x - e.x, dy = p.y - e.y, dd = Math.hypot(dx, dy) || 1; e.dashX = dx / dd; e.dashY = dy / dd; if (d.pt >= 0.22) { d.st = 'dash'; d.pt = 0; d.went = 0; d.last = 0; e.hits = null; } return false; }
+      if (d.st === 'dash') {
+        const mv = P.speed * dt, hit = moveAndCollide(e, e.dashX * mv, e.dashY * mv, world.map); d.went += mv;
+        world.eachTarget((q) => { if (Math.hypot(q.x - e.x, q.y - e.y) < e.radius + q.half + 3) world.hitOnce(e, 'hits', q, () => world.damagePlayer(Math.round(e.damage * 1.3))); });
+        if (d.went - d.last >= P.step) { d.last = d.went; world.hazards.push(new Hazard(e.x, e.y, { r: P.radius, delay: P.delay, damage: e.damage, bullets: 0, color: P.color })); }
+        if (hit.x || hit.y || d.went >= P.dist || d.pt > 0.7) { const base = Math.atan2(p.y - e.y, p.x - e.x), h = (P.fan - 1) / 2;
+          for (let i = 0; i < P.fan; i++) world.enemyShoot(e.x, e.y, base + (i - h) * 0.1, e.def.bulletSpeed * 1.1, e.damage, '#bcd8ff', 3);
+          world.effects.ring(e.x, e.y, 24, P.color); world.addShake(0.15, 3); d.n++; d.pt = 0; d.st = d.n >= P.dashes ? 'center' : 'aim'; }
+        return false; }
+      if (d.st === 'center') { const c = world.map.tileCenter(r.cx, r.cy); fx.ring(e.x, e.y, 16, '#ffffff'); e.x = c.x; e.y = c.y; fx.ring(e.x, e.y, 30, P.color);
+        d.ang = Math.atan2(p.y - e.y, p.x - e.x) + Math.PI / 4; e.laser = { angs: [], width: P.width, color: P.color, live: false }; d.st = 'warn'; d.pt = 0; }
+      const angs = []; for (let i = 0; i < P.beams; i++) angs.push(d.ang + i * TAU / P.beams);
+      if (d.st === 'warn') { e.laser.angs = angs; e.laser.live = false; if (d.pt >= 0.6) { d.st = 'beam'; d.pt = 0; SFX.play('excal'); world.addShake(0.3, 5); } return false; }
+      if (d.st === 'beam') { d.ang += P.spin * dt; e.laser.angs = angs; e.laser.live = true;
+        const segs = angs.map((a) => { const len = beamLength(e, a, world.map); return [e.x + Math.cos(a) * len, e.y + Math.sin(a) * len]; });
+        world.eachTarget((q) => { for (const [ex, ey] of segs) if (segmentCircleHit(e.x, e.y, ex, ey, q.x, q.y, P.width + q.half) >= 0) { world.damagePlayer(Math.round(e.damage * 1.2)); break; } });
+        if (Math.floor(d.pt * 10) !== Math.floor((d.pt - dt) * 10)) SFX.play('beam', 0.08);
+        if (d.pt >= P.beamTime) { e.laser = null; d.lock = false; return true; } }
+      return false;
+    }
+  },
   // 방벽 행진 (갤러해드): 방패가 향한 방향으로, 가로로 늘어선 탄의 벽이 여러 겹 밀려옴 — 겹마다 다른 자리에 빈틈
   rampart: {
     update(e, dt, world, ctx, spd) {
