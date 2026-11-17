@@ -125,6 +125,17 @@ Object.assign(Game.prototype, {
     this.remotes.set(id, { id, p, vin: new VirtualInput(), aim: { x: p.x + 20, y: p.y }, warp: 0 });
     this.coopSendMap(id);
   },
+  coopGather(r, leader) { // 전투가 시작된 방 밖의 플레이어를 앞장선 사람 곁(방 안)으로 옮김
+    const map = this.map, c = map.tileCenter(r.cx, r.cy), base = leader && map.isFullyInside(leader, r) ? leader : c; let i = 0;
+    for (const p of this.allPlayers()) {
+      if (p === leader || map.isFullyInside(p, r)) continue;
+      let x = c.x, y = c.y; i++;
+      for (let k = 0; k < 16; k++) { const a = (i * 2.3 + k * 0.9), d = 16 + k * 4, tx = base.x + Math.cos(a) * d, ty = base.y + Math.sin(a) * d;
+        if (!overlapsSolid(tx, ty, p.half, map) && map.isFullyInside({ x: tx, y: ty, half: p.half }, r)) { x = tx; y = ty; break; } }
+      p.x = x; p.y = y; this.effects.ring(x, y, 14, '#7affc0');
+      const R = [...this.remotes.values()].find((q) => q.p === p); if (R) { R.warp++; R.rx = undefined; } // 참가자 화면도 옮김
+    }
+  },
   coopOnStage() { // 새 스테이지: 모두 시작 방으로, 쓰러진 사람 부활, 맵 보내기
     const s = this.map.startRoom, c = this.map.tileCenter(s.cx, s.cy); let i = 1;
     for (const p of this.allPlayers()) { if (p.state === 'DEAD') { p.state = 'NORMAL'; p.deathTimer = 0; p.hp = Math.max(1, Math.round(p.maxHp * COOP.reviveRatio)); p.hurtInvuln = 2; } }

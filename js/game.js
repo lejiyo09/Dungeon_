@@ -980,7 +980,7 @@ class Game {
         phase2Patterns: [{ type: 'spiral', duration: 2.2, arms: 3 + next, interval: 0.09, spin: 1.8, color: col }, { type: 'slam', radius: 46, chain: next, color: col }] });
     }
     npc.gone = true; r.trial = next; r.trialPlayer = p; r.hybrid = hy || null; r.branch = npc.branch || null; r.state = 'active'; this.activeRoom = r; r.wavesLeft = 0; // 시련을 시작한 사람이 진화 (멀티)
-    this.map.setDoors(r, true); this.enemyBullets.length = 0;
+    this.map.setDoors(r, true); this.enemyBullets.length = 0; if (this.coop && this.coop.host) this.coopGather(r, p); // 멀티: 동료도 시련 방으로
     const c = this.map.tileCenter(r.cx, r.cy - 1), m = this.spawnEnemy(key, c.x, c.y, r); m.phase = 1;
     this.showBanner(`${trialName}의 시련`, hy ? `${hy.el.name}의 마도사 상위자를 쓰러뜨리면 ${trialName}(으)로 진화합니다` : '상위자를 쓰러뜨리면 진화합니다', '#ffd84a'); SFX.play('boss');
   }
@@ -1303,18 +1303,22 @@ class Game {
 
   // ── 방 진행: 입장 → 문 잠금 → 웨이브 → 클리어
   updateRooms() {
-    const p = this.player, map = this.map;
-    const here = map.roomAtPoint(p.x, p.y);
-    if (here && !here.visited) here.visited = true;
-    if (!this.activeRoom && here && here.state === 'idle' && map.isFullyInside(p, here)) this.activateRoom(here);
+    const map = this.map;
+    for (const p of this.allPlayers()) { // 멀티: 누구든 먼저 들어가면 그 방 전투 시작 (쓰러진 사람 제외)
+      if (p.state === 'DEAD') continue;
+      const here = map.roomAtPoint(p.x, p.y);
+      if (here && !here.visited) here.visited = true;
+      if (!this.activeRoom && here && here.state === 'idle' && map.isFullyInside(p, here)) { this.activateRoom(here, p); break; }
+    }
     const r = this.activeRoom;
     if (r && !this.slowMo && !this.enemies.some((e) => e.alive)) {
       if (r.wavesLeft > 0) this.spawnWave(r);
       else this.clearRoom(r);
     }
   }
-  activateRoom(r) {
+  activateRoom(r, leader = this.player) {
     r.state = 'active'; this.activeRoom = r;
+    if (this.coop && this.coop.host) this.coopGather(r, leader); // 멀티: 방 밖에 있는 동료를 모두 이 방으로 모음 (문 밖에 갇히지 않게)
     this.map.setDoors(r, true);
     this.enemyBullets.length = 0;
     if (r.type === 'boss') {
