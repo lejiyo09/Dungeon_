@@ -279,7 +279,7 @@ Object.assign(Game.prototype, {
     C.snapN = (C.snapN || 0) + 1; const full = C.snapN % 18 === 1; // 1.5초마다 전부 (중간에 놓친 값 보정), 그 사이엔 바뀐 것만
     const pl = (p, id, warp) => ({ id, x: Math.round(p.x), y: Math.round(p.y), h: p.hero.id, lk: p.line && p.line.look ? p.line.look : null, a: r1(p.aimVis), f: p.faceVis, st: p.state === 'DEAD' ? 'X' : p.state === 'DASH' ? 'D' : 'N', mv: p.moving ? 1 : 0,
       hp: Math.ceil(p.hp), mhp: p.maxHp, sh: Math.ceil(p.shield), msh: p.maxShield, en: Math.floor(p.energy), men: p.maxEnergy, w: p.weapons.map((x) => x.def.id), wl: p.weapons.map((x) => x.lv || 0), sl: p.slot,
-      sk: r1(p.skillCooldown), skm: r1(p.skillCdMax), sn: p.skillName, tr: p.treasure ? p.treasure.id : null, tc: r1(p.treasureCd), rk: p.rank, ln: p.line ? p.line.id : null, wp: warp, inv: p.hurtInvuln > 0 ? 1 : 0, rv: r1((p.reviveT || 0) / COOP.reviveTime), hy: p.hybrid ? p.hybrid.title : null, fr: p.weapon ? Math.round(this.weaponSystem.getFireRate(p, p.weapon) / (p.weapon.def.fireRate || 1) * 100) / 100 : 1 }); // fr: 공속 배율 (참가자 화면의 탄을 실제 연사 속도로)
+      sk: r1(p.skillCooldown), skm: r1(p.skillCdMax), sn: p.skillName, tr: p.treasure ? p.treasure.id : null, tc: r1(p.treasureCd), rk: p.rank, ln: p.line ? p.line.id : null, wp: warp, inv: p.hurtInvuln > 0 ? 1 : 0, ag: p.aegisT > 0 ? 1 : 0, rv: r1((p.reviveT || 0) / COOP.reviveTime), hy: p.hybrid ? p.hybrid.title : null, fr: p.weapon ? Math.round(this.weaponSystem.getFireRate(p, p.weapon) / (p.weapon.def.fireRate || 1) * 100) / 100 : 1 }); // fr: 공속 배율 (참가자 화면의 탄을 실제 연사 속도로)
     const players = [pl(C.me, Net.id, 0), ...[...this.remotes.values()].map((R) => { const e = pl(R.p, R.id, R.warp); if (R.px || R.py) { e.px = r1(R.px); e.py = r1(R.py); R.px = 0; R.py = 0; } return e; })];
     C.plast = C.plast || {}; const STATIC = ['h', 'lk', 'mhp', 'msh', 'men', 'w', 'wl', 'sn', 'tr', 'ln', 'hy', 'skm', 'rk']; // 잘 안 바뀌는 값은 바뀔 때만
     for (const e of players) { const L = C.plast[e.id] || (C.plast[e.id] = {}); for (const k of STATIC) { const v = JSON.stringify(e[k] ?? null); if (!full && L[k] === v) delete e[k]; else L[k] = v; } }
@@ -362,7 +362,7 @@ Object.assign(Game.prototype, {
       if (!mine) { coopVel(p, s.x, s.y, nowS); if (Math.hypot(p.x - s.x, p.y - s.y) > 80) { p.x = s.x; p.y = s.y; p.vx = p.vy = 0; } p.aimVis = s.a; p.faceVis = s.f; p.moving = !!s.mv; p.hurtInvuln = s.inv ? 0.1 : 0; const base = this.data.heroes.get(s.h); if (base) p.hero = s.lk ? heroWithLook(base, s.lk) : base; }
       else if (s.wp !== C.warp) { p.x = s.x; p.y = s.y; C.warp = s.wp; } // 방장이 옮겼을 때만 내 위치를 맞춤
       else if (s.px || s.py) moveAndCollide(p, s.px || 0, s.py || 0, this.map); // 끌려감·밀림
-      p.reviveT = s.rv * COOP.reviveTime; p.hybridTitle = s.hy; if (mine) C.fr = s.fr || 1;
+      p.reviveT = s.rv * COOP.reviveTime; p.hybridTitle = s.hy; p.aegisT = s.ag ? Math.max(p.aegisT || 0, 0.3) : 0; /* 방패 그림 */ if (mine) C.fr = s.fr || 1;
       if (mine && s.hp + s.sh < p.hp + p.shield - 0.5) { this.addShake(0.15, 3); if (s.hp < p.hp) { this.hurtFlash = 0.35; SFX.play('hurt'); } else SFX.play('shield'); this.effects.text(p.x, p.y - 16, '-' + Math.round(p.hp + p.shield - s.hp - s.sh), '#ff6b6b', true); } // 내가 맞음
       if (mine && s.st === 'X' && p.state !== 'DEAD') this.showBanner('쓰러졌습니다', '동료가 곁에 3초 서 있으면 일어나고, 아니면 다음 스테이지에서 부활합니다', '#ff8a8a');
       p.hp = s.hp; p.maxHp = s.mhp; p.shield = s.sh; p.maxShield = s.msh; p.energy = s.en; p.maxEnergy = s.men;

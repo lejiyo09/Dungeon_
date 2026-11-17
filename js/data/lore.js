@@ -78,7 +78,15 @@ const DATA_TREASURES = [
     desc: '6초간 모습을 감춰 적이 나를 찾지 못함(보스는 처음 3초만), 그동안 공격력 +50%·이동 속도 +20%' },
   { id: 'treasure_gae_bolg', name: '게이볼그', origin: '쿠 훌린', use: 'thorn', cooldown: 63, sfx: 'excal', icon: 'gaebolg', questOnly: true, heroDrop: true,
     damage: 650, thornR: 110, thornDmg: 110, bleed: 5, bleedDps: 40, color: '#ff4a5a',
-    desc: '가장 강한 적(보스 우선)에게 절대 빗나가지 않는 창을 던져 큰 피해, 꿰뚫린 자리에서 가시가 터져 주변 적을 찌르고, 맞은 적은 5초간 출혈' }
+    desc: '가장 강한 적(보스 우선)에게 절대 빗나가지 않는 창을 던져 큰 피해, 꿰뚫린 자리에서 가시가 터져 주변 적을 찌르고, 맞은 적은 5초간 출혈' },
+  // [사용자 결정] 아킬레우스(반신)의 방패: 4초간 피해 없음 + 닿는 적 탄을 그대로 반사 · 이아손의 황금 양털: 체력 50% 회복 + 버티기(한 판 2번)
+  //  얻는 법(심층 보스 전리품 heroDrop)·쿨타임·반사 피해 수치는 Claude가 정한 [제안]
+  { id: 'treasure_shield_of_achilles', name: '아킬레우스의 방패', origin: '아킬레우스', use: 'reflect', cooldown: 60, sfx: 'solomon', icon: 'achilles', questOnly: true, heroDrop: true,
+    duration: 4, reach: 10, damage: 45, mult: 2, color: '#ffc850', // reach: 몸 바깥으로 탄을 받아 내는 거리, 반사 피해 = damage + 탄 피해 × mult
+    desc: '4초간 방패를 둘러 어떤 피해도 받지 않고, 몸에 닿는 적 탄을 쏜 쪽으로 그대로 되돌려 보냄 (되돌린 탄은 적에게 큰 피해)' },
+  { id: 'treasure_golden_fleece', name: '황금 양털', origin: '이아손', use: 'fleece', cooldown: 70, sfx: 'solomon', icon: 'fleece', questOnly: true, heroDrop: true,
+    heal: 0.5, guardDur: 20, endureHp: 0.3, endureMax: 2, color: '#ffd870',
+    desc: '체력 50% 회복, 그 뒤 20초 안에 쓰러질 피해를 받으면 체력 30%로 버팀 (버티기는 한 판에 2번까지)' }
 ];
 // 심층 보스를 쓰러뜨리면 아직 없는 영웅의 보구(heroDrop) 하나를 얻을 확률: 낮게 시작해 깊이 내려갈수록 조금씩 오름 [사용자 결정], 수치는 [제안]
 //  확률 = min(max, base + perDepth × (심층 깊이 - 1)) → 심층 1: 3% · 5: 9% · 10: 16.5% · 13 이후: 20%

@@ -41,7 +41,7 @@ class Player extends Entity {
     this.weapons = []; this.slot = 0; this.buffs = [];
   }
   get weapon() { return this.weapons[this.slot] || null; }
-  get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0; }
+  get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0 || this.aegisT > 0; }
   get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.35 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hadesT > 0 ? this.treasure.atk : 0) + (this.avalonT > 0 ? this.avalonAtk : 0) + (this.buffT > 0 ? this.buffAtk || 0 : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
 
   update(dt, input, map, mouseWorld) {
@@ -51,6 +51,7 @@ class Player extends Entity {
     this.skillCooldown = Math.max(0, this.skillCooldown - dt * (this.solomon > 0 && this.treasure && this.treasure.skillHaste ? this.treasure.skillHaste : 1)); // 솔로몬의 반지: 스킬 쿨타임 빨리 회복
     this.dashInvuln = Math.max(0, this.dashInvuln - dt);
     this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
+    if (this.aegisT > 0) this.aegisT = Math.max(0, this.aegisT - dt); if (this.fleeceT > 0) this.fleeceT = Math.max(0, this.fleeceT - dt); /* 아킬레우스의 방패 · 황금 양털 */
     this.overdrive = Math.max(0, this.overdrive - dt); this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt); this.treasureCd = Math.max(0, this.treasureCd - dt); this.solomon = Math.max(0, this.solomon - dt); this.hadesT = Math.max(0, (this.hadesT || 0) - dt);
     this.castLock = Math.max(0, this.castLock - dt); this.blinkWindowT = Math.max(0, this.blinkWindowT - dt); this.sancBoost = Math.max(0, this.sancBoost - dt); this.hasteT = Math.max(0, (this.hasteT || 0) - dt); this.avalonT = Math.max(0, (this.avalonT || 0) - dt); this.buffT = Math.max(0, (this.buffT || 0) - dt);
     if (this.swing) { this.swing.t += dt; if (this.swing.t >= this.swing.dur) this.swing = null; }
@@ -106,6 +107,9 @@ class Player extends Entity {
     this.shield -= absorbed;
     this.hp = Math.max(0, this.hp - (amount - absorbed));
     this.hurtInvuln = this.cfg.hurtInvuln;
+    const F = this.treasure; /* 황금 양털: 쓰고 나서 버티는 시간 안이면 쓰러질 피해를 한 번 버팀 (한 판에 endureMax번) */
+    if (this.hp <= 0 && this.fleeceT > 0 && F && F.use === 'fleece' && (this.fleeceUsed || 0) < F.endureMax) {
+      this.fleeceUsed = (this.fleeceUsed || 0) + 1; this.fleeceT = 0; this.hp = Math.max(1, Math.round(this.maxHp * F.endureHp)); this.hurtInvuln = 1.5; this.endured = true; }
     if (this.hp <= 0) { this.state = 'DEAD'; this.deathTimer = 0; }
     return true;
   }
@@ -118,9 +122,19 @@ class Player extends Entity {
     return s.ang + dir * (-s.arc / 2 + s.arc * k);
   }
   render(ctx) { // 하데스의 투구: 거의 투명하게 + 일렁이는 그림자
+    if (this.aegisT > 0 && this.state !== 'DEAD') this.renderAegis(ctx);
     if (!(this.hadesT > 0) || this.state === 'DEAD') { this.renderBody(ctx); return; }
     ctx.save(); ctx.globalAlpha = 0.28 + 0.08 * Math.sin(this.time * 10); this.renderBody(ctx); ctx.restore(); ctx.globalAlpha = 1;
     ctx.save(); ctx.globalAlpha = 0.35; ctx.strokeStyle = '#9aa8c8'; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.ellipse(Math.round(this.x), Math.round(this.y) + 6, 10, 3.5, 0, this.time * 2, this.time * 2 + TAU); ctx.stroke(); ctx.restore();
+  }
+  renderAegis(ctx) { /* 아킬레우스의 방패: 몸을 두른 금빛 고리 + 도는 테 (끝나기 1초 전부터 깜박임) */
+    const x = Math.round(this.x), y = Math.round(this.y) - 2, R = this.half + 8, t = this.time || 0;
+    if (this.aegisT < 1 && Math.sin(t * 30) < 0) return;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.16; ctx.fillStyle = '#ffc850'; ctx.beginPath(); ctx.arc(x, y, R, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.85; ctx.strokeStyle = '#ffc850'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, R, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.7; ctx.strokeStyle = '#fff4d0'; ctx.lineWidth = 1; for (let i = 0; i < 3; i++) { const a = t * 3 + i * TAU / 3; ctx.beginPath(); ctx.arc(x, y, R - 2.5, a, a + 0.8); ctx.stroke(); }
+    ctx.restore(); ctx.lineWidth = 1; ctx.globalAlpha = 1;
   }
   renderBody(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y);

@@ -398,11 +398,11 @@ class Game {
       p: { maxHp: p.maxHp, hp: p.hp, maxShield: p.maxShield, maxEnergy: p.maxEnergy, energy: p.energy, moveSpeed: p.moveSpeed,
         dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction,
         stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
-        treasure: p.treasure ? p.treasure.id : null, line: p.line ? p.line.id : null, rank: p.rank || 0, hybrid: p.hybrid ? { id: p.hybrid.id, el: p.hybrid.el } : null } };
+        treasure: p.treasure ? p.treasure.id : null, line: p.line ? p.line.id : null, rank: p.rank || 0, hybrid: p.hybrid ? { id: p.hybrid.id, el: p.hybrid.el } : null, fleeceUsed: p.fleeceUsed || 0 } };
   }
   playerFromSnapshot(hero, s, p = new Player(0, 0, hero, this.data.base)) { // 저장된 캐릭터 상태 → 플레이어 (이어하기·심층 기록 공용)
     return this.withPlayer(p, () => {
-      for (const k of ['maxHp', 'hp', 'maxShield', 'maxEnergy', 'energy', 'moveSpeed', 'dashCdMax', 'skillCdMax', 'vampire', 'damageReduction']) if (typeof s[k] === 'number') p[k] = s[k];
+      for (const k of ['maxHp', 'hp', 'maxShield', 'maxEnergy', 'energy', 'moveSpeed', 'dashCdMax', 'skillCdMax', 'vampire', 'damageReduction', 'fleeceUsed']) if (typeof s[k] === 'number') p[k] = s[k];
       Object.assign(p.stats, s.stats); p.buffs = s.buffs || [];
       p.weapons = (s.weapons || []).map((id, i) => [id, (s.weaponLv || [])[i] || 0]).filter(([id]) => this.data.weapons.get(id)).map(([id, lv]) => new WeaponInstance(this.data.weapons.get(id), lv));
       if (!p.weapons.length) p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
@@ -956,6 +956,14 @@ class Game {
       const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, T.range / d);
       this.zones.push(new RhongoTower(p, p.x + dx * k, p.y + dy * k, T));
       this.effects.rays(p.x, p.y, '#bfe6ff', 12, 60, 0.5); SFX.play('skill');
+    } else if (T.use === 'reflect') { /* 아킬레우스의 방패: 피해 없음 + 닿는 적 탄 반사 */
+      p.aegisT = T.duration;
+      this.effects.ring(p.x, p.y, 18, T.color); this.effects.ring(p.x, p.y, 30, '#ffffff'); this.addShake(0.15, 3); this.screenFlash = 0.1; this.flashColor = '255,200,80';
+    } else if (T.use === 'fleece') { /* 황금 양털: 체력 회복 + 잠시 동안 버티기 */
+      const h = Math.min(p.maxHp - p.hp, Math.round(p.maxHp * T.heal)); p.hp += h; p.fleeceT = T.guardDur; this.effects.heal(p.x, p.y);
+      const left = T.endureMax - (p.fleeceUsed || 0);
+      this.effects.text(p.x, p.y - 34, `+${h}  ·  ${left > 0 ? `버티기 ${T.guardDur}초 (남은 ${left}번)` : '버티기는 모두 썼음'}`, '#ffd870');
+      this.effects.ring(p.x, p.y, 26, T.color); this.screenFlash = 0.1; this.flashColor = '255,216,112';
     } else if (T.use === 'invis') { // 하데스의 투구: 모습을 감춤
       p.hadesT = T.duration;
       for (let i = 0; i < 26; i++) { const a = Math.random() * TAU, s = 20 + Math.random() * 50; this.effects.part(p.x, p.y - 4, Math.cos(a) * s, Math.sin(a) * s * 0.6 - 10, { color: i % 2 ? '#3a3a4a' : '#9aa8c8', life: 0.7, size: 2.5, size2: 0, drag: 2 }); }
@@ -1913,10 +1921,18 @@ class Game {
     if (Math.random() < B.killEnergyChance) this.pickups.push(new Pickup('energy', enemy.x, enemy.y, { value: B.killEnergyValue }));
     if (Math.random() < B.killHpChance) this.pickups.push(new Pickup('hp', enemy.x, enemy.y, { value: B.killHpValue }));
   }
+  reflectBullet(b, p) { /* 아킬레우스의 방패: 적 탄을 쏜 쪽으로 그대로 되돌림 (내 탄이 되어 적을 맞힘) */
+    const T = p.treasure || {}; let dx = -b.vx, dy = -b.vy; if (Math.hypot(dx, dy) < 1) { dx = b.x - p.x; dy = b.y - p.y; }
+    const d = Math.hypot(dx, dy) || 1, sp = Math.max(180, Math.hypot(b.vx, b.vy) * 1.3); b.alive = false;
+    this.projectiles.push(new Projectile({ x: b.x, y: b.y, dx: dx / d, dy: dy / d, speed: sp, range: 420, damage: (T.damage || 45) + b.damage * (T.mult || 2),
+      pierce: 0, knockback: 2, mods: p.mods, color: T.color || '#ffc850', size: 2, owner: p }));
+    this.effects.spark(b.x, b.y, '#fff4d0'); SFX.play('shield', 0.04);
+  }
   damagePlayer(amount) {
     const p = this.player, hp0 = p.hp;
     if (this.admin && this.admin.god) return false; // 관리자 무적
     if (p.takeDamage(amount)) {
+      if (p.endured) { p.endured = false; this.effects.text(p.x, p.y - 26, '황금 양털이 버텨 냈다!', '#ffd870', true); this.effects.ring(p.x, p.y, 30, '#ffd870'); this.effects.heal(p.x, p.y); this.screenFlash = 0.15; this.flashColor = '255,216,112'; SFX.play('solomon', 0.2); return true; }
       this.addShake(0.15, 3);
       this.effects.text(p.x, p.y - 16, '-' + amount, '#ff6b6b', true);
       if (p.hp < hp0) { SFX.play('hurt'); this.hurtFlash = 0.35; } else SFX.play('shield');
