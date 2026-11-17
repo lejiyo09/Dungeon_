@@ -9,7 +9,9 @@
 const COOP = {
   snapHz: 12,  // 방장 → 참가자 화면 상태 (초당) — 사이는 참가자가 속도로 이어서 그림 (데이터 절약)
   inHz: 20,    // 참가자 → 방장 입력 (초당)
-  scale: { mobCount: 0.5, mobHp: 0.25, bossHp: 0.7, elite: 0.03 }, // 1명 늘 때마다
+  scale: { mobCount: 0.5, mobHp: 0.25, bossHp: 0.7, elite: 0.03 }, // 1명 늘 때마다 (표가 없는 항목)
+  // 인원별 배율 [1인, 2인, 3인, 4인] — 봇 측정(tools/coopsim.js): 3~4인은 보스 공격이 나뉘어 혼자보다 훨씬 쉬워서 보스 체력을 더 올리고, 2인은 조금 낮춤
+  table: { bossHp: [1, 1.65, 2.55, 3.5] },
   reviveRatio: 0.3, // 쓰러진 사람은 다음 스테이지에서 최대 체력 30%로 부활
   reviveTime: 3, reviveRange: 24, reviveHp: 0.4, // 동료가 곁에 3초 있으면 그 자리에서 체력 40%로 일어남
   events: ['KeyF', 'Mouse2', 'KeyR', 'KeyE', 'KeyQ', 'Wheel'], // 참가자 → 방장으로 보내는 순간 입력 (대시는 참가자가 직접)
@@ -82,7 +84,7 @@ Object.assign(Game.prototype, {
   },
   hitOnce(e, key, q, fn) { const S = e[key] || (e[key] = new Set()); if (!S.has(q) && fn()) S.add(q); }, // 한 번의 돌진에 같은 사람은 한 번만
   partyCount() { return this.coop && this.coop.host ? 1 + this.remotes.size : 1; },
-  partyScale(kind) { return 1 + COOP.scale[kind] * (this.partyCount() - 1); },
+  partyScale(kind) { const n = this.partyCount(), T = COOP.table[kind]; return T ? T[Math.min(T.length, n) - 1] : 1 + COOP.scale[kind] * (n - 1); },
   coopActors() { // 내 화면에 그릴 다른 플레이어들 (이름표 포함)
     if (!this.coop) return [];
     const list = this.coop.host ? [...this.remotes.values()].map((r) => [r.p, Net.nameOf(r.id)]) : [...(this.coop.others || new Map()).values()].map((o) => [o.p, Net.nameOf(o.id)]);
