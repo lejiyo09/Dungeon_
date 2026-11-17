@@ -15,7 +15,7 @@ const COOP = {
   reviveRatio: 0.3, // 쓰러진 사람은 다음 스테이지에서 최대 체력 30%로 부활
   reviveTime: 3, reviveRange: 24, reviveHp: 0.4, // 동료가 곁에 3초 있으면 그 자리에서 체력 40%로 일어남
   events: ['KeyF', 'Mouse2', 'KeyR', 'KeyE', 'KeyQ', 'Wheel'], // 참가자 → 방장으로 보내는 순간 입력 (대시는 참가자가 직접)
-  fx: ['text', 'spark', 'ring', 'slash', 'lightning', 'burst', 'muzzle', 'impact', 'explosion', 'death', 'goldBurst', 'beamline', 'sparkle', 'heal', 'rays', 'skyBeam', 'reaction', 'excalibur', 'solomonSeal'] // 참가자 화면에도 보여 줄 연출
+  fx: ['text', 'spark', 'ring', 'slash', 'lightning', 'burst', 'muzzle', 'impact', 'explosion', 'death', 'goldBurst', 'beamline', 'sparkle', 'heal', 'rays', 'skyBeam', 'reaction', 'excalibur', 'solomonSeal', 'part', 'dust', 'afterimage', 'status'] // 참가자 화면에도 보여 줄 연출 (part·dust·afterimage·status: 소환·스킬 이펙트의 입자·먼지·잔상)
 };
 class VirtualInput { // 방장 쪽에서 참가자의 입력을 흉내 냄
   constructor() { this.down = new Set(); this.pressed = new Set(); this.typed = []; this.mouse = { x: 0, y: 0, down: false, rdown: false }; }
@@ -40,7 +40,7 @@ function coopPackRef(v) { // 적·플레이어 같은 큰 객체는 위치 정�
   return undefined;
 }
 // 참가자 화면에서 미리 그려도 되는 단순한 탄 (곧게 날아가는 총탄) — 방장 쪽 같은 탄은 참가자에게 보내지 않음
-function coopPredictable(d) { return !!d && d.type === 'gun' && !(d.boomerang || d.homing || d.orbit || d.grenade || d.mine || d.firework || d.trail || d.flame || d.burst || d.split || d.parallel || d.bounce || d.ricochet || d.deploy || d.bubble || d.puddle || d.grow); }
+function coopPredictable(d) { return !!d && (d.type === 'gun' || (d.type === 'charge' && !d.beamShot)) && !(d.boomerang || d.homing || d.orbit || d.grenade || d.mine || d.firework || d.trail || d.flame || d.ricochet || d.deploy || d.summon || d.trap || d.meteor || d.bubble); } // 연사·평행·튕김·분열·충전·회전 총도 포함
 function coopVel(o, x, y, now) { // 받은 위치 두 개로 속도를 구해 둠 → 사이 시간은 앞으로 예측해서 그림 (뒤따라오는 느낌 줄임)
   if (o.snapT && o.tx !== undefined) { const dt = (now - o.snapT) / 1000; if (dt > 0.02 && dt < 0.5) { const vx = (x - o.tx) / dt, vy = (y - o.ty) / dt, sp = Math.hypot(vx, vy); const k = sp > 320 ? 320 / sp : 1; o.vx = vx * k; o.vy = vy * k; } }
   o.tx = x; o.ty = y; o.snapT = now;
@@ -139,7 +139,10 @@ Object.assign(Game.prototype, {
     this.remotes = new Map();
     Net.raw({ t: 'start', on: true }); Net.relay({ k: 'start', deep: !!this.runDeep });
     const E = this.effects, fx = this.coop.fx; this.coop.fxOrig = {}; // 연출을 기록해 참가자에게도 보냄
-    for (const name of COOP.fx) { const orig = E[name]; this.coop.fxOrig[name] = orig; E[name] = function (...a) { if (fx.length < 90) fx.push([name, ...a.map((v) => (typeof v === 'number' ? r1(v) : v))]); return orig.apply(this, a); }; }
+    const cnt = this.coop.fxCount = {}, CAP = { part: 16, status: 8, dust: 6, afterimage: 6 }; let depth = 0; // 자잘한 입자는 화면 공유 한 번에 몇 개까지만 (데이터 절약)
+    for (const name of COOP.fx) { const orig = E[name]; this.coop.fxOrig[name] = orig; E[name] = function (...a) {
+      if (depth === 0 && fx.length < 120 && (!CAP[name] || (cnt[name] = (cnt[name] || 0) + 1) <= CAP[name])) fx.push([name, ...a.map((v) => (typeof v === 'number' ? r1(v) : v))]); // 연출 안에서 부르는 입자(총구 섬광의 입자 등)는 그 연출을 보내면 참가자 쪽에서 다시 생기므로 따로 보내지 않음
+      depth++; try { return orig.apply(this, a); } finally { depth--; } }; }
     this.coopSendMap();
     if (this.cutscene) { const c = this.cutscene; Net.relay({ k: 'cut', lines: c.lines, focus: c.focus ? { x: Math.round(c.focus.x), y: Math.round(c.focus.y) } : null }); } // 출발과 동시에 시작된 컷신(심층 첫 입장 등)도 동료에게
     this.showBanner('함께 출발!', `${Net.players.length}명 협동 · 몬스터가 인원만큼 많고 단단해집니다`, '#7affc0');
@@ -276,7 +279,7 @@ Object.assign(Game.prototype, {
     C.snapN = (C.snapN || 0) + 1; const full = C.snapN % 18 === 1; // 1.5초마다 전부 (중간에 놓친 값 보정), 그 사이엔 바뀐 것만
     const pl = (p, id, warp) => ({ id, x: Math.round(p.x), y: Math.round(p.y), h: p.hero.id, lk: p.line && p.line.look ? p.line.look : null, a: r1(p.aimVis), f: p.faceVis, st: p.state === 'DEAD' ? 'X' : p.state === 'DASH' ? 'D' : 'N', mv: p.moving ? 1 : 0,
       hp: Math.ceil(p.hp), mhp: p.maxHp, sh: Math.ceil(p.shield), msh: p.maxShield, en: Math.floor(p.energy), men: p.maxEnergy, w: p.weapons.map((x) => x.def.id), wl: p.weapons.map((x) => x.lv || 0), sl: p.slot,
-      sk: r1(p.skillCooldown), skm: r1(p.skillCdMax), sn: p.skillName, tr: p.treasure ? p.treasure.id : null, tc: r1(p.treasureCd), rk: p.rank, ln: p.line ? p.line.id : null, wp: warp, inv: p.hurtInvuln > 0 ? 1 : 0, rv: r1((p.reviveT || 0) / COOP.reviveTime), hy: p.hybrid ? p.hybrid.title : null });
+      sk: r1(p.skillCooldown), skm: r1(p.skillCdMax), sn: p.skillName, tr: p.treasure ? p.treasure.id : null, tc: r1(p.treasureCd), rk: p.rank, ln: p.line ? p.line.id : null, wp: warp, inv: p.hurtInvuln > 0 ? 1 : 0, rv: r1((p.reviveT || 0) / COOP.reviveTime), hy: p.hybrid ? p.hybrid.title : null, fr: p.weapon ? Math.round(this.weaponSystem.getFireRate(p, p.weapon) / (p.weapon.def.fireRate || 1) * 100) / 100 : 1 }); // fr: 공속 배율 (참가자 화면의 탄을 실제 연사 속도로)
     const players = [pl(C.me, Net.id, 0), ...[...this.remotes.values()].map((R) => { const e = pl(R.p, R.id, R.warp); if (R.px || R.py) { e.px = r1(R.px); e.py = r1(R.py); R.px = 0; R.py = 0; } return e; })];
     C.plast = C.plast || {}; const STATIC = ['h', 'lk', 'mhp', 'msh', 'men', 'w', 'wl', 'sn', 'tr', 'ln', 'hy', 'skm', 'rk']; // 잘 안 바뀌는 값은 바뀔 때만
     for (const e of players) { const L = C.plast[e.id] || (C.plast[e.id] = {}); for (const k of STATIC) { const v = JSON.stringify(e[k] ?? null); if (!full && L[k] === v) delete e[k]; else L[k] = v; } }
@@ -300,7 +303,7 @@ Object.assign(Game.prototype, {
       pk: this.pickups.map((k) => [k.kind, Math.round(k.x), Math.round(k.y), k.def ? k.def.id : 0]),
       hz: this.hazards.map((h) => [Math.round(h.x), Math.round(h.y), h.r, r1(h.t), h.delay, h.color]),
       po: this.portals.map((p) => [Math.round(p.x), Math.round(p.y), p.label || '', p.color || null]),
-      rv: this.map.rooms.map((r) => (r.visited ? 1 : 0)).join(''), td, fx: C.fx.splice(0), zs,
+      rv: this.map.rooms.map((r) => (r.visited ? 1 : 0)).join(''), td, fx: (C.fxCount && Object.keys(C.fxCount).forEach((k) => { C.fxCount[k] = 0; }), C.fx.splice(0)), zs,
       pp: this.props.map((o) => { let lb = ''; try { lb = o.label ? o.label(this) || '' : ''; } catch (e) { lb = ''; } const own = COOP_OWN_LABEL[o.constructor.name]; return [o.constructor.name, Math.round(o.x), Math.round(o.y), own ? '' : lb, o.open ? 1 : 0, o.content || 0, own ? own.map((k) => o[k]) : 0]; }) };
     C.slast = C.slast || {}; for (const k of ['pk', 'po', 'rv', 'pp']) { const v = JSON.stringify(msg[k]); if (!full && C.slast[k] === v) delete msg[k]; else C.slast[k] = v; } // 그대로면 생략
     if (!td.length) delete msg.td; if (!msg.fx.length) delete msg.fx; if (!msg.hz.length && C.lastHz === 0) delete msg.hz; C.lastHz = this.hazards.length;
@@ -358,7 +361,7 @@ Object.assign(Game.prototype, {
       if (!mine) { coopVel(p, s.x, s.y, nowS); if (Math.hypot(p.x - s.x, p.y - s.y) > 80) { p.x = s.x; p.y = s.y; p.vx = p.vy = 0; } p.aimVis = s.a; p.faceVis = s.f; p.moving = !!s.mv; p.hurtInvuln = s.inv ? 0.1 : 0; const base = this.data.heroes.get(s.h); if (base) p.hero = s.lk ? heroWithLook(base, s.lk) : base; }
       else if (s.wp !== C.warp) { p.x = s.x; p.y = s.y; C.warp = s.wp; } // 방장이 옮겼을 때만 내 위치를 맞춤
       else if (s.px || s.py) moveAndCollide(p, s.px || 0, s.py || 0, this.map); // 끌려감·밀림
-      p.reviveT = s.rv * COOP.reviveTime; p.hybridTitle = s.hy;
+      p.reviveT = s.rv * COOP.reviveTime; p.hybridTitle = s.hy; if (mine) C.fr = s.fr || 1;
       if (mine && s.hp + s.sh < p.hp + p.shield - 0.5) { this.addShake(0.15, 3); if (s.hp < p.hp) { this.hurtFlash = 0.35; SFX.play('hurt'); } else SFX.play('shield'); this.effects.text(p.x, p.y - 16, '-' + Math.round(p.hp + p.shield - s.hp - s.sh), '#ff6b6b', true); } // 내가 맞음
       if (mine && s.st === 'X' && p.state !== 'DEAD') this.showBanner('쓰러졌습니다', '동료가 곁에 3초 서 있으면 일어나고, 아니면 다음 스테이지에서 부활합니다', '#ff8a8a');
       p.hp = s.hp; p.maxHp = s.mhp; p.shield = s.sh; p.maxShield = s.msh; p.energy = s.en; p.maxEnergy = s.men;
@@ -448,8 +451,7 @@ Object.assign(Game.prototype, {
       if (input.wasPressed('Mouse0') && this.minimapClick(input.mouse)) input.mouse.down = false;
     }
     const md = input.mouse.down && p.state !== 'DEAD' ? 1 : 0; if (C.ev.length || md !== C.lastMd) C.inT = 0; C.lastMd = md; // 누르기·떼기·스킬은 바로 보냄 (공격이 늦게 나가는 느낌 줄임)
-    C.fireCd = (C.fireCd || 0) - dt; const w = p.weapons[p.slot]; // 내 공격 소리는 바로 (실제 판정은 방장)
-    if (md && w && C.fireCd <= 0 && (w.def.type === 'gun' || w.def.type === 'melee') && p.energy >= (w.def.energyCost || 0)) { C.fireCd = 1 / Math.max(0.5, w.def.fireRate || 2); SFX.play(w.def.type === 'melee' ? 'melee' : weaponSound(w.def), w.def.fireRate > 8 ? 0.06 : 0.03); this.coopPredictShot(p, w.def, mw); }
+    this.coopLocalFire(p, md, mw, dt); // 내 공격은 내 화면에 바로 (소리·탄·휘두르기 — 실제 판정은 방장)
     if (C.local && C.local.length) { for (let i = this.projectiles.length - 1; i >= 0; i--) if (this.projectiles[i].local && !this.projectiles[i].alive) this.projectiles.splice(i, 1); }
     C.inT -= dt;
     if (C.inT <= 0) { C.inT = 1 / COOP.inHz; Net.relay({ k: 'in', wp: C.warp, x: Math.round(p.x), y: Math.round(p.y), d: p.state === 'DASH' ? 1 : 0, md: input.mouse.down ? 1 : 0, ax: Math.round(mw.x), ay: Math.round(mw.y), ev: C.ev.splice(0) }, C.hostId); }
@@ -470,15 +472,35 @@ Object.assign(Game.prototype, {
     this.updateCamera(dt);
     input0.endStep();
   },
-  coopPredictShot(p, def, mw) { // 내 공격을 내 화면에 바로 그림 (실제 판정은 방장) → 반응이 늦은 느낌 줄임
+  coopLocalFire(p, md, mw, dt) {
+    const C = this.coop, w = p.weapons[p.slot]; if (!w) return; const def = w.def, fr = C.fr || 1;
+    if (C.lastW !== def.id) { C.lastW = def.id; C.fireCd = 0.1; C.spin = 0; C.chargeT = 0; C.burst = null; } // 무기를 바꾸면 처음부터
+    C.fireCd = (C.fireCd || 0) - dt;
+    if (C.burst) { C.burst.t -= dt; if (C.burst.t <= 0 && C.burst.left > 0) { C.burst.left--; C.burst.t = def.burst.interval; this.coopPredictShot(p, def, mw); } if (C.burst.left <= 0) C.burst = null; } // 연사 총: 남은 발
+    if (def.type === 'charge') { // 충전 무기: 누르는 동안 모으고, 떼면 쏨
+      if (md) C.chargeT = (C.chargeT || 0) + dt * fr;
+      else if (C.chargeT > 0.05 && C.fireCd <= 0 && p.energy >= (def.energyCost || 0)) { const k = 0.3 + 0.7 * Math.min(1, C.chargeT / (def.chargeTime || 0.5)); this.coopPredictShot(p, def, mw, { speed: (def.projectileSpeed || 400) * (0.6 + 0.4 * k), pierce: k >= 1 ? def.pierce || 0 : 0 }); SFX.play(weaponSound(def), 0.03); C.fireCd = 1 / Math.max(0.3, def.fireRate * fr); C.chargeT = 0; }
+      else if (!md) C.chargeT = 0;
+      return;
+    }
+    if (def.spinUp) C.spin = md ? Math.min(def.spinUp, (C.spin || 0) + dt) : 0; // 회전 기관총: 누를수록 빨라짐
+    if (!md || C.fireCd > 0 || C.burst || (def.type !== 'gun' && def.type !== 'melee') || p.energy < (def.energyCost || 0)) return;
+    const rate = (def.fireRate || 2) * fr * (def.spinUp ? 0.25 + 0.75 * Math.min(1, C.spin / def.spinUp) : 1);
+    C.fireCd = 1 / Math.max(0.3, rate);
+    SFX.play(def.type === 'melee' ? 'melee' : weaponSound(def), def.fireRate > 8 ? 0.06 : 0.03);
+    this.coopPredictShot(p, def, mw);
+    if (def.burst && coopPredictable(def)) C.burst = { left: def.burst.count - 1, t: def.burst.interval };
+  },
+  coopPredictShot(p, def, mw, ov = {}) { // 내 공격을 내 화면에 바로 그림 (실제 판정은 방장) → 반응이 늦은 느낌 줄임
     const a = Math.atan2(mw.y - p.y, mw.x - p.x);
     if (def.type === 'melee') { p.swing = { t: 0, dur: 0.14, ang: a, arc: (def.arcDeg || 90) * Math.PI / 180, thrust: (def.arcDeg || 90) <= 40 }; return; }
     if (!coopPredictable(def)) return;
     const C = this.coop, n = def.projectileCount || 1, sp = (def.spreadDeg || 0) * Math.PI / 180, map = this.map, game = this;
     for (let i = 0; i < n; i++) {
-      const ang = def.fanDeg && n > 1 ? a + (i / (n - 1) - 0.5) * def.fanDeg * Math.PI / 180 : a + (Math.random() * 2 - 1) * sp, v = def.projectileSpeed || 400;
-      const q = { local: true, alive: true, x: p.x, y: p.y - 1, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, left: def.range || 300, pierce: def.pierce || 0, c: def.bulletColor || '#fff', s: def.bulletSize || 1,
+      const ang = def.fanDeg && n > 1 && !def.parallel ? a + (i / (n - 1) - 0.5) * def.fanDeg * Math.PI / 180 : a + (Math.random() * 2 - 1) * sp, v = ov.speed || def.projectileSpeed || 400, off = def.parallel ? (i - (n - 1) / 2) * def.parallel : 0;
+      const q = { local: true, alive: true, x: p.x - Math.sin(a) * off, y: p.y - 1 + Math.cos(a) * off, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, left: def.range || 300, pierce: ov.pierce ?? def.pierce ?? 0, bounces: def.bounce || 0, c: def.bulletColor || '#fff', s: def.bulletSize || 1,
         update(dt) { if (!this.alive) return; const sx = this.vx * dt, sy = this.vy * dt; this.x += sx; this.y += sy; this.left -= Math.hypot(sx, sy);
+          if (this.left > 0 && map.isSolidAt(this.x, this.y) && this.bounces > 0) { this.bounces--; const hx = map.isSolidAt(this.x, this.y - sy), hy = map.isSolidAt(this.x - sx, this.y); this.x -= sx; this.y -= sy; if (hx || !hy) this.vx = -this.vx; if (hy || !hx) this.vy = -this.vy; return; } // 벽에 튕김
           if (this.left <= 0 || map.isSolidAt(this.x, this.y)) { this.alive = false; return; }
           if (this.pierce < 99) for (const e of game.enemies) if (e.alive && Math.hypot(e.x - this.x, e.y - this.y) < (e.radius || 6) + 2) { if (this.pierce-- <= 0) { this.alive = false; game.effects.spark(this.x, this.y, this.c); } break; } },
         render(ctx) { if (!this.alive) return; ctx.fillStyle = this.c; const z = Math.max(1, this.s); ctx.fillRect(Math.round(this.x) - z, Math.round(this.y) - z, z * 2, z * 2); } };
