@@ -128,7 +128,7 @@ const RHONGO_TRIAL = {
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
 };
 // [사용자 결정] 멀린의 세 번째 퀘스트 '로드 투 카멜롯': 아서왕과 원탁의 기사들이 있던 브리튼의 성 카멜롯(이명: 백악의 성)을 던전으로 — 첫 보스는 태양의 원탁의 기사 가웨인
-//  대사는 모두 [임시] 연출 문구. 던전 구성(방 4개: 시작·전투 2·보스)·장비·보상(결정석)은 Claude가 정한 [제안]
+//  대사는 모두 [임시] 연출 문구. 던전 구성(방 3개: 시작·전투 1·보스 [사용자 결정: 전투 방 1개])·장비·보상(결정석)은 Claude가 정한 [제안]
 const MERLIN_CAMELOT_LINES = [
   '「창이 너를 인정했군. 그렇다면 이제 길을 알려 줄 때가 됐다.」',
   '「백악의 성, 카멜롯. 왕과 원탁의 기사들이 머물던 브리튼의 성이다.」',
@@ -147,7 +147,7 @@ const CAMELOT_TRIAL = {
   confirm: ['백악의 성 카멜롯 — 성의 기사들을 뚫고 성문을 지키는 태양의 기사 가웨인과 싸웁니다', '롱고미니아드보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
   winText: '가웨인을 쓰러뜨리고 성문을 열었습니다', winSub: '결정석 500개를 받았습니다 — 카멜롯 깊은 곳의 이야기는 다음에 이어집니다', winLines: () => GAWAIN_WIN_LINES,
   world: 9,
-  W: { name: '백악의 성 카멜롯', boss: 'boss_gawain', trial: true, rooms: 4, sanctum: false, deep: false, waves: 2,
+  W: { name: '백악의 성 카멜롯', boss: 'boss_gawain', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
     enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 1]],
     palette: { style: 'sanctum', accent: '#ffd870', floor: ['#b8b2a6', '#bcb6aa'], corridor: ['#a49e92', '#a8a296'], wall: '#d8d4ca', wallTop: '#ece8de',
       wallFace: '#c4beb0', faceLine: '#aea896', deco: 'rgba(255,216,112,0.4)' } },
