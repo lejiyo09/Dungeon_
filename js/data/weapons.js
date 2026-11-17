@@ -239,13 +239,13 @@ const DATA_WEAPONS = [
     split: { count: 6, damage: 11, range: 90, speed: 240 }, pierce: 0, knockback: 4, homing: 1.5, color: '#3a6a5a', len: 12, bulletColor: '#7affc0', bulletSize: 3 },
   // ── 전설
   { id: 'weapon_cometgun_001', name: '혜성 기관총', rarity: 'legendary', type: 'gun', shape: 'gun',
-    damage: 15, fireRate: 9, energyCost: 0.35, range: 400, projectileSpeed: 640, projectileCount: 1, spreadDeg: 3, spinUp: 0.15,
+    damage: 18, fireRate: 9, energyCost: 0.35, range: 400, projectileSpeed: 640, projectileCount: 1, spreadDeg: 3, spinUp: 0.15,
     explodeRadius: 18, pierce: 1, knockback: 2, color: '#5a4a3a', len: 15, bulletColor: '#ffc04a', bulletSize: 3 },
   { id: 'weapon_worldtree_001', name: '세계수 지팡이', rarity: 'legendary', type: 'gun', shape: 'staff',
-    damage: 15, fireRate: 2.8, energyCost: 1, range: 440, projectileSpeed: 480, projectileCount: 4, spreadDeg: 18, homing: 4,
+    damage: 18, fireRate: 2.8, energyCost: 1, range: 440, projectileSpeed: 480, projectileCount: 4, spreadDeg: 18, homing: 4,
     status: { type: 'poison', chance: 1, duration: 3, dps: 8 }, pierce: 1, knockback: 2, mark: { mult: 1.3, dur: 3 }, color: '#6a5030', len: 14, bulletColor: '#9aff6a', bulletSize: 3 },
   { id: 'weapon_frostscepter_001', name: '서리여왕의 홀', rarity: 'legendary', type: 'gun', shape: 'staff',
-    damage: 20, fireRate: 2.1, energyCost: 1.8, range: 400, projectileSpeed: 480, projectileCount: 5, spreadDeg: 0, fanDeg: 30, bounce: 2,
+    damage: 24, fireRate: 2.1, energyCost: 1.8, range: 400, projectileSpeed: 480, projectileCount: 5, spreadDeg: 0, fanDeg: 30, bounce: 2,
     status: { type: 'freeze', chance: 0.8, duration: 1.6, slow: 0.6 }, pierce: 1, knockback: 3, color: '#7a9ac8', len: 14, bulletColor: '#bfefff', bulletSize: 3 },
   // ── 개성 무기 5
   { id: 'weapon_harpoon_001', name: '작살총', rarity: 'common', type: 'gun', shape: 'gun',
@@ -319,10 +319,10 @@ const DATA_WEAPONS = [
     damage: 50, fireRate: 1.8, energyCost: 0, range: 46, arcDeg: 40, knockback: 4, status: { type: 'poison', chance: 0.6, duration: 3, dps: 8 }, color: '#4a7a3a', len: 12 },
   // 전설 근접
   { id: 'weapon_sunsword_001', name: '태양의 검', rarity: 'legendary', type: 'melee', shape: 'sword',
-    damage: 50, fireRate: 1.7, energyCost: 0.5, range: 50, arcDeg: 170, deflect: true, knockback: 10, status: { type: 'burn', chance: 1, duration: 2, dps: 12 },
+    damage: 60, fireRate: 1.7, energyCost: 0.5, range: 50, arcDeg: 170, deflect: true, knockback: 10, status: { type: 'burn', chance: 1, duration: 2, dps: 12 },
     wave: { damage: 34, speed: 440, range: 260 }, color: '#ffd84a', len: 17 },
   { id: 'weapon_shadowblades_001', name: '그림자 쌍검', rarity: 'legendary', type: 'melee', shape: 'sword',
-    damage: 30, fireRate: 4.4, energyCost: 0, range: 40, arcDeg: 200, deflect: true, knockback: 4, lifesteal: 0.5,
+    damage: 36, fireRate: 4.4, energyCost: 0, range: 40, arcDeg: 200, deflect: true, knockback: 4, lifesteal: 0.5,
     color: '#5a4a7a', len: 11 },
   { id: 'weapon_torch_001', name: '횃불', rarity: 'common', type: 'melee', shape: 'sword',
     damage: 16, fireRate: 2.4, energyCost: 0, range: 26, arcDeg: 110, knockback: 4,
@@ -378,7 +378,7 @@ const DATA_WEAPONS = [
     damage: 4.5, tickRate: 0.08, energyPerSec: 4, range: 260, pierce: 0, knockback: 0,
     focus: 1.2, color: '#c0c8d8', len: 11, bulletColor: '#ff5ac8' },
   { id: 'weapon_judgment_001', name: '심판의 광선', rarity: 'legendary', type: 'beam', shape: 'gun',
-    damage: 6.6, tickRate: 0.07, energyPerSec: 2.8, range: 380, pierce: 2, knockback: 0,
+    damage: 7.9, tickRate: 0.07, energyPerSec: 2.8, range: 380, pierce: 2, knockback: 0,
     status: { type: 'burn', chance: 0.5, duration: 2, dps: 14 }, focus: 1, color: '#e0c060', len: 13, bulletColor: '#fff0a0' },
   // ── 덫·속성 무기 (추가)
   { id: 'weapon_beartrap_001', name: '사냥꾼의 덫', rarity: 'uncommon', type: 'gun', shape: 'gun',
@@ -389,7 +389,7 @@ const DATA_WEAPONS = [
     trap: { max: 5, life: 25, radius: 18, root: 1.2, chain: { count: 3, range: 80, falloff: 0.7 } },
     status: { type: 'shock', chance: 1, duration: 3 }, color: '#4a5a8a', len: 9, bulletColor: '#fff27a' },
   { id: 'weapon_inferno_001', name: '겁화의 홀', rarity: 'legendary', type: 'gun', shape: 'staff',
-    damage: 33, fireRate: 2.3, energyCost: 1.8, range: 420, projectileSpeed: 480, projectileCount: 1, spreadDeg: 1,
+    damage: 40, fireRate: 2.3, energyCost: 1.8, range: 420, projectileSpeed: 480, projectileCount: 1, spreadDeg: 1,
     explodeRadius: 34, status: { type: 'burn', chance: 1, duration: 3, dps: 10 },
     puddle: { r: 22, life: 2, tick: 0.35, dmg: 5, status: { type: 'burn', chance: 0.6, duration: 2, dps: 10 }, color: '#ff6a2a' },
     pierce: 0, knockback: 4, color: '#c04a1a', len: 14, bulletColor: '#ffb040', bulletSize: 3 },
@@ -438,7 +438,7 @@ const DATA_WEAPONS = [
     damage: 86, fireRate: 1.5, energyCost: 1.5, chargeTime: 0.5, range: 600, projectileSpeed: 900, explodeRadius: 22,
     status: { type: 'blind', chance: 1, duration: 3 }, chain: { count: 3, range: 90, falloff: 0.75 }, pierce: 3, knockback: 8, color: '#3a4270', len: 13, bulletColor: '#dff8ff', bulletSize: 2 },
   { id: 'weapon_aurora_001', name: '오로라 소총', rarity: 'legendary', type: 'gun', shape: 'gun',
-    damage: 18, fireRate: 5, energyCost: 0.5, range: 480, projectileSpeed: 820, projectileCount: 1, spreadDeg: 2, pierce: 2, bounce: 1,
+    damage: 22, fireRate: 5, energyCost: 0.5, range: 480, projectileSpeed: 820, projectileCount: 1, spreadDeg: 2, pierce: 2, bounce: 1,
     status: { type: 'freeze', chance: 0.3, duration: 1.4, slow: 0.5 }, mark: { mult: 1.15, dur: 2 }, knockback: 3, color: '#3a5a7a', len: 16, bulletColor: '#9affe0', bulletSize: 2 },
   // ── 한 방이 강한 전설
   { id: 'weapon_dragonslayer_001', name: '용살자의 대검', rarity: 'legendary', type: 'melee', shape: 'sword',
@@ -504,6 +504,6 @@ const DATA_WEAPONS = [
     chain: { count: 3, range: 85, falloff: 0.75 }, status: { type: 'shock', chance: 0.5, duration: 3 }, pierce: 2, arrow: true, knockback: 6, color: '#5a6a9a', len: 16, bulletColor: '#fff27a', bulletSize: 2 },
   // ── 전설 1
   { id: 'weapon_eclipse_001', name: '일식의 원반', rarity: 'legendary', type: 'gun', shape: 'gun',
-    damage: 38, fireRate: 2.2, energyCost: 0.5, range: 300, projectileSpeed: 400, projectileCount: 1, spreadDeg: 0,
+    damage: 46, fireRate: 2.2, energyCost: 0.5, range: 300, projectileSpeed: 400, projectileCount: 1, spreadDeg: 0,
     pierce: 99, boomerang: true, rehit: 0.3, status: { type: 'burn', chance: 0.5, duration: 2, dps: 12 }, mark: { mult: 1.2, dur: 2 }, knockback: 5, color: '#2a2030', len: 9, bulletColor: '#ffb04a', bulletSize: 3 }
 ];
