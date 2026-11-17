@@ -612,8 +612,8 @@ class Game {
       if (this.transition.t >= 0.9) this.transition = null;
       input.endStep(); return;
     }
+    if (this.cutscene) { if (this.coop && this.coop.host) this.coopHostSend(dt); this.screenFlash = Math.max(0, this.screenFlash - dt); this.shake = Math.max(0, (this.shake || 0) - dt); this.updateCutscene(dt, input); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } // 컷신이 먼저 (창이 함께 떠 있어도 컷신을 넘길 수 있게, 창은 컷신이 끝난 뒤) · 컷신 중에는 세계가 멈춤 (번쩍임·흔들림은 가라앉음)
     if (this.overlay) { this.updateOverlay(input); input.endStep(); if (!(this.coop && this.coop.host) || !this.overlay) return; input = NULL_INPUT; } // 멀티 방장: 창을 열어도 다른 사람 때문에 세계는 계속 돌아감 (내 캐릭터만 멈춤)
-    if (this.cutscene) { if (this.coop && this.coop.host) this.coopHostSend(dt); this.screenFlash = Math.max(0, this.screenFlash - dt); this.shake = Math.max(0, (this.shake || 0) - dt); this.updateCutscene(dt, input); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } // 컷신 중에는 세계가 멈춤 (번쩍임·흔들림은 가라앉음)
     if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; input.endStep(); return; }
     if (this.admin && input.wasPressed('Backquote')) { this.overlay = { type: 'admin', msg: null }; input.endStep(); return; }
     if (this.hitStopT > 0) { this.hitStopT -= dt; return; }

@@ -114,7 +114,7 @@ Object.assign(Game.prototype, {
       else if (d.k === 'in') { const R = this.remotes.get(m.from); if (!R) return; if (d.wp === R.warp) { R.rx = d.x; R.ry = d.y; } /* 방장이 옮긴 뒤 참가자가 확인하기 전의 옛 위치는 무시 */ R.aim = { x: d.ax, y: d.ay }; R.vin.mouse.down = !!d.md; R.dash = !!d.d; for (const e of d.ev || []) if (COOP.events.includes(e)) R.vin.pressed.add(e); }
       else if (d.k === 'ov') { const R = this.remotes.get(m.from); if (R) this.coopRemoteOverlay(R, d); }
       else if (d.k === 'trpick') { const R = this.remotes.get(m.from), T = DATA_TREASURES.find((t) => t.id === d.id); if (R && T && !R.p.treasure) { R.p.treasure = T; R.p.treasureCd = 0; } } // 성역에서 고른 보구를 이번 탐험부터
-      else if (d.k === 'variant') { const R = this.remotes.get(m.from); const L = R && jobLines(R.p.hero.id).find((l) => l.id === d.id); if (L && (R.p.rank === 0 || this.runDeep) && !R.variantSet) { R.variantSet = true; const keep = R.p.weapons, rk = R.p.rank; this.withPlayer(R.p, () => { this.applyVariant(L); if (this.runDeep) { R.p.weapons = keep; this.setJob(R.p, L, rk); } }); } }
+      else if (d.k === 'variant') { const R = this.remotes.get(m.from); const L = R && jobLines(R.p.hero.id).find((l) => l.id === d.id); if (L && (R.p.rank === 0 || this.runDeep) && !R.variantSet) { R.variantSet = true; const keep = R.p.weapons.slice(), rk = R.p.rank; /* 복사해 둠 (갈래 시작 무기가 같은 목록을 바꾸므로) */ this.withPlayer(R.p, () => { this.applyVariant(L); if (this.runDeep) { R.p.weapons = keep; this.setJob(R.p, L, rk); } }); } }
     } else if (m.from === this.coop.hostId) {
       if (d.k === 'map') this.coopGuestMap(d);
       else if (d.k === 'snap') this.coopGuestSnap(d);
@@ -136,6 +136,7 @@ Object.assign(Game.prototype, {
     const E = this.effects, fx = this.coop.fx; this.coop.fxOrig = {}; // 연출을 기록해 참가자에게도 보냄
     for (const name of COOP.fx) { const orig = E[name]; this.coop.fxOrig[name] = orig; E[name] = function (...a) { if (fx.length < 90) fx.push([name, ...a.map((v) => (typeof v === 'number' ? r1(v) : v))]); return orig.apply(this, a); }; }
     this.coopSendMap();
+    if (this.cutscene) { const c = this.cutscene; Net.relay({ k: 'cut', lines: c.lines, focus: c.focus ? { x: Math.round(c.focus.x), y: Math.round(c.focus.y) } : null }); } // 출발과 동시에 시작된 컷신(심층 첫 입장 등)도 동료에게
     this.showBanner('함께 출발!', `${Net.players.length}명 협동 · 몬스터가 인원만큼 많고 단단해집니다`, '#7affc0');
   },
   coopAddRemote(id, d) {
