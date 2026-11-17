@@ -376,9 +376,11 @@ class HUD {
           T(String(i + 1), 34, y, col); T(o.tab === 3 ? r.party : r.name, 62, y, col); if (o.tab !== 3) { const h = game.data.heroes.get(r.hero); T(h ? h.name : '', 200, y, '#c8b890', 'left', 7); }
           T(o.tab === 1 ? String(r.kills) : o.tab === 2 ? '심층 ' + r.deep : r.label || String(r.stage), 330, y, col, 'right');
           T(`${r.label || ''}${r.victory ? ' · 귀환' : ''} · 처치 ${r.kills}`, VIEW_W - 30, y, '#888', 'right', 7); });
-        if (o.data && o.data.restored) T('서버가 다시 시작되어 비어 있던 기록을 이 기기의 사본으로 복구했어요', VIEW_W / 2, VIEW_H - 26, '#7affc0', 'center', 7);
+        if (o.data && o.data.restored) T('서버가 다시 시작되어 비어 있던 기록을 이 기기의 사본으로 복구했어요', VIEW_W / 2, VIEW_H - 36, '#7affc0', 'center', 7);
       }
-      T('1~4 / 클릭: 분야   ·   E / Esc: 닫기   ·   계정으로 탐험을 마치면 자동으로 기록', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
+      const who = game.admin ? ['관리자 계정은 랭킹에 기록되지 않아요 (일반 계정으로 플레이하면 기록)', '#ffb070'] : !game.profile ? ['게스트는 랭킹에 기록되지 않아요 — 계정으로 로그인하면 기록', '#ffb070'] : [`${game.profile.name} 계정 · 탐험을 마치면 자동으로 기록`, '#7affc0'];
+      T(who[0], VIEW_W / 2, VIEW_H - 24, who[1], 'center', 7);
+      T('1~4 / 클릭: 분야   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
     } else if (o.type === 'details') { // 상세 정보 (수치는 설정값에서 바로 읽음)
       const m = game.input.mouse, T = (s, x, y, c = '#e8e0f0', a = 'left', z = 8) => hudText(ctx, s, x, y, c, a, z), pct = (v) => (Math.round(v * 1000) / 10) + '%';
       ['특수방 확률', '무기 강화', '원소 반응'].forEach((t, i) => { const r = HUD.guildTab(i), on = o.tab === i; ctx.fillStyle = on ? 'rgba(255,216,74,0.25)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); T(`${i + 1} ${t}`, r.x + r.w / 2, r.y + 4, on ? '#ffd84a' : '#aaa', 'center', 9); });

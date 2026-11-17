@@ -234,7 +234,7 @@ class Game {
   }
   openRanking() {
     const o = this.overlay = { type: 'rank', tab: 0, data: null, err: null, loading: true }; this.input.mouse.down = false;
-    Net.syncScores().then((d) => { o.data = d; o.loading = false; }).catch((e) => { o.err = e.message; o.loading = false; }); // 서버가 초기화됐으면 이 브라우저의 사본으로 복구
+    Net.flushScores().catch(() => {}).then(() => Net.syncScores()).then((d) => { o.data = d; o.loading = false; }).catch((e) => { o.err = Net.scoreErr(e); o.loading = false; }); // 서버가 초기화됐으면 이 브라우저의 사본으로 복구
   }
   applyDeepKit(p) { // 로비에서 바로 심층에 들어갈 때의 시작 장비 (BALANCE.deepStart)
     const K = BALANCE.deepStart;
@@ -516,6 +516,7 @@ class Game {
     this.locked = false; this.enterLobby();
     if (this.save.run) this.overlay = { type: 'resume' };
     this.backfillScore(); // 랭킹판이 생기기 전의 내 최고 기록도 한 번 올림
+    if (Net.httpBase()) Net.flushScores().catch(() => {}); // 지난번에 보내지 못한 기록
     this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', this.admin ? '관리자 계정 — 모든 것이 해금됨 · ` 키: 관리자 메뉴' : profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다', '#ffd84a');
   }
   logout() {

@@ -66,7 +66,7 @@ const Net = {
   async fetchScores() { // 브라우저가 ETag로 다시 확인 → 바뀌지 않았으면 서버는 내용 없이 응답 (데이터 절약)
     const b = this.httpBase(); if (!b) throw new Error('랭킹판은 서버 주소(Render)에서 열었을 때만 볼 수 있어요');
     if (this.scoreMem && performance.now() - this.scoreMem.at < 60000) return Object.assign({}, this.scoreMem.d); // 1분 안에 다시 열면 서버에 묻지 않음
-    const r = await fetch(b + '/api/scores', { cache: 'no-cache' }); if (!r.ok) throw new Error('랭킹을 불러오지 못했습니다');
+    const r = await fetch(b + '/api/scores', { cache: 'no-cache' }); if (!r.ok) throw new Error('랭킹을 불러오지 못했습니다 (서버 응답 ' + r.status + ')');
     const d = await r.json(); this.scoreMem = { at: performance.now(), d }; return Object.assign({}, d); },
   // 랭킹 사본: 본 적 있는 기록을 이 브라우저에 보관 → 서버가 비어 있으면 다시 채워 넣음 (서버 재시작 대비)
   scoreKey(cat, r) { return cat === 'coop' ? r.party : r.name; },
@@ -82,6 +82,20 @@ const Net = {
     try { localStorage.setItem('pd_scores_cache', JSON.stringify(merged)); } catch (e) { /* 저장 공간 없음 */ }
     return d;
   },
-  submitScore(row) { const b = this.httpBase(); if (!b) return; this.scoreMem = null; fetch(b + '/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(row) }).catch(() => {}); },
+  // 기록 보내기: 실패하면(서버가 깨어나는 중·연결 막힘·너무 자주 보냄) 이 기기에 보관했다가 다음 접속·랭킹 열기 때 다시 보냄
+  submitScore(row) { const b = this.httpBase(); if (!b) return; this.scoreMem = null;
+    const keep = () => { try { const q = JSON.parse(localStorage.getItem('pd_score_queue') || '[]'); q.push(row); localStorage.setItem('pd_score_queue', JSON.stringify(q.slice(-10))); } catch (e) { /* 저장 공간 없음 */ } };
+    return fetch(b + '/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(row) }).then((r) => { if (!r.ok) keep(); return r.ok; }).catch(() => { keep(); return false; }); },
+  async flushScores() { // 보내지 못한 기록 다시 보내기 (같은 이름은 서버가 15초에 한 번만 받으므로 이름마다 가장 좋은 기록 하나씩)
+    let q = []; try { q = JSON.parse(localStorage.getItem('pd_score_queue') || '[]'); localStorage.removeItem('pd_score_queue'); } catch (e) { return; }
+    const best = new Map(); for (const r of q) { const o = best.get(r.name); if (!o) best.set(r.name, r); else best.set(r.name, Object.assign({}, r, { stage: Math.max(o.stage, r.stage), kills: Math.max(o.kills, r.kills), deep: Math.max(o.deep || 0, r.deep || 0), label: r.stage >= o.stage ? r.label : o.label, victory: o.victory || r.victory })); }
+    for (const r of best.values()) await this.submitScore(r);
+  },
+  scoreErr(e) { // 연결 실패를 알아보기 쉬운 말로
+    if (e && /랭킹|서버 주소/.test(e.message)) return e.message;
+    const here = /^https?:$/.test(location.protocol) && !/claude/.test(location.hostname);
+    return here ? '랭킹 서버에 연결하지 못했어요 (무료 서버가 깨어나는 중일 수 있어요 — 30초~1분 뒤 다시 열어 주세요)'
+      : '이 페이지에서는 랭킹 서버에 연결할 수 없어요 → ' + this.httpBase() + ' 에서 열어 주세요';
+  },
   nameOf(id) { const p = this.players.find((q) => q.id === id); return p ? p.name : '?'; }
 };
