@@ -354,6 +354,7 @@ class Game {
     if (p === this.player) for (const w of p.weapons) this.discover(w.def.id);
   }
   titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
+  visibleTitles() { return GUILD_TITLES.filter((T) => !T.hidden || this.titleUnlocked(T)); } /* 히든 칭호는 얻은 뒤에만 목록에 나옴 */
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
   resetWorldLists(map) {
     this.map = map;
@@ -926,7 +927,7 @@ class Game {
         if (click) for (let i = 0; i < 3; i++) if (hit(HUD.guildTab(i))) { o.tab = i; return; }
         if (!click) return;
         if (o.tab < 2) { const list = o.tab ? G.weekly : G.daily; list.forEach((q, i) => { if (hit(HUD.guildRow(i))) say(this.claimQuest(q)); }); }
-        else GUILD_TITLES.forEach((T, i) => { if (hit(HUD.titleCell(i))) { if (!this.titleUnlocked(T)) say(['아직 얻지 못한 칭호입니다', '#ff9a9a']); else { this.save.title = this.save.title === T.id ? null : T.id; writeSave(this.save); say([this.save.title ? `칭호 장착: ${T.name}` : '칭호 해제', '#ffd84a']); } } });
+        else this.visibleTitles().forEach((T, i) => { if (hit(HUD.titleCell(i))) { if (!this.titleUnlocked(T)) say(['아직 얻지 못한 칭호입니다', '#ff9a9a']); else { this.save.title = this.save.title === T.id ? null : T.id; writeSave(this.save); say([this.save.title ? `칭호 장착: ${T.name}` : '칭호 해제', '#ffd84a']); } } });
       } else if (o.type === 'hunt') {
         if (!click) return;
         G.offers.forEach((h, i) => { if (hit(HUD.guildRow(i))) say(this.acceptHunt(h)); });
