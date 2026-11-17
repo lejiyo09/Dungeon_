@@ -390,7 +390,7 @@ Object.assign(Game.prototype, {
     const lat = coopLat(); // 방장 쪽 '지금' 위치로 앞당겨 그림 (피하는 감각을 방장 판정과 맞춤)
     this.enemyBullets = d.eb.map(([x, y, vx, vy, r, c]) => mover(Object.assign(Object.create(EnemyBullet.prototype), { x: x + vx * lat, y: y + vy * lat, vx, vy, r, color: c, alive: true })));
     if (d.pk) this.pickups = d.pk.map(([kind, x, y, id]) => new Pickup(kind, x, y, { still: true, def: id ? this.data.weapons.get(id) : null }));
-    if (d.hz) this.hazards = d.hz.map(([x, y, r, t, delay, color, kind]) => Object.assign(Object.create((kind === 'deny' ? DenyZone : Hazard).prototype), { x, y, r, t, delay, color, kind, alive: true })); /* deny: 가레스의 부정 장판 */
+    if (d.hz) this.hazards = d.hz.map(([x, y, r, t, delay, color, kind]) => Object.assign(Object.create((kind === 'deny' ? DenyZone : kind === 'eye' ? WatchEye : Hazard).prototype), { x, y, r, t, delay, color, kind, alive: true })); /* deny: 가레스의 부정 장판 */
     if (d.po) this.portals = d.po.map(([x, y, label, col]) => new Portal(x, y, () => {}, label, col || undefined));
     if (d.pp) this.props = d.pp.map(([cls, x, y, label, open, content, own]) => { // 상자는 진짜 그림, 나머지는 표시 + 이름 (가까이 가면)
       const K = COOP_OWN_LABEL[cls] && own && typeof window[cls] !== 'undefined' ? window[cls] : (COOP_OWN_LABEL[cls] && own ? Function('return typeof ' + cls + " !== 'undefined' ? " + cls + ' : null')() : null);

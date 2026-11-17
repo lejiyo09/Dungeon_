@@ -189,6 +189,7 @@ const AI_BEHAVIORS = {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
       e.riposteT = 0; e.riposteHit = false;
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
+      if (def.accuse && want === 3) { e.accuseOn = true; e.accuseCd = 2; e.accuseT = 0; world.announceBossSkill(e, '고발 — 도망칠 곳은 없다'); }
       if (def.fierce && want === 3) { e.fierce = true; world.announceBossSkill(e, '치열 — 멈추지 않는 검'); }
       if (def.wall && want === 3) { e.wallCone = def.wall.cone3; e.wallMult = def.wall.mult3; world.announceBossSkill(e, '철벽 — 무너지지 않는 성채'); }
       if (def.negate && want === 3) { e.negateOn = true; e.negCd = 1.5; world.announceBossSkill(e, '부정 — 모든 칼날을 거부하는 빛'); }
@@ -199,6 +200,11 @@ const AI_BEHAVIORS = {
     }
     e.finalCd = (e.finalCd ?? 0) - dt;
     if (e.negateT > 0) e.negateT -= dt;
+    if (e.accuseOn && e.state !== 'PHASE') { /* 아그라베인 고발: 표식 → 그 자리에 철퇴 */
+      const A = def.accuse, p = world.player;
+      if (e.accuseT > 0) { e.accuseT -= dt; if (Math.floor(e.accuseT * 4) !== Math.floor((e.accuseT + dt) * 4)) world.effects.ring(p.x, p.y, 12, '#ff3a2a');
+        if (e.accuseT <= 0) world.hazards.push(new Hazard(p.x, p.y, { r: A.radius, delay: 0.35, damage: Math.round(e.damage * 1.5), bullets: A.bullets, color: '#ff5a3a' })); }
+      else { e.accuseCd -= dt; if (e.accuseCd <= 0) { e.accuseCd = A.every; e.accuseT = A.mark; world.effects.text(p.x, p.y - 26, '고발', '#ff5a3a', true); SFX.play('magic', 0.1); } } }
     if (def.wall) { /* 갤러해드: 방패 방향 — 쫓는 동안만 천천히 플레이어 쪽으로 돎 */
       const want = Math.atan2(world.player.y - e.y, world.player.x - e.x); if (e.shieldAng == null) e.shieldAng = want;
       if (e.state === 'CHASE' || e.state === 'RECOVERY' || e.state === 'INTRO') { let df = want - e.shieldAng; df = Math.atan2(Math.sin(df), Math.cos(df)); e.shieldAng += clamp(df, -def.wall.turn * dt, def.wall.turn * dt); } }
@@ -416,6 +422,33 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 감시의 눈 (아그라베인): 방 곳곳(플레이어에게서 조금 떨어진 곳)에 떠오른 눈이 한동안 조준 사격 — 부술 수 있음. 그동안 보스도 조준 사격
+  watchers: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, r = e.room; d.timer -= dt;
+      if (!d.placed) { d.placed = true; d.timer = 0.6;
+        for (let i = 0; i < P.eyes; i++) { const a = i * TAU / P.eyes + Math.random() * 0.6, q = 90 + Math.random() * 40;
+          const x = clamp(p.x + Math.cos(a) * q, r.x0 * TILE + 20, (r.x0 + r.w) * TILE - 20), y = clamp(p.y + Math.sin(a) * q, r.y0 * TILE + 20, (r.y0 + r.h) * TILE - 20);
+          world.hazards.push(new WatchEye(x, y, { delay: P.life, hp: P.hp * world.scale.hp, interval: P.interval, volley: P.volley, spread: P.spread, speed: P.speed, dmg: e.damage, color: P.color })); world.effects.ring(x, y, 14, P.color); }
+        SFX.play('magic', 0.05); }
+      if (d.timer <= 0 && d.shots < 3) { const base = Math.atan2(p.y - e.y, p.x - e.x); for (let i = 0; i < 5; i++) world.enemyShoot(e.x, e.y, base + (i - 2) * 0.1, e.def.bulletSpeed, e.damage, P.color, 3); d.shots++; d.timer = 0.45 / spd; }
+      return d.shots >= 3 && d.timer <= 0;
+    }
+  },
+  // 단죄의 철완 (아그라베인의 보구): 손을 들어 방 가장자리에 감시의 눈을 가득 띄우고(빠르게 쏨), 그동안 플레이어 자리에 거대한 철퇴를 세 번 내리침. 쓰는 동안 페이즈 전환 없음
+  ironhand: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, r = e.room, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;
+      if (d.t < P.charge) { if (Math.random() < 0.7) { const a = Math.random() * TAU; fx.part(e.x + Math.cos(a) * 24, e.y + Math.sin(a) * 24, -Math.cos(a) * 50, -Math.sin(a) * 50, { color: P.color, life: 0.35, size: 2, size2: 0, drag: 0, add: true }); } return false; }
+      if (!d.placed) { d.placed = true; d.slamT = 0.4; d.slams = 0; const c = world.map.tileCenter(r.cx, r.cy), R = Math.min(r.w, r.h) * TILE / 2 - 24;
+        for (let i = 0; i < P.eyes; i++) { const a = i * TAU / P.eyes; world.hazards.push(new WatchEye(c.x + Math.cos(a) * R, c.y + Math.sin(a) * R * 0.8, { delay: P.life, hp: P.hp * world.scale.hp, interval: P.interval, volley: P.volley, spread: P.spread, speed: P.speed, dmg: e.damage, color: P.color })); }
+        fx.rays(e.x, e.y, P.color, 16, 90, 0.7); world.addShake(0.25, 4); SFX.play('excal'); }
+      d.slamT -= dt; if (d.slamT <= 0 && d.slams < P.slams) { d.slamT = P.slamEvery / spd; d.slams++;
+        world.hazards.push(new Hazard(p.x, p.y, { r: P.radius, delay: 0.7, damage: Math.round(e.damage * 1.5), bullets: P.bullets, color: '#ff5a3a' })); fx.ring(e.x, e.y, 20, P.color); }
+      if (d.slams >= P.slams && d.t >= P.charge + P.slams * P.slamEvery / spd + 0.9) { d.lock = false; return true; }
+      return false;
+    }
+  },
   // 반격 자세 (랜슬롯): 검을 세우고 멈춤 — 그동안 맞으면 피해 절반 + 플레이어 뒤로 순간이동해 사방 검기와 발밑 베기로 반격, 아무도 안 때리면 앞으로 부채꼴 검기만
   riposte: {
     update(e, dt, world, ctx, spd) {

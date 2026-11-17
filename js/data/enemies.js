@@ -673,5 +673,21 @@ const DATA_ENEMIES = [
       { type: 'spiral', duration: 3, arms: 6, interval: 0.06, spin: 2.6, color: '#bcd8ff' },
       { type: 'orbit', count: 24, radius: 52, spinTime: 1, spin: -3.2, speed: 170, color: '#8ab8ff' },
       { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.48, bullets: 0, color: '#bcd8ff' }],
-    finalPatterns: [{ type: 'arondight', name: '아론다이트', charge: 0.9, dashes: 3, speed: 640, dist: 220, step: 20, radius: 12, delay: 0.42, fan: 9, beams: 4, beamTime: 1.7, spin: 1.2, width: 8, color: '#8ab8ff' }] }
+    finalPatterns: [{ type: 'arondight', name: '아론다이트', charge: 0.9, dashes: 3, speed: 640, dist: 220, step: 20, radius: 12, delay: 0.42, fan: 9, beams: 4, beamTime: 1.7, spin: 1.2, width: 8, color: '#8ab8ff' }] },
+  // [사용자 결정] 카멜롯 7층 보스: 아그라베인 — 이명 '철완의 기사'·보구 '단죄의 철완'·패턴·수치는 Claude가 정한 [제안]
+  //  감시의 눈(watchers): 방에 떠오른 눈이 조준 사격 (부술 수 있음) / accuse: 3페이즈 '고발'부터 every초마다 플레이어에게 붉은 표식 → mark초 뒤 그 자리에 철퇴
+  { id: 'boss_agravain', name: '아그라베인', title: '철완의 기사', sprite: 'boss_agravain', color: '#3a3428', phaseColors: ['#3a3428', '#3a2a20', '#4a1a14'],
+    boss: true, aiType: 'boss', health: 7600, damage: 32, moveSpeed: 80, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.45, bulletSpeed: 190,
+    rewardGold: 0, ultFrom: 2, ultCd: 20, accuse: { every: 5, mark: 1.5, radius: 34, bullets: 8 }, patterns: [
+      { type: 'watchers', eyes: 3, life: 6, hp: 160, interval: 1.2, volley: 3, spread: 0.12, speed: 200, color: '#d8b070' },
+      { type: 'charge', dashes: 3, speed: 560, color: '#d8b070' },
+      { type: 'slam', radius: 66, chain: 3, color: '#ffb070' },
+      { type: 'aimed', volleys: 6, count: 8, spread: 0.11, color: '#f0d8a0' },
+      { type: 'grid', spacing: 3, delay: 1.0, radius: 22, bullets: 4, color: '#d8b070' }],
+    phase2Patterns: [{ type: 'watchers', eyes: 5, life: 7, hp: 180, interval: 1.0, volley: 5, spread: 0.12, speed: 210, color: '#d8b070' },
+      { type: 'meteor', count: 10, delay: 0.6, stagger: 0.18, radius: 30, bullets: 7, color: '#ffb070' },
+      { type: 'wall', waves: 3, gap: 3, speed: 130, interval: 0.8, color: '#f0d8a0' },
+      { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 155, interval: 0.4, color: '#d8b070' },
+      { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.5, bullets: 0, color: '#ffb070' }],
+    finalPatterns: [{ type: 'ironhand', name: '단죄의 철완', charge: 0.8, eyes: 6, life: 5.5, hp: 200, interval: 0.75, volley: 3, spread: 0.12, speed: 210, slams: 3, slamEvery: 0.95, radius: 56, bullets: 10, color: '#d8b070' }] }
 ];

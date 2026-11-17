@@ -258,6 +258,33 @@ class DenyZone {
     ctx.restore(); ctx.lineWidth = 1; ctx.globalAlpha = 1;
   }
 }
+/* 아그라베인의 감시의 눈: 공중에 떠서 delay(=지속 시간) 동안 interval마다 가장 가까운 플레이어에게 조준 사격 — 플레이어 공격으로 부술 수 있음 (hp) */
+class WatchEye {
+  constructor(x, y, o) { Object.assign(this, o); this.x = x; this.y = y; this.t = 0; this.alive = true; this.kind = 'eye'; this.r = 9; this.fireT = 0.8 + Math.random() * 0.5; }
+  update(dt, world) {
+    this.t += dt; if (this.t >= this.delay || this.hp <= 0) { this.alive = false; world.effects.burst(this.x, this.y, '#d8b070', 8); return; }
+    for (const q of world.projectiles) if (q.alive && !q.hitEyes?.has(this) && Math.hypot(q.x - this.x, q.y - this.y) < this.r + 3) { /* 플레이어 탄에 맞으면 깎임 */
+      (q.hitEyes || (q.hitEyes = new Set())).add(this); this.hp -= q.damage * (1 + ((q.mods && q.mods.attackBonus) || 0)); world.effects.spark(this.x, this.y, '#ffffff'); if (!(q.pierceLeft > 0)) q.alive = false; }
+    this.fireT -= dt; if (this.fireT > 0) return;
+    this.fireT = this.interval; let tgt = null, best = 1e9;
+    for (const p of world.allPlayers()) if (p.state !== 'DEAD') { const d = Math.hypot(p.x - this.x, p.y - this.y); if (d < best) { best = d; tgt = p; } }
+    if (!tgt) return; const base = Math.atan2(tgt.y - this.y, tgt.x - this.x), h = (this.volley - 1) / 2;
+    for (let i = 0; i < this.volley; i++) world.enemyShoot(this.x, this.y, base + (i - h) * this.spread, this.speed, this.dmg, this.color, 3);
+    world.effects.ring(this.x, this.y, 10, this.color);
+  }
+  render(ctx) {
+    const k = Math.min(1, this.t / 0.3, (this.delay - this.t) / 0.3), x = Math.round(this.x), y = Math.round(this.y), P = typeof game !== 'undefined' && game.player;
+    const a = P ? Math.atan2(P.y - y, P.x - x) : 0, blink = (this.fireT != null && this.fireT < 0.25) ? 1 : 0;
+    ctx.save(); ctx.globalAlpha = k;
+    ctx.fillStyle = 'rgba(20,14,8,0.35)'; ctx.beginPath(); ctx.ellipse(x, y + 12, 6, 2, 0, 0, TAU); ctx.fill(); /* 그림자 */
+    ctx.fillStyle = '#2a2018'; ctx.beginPath(); ctx.ellipse(x, y, 10, 6.5, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#f4ecd8'; ctx.beginPath(); ctx.ellipse(x, y, 8.5, 5, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = blink ? '#ffffff' : this.color; ctx.beginPath(); ctx.arc(x + Math.cos(a) * 3, y + Math.sin(a) * 2, 3.2, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#1a0a0a'; ctx.beginPath(); ctx.arc(x + Math.cos(a) * 3.4, y + Math.sin(a) * 2.2, 1.4, 0, TAU); ctx.fill();
+    if (blink) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.6 * k; ctx.strokeStyle = '#ff5a3a'; ctx.beginPath(); ctx.arc(x, y, 12, 0, TAU); ctx.stroke(); }
+    ctx.restore(); ctx.globalAlpha = 1;
+  }
+}
 class Hazard {
   constructor(x, y, o) { Object.assign(this, o); this.x = x; this.y = y; this.t = 0; this.alive = true; }
   update(dt, world) {

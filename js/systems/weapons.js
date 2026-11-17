@@ -205,6 +205,9 @@ class WeaponSystem {
       if (d > 4 && angleDiff(Math.atan2(dy, dx), ang) > arc / 2 + Math.atan2(e.radius, d)) continue;
       world.damageEnemy(e, src, dx / (d || 1), dy / (d || 1)); hits++;
     }
+    for (const h of world.hazards) if (h.kind === 'eye' && h.alive) { /* 아그라베인의 감시의 눈도 근접 공격으로 부숨 */
+      const dx = h.x - player.x, dy = h.y - player.y, d = Math.hypot(dx, dy);
+      if (d - h.r <= def.range && (d < 4 || angleDiff(Math.atan2(dy, dx), ang) <= arc / 2 + Math.atan2(h.r, d))) { h.hp -= src.damage * (1 + ((src.mods && src.mods.attackBonus) || 0)); world.effects.spark(h.x, h.y, '#ffffff'); } }
     world.breakCratesInArc(player.x, player.y, ang, arc, def.range);
     if (def.slam) // 지면 강타: 내리친 자리에 충격파
       world.explodeAt(player.x + Math.cos(ang) * def.range * 0.8, player.y + Math.sin(ang) * def.range * 0.8, def.slam.r,

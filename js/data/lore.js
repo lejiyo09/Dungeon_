@@ -273,7 +273,31 @@ const CAMELOT6_TRIAL = {
     palette: CAMELOT_TRIAL.W.palette },
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
 };
-const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL, camelot6: CAMELOT6_TRIAL };
+// [사용자 결정] 카멜롯 7층 보스: 아그라베인. 이명 '철완의 기사'(전승 속 별명 '단단한 손')·보구 '단죄의 철완'·'감시의 눈'·'고발'(3페이즈 표식)·수치·대사는 Claude가 정한 [제안]/[임시]
+const MERLIN_AGRAVAIN_LINES = [
+  '「랜슬롯마저… 이제 이 성에서 너를 막을 자는 몇 남지 않았다.」',
+  '「다음은 아그라베인. 가웨인의 동생이자, 원탁의 규율을 누구보다 엄하게 지킨 기사다.」',
+  '「사람들은 그를 철완의 기사라 부른다. 그의 손은 쇠처럼 단단하고, 그의 눈은 어디에나 있지.」',
+  '「방 곳곳에 떠오르는 눈을 조심하게. 그리고 붉은 표식이 붙으면 절대 멈추지 말고.」',
+  '「로드 투 카멜롯, 일곱 번째 층. 준비가 되면 말하게.」'
+];
+const AGRAVAIN_WIN_LINES = [
+  '쇠 장갑이 둔탁한 소리를 내며 바닥에 떨어진다.',
+  '「…규율로도 막을 수 없는 자가 있었군.」',
+  '「가라. 다만 위에서 무엇을 보든, 그것이 이 성의 진실이라는 걸 잊지 마라.」',
+  '감시하던 눈들이 하나씩 감기고, 기사의 모습도 어둠 속으로 사라진다.'
+];
+const CAMELOT7_TRIAL = {
+  id: 'camelot7', title: '로드 투 카멜롯 — 7층', color: '#d8b070', intro: '철완의 기사 아그라베인이 기다리고 있습니다', reward: 1100, questDone: 18,
+  confirm: ['백악의 성 7층 — 성의 기사들을 뚫고 철완의 기사 아그라베인과 싸웁니다', '랜슬롯보다 강합니다. 떠오르는 감시의 눈을 먼저 부수고, 붉은 표식이 붙으면 계속 움직이세요. 고른 진화 단계·축복과 +3 강화 무기 2개를 들고 갑니다'],
+  winText: '아그라베인을 쓰러뜨리고 7층을 지났습니다', winSub: '결정석 1100개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => AGRAVAIN_WIN_LINES,
+  world: 9,
+  W: { name: '백악의 성 카멜롯 — 7층', boss: 'boss_agravain', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
+    enemies: [['enemy_camguard_001', 2], ['enemy_camxbow_001', 3], ['enemy_cammonk_001', 1]],
+    palette: CAMELOT_TRIAL.W.palette },
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+};
+const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL, camelot6: CAMELOT6_TRIAL, camelot7: CAMELOT7_TRIAL };
 // 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
 const DEEP_ARRIVAL_LINES = [
   '발밑의 돌이 차갑게 식어 간다.',
@@ -305,7 +329,9 @@ const STORY_ARCHIVE = [
   { id: 'galahad_road', name: '철벽의 기사', kind: 'cut', lines: () => MERLIN_GALAHAD_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 13) },
   { id: 'galahad', name: '무너진 방패', kind: 'cut', lines: () => GALAHAD_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 14) },
   { id: 'lancelot_road', name: '호수의 기사', kind: 'cut', lines: () => MERLIN_LANCELOT_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 15) },
-  { id: 'lancelot', name: '땅에 닿은 검', kind: 'cut', lines: () => LANCELOT_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 16) }
+  { id: 'lancelot', name: '땅에 닿은 검', kind: 'cut', lines: () => LANCELOT_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 16) },
+  { id: 'agravain_road', name: '철완의 기사', kind: 'cut', lines: () => MERLIN_AGRAVAIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 17) },
+  { id: 'agravain', name: '감기는 눈', kind: 'cut', lines: () => AGRAVAIN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 18) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 // [사용자 결정] 문지기 조건을 없애기 전에 이미 문지기를 잡아 둔 사람은 그 1번을 심층 보스 1마리로 쳐 줌 (한 번만 바꿈)
