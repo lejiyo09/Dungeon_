@@ -146,7 +146,7 @@ class WeaponSystem {
         bubble: !!def.bubble, grenade: def.grenade || null, firework: def.firework || null, ricochet: def.ricochet || 0,
         puddle: def.puddle || null, arrow: !!def.arrow, trail: def.trail || null, grow: def.grow || 0,
         close: def.close || 0, execute: def.execute || 0, mark: def.mark || null, killEnergy: def.killEnergy || 0,
-        speed: def.projectileSpeed, range: def.range, damage: def.damage,
+        speed: def.projectileSpeed, range: def.range, damage: def.damage, wdef: def, // wdef: 멀티 참가자 화면이 내 탄을 미리 그릴 수 있는지 판단
         pierce: def.pierce, knockback: def.knockback || 0,
         mods: weaponMods(player, w),
         explodeRadius: def.explodeRadius || 0, color: def.bulletColor, size: def.bulletSize || 1,

@@ -25,7 +25,7 @@ const BLOCK = ['server', 'tools', 'node_modules', '.git', 'versions']; // 밖으
 const LIMIT = {
   lobbyIdleMs: 2 * 60 * 1000,  // 방에 안 들어간 연결은 2분 뒤 끊음 → 아무도 없으면 서버가 잠들 수 있게
   roomIdleMs: 10 * 60 * 1000,  // 10분 동안 아무 움직임 없는 방은 닫음 (창만 켜 두고 자리 비움)
-  msgPerSec: 40,               // 한 사람이 1초에 보낼 수 있는 메시지 (넘치면 버림)
+  msgPerSec: 80,               // 한 사람이 1초에 보낼 수 있는 메시지 (넘치면 버림)
   maxRooms: 200
 };
 const fileCache = new Map(); // 경로 → { mtime, etag, raw, gz } : 같은 파일을 매번 읽고 압축하지 않게
@@ -190,7 +190,7 @@ wss.on('connection', (ws) => {
         room = rooms.get(clean(m.code, 4).toUpperCase());
         if (!room) { send(ws, { t: 'error', msg: '없는 방 코드입니다' }); return; }
         if (room.players.length >= MAX_PLAYERS) { send(ws, { t: 'error', msg: `방이 가득 찼습니다 (최대 ${MAX_PLAYERS}명)` }); return; }
-        if (room.started && !m.rejoin) { send(ws, { t: 'error', msg: '이미 탐험을 시작한 방입니다' }); return; } // 연결이 끊겼던 사람은 진행 중인 방에 다시 들어올 수 있음
+        // 탐험 중인 방에도 들어올 수 있음 → 방장이 로비에 있는 새 사람을 진행 중인 탐험으로 불러옴 (예전엔 '이미 시작한 방'이라 막혀서, 방장이 탐험 중에 나가면 방이 계속 막혔음)
       }
       room.players.push(ws); ws.room = room; room.last = Date.now();
       broadcastPlayers(room);

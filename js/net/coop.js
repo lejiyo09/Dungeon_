@@ -37,6 +37,8 @@ function coopPackRef(v) { // 적·플레이어 같은 큰 객체는 위치 정�
   if (v instanceof Enemy) return { $e: 1, x: r1(v.x), y: r1(v.y), alive: v.alive, chainT: r1(v.chainT || 0), radius: v.radius, half: v.half };
   return undefined;
 }
+// 참가자 화면에서 미리 그려도 되는 단순한 탄 (곧게 날아가는 총탄) — 방장 쪽 같은 탄은 참가자에게 보내지 않음
+function coopPredictable(d) { return !!d && d.type === 'gun' && !(d.boomerang || d.homing || d.orbit || d.grenade || d.mine || d.firework || d.trail || d.flame || d.burst || d.split || d.parallel || d.bounce || d.ricochet || d.deploy || d.bubble || d.puddle || d.grow); }
 function coopVel(o, x, y, now) { // 받은 위치 두 개로 속도를 구해 둠 → 사이 시간은 앞으로 예측해서 그림 (뒤따라오는 느낌 줄임)
   if (o.snapT && o.tx !== undefined) { const dt = (now - o.snapT) / 1000; if (dt > 0.02 && dt < 0.5) { const vx = (x - o.tx) / dt, vy = (y - o.ty) / dt, sp = Math.hypot(vx, vy); const k = sp > 320 ? 320 / sp : 1; o.vx = vx * k; o.vy = vy * k; } }
   o.tx = x; o.ty = y; o.snapT = now;
@@ -96,7 +98,7 @@ Object.assign(Game.prototype, {
   coopOnNet(m) {
     if (!this.coop) {
       if (m.t === 'relay' && m.data && m.data.k === 'gather' && !Net.isHost) { const d = m.data; this.gather = { label: d.label, n: d.n, total: d.total, t: d.t }; if (d.t) SFX.play('ui', 0.2); return; } // 단체 입장 상태 (방장이 보냄)
-      if (m.t === 'relay' && m.data && m.data.k === 'start' && this.mode === 'lobby' && !this.transition) { this.gather = {}; this.coopGuestStart(m.from, !!m.data.deep); }
+      if (m.t === 'relay' && m.data && m.data.k === 'start' && this.mode === 'lobby' && !this.transition && !(this.overlay && this.overlay.type === 'result')) { this.gather = {}; this.coopGuestStart(m.from, !!m.data.deep); if (m.data.late) this.showBanner('진행 중인 탐험에 합류했습니다', null, '#7affc0'); } // 늦게 와도 로비에 오면 합류
       return; }
     if (m.t === 'dropped' || m.t === 'rejoined' || m.t === 'lost') { this.coopNetEvent(m.t); return; } // 내 연결이 끊김 / 다시 연결됨 / 포기
     if (m.t === 'players') {
@@ -141,8 +143,9 @@ Object.assign(Game.prototype, {
   },
   coopAddRemote(id, d) {
     if (this.remotes.has(id)) return;
-    const hero = this.data.heroes.get(d.hero) || DATA_HEROES[0], s = this.map.startRoom, c = this.map.tileCenter(s.cx, s.cy);
-    const p = new Player(c.x + (this.remotes.size + 1) * 14, c.y + 10, hero, this.data.base), J = BALANCE.jobLevel, lv = Math.min(J.max, d.jobLv | 0);
+    const hero = this.data.heroes.get(d.hero) || DATA_HEROES[0], me = this.coop.me, c = { x: me.x, y: me.y }; // 방장 곁에서 시작 (늦게 합류해도)
+    let px = c.x + (this.remotes.size + 1) * 14, py = c.y + 10; if (overlapsSolid(px, py, 5, this.map)) { px = c.x; py = c.y; }
+    const p = new Player(px, py, hero, this.data.base), J = BALANCE.jobLevel, lv = Math.min(J.max, d.jobLv | 0);
     if (lv) { p.maxHp += J.hp * lv; p.hp = p.maxHp; p.maxEnergy += J.energy * lv; p.energy = p.maxEnergy; p.stats.attackBonus += J.atk * lv; }
     p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
     if (d.loadout && d.loadout !== hero.startWeapon && this.data.weapons.get(d.loadout)) p.weapons.push(new WeaponInstance(this.weaponDef(d.loadout)));
@@ -265,7 +268,7 @@ Object.assign(Game.prototype, {
   },
   coopNotifyEvolve(p) { if (!(this.coop && this.coop.host)) return; for (const R of this.remotes.values()) if (R.p === p) Net.relay({ k: 'msg', text: `${p.line.ranks[p.rank]}(으)로 진화! 새 스킬: ${p.skillName}` }, R.id); },
   coopHostSend(dt) {
-    const C = this.coop; C.snapT -= dt; if (C.snapT > 0) return; C.snapT = 1 / COOP.snapHz; this.coopHostSendGev();
+    const C = this.coop; this.coopInviteMissing(dt); C.snapT -= dt; if (C.snapT > 0) return; C.snapT = 1 / COOP.snapHz; this.coopHostSendGev();
     C.snapN = (C.snapN || 0) + 1; const full = C.snapN % 18 === 1; // 1.5초마다 전부 (중간에 놓친 값 보정), 그 사이엔 바뀐 것만
     const pl = (p, id, warp) => ({ id, x: Math.round(p.x), y: Math.round(p.y), h: p.hero.id, lk: p.line && p.line.look ? p.line.look : null, a: r1(p.aimVis), f: p.faceVis, st: p.state === 'DEAD' ? 'X' : p.state === 'DASH' ? 'D' : 'N', mv: p.moving ? 1 : 0,
       hp: Math.ceil(p.hp), mhp: p.maxHp, sh: Math.ceil(p.shield), msh: p.maxShield, en: Math.floor(p.energy), men: p.maxEnergy, w: p.weapons.map((x) => x.def.id), wl: p.weapons.map((x) => x.lv || 0), sl: p.slot,
@@ -284,7 +287,8 @@ Object.assign(Game.prototype, {
     for (const id of [...C.sent]) if (!seenZ.has(id) && ![...this.zones, ...this.allies].some((z) => z.nid === id)) { C.sent.delete(id); C.zlast.delete(id); }
     C.eknown = C.eknown || new Set(); const enew = (e) => { const n = full || !C.eknown.has(e.nid); C.eknown.add(e.nid); return n; }; // 적 종류·최대 체력은 처음(과 1.5초마다)만
     const en = this.enemies.map((e) => { if (!e.nid) e.nid = ++C.nid; const nw = enew(e); return [e.nid, nw ? e.def.id : '', Math.round(e.x), Math.round(e.y), Math.ceil(e.hp), nw ? e.maxHp : 0, e.state, e.face, e.phase || 1, e.elite ? 1 : 0, e.hurtFlash > 0 ? 1 : 0, Math.round(e.jumpH || 0), r1(e.fade ?? 1), r1(e.aimAng || 0), r1(e.stateTime), e.laser ? [e.laser.angs.map(r1), e.laser.width, e.laser.color, e.laser.live ? 1 : 0] : 0, e.chainT > 0 ? [r1(e.chainT), r1(e.chainMax || e.chainT)] : 0, e.def.boss && e.pat && (e.state === 'TELEGRAPH' || e.state === 'ATTACK') ? [e.pat.type, e.pat.color || '', e.pat.radius || 0, Math.round((e.pd && e.pd.tx) || e.x), Math.round((e.pd && e.pd.ty) || e.y)] : 0]; }); // 보스 예고 표시용 패턴
-    const pr = this.projectiles.filter((q) => !q.orbit).slice(0, 160).map((q) => [Math.round(q.x), Math.round(q.y), Math.round((q.dx || 0) * (q.speed || 0)), Math.round((q.dy || 0) * (q.speed || 0)), q.color, q.size || 1]);
+    const oi = new Map([[C.me, 0], ...[...this.remotes.values()].map((R, i) => [R.p, i + 1])]); // 탄 주인 (플레이어 목록 순서)
+    const pr = this.projectiles.filter((q) => !q.orbit).slice(0, 160).map((q) => [Math.round(q.x), Math.round(q.y), Math.round((q.dx || 0) * (q.speed || 0)), Math.round((q.dy || 0) * (q.speed || 0)), q.color, q.size || 1, oi.has(q.owner) ? oi.get(q.owner) : -1, coopPredictable(q.wdef) ? 1 : 0]);
     const eb = this.enemyBullets.slice(0, 240).map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.r, b.color]);
     const td = []; const T = this.map.tiles, L = C.lastTiles; if (L && L.length === T.length) for (let i = 0; i < T.length; i++) if (T[i] !== L[i]) { td.push([i, T[i]]); L[i] = T[i]; }
     C.seq = (C.seq || 0) + 1;
@@ -297,6 +301,10 @@ Object.assign(Game.prototype, {
     C.slast = C.slast || {}; for (const k of ['pk', 'po', 'rv', 'pp']) { const v = JSON.stringify(msg[k]); if (!full && C.slast[k] === v) delete msg[k]; else C.slast[k] = v; } // 그대로면 생략
     if (!td.length) delete msg.td; if (!msg.fx.length) delete msg.fx; if (!msg.hz.length && C.lastHz === 0) delete msg.hz; C.lastHz = this.hazards.length;
     Net.relay(msg);
+  },
+  coopInviteMissing(dt) { // 방에는 있는데 탐험에 안 들어온 사람(결과 화면·화면 전환 중이던 사람, 나중에 들어온 사람)을 3초마다 다시 부름
+    const C = this.coop; C.inviteT = (C.inviteT || 0) - dt; if (C.inviteT > 0) return; C.inviteT = 3;
+    for (const P of Net.players) if (P.id !== Net.id && !this.remotes.has(P.id)) Net.relay({ k: 'start', deep: !!this.runDeep, late: true }, P.id);
   },
   coopHostSendGev() { for (const R of this.remotes.values()) if (R.gev && R.gev.length) { Net.relay({ k: 'gev', e: R.gev.splice(0, 200) }, R.id); } },
   coopHostEnd(victory) {
@@ -368,7 +376,8 @@ Object.assign(Game.prototype, {
     }).filter(Boolean);
     for (const id of [...C.enemies.keys()]) if (!live.has(id)) C.enemies.delete(id);
     const mover = (o) => { o.update = function (dt) { this.x += this.vx * dt; this.y += this.vy * dt; }; return o; };
-    this.projectiles = d.pr.map(([x, y, vx, vy, c, s]) => mover({ x, y, vx, vy, render(ctx) { ctx.fillStyle = c; const z = Math.max(1, s); ctx.fillRect(Math.round(this.x) - z, Math.round(this.y) - z, z * 2, z * 2); } }));
+    const myIdx = d.pl.findIndex((q) => q.id === Net.id); C.local = (C.local || []).filter((q) => q.alive);
+    this.projectiles = d.pr.filter((q) => !(q[6] === myIdx && q[7])).map(([x, y, vx, vy, c, s]) => mover({ x, y, vx, vy, render(ctx) { ctx.fillStyle = c; const z = Math.max(1, s); ctx.fillRect(Math.round(this.x) - z, Math.round(this.y) - z, z * 2, z * 2); } })).concat(C.local); // 내 단순한 탄은 내 화면에서 미리 그린 것으로
     this.enemyBullets = d.eb.map(([x, y, vx, vy, r, c]) => mover(Object.assign(Object.create(EnemyBullet.prototype), { x, y, vx, vy, r, color: c, alive: true })));
     if (d.pk) this.pickups = d.pk.map(([kind, x, y, id]) => new Pickup(kind, x, y, { still: true, def: id ? this.data.weapons.get(id) : null }));
     if (d.hz) this.hazards = d.hz.map(([x, y, r, t, delay, color]) => Object.assign(Object.create(Hazard.prototype), { x, y, r, t, delay, color, alive: true }));
@@ -433,7 +442,8 @@ Object.assign(Game.prototype, {
     }
     const md = input.mouse.down && p.state !== 'DEAD' ? 1 : 0; if (C.ev.length || md !== C.lastMd) C.inT = 0; C.lastMd = md; // 누르기·떼기·스킬은 바로 보냄 (공격이 늦게 나가는 느낌 줄임)
     C.fireCd = (C.fireCd || 0) - dt; const w = p.weapons[p.slot]; // 내 공격 소리는 바로 (실제 판정은 방장)
-    if (md && w && C.fireCd <= 0 && (w.def.type === 'gun' || w.def.type === 'melee') && p.energy >= (w.def.energyCost || 0)) { C.fireCd = 1 / Math.max(0.5, w.def.fireRate || 2); SFX.play(w.def.type === 'melee' ? 'melee' : weaponSound(w.def), w.def.fireRate > 8 ? 0.06 : 0.03); }
+    if (md && w && C.fireCd <= 0 && (w.def.type === 'gun' || w.def.type === 'melee') && p.energy >= (w.def.energyCost || 0)) { C.fireCd = 1 / Math.max(0.5, w.def.fireRate || 2); SFX.play(w.def.type === 'melee' ? 'melee' : weaponSound(w.def), w.def.fireRate > 8 ? 0.06 : 0.03); this.coopPredictShot(p, w.def, mw); }
+    if (C.local && C.local.length) { for (let i = this.projectiles.length - 1; i >= 0; i--) if (this.projectiles[i].local && !this.projectiles[i].alive) this.projectiles.splice(i, 1); }
     C.inT -= dt;
     if (C.inT <= 0) { C.inT = 1 / COOP.inHz; Net.relay({ k: 'in', wp: C.warp, x: Math.round(p.x), y: Math.round(p.y), d: p.state === 'DASH' ? 1 : 0, md: input.mouse.down ? 1 : 0, ax: Math.round(mw.x), ay: Math.round(mw.y), ev: C.ev.splice(0) }, C.hostId); }
     const k = Math.min(1, dt * 12);
@@ -452,6 +462,21 @@ Object.assign(Game.prototype, {
     for (const z of this.allies) if (typeof z.t === 'number') z.t += dt; // 소환물 애니메이션 (방장은 1.5초마다만 보냄)
     this.updateCamera(dt);
     input0.endStep();
+  },
+  coopPredictShot(p, def, mw) { // 내 공격을 내 화면에 바로 그림 (실제 판정은 방장) → 반응이 늦은 느낌 줄임
+    const a = Math.atan2(mw.y - p.y, mw.x - p.x);
+    if (def.type === 'melee') { p.swing = { t: 0, dur: 0.14, ang: a, arc: (def.arcDeg || 90) * Math.PI / 180, thrust: (def.arcDeg || 90) <= 40 }; return; }
+    if (!coopPredictable(def)) return;
+    const C = this.coop, n = def.projectileCount || 1, sp = (def.spreadDeg || 0) * Math.PI / 180, map = this.map, game = this;
+    for (let i = 0; i < n; i++) {
+      const ang = def.fanDeg && n > 1 ? a + (i / (n - 1) - 0.5) * def.fanDeg * Math.PI / 180 : a + (Math.random() * 2 - 1) * sp, v = def.projectileSpeed || 400;
+      const q = { local: true, alive: true, x: p.x, y: p.y - 1, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, left: def.range || 300, pierce: def.pierce || 0, c: def.bulletColor || '#fff', s: def.bulletSize || 1,
+        update(dt) { if (!this.alive) return; const sx = this.vx * dt, sy = this.vy * dt; this.x += sx; this.y += sy; this.left -= Math.hypot(sx, sy);
+          if (this.left <= 0 || map.isSolidAt(this.x, this.y)) { this.alive = false; return; }
+          if (this.pierce < 99) for (const e of game.enemies) if (e.alive && Math.hypot(e.x - this.x, e.y - this.y) < (e.radius || 6) + 2) { if (this.pierce-- <= 0) { this.alive = false; game.effects.spark(this.x, this.y, this.c); } break; } },
+        render(ctx) { if (!this.alive) return; ctx.fillStyle = this.c; const z = Math.max(1, this.s); ctx.fillRect(Math.round(this.x) - z, Math.round(this.y) - z, z * 2, z * 2); } };
+      C.local = C.local || []; C.local.push(q); this.projectiles.push(q);
+    }
   },
   coopGuestEnd(d) {
     if (!this.coop || !this.coop.guest) return;
