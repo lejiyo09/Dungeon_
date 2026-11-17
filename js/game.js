@@ -666,7 +666,7 @@ class Game {
     if (this.shake === 0) this.shakeMag = 0;
 
     if (this.mode === 'dungeon' && (p.state !== 'DEAD' || (this.coop && this.coop.host))) this.updateRooms(); // 멀티: 방장이 쓰러져 있어도 방 진행은 계속
-    if (this.coop && this.coop.host && !this.transition) for (const R of this.remotes.values()) { // 멀티: 참가자가 포탈을 밟아도 모두 함께 이동 (귀환 포탈은 방장만)
+    if (this.coop && this.coop.host && !this.transition && !this.overlay && !this.cutscene) for (const R of this.remotes.values()) { // 창·컷신이 떠 있는 동안은 포탈이 다시 작동하지 않게 // 멀티: 참가자가 포탈을 밟아도 모두 함께 이동 (귀환 포탈은 방장만)
       if (R.p.state === 'DEAD' || this.transition) continue;
       for (const po of this.portals) if (!/귀환/.test(po.label || '') && Math.hypot(R.p.x - po.x, R.p.y - po.y) < 12) { this.transition = { t: 0, swapped: false, action: po.onEnter }; break; }
     }
@@ -674,7 +674,7 @@ class Game {
       this.updateInteraction(input);
       const grouped = this.mode === 'lobby' && Net.inRoom && Net.players.length > 1; // 멀티 방: 던전·심층 포탈은 단체 입장 (모두 모이면 출발)
       if (grouped) this.updateGather(dt, input);
-      for (const po of this.portals)
+      if (!this.overlay && !this.cutscene) for (const po of this.portals) // 멀티 방장은 창이 떠 있어도 세계가 돌아가므로, 그동안 포탈이 다시 작동하지 않게 (성역 장면이 계속 처음부터 반복되던 문제)
         if (!(grouped && po.group) && Math.hypot(p.x - po.x, p.y - po.y) < 12) {
           if (this.mode === 'lobby' && this.save.run) { this.overlay = { type: 'resume' }; p.y += 22; break; } // 진행 중인 탐험이 있으면 이어하기 물음
           this.transition = { t: 0, swapped: false, action: po.onEnter }; break;
