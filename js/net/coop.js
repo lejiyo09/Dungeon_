@@ -301,7 +301,7 @@ Object.assign(Game.prototype, {
   coopHostSendGev() { for (const R of this.remotes.values()) if (R.gev && R.gev.length) { Net.relay({ k: 'gev', e: R.gev.splice(0, 200) }, R.id); } },
   coopHostEnd(victory) {
     const C = this.coop; if (!C) return;
-    const stages = this.stageIndex + (victory ? 1 : 0), bosses = this.worldIdx + (victory ? 1 : 0);
+    const { stages, bosses } = this.runReward(victory); // 참가자도 같은 기준 (실제로 깬 것만)
     this.coopHostSendGev(); Net.relay({ k: 'end', victory, stages, bosses, deep: this.W && this.W.deep ? this.W.depth : 0, row: this.runScoreRow(victory) }); Net.raw({ t: 'start', on: false });
     for (const [name, orig] of Object.entries(C.fxOrig || {})) this.effects[name] = orig; // 연출 기록 해제
     this.player = C.me; this.coop = null; this.remotes = new Map();

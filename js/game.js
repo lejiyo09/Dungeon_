@@ -368,6 +368,7 @@ class Game {
   startRun(deep = false) {
     this.mode = 'dungeon'; this.trialW = null; this.runDeep = !!deep;
     this.worldIdx = deep ? DEEP_START : 0; this.levelIdx = 0; this.gold = deep ? BALANCE.deepStart.gold : 0; this.kills = 0; // 심층 입장: 심층 1번째 필드부터
+    this.runStart = { stage: this.stageIndex, world: this.worldIdx }; // 이번 탐험을 시작한 곳 (결정석은 실제로 깬 스테이지·보스만)
     this.save.runReviveUsed = false; // 새 탐험마다 부활 기회 초기화
     this.player = this.makePlayer(0, 0);
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); // 로비에서 고른 보구 (사망해도 영구 보유)
@@ -385,7 +386,7 @@ class Game {
   // ── 이어하기: 스테이지 시작 시점의 런 상태 (맵은 그 스테이지를 새로 생성)
   snapshotRun() {
     const p = this.player;
-    return { v: 1, t: Date.now(), hero: p.hero.id, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills,
+    return { v: 1, t: Date.now(), hero: p.hero.id, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills, start: this.runStart || null,
       p: { maxHp: p.maxHp, hp: p.hp, maxShield: p.maxShield, maxEnergy: p.maxEnergy, energy: p.energy, moveSpeed: p.moveSpeed,
         dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction,
         stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
@@ -407,7 +408,7 @@ class Game {
   resumeRun() {
     const r = this.save.run, hero = r && this.data.heroes.get(r.hero);
     if (!r || !hero) { this.save.run = null; writeSave(this.save); this.startRun(); return; }
-    this.mode = 'dungeon'; this.worldIdx = r.worldIdx; this.levelIdx = r.levelIdx; this.gold = r.gold; this.kills = r.kills;
+    this.mode = 'dungeon'; this.worldIdx = r.worldIdx; this.levelIdx = r.levelIdx; this.gold = r.gold; this.kills = r.kills; this.runStart = r.start && typeof r.start.stage === 'number' ? r.start : { stage: 0, world: 0 };
     this.player = this.playerFromSnapshot(hero, r.p);
     this.loadStage();
     this.showBanner(`이어하기 · ${stageLabel(this.worldIdx, this.levelIdx)} ${this.W.name}`, '스테이지 시작 지점부터 다시 시작합니다', '#7ad0ff');
@@ -557,10 +558,13 @@ class Game {
     SFX.stopMusic(); this.save.run = null; this.save.runReviveUsed = false; writeSave(this.save);
     SFX.play(victory ? 'victory' : 'hurt');
     // 로비 재화: 클리어한 스테이지 수 · 쓰러뜨린 필드 보스 수 · 승리 보너스 (던전 골드는 런과 함께 사라짐)
-    const stages = this.stageIndex + (victory ? 1 : 0), bosses = this.worldIdx + (victory ? 1 : 0);
-    const reward = stages * CUR.perStage + bosses * CUR.perBoss + (victory ? CUR.victory : 0);
+    const { stages, bosses, reward } = this.runReward(victory);
     this.overlay = { type: 'result', victory, stages, bosses, reward };
     if (victory) { this.save.clears++; writeSave(this.save); }
+  }
+  runReward(victory) { // 로비 재화: 이번 탐험에서 실제로 깬 스테이지·필드 보스 수 (로비에서 바로 심층에 들어간 탐험도 일반과 같은 기준)
+    const S = this.runStart || { stage: 0, world: 0 }, stages = Math.max(0, this.stageIndex - S.stage + (victory ? 1 : 0)), bosses = Math.max(0, this.worldIdx - S.world + (victory ? 1 : 0));
+    return { stages, bosses, reward: stages * CUR.perStage + bosses * CUR.perBoss + (victory ? CUR.victory : 0) };
   }
   finishResult() {
     if (!this.overlay.trial) { this.save.bank += this.overlay.reward; writeSave(this.save); }
