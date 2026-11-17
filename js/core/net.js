@@ -22,6 +22,12 @@ const Net = {
     const h = location.hostname, S = NET_CONFIG.server; let sh = ''; try { sh = new URL(S.replace(/^ws/, 'http')).hostname; } catch (e) { /* 주소 없음 */ }
     return h === sh || /\.onrender\.com$/.test(h) || /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h);
   },
+  // 서버 깨우기: Render 무료 서버는 15분 동안 안 쓰면 잠들고 깨는 데 30초~1분 → 게임을 열거나 로비로 올 때 미리 깨워 둠 (10분에 한 번까지)
+  wake() {
+    if (window.__toolMode || /[?&]guest/.test(location.search) || document.hidden) return; const b = this.httpBase(); if (!b) return; // 테스트 도구(?guest=1)는 건너뜀
+    const now = Date.now(); if (now - (this.wokeAt || 0) < 10 * 60000) return; this.wokeAt = now;
+    fetch(b + '/health', { cache: 'no-store' }).catch(() => { this.wokeAt = 0; });
+  },
   get inRoom() { return !!this.code; },
   get isHost() { const me = this.players.find((p) => p.id === this.id); return !!(me && me.host); },
   connect(then) {

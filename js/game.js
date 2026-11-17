@@ -263,6 +263,7 @@ class Game {
 
   // ── 로비
   enterLobby() {
+    Net.wake(); // 로비에 오면 서버를 미리 깨움 (10분에 한 번까지)
     SFX.stopMusic(); this.cinematic = null; this.slowMo = null; this.trialW = null;
     this.mode = 'lobby'; this.overlay = null;
     this.worldIdx = 0; this.levelIdx = 0;

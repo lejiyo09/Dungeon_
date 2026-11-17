@@ -13,3 +13,5 @@ else {
   if (auto) { game.login(auto); game.showBanner(`자동 로그인 — ${auto.name}`, '로비에서 Esc → L로 로그아웃하면 자동 로그인이 꺼집니다', '#ffd84a'); }
   else { game.locked = true; LoginUI.show(game); }
 }
+Net.wake(); // 멀티·랭킹 서버를 미리 깨움
+document.addEventListener('visibilitychange', () => { if (!document.hidden && game.mode === 'lobby') Net.wake(); }); // 오래 자리를 비웠다 돌아왔을 때
