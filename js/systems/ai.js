@@ -184,7 +184,8 @@ const AI_BEHAVIORS = {
     const def = e.def, phase = e.phase || 1;
     const spd = [1, 1, 1.25, 1.5][phase];
     const ratio = e.hp / e.maxHp, want = ratio <= 0.33 ? 3 : ratio <= 0.66 ? 2 : 1;
-    if (want > phase && e.state !== 'INTRO') {
+    const channeling = e.pd && e.pd.tower && e.pd.tower.alive; /* 롱고미니아드(빛의 탑)가 서 있는 동안은 페이즈도 넘기지 않고 다른 행동 없음 — 탑이 무너진 뒤에 넘어감 */
+    if (want > phase && e.state !== 'INTRO' && !channeling) {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
       world.onBossPhase(e, want); e.setState('PHASE'); return;
