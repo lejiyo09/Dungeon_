@@ -94,7 +94,10 @@ Object.assign(Game.prototype, {
     return out;
   },
   coopOnNet(m) {
-    if (!this.coop) { if (m.t === 'relay' && m.data && m.data.k === 'start' && this.mode === 'lobby' && !this.transition) this.coopGuestStart(m.from, !!m.data.deep); return; }
+    if (!this.coop) {
+      if (m.t === 'relay' && m.data && m.data.k === 'gather' && !Net.isHost) { const d = m.data; this.gather = { label: d.label, n: d.n, total: d.total, t: d.t }; if (d.t) SFX.play('ui', 0.2); return; } // 단체 입장 상태 (방장이 보냄)
+      if (m.t === 'relay' && m.data && m.data.k === 'start' && this.mode === 'lobby' && !this.transition) { this.gather = {}; this.coopGuestStart(m.from, !!m.data.deep); }
+      return; }
     if (m.t === 'dropped' || m.t === 'rejoined' || m.t === 'lost') { this.coopNetEvent(m.t); return; } // 내 연결이 끊김 / 다시 연결됨 / 포기
     if (m.t === 'players') {
       if (this.coop.host) { for (const id of [...this.remotes.keys()]) if (!Net.players.some((p) => p.id === id)) this.coopRemoteGone(id); }

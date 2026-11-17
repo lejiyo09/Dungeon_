@@ -215,6 +215,37 @@ class Game {
     ];
   }
   // ── 멀티 (1단계): 내 위치를 보내고, 다른 사람 위치를 부드럽게 따라감
+  // ── 단체 입장: 방 사람이 모두 같은 포탈(던전·심층)에 모이면 3초 뒤 함께 출발 (방장이 계산해 알림, 방장은 E로 바로 출발)
+  gatherMembers(po) { // 이 포탈 위에 서 있는 사람 수 (나 + 로비에 있는 동료)
+    const R = 22, me = this.player; let n = Math.hypot(me.x - po.x, me.y - po.y) < R ? 1 : 0;
+    for (const P of Net.peers.values()) if (P.mode === 'lobby' && Net.players.some((q) => q.id === P.id) && Math.hypot(P.tx - po.x, P.ty - po.y) < R) n++;
+    return n;
+  }
+  updateGather(dt, input) {
+    const total = Net.players.length; this.gather = this.gather || {};
+    if (!Net.isHost) return; // 참가자: 방장이 보내 준 상태를 그리기만
+    let best = null, bn = 0; for (const po of this.portals) if (po.group) { const n = this.gatherMembers(po); if (n > bn) { bn = n; best = po; } }
+    const G = this.gather, meOn = best && Math.hypot(this.player.x - best.x, this.player.y - best.y) < 22;
+    const go = () => { const po = G.po; this.gather = {}; Net.relay({ k: 'gather', label: null }); if (this.save.run && po.group === 'run') { this.overlay = { type: 'resume' }; this.player.y += 22; } else this.transition = { t: 0, swapped: false, action: po.onEnter }; };
+    if (best && bn >= total) { if (G.po !== best || G.t === undefined) { G.po = best; G.t = 3; SFX.play('ui'); } G.t -= dt; if (G.t <= 0) { go(); return; } }
+    else { G.po = bn ? best : null; G.t = undefined; }
+    if (meOn && input.wasPressed('KeyE') && bn >= 1) { G.po = best; go(); return; } // 방장: 다 안 모여도 바로 출발 (방 사람 모두 함께)
+    G.n = bn; G.total = total; G.sendT = (G.sendT || 0) - dt;
+    const key = (G.po ? G.po.label : '') + bn + total + (G.t !== undefined ? Math.ceil(G.t) : '');
+    if (G.sendT <= 0 || key !== G.key) { G.sendT = 1; G.key = key; Net.relay({ k: 'gather', label: G.po ? G.po.label : null, n: bn, total, t: G.t !== undefined ? Math.ceil(G.t) : null }); }
+  }
+  renderGather(ctx) { // 포탈 위 안내 (월드 좌표)
+    if (this.mode !== 'lobby' || !Net.inRoom || Net.players.length < 2) return;
+    const G = this.gather || {}, total = Net.players.length, label = G.po ? G.po.label : G.label;
+    for (const po of this.portals) if (po.group) {
+      const on = label === po.label, n = on ? (G.n || 0) : 0, t = on ? (G.t !== undefined && G.t !== null ? Math.ceil(G.t) : null) : null;
+      const x = Math.round(po.x), y = Math.round(po.y) - 58; // 포탈 이름 위쪽
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(x - 56, y - 2, 112, t ? 13 : 21);
+      hudText(ctx, t ? `${t}초 뒤 함께 출발!` : `단체 입장 ${n}/${total}`, x, y, t ? '#7affc0' : n ? '#ffd27a' : '#c8c8d8', 'center', 8);
+      if (!t) hudText(ctx, Net.isHost ? '모두 모이면 출발 · E: 지금 출발' : '모두 모이면 함께 출발', x, y + 11, '#aaa', 'center', 6);
+      if (on && n) { ctx.strokeStyle = t ? '#7affc0' : '#ffd27a'; ctx.globalAlpha = 0.5 + 0.3 * Math.sin(this.time * 6); ctx.beginPath(); ctx.arc(x, Math.round(po.y), 22, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
+    }
+  }
   updateNet(dt) {
     if (!Net.inRoom) return;
     const p = this.player; this.netT = (this.netT || 0) - dt;
@@ -308,8 +339,8 @@ class Game {
     this.props.push(new StoryShelf(3 * TILE + 8, 30 * TILE)); // 왼쪽 벽: 이야기 기록 책장
     this.guild(); // 오늘의 퀘스트·의뢰·진열 준비
     const pc = this.map.tileCenter(17, 18);
-    this.portals.push(new Portal(pc.x, pc.y, () => this.startRun(), '던전 입장'));
-    if (this.save.sanctumReached) { const dc = this.map.tileCenter(21, 18); this.portals.push(new Portal(dc.x, dc.y, () => this.startRun(true), '심층 입장', [120, 200, 255])); } // 심층을 열면 로비에서 바로 심층으로
+    this.portals.push(new Portal(pc.x, pc.y, () => this.startRun(), '던전 입장')); this.portals[this.portals.length - 1].group = 'run'; // 멀티: 단체 입장
+    if (this.save.sanctumReached) { const dc = this.map.tileCenter(21, 18); this.portals.push(new Portal(dc.x, dc.y, () => this.startRun(true), '심층 입장', [120, 200, 255])); this.portals[this.portals.length - 1].group = 'deep'; } // 심층을 열면 로비에서 바로 심층으로
     this.snapCamera();
     this.showBanner('로비', '캐릭터를 고르고 포탈로 들어가세요');
   }
@@ -641,8 +672,10 @@ class Game {
     }
     if (p.state !== 'DEAD') {
       this.updateInteraction(input);
+      const grouped = this.mode === 'lobby' && Net.inRoom && Net.players.length > 1; // 멀티 방: 던전·심층 포탈은 단체 입장 (모두 모이면 출발)
+      if (grouped) this.updateGather(dt, input);
       for (const po of this.portals)
-        if (Math.hypot(p.x - po.x, p.y - po.y) < 12) {
+        if (!(grouped && po.group) && Math.hypot(p.x - po.x, p.y - po.y) < 12) {
           if (this.mode === 'lobby' && this.save.run) { this.overlay = { type: 'resume' }; p.y += 22; break; } // 진행 중인 탐험이 있으면 이어하기 물음
           this.transition = { t: 0, swapped: false, action: po.onEnter }; break;
         }
@@ -1923,6 +1956,7 @@ class Game {
     this.map.renderDoors(ctx, this.time);
     this.map.renderAnim(ctx, this.time, { x: cx, y: cy });
     for (const po of this.portals) po.render(ctx);
+    this.renderGather(ctx); // 멀티 단체 입장 안내
     for (const h of this.hazards) h.render(ctx);
     for (const z of this.zones) z.render(ctx);
     for (const o of this.props) o.render(ctx, this);
