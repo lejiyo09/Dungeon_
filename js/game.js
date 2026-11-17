@@ -1141,9 +1141,9 @@ class Game {
       // 불
       case 'fireball': shoot({ p: { damage: 40, explodeRadius: 30, color: '#ff8a3a', size: 5, speed: 280, status: { type: 'burn', chance: 1, duration: 3, dps: 10 } } }); SFX.play('fire_x' in SOUNDS ? 'fire_x' : 'flame'); break;
       case 'flamestorm': this.zones.push(new SkillAura(p, { r: 60, life: 5, tick: 0.25, dmg: 16, color: '#ff7a3a', kind: 'flame', status: { type: 'burn', chance: 0.5, duration: 2, dps: 8 } })); this.effects.ring(p.x, p.y, 54, '#ff7a3a'); break;
-      case 'explosion': { const c = at(200); this.zones.push(new SkillCast(p, c.x, c.y, { r: 90, time: 2, color: '#ff7a3a' }, () => {
+      case 'explosion': { const c = at(200); this.zones.push(new ExplosionSigil(p, c.x, c.y, { r: 90, time: 2 })); /* 공중 마법진 + 땅의 불기둥 (발동 때 기둥이 차례로 터짐) */
+        this.zones.push(new SkillCast(p, c.x, c.y, { r: 90, time: 2, color: '#ff7a3a' }, () => {
         this.explodeAt(c.x, c.y, 90, { color: '#ff7a3a', hurtEnemies: true, src: { damage: D(440), mods: p.mods, knockback: 14, status: { type: 'burn', chance: 1, duration: 4, dps: 14 } } });
-        for (let i = 0; i < 10; i++) this.effects.explosion(c.x + randInt(-45, 45), c.y + randInt(-30, 30), randInt(14, 26), pick(['#ffffff', '#ffd84a', '#ff7a3a']));
         this.screenFlash = 0.4; this.flashColor = '255,170,90'; this.addShake(0.6, 10); this.hitStop(0.1); SFX.play('excal'); })); break; }
       // 얼음
       case 'icelance': shoot({ n: 3, fan: 0.25, p: { damage: 28, pierce: 99, color: '#bfefff', size: 2, speed: 380, arrow: true, status: { type: 'freeze', chance: 0.7, duration: 1.6, slow: 0.4 } } }); break;
@@ -1169,7 +1169,7 @@ class Game {
       // 어둠
       case 'curseshot': shoot({ p: { damage: 36, explodeRadius: 26, color: '#a070e0', size: 4, speed: 260, mark: { mult: 1.4, dur: 6 }, status: { type: 'curse', chance: 1, duration: 6 } } }); break;
       case 'abyss': { const c = at(170); this.zones.push(new DarkHole(c.x, c.y, p, { r: 62, life: 2.5, pull: 75, dmg: 8, status: { type: 'curse', chance: 1, duration: 5 } })); break; }
-      case 'voidcollapse': { const c = at(180); this.zones.push(new DarkHole(c.x, c.y, p, { r: 90, life: 2, pull: 110, dmg: 6, status: { type: 'curse', chance: 1, duration: 6 } }));
+      case 'voidcollapse': { const c = at(180); this.zones.push(new DarkHole(c.x, c.y, p, { r: 90, life: 2, pull: 110, dmg: 6, hole: true, status: { type: 'curse', chance: 1, duration: 6 } }));
         this.zones.push(new SkillCast(p, c.x, c.y, { r: 90, time: 2, color: '#a070e0' }, () => {
           this.explodeAt(c.x, c.y, 80, { color: '#a070e0', hurtEnemies: true, src: { damage: D(360), mods: p.mods, knockback: 10, status: { type: 'curse', chance: 1, duration: 6 } } });
           this.effects.ring(c.x, c.y, 90, '#ffffff'); this.screenFlash = 0.3; this.flashColor = '160,110,230'; this.addShake(0.5, 8); this.hitStop(0.08); SFX.play('excal'); })); break; }
@@ -1920,6 +1920,13 @@ class Game {
     for (let i = 0; i < coins; i++) this.pickups.push(new Pickup('coin', enemy.x, enemy.y));
     if (Math.random() < B.killEnergyChance) this.pickups.push(new Pickup('energy', enemy.x, enemy.y, { value: B.killEnergyValue }));
     if (Math.random() < B.killHpChance) this.pickups.push(new Pickup('hp', enemy.x, enemy.y, { value: B.killHpValue }));
+  }
+  trapRoot(e, dur) { /* 덫에 묶임: 보스는 3번 묶이면 그 뒤로 덫에 면역 (피해는 그대로) */
+    if (!e.def.boss) { e.stunT = Math.max(e.stunT || 0, dur); return; }
+    e.trapN = e.trapN || 0;
+    if (e.trapN >= 3) { if (!(e.trapMsgT > this.time)) { this.effects.text(e.x, e.y - e.radius - 10, '덫 면역', '#aaaaaa'); e.trapMsgT = this.time + 1.5; } return; }
+    e.trapN++; e.stunT = Math.max(e.stunT || 0, dur);
+    if (e.trapN >= 3) this.effects.text(e.x, e.y - e.radius - 14, '이제 덫에 걸리지 않음', '#ffd84a', true);
   }
   reflectBullet(b, p) { /* 아킬레우스의 방패: 적 탄을 쏜 쪽으로 그대로 되돌림 (내 탄이 되어 적을 맞힘) */
     const T = p.treasure || {}; let dx = -b.vx, dy = -b.vy; if (Math.hypot(dx, dy) < 1) { dx = b.x - p.x; dy = b.y - p.y; }
