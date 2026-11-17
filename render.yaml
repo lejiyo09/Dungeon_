@@ -1,9 +1,11 @@
 # Render 배포 설정 (Blueprint): 게임 파일과 멀티 서버를 한 주소에서 제공
 #  Render 대시보드 → New → Blueprint → 이 저장소 선택 → Apply
 #  이후로는 GitHub main에 올라온 업데이트가 자동으로 배포됨 (Blueprint 동기화 + 커밋마다 자동 배포)
+#  지역: 싱가포르 (한국에서 핑이 가장 낮음). Render는 만든 서비스의 지역을 바꿀 수 없어서, 이름을 바꿔 싱가포르에 새로 만듦
 services:
   - type: web
-    name: project-dungeon
+    name: project-dungeon-sg
+    region: singapore
     runtime: node
     plan: free
     buildCommand: npm install
@@ -15,6 +17,6 @@ services:
       - key: GH_TOKEN
         sync: false
       - key: GH_REPO
-        value: yubinl3756-lgtm/dungeon_
+        value: yubinl3756-lgtm/Dungeon_ # 저장소 이름이 바뀌었음 (예전 이름도 GitHub가 연결해 주지만 새 이름으로)
       - key: GH_BRANCH
         value: scores
