@@ -147,7 +147,7 @@ class Game {
   }
   // 멀린: 보구가 없으면 '…'만, 보구를 얻은 뒤 처음 말을 걸면 정체가 드러나며 시련을 줌 → 시련을 마치면 가든 오브 아발론
   talkMerlin(npc) {
-    const sv = this.save, M = sv.merlin = sv.merlin || { quest: 0, gate: 0, deep: 0 };
+    const sv = this.save, M = sv.merlin = sv.merlin || { quest: 0, gate: 0, deep: 0 }; merlinGateToDeep(M);
     if (!(sv.treasures || []).length) { npc.bubble = { text: '…', t: 2 }; return; }
     if (!M.revealed) { this.playCutscene(MERLIN_REVEAL_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.revealed = true; M.quest = 1; writeSave(sv); this.showBanner('멀린의 시련', `${MERLIN_TRIAL.gate ? `무명의 문지기 다시 쓰러뜨리기 (${M.gate}/${MERLIN_TRIAL.gate}) · ` : ''}심층 보스 처치 (${M.deep}/${MERLIN_TRIAL.deep})`, '#ffb0d8'); } }); return; }
     if (M.quest === 1) {
@@ -1873,7 +1873,7 @@ class Game {
     enemy.rewardGiven = true;
     this.kills++;
     if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) { this.guildEvent('kills', 1, enemy.def.id); if (enemy.elite) this.guildEvent('elites'); if (enemy.def.boss) this.guildEvent('bosses', 1, enemy.def.id);
-      const M = this.save.merlin; if (M && M.quest === 1 && enemy.def.boss) { if (enemy.def.id === 'boss_nameless_gatekeeper') M.gate = Math.min(MERLIN_TRIAL.gate, (M.gate || 0) + 1); if (this.W.deep) M.deep = Math.min(MERLIN_TRIAL.deep, (M.deep || 0) + 1); } } // 멀린의 시련 // 길드 퀘스트·토벌·칭호 집계
+      const M = this.save.merlin; if (M) merlinGateToDeep(M); if (M && M.quest === 1 && enemy.def.boss) { if (enemy.def.id === 'boss_nameless_gatekeeper') M.gate = Math.min(MERLIN_TRIAL.gate, (M.gate || 0) + 1); if (this.W.deep) M.deep = Math.min(MERLIN_TRIAL.deep, (M.deep || 0) + 1); } } // 멀린의 시련 // 길드 퀘스트·토벌·칭호 집계
     const p = this.player;
     if (p.vampire > 0 && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.vampire);
     if (p.rage > 0 && p.rageVamp && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.rageVamp);
