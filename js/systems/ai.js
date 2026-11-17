@@ -188,12 +188,15 @@ const AI_BEHAVIORS = {
     if (want > phase && e.state !== 'INTRO' && !channeling) {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
+      if (def.negate && want === 3) { e.negateOn = true; e.negCd = 1.5; world.announceBossSkill(e, '부정 — 모든 칼날을 거부하는 빛'); }
       if (def.rampage && want === 3) { e.rampage = true; world.announceBossSkill(e, '폭주 — 멈추지 않는 반역'); }
       if (def.rev && want === 3) { e.revAll = true; world.announceBossSkill(e, '반전 — 되돌아오는 화살'); } /* 트리스탄: 이제 화살이 지나간 뒤 되돌아옴 */
       if (def.noon && want === 3) { e.damage = Math.round(e.damage * (1 + def.noon)); e.dmg0 = e.damage; world.announceBossSkill(e, '정오 — 태양의 가호'); } /* 가웨인: 해가 가장 높이 뜸 */
       world.onBossPhase(e, want); e.setState('PHASE'); return;
     }
     e.finalCd = (e.finalCd ?? 0) - dt;
+    if (e.negateT > 0) e.negateT -= dt;
+    if (e.negateOn && e.state !== 'PHASE') { e.negCd -= dt; if (e.negCd <= 0) { e.negCd = def.negate.every + def.negate.dur; e.negateT = def.negate.dur; world.effects.ring(e.x, e.y, 30, '#ffffff'); world.effects.ring(e.x, e.y, 20, '#d8f0ff'); SFX.play('shield', 0.1); } } /* 가레스: 주기적으로 피해 무효 */
     switch (e.state) {
       case 'INTRO': break; // 등장 연출은 Game이 진행
       case 'PHASE': if (e.stateTime >= 1.3) e.setState('CHASE'); break; // 페이즈 전환 중 무적
@@ -406,6 +409,41 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 부정의 원 (가레스): 플레이어 자리와 그 주변에 하얀 원(안에서는 공격·스킬 불가)을 깔고, 원 밖으로 피하는 동안 조준 사격
+  denyfield: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, r = e.room; d.timer -= dt;
+      if (!d.placed) { d.placed = true; d.timer = 0.5;
+        for (let i = 0; i < P.zones; i++) { const a = Math.random() * TAU, q = i === 0 ? 0 : 30 + Math.random() * P.around;
+          const x = clamp(p.x + Math.cos(a) * q, r.x0 * TILE + P.zr, (r.x0 + r.w) * TILE - P.zr), y = clamp(p.y + Math.sin(a) * q, r.y0 * TILE + P.zr, (r.y0 + r.h) * TILE - P.zr);
+          world.hazards.push(new DenyZone(x, y, { r: P.zr, delay: P.life, color: P.color })); }
+        world.effects.ring(e.x, e.y, 26, '#ffffff'); SFX.play('magic', 0.05); }
+      if (d.timer <= 0 && d.shots < P.volleys) { const base = Math.atan2(p.y - e.y, p.x - e.x), h = (P.count - 1) / 2;
+        for (let i = 0; i < P.count; i++) world.enemyShoot(e.x, e.y, base + (i - h) * P.spread, e.def.bulletSpeed, e.damage, P.color, 3);
+        d.shots++; d.timer = 0.42 / spd; }
+      return d.shots >= P.volleys && d.timer <= 0;
+    }
+  },
+  // 보마인 (가레스의 보구, '고운 손'): 빛을 모은 뒤 플레이어 둘레를 돌며 여러 번 순간이동 — 나타날 때마다 부채꼴 사격, 마지막에 사방으로 터짐. 쓰는 동안 페이즈 전환 없음
+  beaumains: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, r = e.room, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;
+      if (d.t < P.charge) { if (Math.random() < 0.7) { const a = Math.random() * TAU; fx.part(e.x + Math.cos(a) * 22, e.y + Math.sin(a) * 22, -Math.cos(a) * 50, -Math.sin(a) * 50, { color: '#ffffff', life: 0.35, size: 2, size2: 0, drag: 0, add: true }); } d.a0 = d.a0 ?? Math.random() * TAU; return false; }
+      d.timer = (d.timer ?? 0) - dt;
+      if (d.timer <= 0 && d.shots < P.blinks) {
+        const a = d.a0 + d.shots * (TAU / P.blinks) * 1.5, x = clamp(p.x + Math.cos(a) * P.ring, r.x0 * TILE + 20, (r.x0 + r.w) * TILE - 20), y = clamp(p.y + Math.sin(a) * P.ring, r.y0 * TILE + 20, (r.y0 + r.h) * TILE - 20);
+        fx.ring(e.x, e.y, 16, '#ffffff'); if (!world.map.isSolidAt(x, y)) { e.x = x; e.y = y; }
+        fx.ring(e.x, e.y, 22, P.color); SFX.play('swing', 0.04);
+        const base = Math.atan2(p.y - e.y, p.x - e.x), h = (P.count - 1) / 2;
+        for (let i = 0; i < P.count; i++) world.enemyShoot(e.x, e.y, base + (i - h) * (P.spread / P.count), P.speed, Math.round(e.damage * 1.1), i % 2 ? P.color : '#ffffff', 3);
+        d.shots++; d.timer = P.interval / spd;
+        if (d.shots >= P.blinks) { d.endAt = d.t + 0.45; }
+      }
+      if (d.endAt && d.t >= d.endAt && !d.burst) { d.burst = true; for (let i = 0; i < P.final; i++) world.enemyShoot(e.x, e.y, i * TAU / P.final, e.def.bulletSpeed, e.damage, P.color, 4); fx.rays(e.x, e.y, '#ffffff', 16, 80, 0.6); world.addShake(0.25, 4); }
+      if (d.burst && d.t >= d.endAt + 0.5) { d.lock = false; return true; }
+      return false;
+    }
+  },
   // 폭주 돌진 (모드레드): 짧게 노린 뒤 플레이어 쪽으로 돌진, 지나간 자리에 붉은 번개가 차례로 떨어지고 멈춘 곳에서 사방으로 탄 — 여러 번 연속
   rampage: {
     begin(e) { e.pd.n = 0; e.pd.phase = 'aim'; e.pd.pt = 0; },

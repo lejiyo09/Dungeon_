@@ -624,5 +624,21 @@ const DATA_ENEMIES = [
       { type: 'spiral', duration: 3, arms: 6, interval: 0.06, spin: -2.6, color: '#ffb0b0' },
       { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.5, bullets: 0, color: '#ff5a5a' },
       { type: 'ringOut', rings: 5, count: 32, gap: 4, speed: 160, interval: 0.38, color: '#ff3a3a' }],
-    finalPatterns: [{ type: 'clarent', name: '클래런트', charge: 1.1, duration: 2.0, width: 15, turn: 0.55, strikes: 12, radius: 18, delay: 0.5, bullets: 4, color: '#ff2a2a' }] }
+    finalPatterns: [{ type: 'clarent', name: '클래런트', charge: 1.1, duration: 2.0, width: 15, turn: 0.55, strikes: 12, radius: 18, delay: 0.5, bullets: 4, color: '#ff2a2a' }] },
+  // [사용자 결정] 카멜롯 4층 보스: 부정의 기사 가레스 — 보구 '보마인'·패턴·수치는 Claude가 정한 [제안]
+  //  negate: 3페이즈 '부정'부터 every초마다 dur초 동안 하얀 빛을 둘러 모든 피해 무효
+  { id: 'boss_gareth', name: '가레스', title: '부정의 기사', sprite: 'boss_gareth', color: '#5a8a7a', phaseColors: ['#5a8a7a', '#4a7a9a', '#6a6aa8'],
+    boss: true, aiType: 'boss', health: 7000, damage: 32, moveSpeed: 85, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.45, bulletSpeed: 185,
+    rewardGold: 0, ultFrom: 2, ultCd: 20, negate: { every: 7, dur: 2 }, patterns: [
+      { type: 'denyfield', zones: 3, zr: 34, life: 4.5, around: 90, volleys: 3, count: 7, spread: 0.12, color: '#d8f0ff' },
+      { type: 'charge', dashes: 3, speed: 560, color: '#d8f0ff' },
+      { type: 'slam', radius: 60, chain: 2, color: '#bfe0ff' },
+      { type: 'aimed', volleys: 6, count: 8, spread: 0.11, color: '#d8f0ff' },
+      { type: 'wall', waves: 3, gap: 3, speed: 125, interval: 0.85, color: '#bfe0ff' }],
+    phase2Patterns: [{ type: 'denyfield', zones: 5, zr: 36, life: 5, around: 110, volleys: 5, count: 9, spread: 0.12, color: '#d8f0ff' },
+      { type: 'orbit', count: 22, radius: 52, spinTime: 1, spin: -3, speed: 160, color: '#d8f0ff' },
+      { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.5, bullets: 0, color: '#bfe0ff' },
+      { type: 'meteor', count: 10, delay: 0.6, stagger: 0.18, radius: 30, bullets: 7, color: '#d8f0ff' },
+      { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 155, interval: 0.4, color: '#bfe0ff' }],
+    finalPatterns: [{ type: 'beaumains', name: '보마인', charge: 0.8, blinks: 6, ring: 80, interval: 0.38, count: 7, spread: 0.5, speed: 200, final: 30, color: '#d8f0ff' }] }
 ];

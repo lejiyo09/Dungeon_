@@ -51,6 +51,7 @@ class Player extends Entity {
     this.skillCooldown = Math.max(0, this.skillCooldown - dt * (this.solomon > 0 && this.treasure && this.treasure.skillHaste ? this.treasure.skillHaste : 1)); // 솔로몬의 반지: 스킬 쿨타임 빨리 회복
     this.dashInvuln = Math.max(0, this.dashInvuln - dt);
     this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
+    if (this.denyT > 0) this.denyT -= dt; /* 가레스의 부정 장판 */
     if (this.aegisT > 0) this.aegisT = Math.max(0, this.aegisT - dt); if (this.fleeceT > 0) this.fleeceT = Math.max(0, this.fleeceT - dt); /* 아킬레우스의 방패 · 황금 양털 */
     this.overdrive = Math.max(0, this.overdrive - dt); this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt); this.treasureCd = Math.max(0, this.treasureCd - dt); this.solomon = Math.max(0, this.solomon - dt); this.hadesT = Math.max(0, (this.hadesT || 0) - dt);
     this.castLock = Math.max(0, this.castLock - dt); this.blinkWindowT = Math.max(0, this.blinkWindowT - dt); this.sancBoost = Math.max(0, this.sancBoost - dt); this.hasteT = Math.max(0, (this.hasteT || 0) - dt); this.avalonT = Math.max(0, (this.avalonT || 0) - dt); this.buffT = Math.max(0, (this.buffT || 0) - dt);
@@ -123,6 +124,8 @@ class Player extends Entity {
   }
   render(ctx) { // 하데스의 투구: 거의 투명하게 + 일렁이는 그림자
     if (this.aegisT > 0 && this.state !== 'DEAD') this.renderAegis(ctx);
+    if (this.denyT > 0 && this.state !== 'DEAD') { const x = Math.round(this.x), y = Math.round(this.y) - 22; ctx.save(); ctx.strokeStyle = '#ff6a6a'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.9; /* 공격 금지 표시 */
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, TAU); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x - 3, y + 3); ctx.lineTo(x + 3, y - 3); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; }
     if (!(this.hadesT > 0) || this.state === 'DEAD') { this.renderBody(ctx); return; }
     ctx.save(); ctx.globalAlpha = 0.28 + 0.08 * Math.sin(this.time * 10); this.renderBody(ctx); ctx.restore(); ctx.globalAlpha = 1;
     ctx.save(); ctx.globalAlpha = 0.35; ctx.strokeStyle = '#9aa8c8'; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.ellipse(Math.round(this.x), Math.round(this.y) + 6, 10, 3.5, 0, this.time * 2, this.time * 2 + TAU); ctx.stroke(); ctx.restore();
@@ -322,6 +325,9 @@ class Enemy extends Entity {
   render(ctx) {
     if (this.state === 'SPAWN') return;
     const x = Math.round(this.x), y = Math.round(this.y), def = this.def;
+    if (this.negateT > 0 && this.state !== 'DEAD') { const R = this.radius + 8, t = performance.now() / 1000; ctx.save(); ctx.globalCompositeOperation = 'lighter'; /* 가레스의 부정: 하얀 빛의 막 */
+      ctx.globalAlpha = 0.18; ctx.fillStyle = '#d8f0ff'; ctx.beginPath(); ctx.arc(x, y - 4, R, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 0.85; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y - 4, R + Math.sin(t * 12), 0, TAU); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; }
     if (this.state === 'DEAD') {
       const dur = def.boss ? 1 : 0.35;
       const k = 1 - Math.min(1, this.stateTime / dur);

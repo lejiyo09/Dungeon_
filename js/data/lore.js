@@ -201,7 +201,31 @@ const CAMELOT3_TRIAL = {
     palette: CAMELOT_TRIAL.W.palette },
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
 };
-const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL };
+// [사용자 결정] 카멜롯 4층 보스: 부정의 기사 가레스. 보구 '보마인'(전승 속 가레스의 별명 '고운 손')·'부정'(하얀 원 안에서는 공격 불가, 3페이즈부터 주기적으로 모든 피해 무효)·수치·대사는 Claude가 정한 [제안]/[임시]
+const MERLIN_GARETH_LINES = [
+  '「모드레드를 넘다니… 이제 남은 층은 많지 않다.」',
+  '「다음은 가레스. 부엌일부터 시작해 원탁에 오른, 손이 고운 기사지.」',
+  '「사람들은 그를 부정의 기사라 부른다. 그 앞에서는 무기도, 기술도 거부당한다.」',
+  '「하얀 원 안에 서면 너는 공격할 수 없다. 그리고 그가 하얀 빛을 두르면 어떤 칼날도 닿지 않지.」',
+  '「로드 투 카멜롯, 네 번째 층. 준비가 되면 말하게.」'
+];
+const GARETH_WIN_LINES = [
+  '하얀 빛이 걷히고, 젊은 기사가 조용히 검을 내려놓는다.',
+  '「…그렇군요. 당신만은 부정할 수가 없었네요.」',
+  '「위층의 분들은 저처럼 물러서지 않을 거예요. 부디 조심하세요.」',
+  '기사는 고운 손을 가슴에 얹어 인사한 뒤 빛 속으로 사라진다.'
+];
+const CAMELOT4_TRIAL = {
+  id: 'camelot4', title: '로드 투 카멜롯 — 4층', color: '#d8f0ff', intro: '부정의 기사 가레스가 기다리고 있습니다', reward: 800, questDone: 12,
+  confirm: ['백악의 성 4층 — 성의 기사들을 뚫고 부정의 기사 가레스와 싸웁니다', '모드레드보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
+  winText: '가레스를 쓰러뜨리고 4층을 지났습니다', winSub: '결정석 800개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => GARETH_WIN_LINES,
+  world: 9,
+  W: { name: '백악의 성 카멜롯 — 4층', boss: 'boss_gareth', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
+    enemies: [['enemy_camguard_001', 2], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 2]],
+    palette: CAMELOT_TRIAL.W.palette },
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+};
+const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL };
 // 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
 const DEEP_ARRIVAL_LINES = [
   '발밑의 돌이 차갑게 식어 간다.',
@@ -227,7 +251,9 @@ const STORY_ARCHIVE = [
   { id: 'tristan_road', name: '반전의 기사', kind: 'cut', lines: () => MERLIN_TRISTAN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 7) },
   { id: 'tristan', name: '끊어진 활시위', kind: 'cut', lines: () => TRISTAN_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 8) },
   { id: 'mordred_road', name: '반역의 기사', kind: 'cut', lines: () => MERLIN_MORDRED_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 9) },
-  { id: 'mordred', name: '붉은 번개가 잦아들 때', kind: 'cut', lines: () => MORDRED_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 10) }
+  { id: 'mordred', name: '붉은 번개가 잦아들 때', kind: 'cut', lines: () => MORDRED_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 10) },
+  { id: 'gareth_road', name: '부정의 기사', kind: 'cut', lines: () => MERLIN_GARETH_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 11) },
+  { id: 'gareth', name: '고운 손', kind: 'cut', lines: () => GARETH_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 12) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 // [사용자 결정] 문지기 조건을 없애기 전에 이미 문지기를 잡아 둔 사람은 그 1번을 심층 보스 1마리로 쳐 줌 (한 번만 바꿈)

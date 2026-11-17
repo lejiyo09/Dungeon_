@@ -35,7 +35,7 @@ class WeaponSystem {
     for (const o of player.weapons) if (o !== w) { o.cooldown = Math.max(0, o.cooldown - dt); o.charge = 0; o.beamActive = false; o.burstLeft = 0; }
     if (!w) return;
     w.cooldown = Math.max(w.cooldown - dt, -STEP);
-    if (player.state === 'DEAD' || player.castLock > 0) { w.beamActive = false; w.charge = 0; return; } // 시전 중엔 공격 불가
+    if (player.state === 'DEAD' || player.castLock > 0 || player.denyT > 0) { w.beamActive = false; w.charge = 0; return; } // 시전 중엔 공격 불가 (가레스의 부정 장판 안도)
     if ((input.wasPressed('KeyQ') || input.wasPressed('Wheel')) && player.weapons.length > 1) {
       w.charge = 0; w.beamActive = false; w.burstLeft = 0;
       player.slot = (player.slot + 1) % player.weapons.length;

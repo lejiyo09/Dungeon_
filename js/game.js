@@ -172,7 +172,10 @@ class Game {
     if (M.quest === 8) { /* 카멜롯 3층: 폭주의 기사 모드레드 */
       this.playCutscene(MERLIN_MORDRED_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 9; writeSave(sv); this.askTrial('camelot3'); } }); return; }
     if (M.quest === 9) { this.askTrial('camelot3'); return; }
-    if (this.admin) { this.askTrial(M.quest >= 9 ? 'camelot3' : M.quest >= 7 ? 'camelot2' : M.quest >= 5 ? 'camelot' : 'rhongo'); return; } // 관리자는 시련을 마친 뒤에도 언제든 다시 도전
+    if (M.quest === 10) { /* 카멜롯 4층: 부정의 기사 가레스 */
+      this.playCutscene(MERLIN_GARETH_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 11; writeSave(sv); this.askTrial('camelot4'); } }); return; }
+    if (M.quest === 11) { this.askTrial('camelot4'); return; }
+    if (this.admin) { this.askTrial(M.quest >= 11 ? 'camelot4' : M.quest >= 9 ? 'camelot3' : M.quest >= 7 ? 'camelot2' : M.quest >= 5 ? 'camelot' : 'rhongo'); return; } // 관리자는 시련을 마친 뒤에도 언제든 다시 도전
     npc.bubble = { text: pick(MERLIN_CHATTER), t: 3 };
   }
   // ── 롱고미니아드의 시련: 따로 준비된 장비로 신령 롱고미니아드와 1:1 (진행 중인 탐험·보상·기록에는 영향 없음)
@@ -238,7 +241,8 @@ class Game {
       { name: '롱고미니아드의 시련 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('rhongo') }; } },
       { name: '로드 투 카멜롯 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot') }; } },
       { name: '카멜롯 2층 (트리스탄) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot2') }; } },
-      { name: '카멜롯 3층 (모드레드) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot3') }; } }
+      { name: '카멜롯 3층 (모드레드) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot3') }; } },
+      { name: '카멜롯 4층 (가레스) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot4') }; } }
     ];
   }
   // ── 멀티 (1단계): 내 위치를 보내고, 다른 사람 위치를 부드럽게 따라감
@@ -1097,6 +1101,7 @@ class Game {
     const p = this.player;
     if (p.castLock > 0) return;
     if (p.skillCooldown > 0) return;
+    if (p.denyT > 0) { this.effects.text(p.x, p.y - 20, '부정됨', '#d8f0ff'); return; } /* 가레스의 부정 장판 안: 스킬 금지 */
     p.skillCooldown = p.skillCdMax; this.guildEvent('skills');
     SFX.play('skill');
     if (p.rank === 2) this.ultimateFx(p); // 최종 진화 스킬은 컷인과 함께
@@ -1663,6 +1668,7 @@ class Game {
     this.enemyBullets.push(new EnemyBullet(x, y, Math.cos(ang) * speed, Math.sin(ang) * speed, damage, color, r));
   }
   damageEnemy(enemy, src, kx, ky, opts = {}) {
+    if (enemy.negateT > 0) { if (!(enemy.negMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, '부정', '#d8f0ff'); enemy.negMsgT = this.time + 0.35; } return; } /* 가레스의 부정: 모든 피해 무효 */
     let base = src.damage;
     if (src.execute && enemy.hp < enemy.maxHp * 0.35) base *= 1 + src.execute; // 처형: 빈사 적 추가 피해
     if (enemy.markT > 0) base *= enemy.markMult;                                 // 약점 표시된 적

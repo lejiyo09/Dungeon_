@@ -301,7 +301,7 @@ Object.assign(Game.prototype, {
     C.seq = (C.seq || 0) + 1;
     const msg = { k: 'snap', q: C.seq, g: this.gold, kills: this.kills, wi: this.worldIdx, li: this.levelIdx, pl: players, en, pr, eb,
       pk: this.pickups.map((k) => [k.kind, Math.round(k.x), Math.round(k.y), k.def ? k.def.id : 0]),
-      hz: this.hazards.map((h) => [Math.round(h.x), Math.round(h.y), h.r, r1(h.t), h.delay, h.color]),
+      hz: this.hazards.map((h) => [Math.round(h.x), Math.round(h.y), h.r, r1(h.t), h.delay, h.color, h.kind || 0]),
       po: this.portals.map((p) => [Math.round(p.x), Math.round(p.y), p.label || '', p.color || null]),
       rv: this.map.rooms.map((r) => (r.visited ? 1 : 0)).join(''), td, fx: (C.fxCount && Object.keys(C.fxCount).forEach((k) => { C.fxCount[k] = 0; }), C.fx.splice(0)), zs,
       pp: this.props.map((o) => { let lb = ''; try { lb = o.label ? o.label(this) || '' : ''; } catch (e) { lb = ''; } const own = COOP_OWN_LABEL[o.constructor.name]; return [o.constructor.name, Math.round(o.x), Math.round(o.y), own ? '' : lb, o.open ? 1 : 0, o.content || 0, own ? own.map((k) => o[k]) : 0]; }) };
@@ -389,7 +389,7 @@ Object.assign(Game.prototype, {
     const lat = coopLat(); // 방장 쪽 '지금' 위치로 앞당겨 그림 (피하는 감각을 방장 판정과 맞춤)
     this.enemyBullets = d.eb.map(([x, y, vx, vy, r, c]) => mover(Object.assign(Object.create(EnemyBullet.prototype), { x: x + vx * lat, y: y + vy * lat, vx, vy, r, color: c, alive: true })));
     if (d.pk) this.pickups = d.pk.map(([kind, x, y, id]) => new Pickup(kind, x, y, { still: true, def: id ? this.data.weapons.get(id) : null }));
-    if (d.hz) this.hazards = d.hz.map(([x, y, r, t, delay, color]) => Object.assign(Object.create(Hazard.prototype), { x, y, r, t, delay, color, alive: true }));
+    if (d.hz) this.hazards = d.hz.map(([x, y, r, t, delay, color, kind]) => Object.assign(Object.create((kind === 'deny' ? DenyZone : Hazard).prototype), { x, y, r, t, delay, color, kind, alive: true })); /* deny: 가레스의 부정 장판 */
     if (d.po) this.portals = d.po.map(([x, y, label, col]) => new Portal(x, y, () => {}, label, col || undefined));
     if (d.pp) this.props = d.pp.map(([cls, x, y, label, open, content, own]) => { // 상자는 진짜 그림, 나머지는 표시 + 이름 (가까이 가면)
       const K = COOP_OWN_LABEL[cls] && own && typeof window[cls] !== 'undefined' ? window[cls] : (COOP_OWN_LABEL[cls] && own ? Function('return typeof ' + cls + " !== 'undefined' ? " + cls + ' : null')() : null);
@@ -461,7 +461,7 @@ Object.assign(Game.prototype, {
     for (const e of this.enemies) { coopSmooth(e, dt, now); e.stateTime += dt; e.hurtFlash = Math.max(0, e.hurtFlash - dt); }
     for (const q of this.projectiles) q.update(dt);
     for (const b of this.enemyBullets) { b.x += b.vx * dt; b.y += b.vy * dt; }
-    for (const h of this.hazards) h.t += dt;
+    for (const h of this.hazards) { h.t += dt; if (h.kind === 'deny' && h.t < h.delay && Math.hypot(this.player.x - h.x, this.player.y - h.y) < h.r) this.player.denyT = 0.15; } /* 부정 장판 안에선 내 화면에서도 공격 안 나감 */
     for (const pk of this.pickups) pk.t += dt;
     for (const po of this.portals) po.t += dt;
     this.interactTarget = p.state !== 'DEAD' ? this.findInteractTarget() : null; // 가까운 상자·상점 이름 표시 (E는 방장에게 전달)
@@ -474,7 +474,7 @@ Object.assign(Game.prototype, {
     input0.endStep();
   },
   coopLocalFire(p, md, mw, dt) {
-    const C = this.coop, w = p.weapons[p.slot]; if (!w) return; const def = w.def, fr = C.fr || 1;
+    const C = this.coop, w = p.weapons[p.slot]; if (!w || p.denyT > 0) return; const def = w.def, fr = C.fr || 1;
     if (C.lastW !== def.id) { C.lastW = def.id; C.fireCd = 0.1; C.spin = 0; C.chargeT = 0; C.burst = null; } // 무기를 바꾸면 처음부터
     C.fireCd = (C.fireCd || 0) - dt;
     if (C.burst) { C.burst.t -= dt; if (C.burst.t <= 0 && C.burst.left > 0) { C.burst.left--; C.burst.t = def.burst.interval; this.coopPredictShot(p, def, mw); } if (C.burst.left <= 0) C.burst = null; } // 연사 총: 남은 발

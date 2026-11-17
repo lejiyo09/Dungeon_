@@ -240,6 +240,24 @@ class EnemyBullet {
 }
 
 // 지연 폭발 장판 (보스 패턴)
+/* 가레스의 부정 장판: delay(=지속 시간) 동안 안에 선 플레이어는 공격·스킬을 쓸 수 없음 (피해는 없음) */
+class DenyZone {
+  constructor(x, y, o) { Object.assign(this, o); this.x = x; this.y = y; this.t = 0; this.alive = true; this.kind = 'deny'; }
+  update(dt, world) {
+    this.t += dt; if (this.t >= this.delay) { this.alive = false; return; }
+    if (this.t < 0.35) return; /* 처음 잠깐은 경고만 */
+    for (const p of world.allPlayers()) if (p.state !== 'DEAD' && Math.hypot(p.x - this.x, p.y - this.y) < this.r) p.denyT = 0.15;
+  }
+  render(ctx) {
+    const k = Math.min(1, this.t / 0.35, (this.delay - this.t) / 0.4), x = Math.round(this.x), y = Math.round(this.y), R = this.r, arm = this.t >= 0.35;
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.6);
+    ctx.globalAlpha = (arm ? 0.22 : 0.1) * k; ctx.fillStyle = '#d8f0ff'; ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.85 * k; ctx.strokeStyle = arm ? '#ffffff' : '#d8f0ff'; ctx.lineWidth = arm ? 1.5 : 1; ctx.setLineDash(arm ? [] : [3, 3]); ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+    ctx.globalAlpha = 0.5 * k; ctx.strokeStyle = '#ff8a8a'; ctx.lineWidth = 2; const q = R * 0.35; /* 가운데 금지 표시 */
+    ctx.beginPath(); ctx.moveTo(-q, -q); ctx.lineTo(q, q); ctx.moveTo(q, -q); ctx.lineTo(-q, q); ctx.stroke();
+    ctx.restore(); ctx.lineWidth = 1; ctx.globalAlpha = 1;
+  }
+}
 class Hazard {
   constructor(x, y, o) { Object.assign(this, o); this.x = x; this.y = y; this.t = 0; this.alive = true; }
   update(dt, world) {
