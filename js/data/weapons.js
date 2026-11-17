@@ -506,5 +506,20 @@ const DATA_WEAPONS = [
   // ── 전설 1
   { id: 'weapon_eclipse_001', name: '일식의 원반', rarity: 'legendary', type: 'gun', shape: 'gun',
     damage: 46, fireRate: 2.2, energyCost: 0.5, range: 300, projectileSpeed: 400, projectileCount: 1, spreadDeg: 0,
-    pierce: 99, boomerang: true, rehit: 0.3, status: { type: 'burn', chance: 0.5, duration: 2, dps: 12 }, mark: { mult: 1.2, dur: 2 }, knockback: 5, color: '#2a2030', len: 9, bulletColor: '#ffb04a', bulletSize: 3 }
+    pierce: 99, boomerang: true, rehit: 0.3, status: { type: 'burn', chance: 0.5, duration: 2, dps: 12 }, mark: { mult: 1.2, dur: 2 }, knockback: 5, color: '#2a2030', len: 9, bulletColor: '#ffb04a', bulletSize: 3 },
+  // ── 추가: 영웅 중독 연타 · 등급별 새 방식
+  { id: 'weapon_venomgatling_001', name: '맹독 개틀링', rarity: 'epic', type: 'gun', shape: 'gun',
+    damage: 7.5, fireRate: 13, spinUp: 0.7, energyCost: 0.25, range: 380, projectileSpeed: 520, projectileCount: 1, spreadDeg: 7,
+    status: { type: 'poison', chance: 0.25, duration: 3, dps: 10 }, pierce: 0, knockback: 1, color: '#3a5a2a', len: 14, bulletColor: '#9aff5a', bulletSize: 1 },
+  { id: 'weapon_markdagger_001', name: '표식 단검', rarity: 'uncommon', type: 'melee', shape: 'sword',
+    damage: 17, fireRate: 3.6, energyCost: 0, range: 34, arcDeg: 36, mark: { mult: 1.2, dur: 2.5 }, knockback: 2, color: '#8a9aa8', len: 8 },
+  { id: 'weapon_shockbow_001', name: '전격 장궁', rarity: 'rare', type: 'charge', shape: 'bow',
+    damage: 62, fireRate: 1.3, energyCost: 1.2, chargeTime: 0.6, range: 520, projectileSpeed: 700, pierce: 0, ricochet: 2,
+    status: { type: 'shock', chance: 0.6, duration: 3 }, knockback: 4, color: '#6a6a9a', len: 14, bulletColor: '#fff27a', bulletSize: 2 },
+  { id: 'weapon_flamebouncer_001', name: '화염 튕김탄', rarity: 'epic', type: 'gun', shape: 'gun',
+    damage: 19, fireRate: 2.6, energyCost: 1, range: 360, projectileSpeed: 420, projectileCount: 3, spreadDeg: 0, fanDeg: 24, bounce: 2,
+    status: { type: 'burn', chance: 0.4, duration: 2, dps: 9 }, pierce: 0, knockback: 3, color: '#8a4a2a', len: 12, bulletColor: '#ff8a3a', bulletSize: 2 },
+  { id: 'weapon_frostscythe_001', name: '서리 대낫', rarity: 'legendary', type: 'melee', shape: 'sword',
+    damage: 83, fireRate: 1.5, energyCost: 0.4, range: 48, arcDeg: 200, lifesteal: 0.25, knockback: 7,
+    status: { type: 'freeze', chance: 0.5, duration: 1.5, slow: 0.55 }, wave: { damage: 30, speed: 340, range: 190 }, color: '#9ad8f0', len: 18 }
 ];

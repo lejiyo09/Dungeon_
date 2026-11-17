@@ -130,6 +130,11 @@ Object.assign(WPIX, {
   swarm: { auto: true, p: [3, 3], rows: ['..nnnnnnnnn..', '.naoaoaoaoaon', '.naaaaaaaaaan', '.naoaoaoaoaon', '..nnnnnnnnn..', '...gg........'] },
   boltjavelin: { auto: true, p: [3, 1], rows: ['.............oo.', 'dddddddddddyoooo', '.............oo.'] },
   eclipse: { auto: true, p: [4, 4], rows: ['...ooooo...', '..oaaaaao..', '.oaaaaaaao.', '.oaacccaao.', '.oaacwcaao.', '.oaacccaao.', '.oaaaaaaao.', '..oaaaaao..', '...ooooo...'] },
+  venomgatling: { auto: true, p: [4, 3], rows: ['....nnnnnnnnnnn.', 'bbbaoaoaoaoaoaoo', 'bb.annnnnnnnnnn.', '....gg.cc.......', '....gg.cc.......'] },
+  markdagger: { auto: true, p: [2, 1], rows: ['...r.....', 'gganmmmmm', '...r.....'] },
+  shockbow: { auto: true, p: [2, 6], rows: ['..cc.........', '...cc......s.', '....cc.....s.', '.....ddddddso', '....cc.....s.', '...cc......s.', '..cc.........'] },
+  flamebouncer: { auto: true, p: [2, 3], rows: ['.ccccccc.o.', '.aaaaaaanoo', '.bbnbbbb.o.', '.gg.n......', '.gg........'] },
+  frostscythe: { auto: true, p: [1, 4], rows: ['..........cccc.', '............ccc', '..............c', 'ddddddddddddddm', '..............c', '.............cc', '...............'] },
   headshot: { auto: true, p: [5, 3], rows: ['.....nnnnnnn........', '.....nooooon........', 'bbbbaaaaaaaaaaaaaaaan', 'bb...aanbb..........', '.....gg.............', '.....gg.............'] }
 });
 
@@ -168,6 +173,7 @@ Object.assign(WEAPON_SPRITE, {
   weapon_earthbreaker_001: 'earthbreaker', weapon_bronzesword_001: 'bronzesword', weapon_flametwin_001: 'flametwin', weapon_abyssblade_001: 'abyssblade',
   weapon_emberwand_001: 'emberwand', weapon_shortspear_001: 'shortspear', weapon_burstpistol_001: 'burstpistol', weapon_icicle_001: 'icicle', weapon_moonscythe_001: 'moonscythe', weapon_stickybomb_001: 'stickybomb',
   weapon_dualstring_001: 'dualstring', weapon_shockbaton_001: 'shockbaton', weapon_ricochetrifle_001: 'ricochetrifle', weapon_splitpistol_001: 'splitpistol', weapon_swarm_001: 'swarm', weapon_boltjavelin_001: 'boltjavelin', weapon_eclipse_001: 'eclipse',
+  weapon_venomgatling_001: 'venomgatling', weapon_markdagger_001: 'markdagger', weapon_shockbow_001: 'shockbow', weapon_flamebouncer_001: 'flamebouncer', weapon_frostscythe_001: 'frostscythe',
   weapon_kitchenknife_001: 'kitchenknife', weapon_pickaxe_001: 'pickaxe', weapon_icegreatsword_001: 'greatsword', weapon_steelxbow_001: 'repeatxbow', weapon_quakehammer_001: 'quakehammer'
 });
 
