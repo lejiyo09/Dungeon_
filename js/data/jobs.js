@@ -65,7 +65,7 @@ const JOB_LINES = {
         { id: 'voidcollapse', name: '블랙홀', desc: '2초 시전(이동 불가)하며 블랙홀로 주변 적을 모두 빨아들인 뒤 터뜨려 엄청난 피해', cd: 13 }] }
   },
   hero_gunner: { title: '사격 방식 선택',
-    base: { name: '속사', desc: '빠른 연사 · 공격 속도 강화', ranks: ['사수', '건마스터', '탄우의 군주'], color: '#ffd84a',
+    base: { name: '속사', desc: '빠른 연사 · 공격 속도 강화', ranks: ['사수', '건마스터', '폭풍의 총잡이'], color: '#ffd84a',
     skills: [
       { id: 'overdrive', name: '과부하 사격', desc: '5초간 공격 속도 2배, 에너지 무소모', cd: 15 },
       { id: 'overdrive2', name: '탄막 폭주', desc: '7초간 공격 속도 2배·공격력 +40%, 에너지 무소모', cd: 15 },
