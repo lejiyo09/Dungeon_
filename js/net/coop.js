@@ -7,8 +7,8 @@
 //  · 인원별 난이도: 몬스터 수·체력, 보스 체력, 정예 확률 (MULTIPLAYER.md)
 // ════════════════════════════════════════════
 const COOP = {
-  snapHz: 12,  // 방장 → 참가자 화면 상태 (초당) — 사이는 참가자가 속도로 이어서 그림 (데이터 절약)
-  inHz: 20,    // 참가자 → 방장 입력 (초당)
+  snapHz: 15,  // 방장 → 참가자 화면 상태 (초당) — 사이는 참가자가 속도로 이어서 그림 (데이터 절약)
+  inHz: 30,    // 참가자 → 방장 입력 (초당)
   scale: { mobCount: 0.5, mobHp: 0.25, bossHp: 0.7, elite: 0.03 }, // 1명 늘 때마다 (표가 없는 항목)
   // 인원별 배율 [1인, 2인, 3인, 4인] — 봇 측정(tools/coopsim.js): 3~4인은 보스 공격이 나뉘어 혼자보다 훨씬 쉬워서 보스 체력을 더 올리고, 2인은 조금 낮춤
   table: { bossHp: [1, 1.65, 2.55, 3.5] },
@@ -32,6 +32,8 @@ const COOP_CLASSES = {};
 ['RhongoTower', 'BossRhongoTower', 'ChainCircle', 'AvalonGarden', 'SkillAura', 'SkillCast', 'ExcaliburRaise', 'FxEmitter', 'DarkHole', 'ShadowStrike', 'Trap', 'Strike', 'Sanctuary', 'SpiritWolf', 'Turret', 'Drone', 'Puddle',
   'ThornBurst', 'BleedTicker', 'GaeBolgThrow'].forEach((n) => { try { const c = Function('return typeof ' + n + " !== 'undefined' ? " + n + ' : null')(); if (c) COOP_CLASSES[n] = c; } catch (e) { /* 없는 클래스 */ } });
 const COOP_REF_RENDER = new Set(['SkillCast', 'ExcaliburRaise', 'ShadowStrike', 'Drone']); // 그림에 주인(플레이어) 위치를 쓰는 장판·소환물
+// 이름표가 '보는 사람의 무기·체력'에 따라 바뀌는 물건: 방장 쪽 이름표 대신 값만 보내고, 참가자 화면에서 자기 기준으로 만듦 (강화대에 방장 무기가 뜨던 문제)
+const COOP_OWN_LABEL = { UpgradeAnvil: ['discount', 'bonus', 'room'], Forge: ['price', 'used'], BloodAltar: ['used'] };
 function coopPackRef(v) { // 적·플레이어 같은 큰 객체는 위치 정도만
   if (v instanceof Player) return { $p: 1, x: r1(v.x), y: r1(v.y), aim: { x: r1(v.aim.x), y: r1(v.aim.y) }, half: v.half, radius: v.radius, state: v.state, faceVis: v.faceVis, hero: { id: v.hero.id } };
   if (v instanceof Enemy) return { $e: 1, x: r1(v.x), y: r1(v.y), alive: v.alive, chainT: r1(v.chainT || 0), radius: v.radius, half: v.half };
@@ -43,7 +45,8 @@ function coopVel(o, x, y, now) { // 받은 위치 두 개로 속도를 구해 �
   if (o.snapT && o.tx !== undefined) { const dt = (now - o.snapT) / 1000; if (dt > 0.02 && dt < 0.5) { const vx = (x - o.tx) / dt, vy = (y - o.ty) / dt, sp = Math.hypot(vx, vy); const k = sp > 320 ? 320 / sp : 1; o.vx = vx * k; o.vy = vy * k; } }
   o.tx = x; o.ty = y; o.snapT = now;
 }
-function coopSmooth(o, dt, now) { if (o.tx === undefined) return; const age = Math.min(0.12, (now - (o.snapT || now)) / 1000), gx = o.tx + (o.vx || 0) * age, gy = o.ty + (o.vy || 0) * age, k = Math.min(1, dt * 15); o.x += (gx - o.x) * k; o.y += (gy - o.y) * k; }
+function coopLat() { return Math.min(0.15, Math.max(0, (Net.ping || 0) / 2000)); } // 방장 → 나 한쪽 지연 (핑의 절반, 최대 0.15초)
+function coopSmooth(o, dt, now) { if (o.tx === undefined) return; const age = Math.min(0.27, (now - (o.snapT || now)) / 1000 + coopLat()), gx = o.tx + (o.vx || 0) * age, gy = o.ty + (o.vy || 0) * age, k = Math.min(1, dt * 15); o.x += (gx - o.x) * k; o.y += (gy - o.y) * k; }
 function coopSafeDraw(ctx, fn) { // 그리다 오류가 나도 캔버스 상태(이동·혼합 방식 등)를 그리기 전으로 되돌림
   trackCtxDepth(ctx);
   const d0 = ctx.__d; ctx.save(); try { fn(); } catch (e) { /* 이것만 생략 */ } finally { while (ctx.__d > d0) ctx.restore(); }
@@ -181,6 +184,7 @@ Object.assign(Game.prototype, {
   },
   coopStatusDraw(ctx) { // 연결 상태 안내 (화면 가운데 위)
     const C = this.coop; if (!C) return; const now = performance.now(); let msg = null;
+    if (Net.ping) { const P = Net.ping; hudText(ctx, `핑 ${P}ms`, VIEW_W - 6, VIEW_H - 74, P < 90 ? '#7affc0' : P < 180 ? '#ffd27a' : '#ff8a8a', 'right', 7); } // 서버까지 왕복 시간
     if (C.netLostAt || Net.rejoin) msg = `서버 연결이 끊겼습니다 — 다시 연결하는 중… (${Math.max(0, Math.ceil((Net.REJOIN_MS - (now - (Net.rejoin ? Net.rejoin.since : now))) / 1000))}초)`;
     else if (C.guest && C.hostLostAt) msg = `방장 연결이 끊겼습니다 — 기다리는 중… (${Math.max(0, Math.ceil((25000 - (now - C.hostLostAt)) / 1000))}초)`;
     else if (C.guest && !C.loading && C.lastSnap && now - C.lastSnap > 2500) msg = '방장 화면 응답을 기다리는 중…';
@@ -297,7 +301,7 @@ Object.assign(Game.prototype, {
       hz: this.hazards.map((h) => [Math.round(h.x), Math.round(h.y), h.r, r1(h.t), h.delay, h.color]),
       po: this.portals.map((p) => [Math.round(p.x), Math.round(p.y), p.label || '', p.color || null]),
       rv: this.map.rooms.map((r) => (r.visited ? 1 : 0)).join(''), td, fx: C.fx.splice(0), zs,
-      pp: this.props.map((o) => { let lb = ''; try { lb = o.label ? o.label(this) || '' : ''; } catch (e) { lb = ''; } return [o.constructor.name, Math.round(o.x), Math.round(o.y), lb, o.open ? 1 : 0, o.content || 0]; }) };
+      pp: this.props.map((o) => { let lb = ''; try { lb = o.label ? o.label(this) || '' : ''; } catch (e) { lb = ''; } const own = COOP_OWN_LABEL[o.constructor.name]; return [o.constructor.name, Math.round(o.x), Math.round(o.y), own ? '' : lb, o.open ? 1 : 0, o.content || 0, own ? own.map((k) => o[k]) : 0]; }) };
     C.slast = C.slast || {}; for (const k of ['pk', 'po', 'rv', 'pp']) { const v = JSON.stringify(msg[k]); if (!full && C.slast[k] === v) delete msg[k]; else C.slast[k] = v; } // 그대로면 생략
     if (!td.length) delete msg.td; if (!msg.fx.length) delete msg.fx; if (!msg.hz.length && C.lastHz === 0) delete msg.hz; C.lastHz = this.hazards.length;
     Net.relay(msg);
@@ -378,11 +382,14 @@ Object.assign(Game.prototype, {
     const mover = (o) => { o.update = function (dt) { this.x += this.vx * dt; this.y += this.vy * dt; }; return o; };
     const myIdx = d.pl.findIndex((q) => q.id === Net.id); C.local = (C.local || []).filter((q) => q.alive);
     this.projectiles = d.pr.filter((q) => !(q[6] === myIdx && q[7])).map(([x, y, vx, vy, c, s]) => mover({ x, y, vx, vy, render(ctx) { ctx.fillStyle = c; const z = Math.max(1, s); ctx.fillRect(Math.round(this.x) - z, Math.round(this.y) - z, z * 2, z * 2); } })).concat(C.local); // 내 단순한 탄은 내 화면에서 미리 그린 것으로
-    this.enemyBullets = d.eb.map(([x, y, vx, vy, r, c]) => mover(Object.assign(Object.create(EnemyBullet.prototype), { x, y, vx, vy, r, color: c, alive: true })));
+    const lat = coopLat(); // 방장 쪽 '지금' 위치로 앞당겨 그림 (피하는 감각을 방장 판정과 맞춤)
+    this.enemyBullets = d.eb.map(([x, y, vx, vy, r, c]) => mover(Object.assign(Object.create(EnemyBullet.prototype), { x: x + vx * lat, y: y + vy * lat, vx, vy, r, color: c, alive: true })));
     if (d.pk) this.pickups = d.pk.map(([kind, x, y, id]) => new Pickup(kind, x, y, { still: true, def: id ? this.data.weapons.get(id) : null }));
     if (d.hz) this.hazards = d.hz.map(([x, y, r, t, delay, color]) => Object.assign(Object.create(Hazard.prototype), { x, y, r, t, delay, color, alive: true }));
     if (d.po) this.portals = d.po.map(([x, y, label, col]) => new Portal(x, y, () => {}, label, col || undefined));
-    if (d.pp) this.props = d.pp.map(([cls, x, y, label, open, content]) => { // 상자는 진짜 그림, 나머지는 표시 + 이름 (가까이 가면)
+    if (d.pp) this.props = d.pp.map(([cls, x, y, label, open, content, own]) => { // 상자는 진짜 그림, 나머지는 표시 + 이름 (가까이 가면)
+      const K = COOP_OWN_LABEL[cls] && own && typeof window[cls] !== 'undefined' ? window[cls] : (COOP_OWN_LABEL[cls] && own ? Function('return typeof ' + cls + " !== 'undefined' ? " + cls + ' : null')() : null);
+      if (K) { const o = Object.create(K.prototype); o.x = x; o.y = y; o.radius = 20; COOP_OWN_LABEL[cls].forEach((k, i) => { o[k] = own[i]; }); o.interact = () => {}; return o; } // 진짜 물건 그림 + 내 무기 기준 이름표
       if (cls === 'Chest') { const c = new Chest(x, y, content); c.open = !!open; c.label = () => label || null; c.interact = () => {}; return c; }
       return { x, y, radius: 20, label: () => label || null, labelColor: '#c8b890', interact() {}, render(ctx) { const X = Math.round(this.x), Y = Math.round(this.y); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(X - 7, Y + 4, 14, 3); ctx.fillStyle = OUTLINE; ctx.fillRect(X - 6, Y - 9, 12, 13); ctx.fillStyle = '#8a7a5a'; ctx.fillRect(X - 5, Y - 8, 10, 11); ctx.fillStyle = '#ffd84a'; ctx.fillRect(X - 1, Y - 5, 2, 5); } };
     });

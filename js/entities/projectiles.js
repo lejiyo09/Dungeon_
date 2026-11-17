@@ -221,10 +221,11 @@ class EnemyBullet {
     this.x += this.vx * dt; this.y += this.vy * dt;
     if (this.life <= 0) { this.alive = false; return; }
     if (world.map.isSolidAt(this.x, this.y)) { world.hitTile(this.x, this.y); this.alive = false; world.effects.impact(this.x, this.y, this.color); return; }
-    for (const p of world.allPlayers()) // 멀티: 모든 플레이어와 부딪힘
-      if (p.state !== 'DEAD' && Math.abs(p.x - this.x) < p.half + this.r - 1 && Math.abs(p.y - this.y) < p.half + this.r - 1) {
+    for (const p of world.allPlayers()) { // 멀티: 모든 플레이어와 부딪힘 — 참가자는 위치가 조금 늦게 오므로 맞는 범위를 25% 작게 (내 화면에서 피했는데 맞는 일 줄임)
+      const h = world.coop && world.coop.host && p !== world.coop.me ? p.half * 0.75 : p.half;
+      if (p.state !== 'DEAD' && Math.abs(p.x - this.x) < h + this.r - 1 && Math.abs(p.y - this.y) < h + this.r - 1) {
         if (world.withPlayer(p, () => world.damagePlayer(this.damage))) { this.alive = false; world.effects.spark(this.x, this.y, '#fff'); break; }
-      }
+      } }
   }
   render(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y);
