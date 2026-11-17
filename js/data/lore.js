@@ -62,12 +62,12 @@ const DATA_TREASURES = [
     damage: 1050, width: 28, range: 300, blast: 86, blastRatio: 0.35, stun: 1.5, color: '#ffe9a0', // blast: 끝 폭발 반경, blastRatio: 폭발 추가 피해 비율
     desc: '검을 들어 빛기둥을 세운 뒤 조준 방향으로 내려꽂아 일직선에 압도적인 피해(벽 관통), 조준한 지점에서 큰 폭발, 맞은 적은 1.5초 경직 — 보구 중 가장 강한 한 방' },
   { id: 'treasure_ring_of_solomon', name: '솔로몬의 반지', origin: '솔로몬', use: 'blessing', cooldown: 68, sfx: 'solomon', icon: 'ring',
-    duration: 15, atk: 0.9, rate: 0.7, speed: 0.35, guard: 0.6, heal: 0.5, skillHaste: 2, color: '#c8a0ff',
-    desc: '15초간 공격력 +90%·공격 속도 +70%·이동 속도 +35%·받는 피해 -60%·스킬 쿨타임 2배 빨리 회복, 체력 50%·에너지·보호막 회복, 스킬 쿨타임 초기화' },
+    duration: 12, atk: 0.6, rate: 0.45, speed: 0.3, guard: 0.4, heal: 0.3, skillHaste: 1.5, color: '#c8a0ff', // [사용자 결정] 너프 (예전: 15초 · 공격력 +90% · 공속 +70% · 이동 +35% · 피해 -60% · 체력 50% · 스킬 2배)
+    desc: '12초간 공격력 +60%·공격 속도 +45%·이동 속도 +30%·받는 피해 -40%·스킬 쿨타임 1.5배 빨리 회복, 체력 30%·에너지·보호막 회복, 스킬 쿨타임 초기화' },
   // [사용자 결정] 탐험가 길드의 멀린이 주는 시련을 마치면 얻는 보구 (성역의 보구 선택지에는 나오지 않음). 수치는 Claude가 정한 값
-  { id: 'treasure_garden_of_avalon', name: '가든 오브 아발론', origin: '멀린', use: 'garden', cooldown: 66, sfx: 'solomon', icon: 'avalon', questOnly: true,
-    duration: 12, atk: 0.35, guard: 0.3, regen: 4, slowK: 0.65, color: '#ffb0d8',
-    desc: '방 한가운데 아발론의 탑을 소환하고 12초간 방을 꽃밭으로 — 꽃밭 안의 적은 느려지고 받는 피해 +20%, 나는 공격력 +35%·받는 피해 -30%·체력 초당 4 회복' },
+  { id: 'treasure_garden_of_avalon', name: '가든 오브 아발론', origin: '멀린', use: 'garden', cooldown: 58, sfx: 'solomon', icon: 'avalon', questOnly: true,
+    duration: 16, atk: 0.55, guard: 0.45, regen: 7, slowK: 0.55, vuln: 0.35, color: '#ffb0d8', // [사용자 결정] 버프 (예전: 쿨 66초 · 12초 · 공격력 +35% · 피해 -30% · 초당 4 회복 · 적 피해 +20%), 멀티에서는 꽃밭 안의 동료 모두
+    desc: '방 한가운데 아발론의 탑을 소환하고 16초간 방을 꽃밭으로 — 꽃밭 안의 적은 크게 느려지고 받는 피해 +35%, 꽃밭 안의 아군은 공격력 +55%·받는 피해 -45%·체력 초당 7 회복' },
   // [사용자 결정] 아서왕의 창 롱고미니아드. 얻는 법: 멀린의 두 번째 시련 → 신령 롱고미니아드 보스전 승리 [사용자 결정]. 능력·수치는 Claude가 정한 [제안]
   { id: 'treasure_rhongomyniad', name: '롱고미니아드', origin: '아서왕', use: 'spear', cooldown: 64, sfx: 'excal', icon: 'rhongo', questOnly: true,
     damage: 380, impact: 64, range: 240, radius: 100, duration: 5, tick: 0.5, tickDmg: 36, pull: 70, final: 320, color: '#bfe6ff',

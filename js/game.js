@@ -1634,6 +1634,7 @@ class Game {
     if (src.execute && enemy.hp < enemy.maxHp * 0.35) base *= 1 + src.execute; // 처형: 빈사 적 추가 피해
     if (enemy.markT > 0) base *= enemy.markMult;                                 // 약점 표시된 적
     if (enemy.curse > 0) base *= 1.2;                                             // 저주: 받는 피해 +20%
+    if (enemy.avalonUntil > this.time) base *= 1 + (enemy.avalonVuln || 0.2);        // 아발론의 꽃밭: 받는 피해 증가
     const { amount, crit } = rollDamage(base, src.mods);
     if (!enemy.takeHit(amount)) return;
     let kb = (src.knockback || 0) * (1 - (enemy.def.knockbackResist || 0));

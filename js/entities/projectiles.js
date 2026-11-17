@@ -745,9 +745,9 @@ class AvalonGarden {
   inside(o) { const b = this.bounds; return o.x >= b.x0 && o.x <= b.x1 && o.y >= b.y0 && o.y <= b.y1; }
   update(dt, world) {
     this.t += dt; if (this.t >= this.life) { this.alive = false; return; }
-    const p = this.owner, T = this.T;
-    if (p.state !== 'DEAD' && this.inside(p)) { p.avalonT = 0.3; p.avalonAtk = T.atk; p.avalonGuard = T.guard; this.heal += T.regen * dt; if (this.heal >= 1) { const n = Math.floor(this.heal); this.heal -= n; p.hp = Math.min(p.maxHp, p.hp + n); } }
-    for (const e of world.enemies) if (e.targetable && this.inside(e)) { e.slow = Math.max(e.slow, 0.4); e.slowK = e.def.boss ? Math.max(0.85, e.slowK || 1) : Math.min(e.slowK || 1, T.slowK); e.curse = Math.max(e.curse || 0, 0.4); }
+    const T = this.T; this.heal += T.regen * dt; const n = Math.floor(this.heal); if (n) this.heal -= n;
+    for (const p of world.allPlayers()) if (p.state !== 'DEAD' && this.inside(p)) { p.avalonT = 0.3; p.avalonAtk = T.atk; p.avalonGuard = T.guard; if (n) p.hp = Math.min(p.maxHp, p.hp + n); } // 꽃밭 안의 아군 모두 (멀티: 동료도)
+    for (const e of world.enemies) if (e.targetable && this.inside(e)) { e.slow = Math.max(e.slow, 0.4); e.slowK = e.def.boss ? Math.max(0.8, Math.min(e.slowK || 1, 0.85)) : Math.min(e.slowK || 1, T.slowK); e.avalonVuln = T.vuln || 0.2; e.avalonUntil = world.time + 0.3; }
     if (Math.random() < 0.6) { const b = this.bounds; world.effects.part(b.x0 + Math.random() * (b.x1 - b.x0), b.y0 + Math.random() * (b.y1 - b.y0), 12 + Math.random() * 10, -6 - Math.random() * 8, { color: pick(['#ffb0d8', '#ffffff', '#ffd8ec']), life: 1.6, size: 1.5, size2: 0.5, drag: 0.2 }); } // 흩날리는 꽃잎
   }
   render(ctx) { // 바닥의 꽃밭
