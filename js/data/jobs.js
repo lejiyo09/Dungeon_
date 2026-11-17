@@ -65,11 +65,11 @@ const JOB_LINES = {
         { id: 'voidcollapse', name: '블랙홀', desc: '2초 시전(이동 불가)하며 블랙홀로 주변 적을 모두 빨아들인 뒤 터뜨려 엄청난 피해', cd: 13 }] }
   },
   hero_gunner: { title: '사격 방식 선택',
-    base: { name: '속사', desc: '빠른 연사 · 공격 속도 강화', ranks: ['사수', '건마스터', '데드아이'], color: '#ffd84a',
+    base: { name: '속사', desc: '빠른 연사 · 공격 속도 강화', ranks: ['사수', '건마스터', '탄우의 군주'], color: '#ffd84a',
     skills: [
       { id: 'overdrive', name: '과부하 사격', desc: '5초간 공격 속도 2배, 에너지 무소모', cd: 15 },
       { id: 'overdrive2', name: '탄막 폭주', desc: '7초간 공격 속도 2배·공격력 +40%, 에너지 무소모', cd: 15 },
-      { id: 'deadeye', name: '데드아이', desc: '1초 조준(이동 불가) → 보이는 모든 적을 한 발씩 저격', cd: 14 }] },
+      { id: 'overdrive3', name: '관통 폭풍', desc: '8초간 공격 속도 2.5배·공격력 +15%·모든 탄 관통 (원래 관통하는 무기는 공격력 +20% 더), 에너지 무소모', cd: 15 }] },
     sniper: { name: '저격', desc: '부싯돌 권총 · 느리지만 멀리, 강하게 관통', startWeapon: 'weapon_flintlock_001', ranks: ['저격수', '명사수', '일격필살'], color: '#ffe9a0',
       skills: [
         { id: 'snipe', name: '관통 저격', desc: '조준 방향으로 모든 적을 꿰뚫는 강한 탄 한 발', cd: 5 },

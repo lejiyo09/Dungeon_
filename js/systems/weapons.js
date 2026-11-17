@@ -9,6 +9,9 @@ function weaponMods(player, w) {
   if (def.critBonus) m.critChance = player.stats.critChance + def.critBonus;
   return m;
 }
+/* 사수 3진 스킬(관통 폭풍) 중: 관통 안 되는 탄도 관통, 원래 관통하는 무기는 공격력 +20% */
+function odPierce(player) { return player.overdrive > 0 && player.odPierce; }
+function piercerMods(m) { return Object.assign({}, m, { attackBonus: m.attackBonus + 0.2 }); }
 function weaponTitle(w) { return w.def.name + (w.lv ? ` +${w.lv}` : ''); }
 class WeaponInstance {
   constructor(def, lv = 0) { this.lv = lv; this.def = def; this.cooldown = 0; this.charge = 0; this.burstLeft = 0; this.burstTimer = 0; this.beamTick = 0; this.beamActive = false; this.beamEnd = null; }
@@ -26,7 +29,7 @@ class WeaponSystem {
     if (player.energy < cost) { this.noEnergy(player); return false; }
     player.energy -= cost; return true;
   }
-  getFireRate(player, w) { return w.def.fireRate * (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 : 0) + (player.solomon > 0 ? player.treasure.rate : 0)) * (w.def.spinUp ? 0.25 + 0.75 * Math.min(1, (w.spin || 0) / w.def.spinUp) : 1); }
+  getFireRate(player, w) { return w.def.fireRate * (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 + (player.odRate || 0) : 0) + (player.solomon > 0 ? player.treasure.rate : 0)) * (w.def.spinUp ? 0.25 + 0.75 * Math.min(1, (w.spin || 0) / w.def.spinUp) : 1); }
   update(player, dt, input) {
     this.noEnergyMsgT = Math.max(0, this.noEnergyMsgT - dt);
     const w = player.weapon;
@@ -53,7 +56,7 @@ class WeaponSystem {
         if (down) {
           if (w.cooldown <= 0) {
             if (w.charge === 0 && !this.canPay(player, w.def.energyCost)) this.weakAttack(player, w); // 에너지 부족: 약한 공격
-            else w.charge = Math.min(w.def.chargeTime, w.charge + dt * (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 : 0)));
+            else w.charge = Math.min(w.def.chargeTime, w.charge + dt * (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 + (player.odRate || 0) : 0)));
           }
         } else if (w.charge > 0) this.releaseCharge(player, w);
         break;
@@ -139,7 +142,7 @@ class WeaponSystem {
       if (def.fanDeg && n > 1) ang = base + (i / (n - 1) - 0.5) * def.fanDeg * Math.PI / 180;
       if (def.parallel) ang = base + (Math.random() * 2 - 1) * spread;
       const off = def.parallel ? (i - (n - 1) / 2) * def.parallel : 0;
-      this.world.projectiles.push(new Projectile(Object.assign({
+      const opt = Object.assign({
         x: player.x - Math.sin(base) * off, y: player.y - 1 + Math.cos(base) * off, dx: Math.cos(ang), dy: Math.sin(ang),
         boomerang: !!def.boomerang, split: def.split || null, pull: def.pull || null, rehit: def.rehit || 0, mine: def.mine || null,
         spriteDef: def.boomerang || def.spinSprite ? def : null,
@@ -151,7 +154,9 @@ class WeaponSystem {
         mods: weaponMods(player, w),
         explodeRadius: def.explodeRadius || 0, color: def.bulletColor, size: def.bulletSize || 1,
         homing: def.homing || 0, bounce: def.bounce || 0, chain: def.chain || null, status: def.status || null, flame: !!def.flame
-      }, override)));
+      }, override);
+      if (odPierce(player) && !opt.mine) { if (opt.pierce > 0) opt.mods = piercerMods(opt.mods); else opt.pierce = opt.explodeRadius ? 2 : 99; } /* 폭발탄은 2번까지만 뚫고 터짐 */
+      this.world.projectiles.push(new Projectile(opt));
     }
     const L = weaponLength(def) + 4; // 총구 위치에 섬광
     if (!def.flame) this.world.effects.muzzle(player.x + player.aim.x * L, player.y + 2 + player.aim.y * L * 0.75, base, def.bulletColor);
@@ -243,17 +248,18 @@ class WeaponSystem {
       if (t >= 0 && t <= wall) hits.push([t, e]);
     }
     hits.sort((a, b) => a[0] - b[0]);
-    const target = hits.length ? hits[0][1] : null, extra = def.pierce ? hits.slice(1, 1 + def.pierce).map((h) => h[1]) : []; // 관통: 뒤에 있는 적도 함께 지짐
-    const limit = !target ? wall : def.pierce && hits.length > 1 + def.pierce ? hits[def.pierce][0] : def.pierce ? wall : hits[0][0];
+    const od = odPierce(player), pc = def.pierce || (od ? 99 : 0), bm = od && def.pierce ? piercerMods(weaponMods(player, w)) : weaponMods(player, w);
+    const target = hits.length ? hits[0][1] : null, extra = pc ? hits.slice(1, 1 + pc).map((h) => h[1]) : []; // 관통: 뒤에 있는 적도 함께 지짐
+    const limit = !target ? wall : pc && hits.length > 1 + pc ? hits[pc][0] : pc ? wall : hits[0][0];
     w.beamEnd = { sx, sy, x: sx + (ex - sx) * limit, y: sy + (ey - sy) * limit };
     if (def.focus) { w.focusT = target && target === w.focusTarget ? (w.focusT || 0) + dt : 0; w.focusTarget = target; w.focusK = Math.min(1, w.focusT / 1.5); } // 같은 적을 계속 비추면 강해짐
     // 누적식 틱: 간격을 이어서 더해야 공속 버프가 프레임 단위로 잘리지 않음
     w.beamTick -= dt;
-    const interval = def.tickRate / (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 : 0));
+    const interval = def.tickRate / (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 + (player.odRate || 0) : 0));
     while (w.beamTick <= 0) {
       w.beamTick += interval;
-      if (target) world.damageEnemy(target, { damage: def.damage * (1 + (def.focus || 0) * (w.focusK || 0)), mods: weaponMods(player, w), knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
-      for (const e of extra) if (e.alive) world.damageEnemy(e, { damage: def.damage, mods: weaponMods(player, w), knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
+      if (target) world.damageEnemy(target, { damage: def.damage * (1 + (def.focus || 0) * (w.focusK || 0)), mods: bm, knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
+      for (const e of extra) if (e.alive) world.damageEnemy(e, { damage: def.damage, mods: bm, knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
     }
   }
 }
