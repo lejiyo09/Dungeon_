@@ -297,6 +297,12 @@ class Game {
     if (p === this.player) this.showBanner('심층 입장', `최종 진화 · ${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv}) · 축복 ${K.buffs}개`, '#9ad8ff');
   }
   deepCheckpoint(heroId) { const c = this.save.deepCheckpoints; return (c && c[heroId]) || null; } // 직업마다 10-4를 깼을 때의 캐릭터
+  deepEntryHero() { // 로비에서 심층 입장: 고른 직업에 10-4 기록이 없으면 가장 최근에 10-4를 깬 직업으로 바꿈 → 바꿨으면 그 직업 id
+    const c = this.save.deepCheckpoints || {}; if (c[this.save.selected]) return null;
+    let best = null; for (const [id, cp] of Object.entries(c)) if (cp && typeof cp === 'object' && this.data.heroes.get(id) && (!best || (cp.t || 0) > (c[best].t || 0))) best = id;
+    if (best) { this.save.selected = best; writeSave(this.save); }
+    return best;
+  }
   useCheckpoint(p, cp, tr) { // 체력·에너지 가득, 보구는 지금 장착한 것
     p.hp = p.maxHp; p.energy = p.maxEnergy; p.shield = p.maxShield; p.skillCooldown = 0;
     p.treasure = tr || null; if (tr && tr.apply) tr.apply(p);
@@ -370,6 +376,7 @@ class Game {
     this.worldIdx = deep ? DEEP_START : 0; this.levelIdx = 0; this.gold = deep ? BALANCE.deepStart.gold : 0; this.kills = 0; // 심층 입장: 심층 1번째 필드부터
     this.runStart = { stage: this.stageIndex, world: this.worldIdx }; // 이번 탐험을 시작한 곳 (결정석은 실제로 깬 스테이지·보스만)
     this.save.runReviveUsed = false; // 새 탐험마다 부활 기회 초기화
+    const switched = deep ? this.deepEntryHero() : null; // 이 직업으로 10-4를 깬 적이 없으면 가장 최근에 깬 직업으로
     this.player = this.makePlayer(0, 0);
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); // 로비에서 고른 보구 (사망해도 영구 보유)
     const cp = deep && this.deepCheckpoint(this.save.selected);
@@ -378,7 +385,7 @@ class Game {
     this.guild(); this.applySupplies(); // 길드 퀘스트 준비 · 거래상에서 산 보급품
     this.loadStage();
     if (cp) {
-      this.showBanner('심층 입장', `10-4를 깬 그대로 · ${this.player.weapons.map((w) => w.def.name).join(' + ')} · 축복 ${this.player.buffs.length}개`, '#9ad8ff'); }
+      this.showBanner(switched ? `심층 입장 — ${this.player.hero.name}(으)로 바꿈` : '심층 입장', `${switched ? '이 직업으로 10-4를 깬 기록이 없어 가장 최근에 10-4를 깬 캐릭터로 · ' : '10-4를 깬 그대로 · '}${this.player.weapons.map((w) => w.def.name).join(' + ')} · 축복 ${this.player.buffs.length}개`, '#9ad8ff'); if (switched && Net.inRoom) Net.profile(this.netName(), switched); }
     else { const after = deep ? () => this.applyDeepKit(this.player) : null; // 이 직업의 10-4 기록이 없으면 기본 심층 장비
       if (!this.save.prologueSeen) this.showPrologue(() => this.askVariant(after)); else this.askVariant(after); }
     if (Net.inRoom && Net.isHost && Net.players.length > 1) this.coopHostStart(); // 멀티: 방 사람들과 함께 출발

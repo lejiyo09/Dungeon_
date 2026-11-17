@@ -327,6 +327,7 @@ Object.assign(Game.prototype, {
     SFX.stopMusic(); this.overlay = null; this.cutscene = null; this.cinematic = null; this.slowMo = null; this.trialW = null;
     this.coop = { guest: true, hostId, loading: true, others: new Map(), enemies: new Map(), inT: 0, ev: [], warp: -1 };
     this.mode = 'dungeon'; this.gold = 0; this.kills = 0;
+    const switched = deep ? this.deepEntryHero() : null; if (switched) { Net.profile(this.netName(), switched); this.showBanner(`심층 입장 — ${this.heroDef(switched).name}(으)로 바꿈`, '이 직업으로 10-4를 깬 기록이 없어 가장 최근에 10-4를 깬 캐릭터로', '#9ad8ff'); } // 참가자도 같은 규칙
     this.player = this.makePlayer(0, 0);
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) this.player.treasure = tr;
     const cp = deep && this.deepCheckpoint(this.save.selected); // 심층: 내 직업으로 10-4를 깬 캐릭터가 있으면 그대로
