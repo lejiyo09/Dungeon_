@@ -187,7 +187,7 @@ const AI_BEHAVIORS = {
     const channeling = e.pd && ((e.pd.tower && e.pd.tower.alive) || e.pd.lock); /* 롱고미니아드(빛의 탑)가 서 있는 동안은 페이즈도 넘기지 않고 다른 행동 없음 — 탑이 무너진 뒤에 넘어감 */
     if (want > phase && e.state !== 'INTRO' && !channeling) {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
-      e.riposteT = 0; e.riposteHit = false; e.slashWarn = null;
+      e.riposteT = 0; e.riposteHit = false; e.slashWarn = null; e.dashWarn = null;
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
       if (def.arm && want >= 2 && !e.armOn) { e.armOn = true; e.damage = Math.round(e.damage * (1 + def.arm)); e.dmg0 = e.damage; world.announceBossSkill(e, '스위치 온 — 아가트람'); world.effects.rays(e.x, e.y, '#a0d0ff', 16, 80, 0.7); } /* 베디비어: 은빛 팔이 켜짐 */
       if (def.arm && want === 3) world.announceBossSkill(e, '해방 — 데드 엔드 아가트람');
@@ -425,6 +425,26 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 왕의 돌진 (아서 왕): 탄 없이 검을 앞세워 일직선으로 꿰뚫고 지나가는 돌진 — 돌진할 길을 붉은 띠로 예고 → 아주 빠르게 돌진(길 위에 있으면 베임) → 여러 번, 마지막엔 멈춘 자리에서 크게 한 바퀴 베기
+  kingcharge: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, fx = world.effects;
+      if (d.n === undefined) { d.n = 0; d.st = 'aim'; d.pt = 0; }
+      d.pt += dt;
+      if (d.st === 'aim') { d.ang = Math.atan2(p.y - e.y, p.x - e.x); d.len = Math.min(P.len, beamLength(e, d.ang, world.map) - 8); e.dashWarn = { ang: d.ang, len: d.len, w: P.w, k: 0 }; d.st = 'warn'; d.pt = 0; return false; }
+      if (d.st === 'warn') { e.dashWarn.k = Math.min(1, d.pt / (P.tele / spd)); if (d.pt >= P.tele / spd) { e.dashWarn = null; d.st = 'dash'; d.pt = 0; d.went = 0; e.hits = null; SFX.play('swing', 0.03); } return false; }
+      if (d.st === 'dash') {
+        const mv = P.speed * dt, x0 = e.x, y0 = e.y, hit = moveAndCollide(e, Math.cos(d.ang) * mv, Math.sin(d.ang) * mv, world.map); d.went += mv;
+        world.eachTarget((q) => { if (segmentCircleHit(x0, y0, e.x, e.y, q.x, q.y, P.w + q.half) >= 0 || Math.hypot(q.x - e.x, q.y - e.y) < e.radius + q.half + 4) world.hitOnce(e, 'hits', q, () => world.damagePlayer(Math.round(e.damage * P.mult))); });
+        fx.part(e.x - Math.cos(d.ang) * 6, e.y - Math.sin(d.ang) * 6, 0, 0, { color: '#fff4c0', life: 0.25, size: 4, size2: 0, drag: 0, add: true }); /* 금빛 잔상 */
+        if (hit.x || hit.y || d.went >= d.len) { fx.slash(e.x, e.y, d.ang, 40, 1.6, '#fff4c0'); world.addShake(0.12, 3); d.n++; d.st = 'rest'; d.pt = 0;
+          if (d.n >= P.dashes && P.spinR) { world.eachTarget((q) => { if (Math.hypot(q.x - e.x, q.y - e.y) < P.spinR + q.half) world.damagePlayer(Math.round(e.damage * P.mult * 1.2)); });
+            fx.slash(e.x, e.y, d.ang, P.spinR, TAU - 0.05, '#fff4c0'); fx.ring(e.x, e.y, P.spinR, '#ffe9a0'); world.addShake(0.3, 6); SFX.play('heavy', 0.05); } }
+        return false; }
+      if (d.st === 'rest') { if (d.pt >= (d.n >= P.dashes ? 0.3 : P.rest) / spd) { if (d.n >= P.dashes) return true; d.st = 'aim'; } return false; }
+      return false;
+    }
+  },
   // 왕의 검술 (아서 왕): 탄이 아니라 검으로 직접 베는 근접 연격 — 근접 무기로 지울 수 없음. 파고들어 → 부채꼴 예고(붉은 칸) → 베기를 연달아, 마지막은 크게 한 바퀴 베기
   kingsblade: {
     update(e, dt, world, ctx, spd) {
