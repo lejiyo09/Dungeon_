@@ -188,6 +188,7 @@ const AI_BEHAVIORS = {
     if (want > phase && e.state !== 'INTRO' && !channeling) {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
+      if (def.wall && want === 3) { e.wallCone = def.wall.cone3; e.wallMult = def.wall.mult3; world.announceBossSkill(e, '철벽 — 무너지지 않는 성채'); }
       if (def.negate && want === 3) { e.negateOn = true; e.negCd = 1.5; world.announceBossSkill(e, '부정 — 모든 칼날을 거부하는 빛'); }
       if (def.rampage && want === 3) { e.rampage = true; world.announceBossSkill(e, '폭주 — 멈추지 않는 반역'); }
       if (def.rev && want === 3) { e.revAll = true; world.announceBossSkill(e, '반전 — 되돌아오는 화살'); } /* 트리스탄: 이제 화살이 지나간 뒤 되돌아옴 */
@@ -196,6 +197,9 @@ const AI_BEHAVIORS = {
     }
     e.finalCd = (e.finalCd ?? 0) - dt;
     if (e.negateT > 0) e.negateT -= dt;
+    if (def.wall) { /* 갤러해드: 방패 방향 — 쫓는 동안만 천천히 플레이어 쪽으로 돎 */
+      const want = Math.atan2(world.player.y - e.y, world.player.x - e.x); if (e.shieldAng == null) e.shieldAng = want;
+      if (e.state === 'CHASE' || e.state === 'RECOVERY' || e.state === 'INTRO') { let df = want - e.shieldAng; df = Math.atan2(Math.sin(df), Math.cos(df)); e.shieldAng += clamp(df, -def.wall.turn * dt, def.wall.turn * dt); } }
     if (e.negateOn && e.state !== 'PHASE') { e.negCd -= dt; if (e.negCd <= 0) { e.negCd = def.negate.every + def.negate.dur; e.negateT = def.negate.dur; world.effects.ring(e.x, e.y, 30, '#ffffff'); world.effects.ring(e.x, e.y, 20, '#d8f0ff'); SFX.play('shield', 0.1); } } /* 가레스: 주기적으로 피해 무효 */
     switch (e.state) {
       case 'INTRO': break; // 등장 연출은 Game이 진행
@@ -409,6 +413,40 @@ function endUltimate(e, world) {
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
 const BOSS_PATTERNS = {
+  // 방벽 행진 (갤러해드): 방패가 향한 방향으로, 가로로 늘어선 탄의 벽이 여러 겹 밀려옴 — 겹마다 다른 자리에 빈틈
+  rampart: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd; d.timer -= dt;
+      if (d.timer <= 0 && d.shots < P.waves) {
+        const a = e.shieldAng != null ? e.shieldAng : Math.atan2(world.player.y - e.y, world.player.x - e.x), nx = -Math.sin(a), ny = Math.cos(a), h = (P.width - 1) / 2, gap = randInt(1, P.width - P.gapN - 1);
+        for (let i = 0; i < P.width; i++) { if (i >= gap && i < gap + P.gapN) continue; const o = (i - h) * P.step;
+          const b = new EnemyBullet(e.x + Math.cos(a) * 14 + nx * o, e.y + Math.sin(a) * 14 + ny * o, Math.cos(a) * P.speed, Math.sin(a) * P.speed, e.damage, P.color, 4); b.life = 4; world.enemyBullets.push(b); }
+        world.effects.ring(e.x + Math.cos(a) * 14, e.y + Math.sin(a) * 14, 18, P.color); d.shots++; d.timer = P.interval / spd;
+      }
+      return d.shots >= P.waves && d.timer <= 0;
+    }
+  },
+  // 시즈 페릴러스 (갤러해드의 보구): 방패를 세우고 성채가 됨 — 그동안 모든 피해 무효, 방 가장자리에서 틈 있는 고리가 계속 좁혀 오고 보스에게서도 탄이 퍼짐 → 끝날 때 크게 터짐. 쓰는 동안 페이즈 전환 없음
+  perilous: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, r = e.room, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;
+      if (d.t < P.charge) { if (Math.random() < 0.7) { const a = Math.random() * TAU; fx.part(e.x + Math.cos(a) * 26, e.y + Math.sin(a) * 26, -Math.cos(a) * 60, -Math.sin(a) * 60, { color: '#ffffff', life: 0.35, size: 2, size2: 0, drag: 0, add: true }); } return false; }
+      const T = d.t - P.charge;
+      if (T < P.duration) {
+        e.negateT = Math.max(e.negateT || 0, 0.15); /* 성채: 피해 무효 (하얀 빛) */
+        if (!d.on) { d.on = true; d.ringT = 0; d.burstT = 0.3; d.rings = 0; fx.rays(e.x, e.y, '#ffffff', 18, 90, 0.7); world.addShake(0.3, 5); SFX.play('excal'); }
+        d.ringT -= dt; if (d.ringT <= 0 && d.rings < P.rings) { d.ringT = P.ringEvery; d.rings++;
+          const c = world.map.tileCenter(r.cx, r.cy), R = Math.min(r.w, r.h) * TILE / 2 - 14, gapAt = randInt(0, P.count - 1);
+          for (let i = 0; i < P.count; i++) { if (((i - gapAt + P.count) % P.count) < P.gap) continue; const a = i * TAU / P.count;
+            const b = new EnemyBullet(c.x + Math.cos(a) * R, c.y + Math.sin(a) * R, -Math.cos(a) * P.ringSpeed, -Math.sin(a) * P.ringSpeed, e.damage, P.color, 4); b.life = R / P.ringSpeed + 0.2; world.enemyBullets.push(b); } }
+        d.burstT -= dt; if (d.burstT <= 0) { d.burstT = P.burstEvery; const a0 = Math.random() * TAU; for (let i = 0; i < P.burst; i++) world.enemyShoot(e.x, e.y, a0 + i * TAU / P.burst, e.def.bulletSpeed * 0.8, e.damage, '#ffd8d8', 3); }
+        return false;
+      }
+      if (!d.done) { d.done = true; for (let i = 0; i < P.final; i++) world.enemyShoot(e.x, e.y, i * TAU / P.final, e.def.bulletSpeed, Math.round(e.damage * 1.1), P.color, 4); fx.ring(e.x, e.y, 60, '#ffffff'); world.addShake(0.3, 5); }
+      if (T >= P.duration + 0.5) { d.lock = false; return true; }
+      return false;
+    }
+  },
   // 부정의 원 (가레스): 플레이어 자리와 그 주변에 하얀 원(안에서는 공격·스킬 불가)을 깔고, 원 밖으로 피하는 동안 조준 사격
   denyfield: {
     update(e, dt, world, ctx, spd) {

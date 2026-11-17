@@ -640,5 +640,22 @@ const DATA_ENEMIES = [
       { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.5, bullets: 0, color: '#bfe0ff' },
       { type: 'meteor', count: 10, delay: 0.6, stagger: 0.18, radius: 30, bullets: 7, color: '#d8f0ff' },
       { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 155, interval: 0.4, color: '#bfe0ff' }],
-    finalPatterns: [{ type: 'beaumains', name: '보마인', charge: 0.8, blinks: 6, ring: 80, interval: 0.38, count: 7, spread: 0.5, speed: 200, final: 30, color: '#d8f0ff' }] }
+    finalPatterns: [{ type: 'beaumains', name: '보마인', charge: 0.8, blinks: 6, ring: 80, interval: 0.38, count: 7, spread: 0.5, speed: 200, final: 30, color: '#d8f0ff' }] },
+  // [사용자 결정] 카멜롯 5층 보스: 철벽의 기사 갤러해드 — 보구 '시즈 페릴러스'·패턴·수치는 Claude가 정한 [제안]
+  //  wall: 방패가 향한 쪽 ±cone(라디안) 안에서 들어온 공격은 피해 ×mult. 방패는 쫓는 동안만 turn(라디안/초)으로 천천히 돌고, 공격 중에는 멈춤 → 그 틈에 옆·뒤로
+  //  3페이즈 '철벽': 원뿔이 넓어지고(cone3) 더 단단해짐(mult3)
+  { id: 'boss_galahad', name: '갤러해드', title: '철벽의 기사', sprite: 'boss_galahad', color: '#5a6a9a', phaseColors: ['#5a6a9a', '#4a5a8a', '#3a4a7a'],
+    boss: true, aiType: 'boss', health: 6500, damage: 35, moveSpeed: 66, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.5, bulletSpeed: 175,
+    rewardGold: 0, ultFrom: 2, ultCd: 20, wall: { cone: 1.05, mult: 0.25, turn: 1.3, cone3: 1.3, mult3: 0.15 }, patterns: [
+      { type: 'rampart', waves: 4, width: 15, gapN: 3, step: 11, speed: 110, interval: 0.7, color: '#e8ecff' },
+      { type: 'charge', dashes: 3, speed: 520, color: '#e8ecff' },
+      { type: 'slam', radius: 64, chain: 2, color: '#ffd8d8' },
+      { type: 'aimed', volleys: 5, count: 9, spread: 0.12, color: '#e8ecff' },
+      { type: 'ringIn', rings: 3, count: 40, gap: 5, speed: 80, interval: 0.9, color: '#ffd8d8' }],
+    phase2Patterns: [{ type: 'rampart', waves: 6, width: 19, gapN: 3, step: 11, speed: 120, interval: 0.6, color: '#e8ecff' },
+      { type: 'orbit', count: 24, radius: 54, spinTime: 1.1, spin: 3, speed: 150, color: '#e8ecff' },
+      { type: 'grid', spacing: 3, delay: 0.95, radius: 22, bullets: 4, color: '#ffd8d8' },
+      { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.5, bullets: 0, color: '#e8ecff' },
+      { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 150, interval: 0.42, color: '#ffd8d8' }],
+    finalPatterns: [{ type: 'perilous', name: '시즈 페릴러스', charge: 0.8, duration: 4.5, rings: 4, count: 44, gap: 6, ringSpeed: 85, ringEvery: 1.05, burstEvery: 0.6, burst: 14, final: 36, color: '#e8ecff' }] }
 ];

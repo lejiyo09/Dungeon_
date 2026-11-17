@@ -328,6 +328,10 @@ class Enemy extends Entity {
     if (this.negateT > 0 && this.state !== 'DEAD') { const R = this.radius + 8, t = performance.now() / 1000; ctx.save(); ctx.globalCompositeOperation = 'lighter'; /* 가레스의 부정: 하얀 빛의 막 */
       ctx.globalAlpha = 0.18; ctx.fillStyle = '#d8f0ff'; ctx.beginPath(); ctx.arc(x, y - 4, R, 0, TAU); ctx.fill();
       ctx.globalAlpha = 0.85; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y - 4, R + Math.sin(t * 12), 0, TAU); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; }
+    if (def.wall && this.shieldAng != null && this.state !== 'DEAD' && this.state !== 'SPAWN') { const R = this.radius + 9, c = this.wallCone || def.wall.cone, A = this.shieldAng; ctx.save(); /* 갤러해드 철벽: 방패가 막는 방향 (이 호 안에서 쏘면 막힘) */
+      ctx.globalAlpha = 0.16; ctx.fillStyle = '#e8ecff'; ctx.beginPath(); ctx.moveTo(x, y - 4); ctx.arc(x, y - 4, R + 10, A - c, A + c); ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 0.9; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y - 4, R, A - c, A + c); ctx.stroke();
+      ctx.strokeStyle = '#d04040'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y - 4, R + 2, A - c * 0.3, A + c * 0.3); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; }
     if (this.state === 'DEAD') {
       const dur = def.boss ? 1 : 0.35;
       const k = 1 - Math.min(1, this.stateTime / dur);

@@ -175,7 +175,10 @@ class Game {
     if (M.quest === 10) { /* 카멜롯 4층: 부정의 기사 가레스 */
       this.playCutscene(MERLIN_GARETH_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 11; writeSave(sv); this.askTrial('camelot4'); } }); return; }
     if (M.quest === 11) { this.askTrial('camelot4'); return; }
-    if (this.admin) { this.askTrial(M.quest >= 11 ? 'camelot4' : M.quest >= 9 ? 'camelot3' : M.quest >= 7 ? 'camelot2' : M.quest >= 5 ? 'camelot' : 'rhongo'); return; } // 관리자는 시련을 마친 뒤에도 언제든 다시 도전
+    if (M.quest === 12) { /* 카멜롯 5층: 철벽의 기사 갤러해드 */
+      this.playCutscene(MERLIN_GALAHAD_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.quest = 13; writeSave(sv); this.askTrial('camelot5'); } }); return; }
+    if (M.quest === 13) { this.askTrial('camelot5'); return; }
+    if (this.admin) { this.askTrial(M.quest >= 13 ? 'camelot5' : M.quest >= 11 ? 'camelot4' : M.quest >= 9 ? 'camelot3' : M.quest >= 7 ? 'camelot2' : M.quest >= 5 ? 'camelot' : 'rhongo'); return; } // 관리자는 시련을 마친 뒤에도 언제든 다시 도전
     npc.bubble = { text: pick(MERLIN_CHATTER), t: 3 };
   }
   // ── 롱고미니아드의 시련: 따로 준비된 장비로 신령 롱고미니아드와 1:1 (진행 중인 탐험·보상·기록에는 영향 없음)
@@ -242,7 +245,8 @@ class Game {
       { name: '로드 투 카멜롯 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot') }; } },
       { name: '카멜롯 2층 (트리스탄) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot2') }; } },
       { name: '카멜롯 3층 (모드레드) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot3') }; } },
-      { name: '카멜롯 4층 (가레스) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot4') }; } }
+      { name: '카멜롯 4층 (가레스) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot4') }; } },
+      { name: '카멜롯 5층 (갤러해드) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot5') }; } }
     ];
   }
   // ── 멀티 (1단계): 내 위치를 보내고, 다른 사람 위치를 부드럽게 따라감
@@ -1670,6 +1674,9 @@ class Game {
   damageEnemy(enemy, src, kx, ky, opts = {}) {
     if (enemy.negateT > 0) { if (!(enemy.negMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, '부정', '#d8f0ff'); enemy.negMsgT = this.time + 0.35; } return; } /* 가레스의 부정: 모든 피해 무효 */
     let base = src.damage;
+    if (enemy.def.wall && enemy.shieldAng != null && !(window.__noWall)) { /* 갤러해드 철벽: 공격한 사람이 방패 정면(원뿔 안)에 있으면 피해가 크게 줄어듦 */
+      const A = this.player, da = Math.atan2(A.y - enemy.y, A.x - enemy.x) - enemy.shieldAng, df = Math.abs(Math.atan2(Math.sin(da), Math.cos(da)));
+      if (df < (enemy.wallCone || enemy.def.wall.cone)) { base *= enemy.wallMult ?? enemy.def.wall.mult; if (!(enemy.wallMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, '막힘', '#c8c8d8'); enemy.wallMsgT = this.time + 0.5; } } }
     if (src.execute && enemy.hp < enemy.maxHp * 0.35) base *= 1 + src.execute; // 처형: 빈사 적 추가 피해
     if (enemy.markT > 0) base *= enemy.markMult;                                 // 약점 표시된 적
     if (enemy.curse > 0) base *= 1.2;                                             // 저주: 받는 피해 +20%

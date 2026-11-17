@@ -225,7 +225,31 @@ const CAMELOT4_TRIAL = {
     palette: CAMELOT_TRIAL.W.palette },
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
 };
-const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL };
+// [사용자 결정] 카멜롯 5층 보스: 철벽의 기사 갤러해드. 보구 '시즈 페릴러스'(전승 속 원탁의 '위험한 자리')·'철벽'(정면 공격은 방패가 막아 크게 줄어듦, 옆·뒤로 돌아가야 함)·수치·대사는 Claude가 정한 [제안]/[임시]
+const MERLIN_GALAHAD_LINES = [
+  '「가레스도 길을 비켰나. 이제 성의 가장 높은 곳이 가깝다.」',
+  '「다섯 번째 층에는 갤러해드가 있다. 원탁의 위험한 자리에 앉고도 살아남은 유일한 기사지.」',
+  '「사람들은 그를 철벽의 기사라 부른다. 그 방패 앞에서는 어떤 공격도 제대로 닿지 않는다.」',
+  '「정면으로 부딪치지 말게. 그가 공격하느라 방패를 돌리지 못하는 틈에, 옆이나 뒤로 파고들어야 해.」',
+  '「로드 투 카멜롯, 다섯 번째 층. 준비가 되면 말하게.」'
+];
+const GALAHAD_WIN_LINES = [
+  '금이 간 방패가 소리 없이 바닥에 내려앉는다.',
+  '「…이 방패가 무너진 것은 처음입니다.」',
+  '「당신이라면 저 위의 문을 열 수 있을지도 모르겠군요.」',
+  '기사는 무너진 방패 곁에 무릎을 꿇은 채, 맑은 빛이 되어 흩어진다.'
+];
+const CAMELOT5_TRIAL = {
+  id: 'camelot5', title: '로드 투 카멜롯 — 5층', color: '#f4f4ff', intro: '철벽의 기사 갤러해드가 기다리고 있습니다', reward: 900, questDone: 14,
+  confirm: ['백악의 성 5층 — 성의 기사들을 뚫고 철벽의 기사 갤러해드와 싸웁니다', '가레스보다 강합니다. 정면 공격은 방패에 막히니 옆·뒤를 노리세요. 고른 진화 단계·축복과 +3 강화 무기 2개를 들고 갑니다'],
+  winText: '갤러해드를 쓰러뜨리고 5층을 지났습니다', winSub: '결정석 900개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => GALAHAD_WIN_LINES,
+  world: 9,
+  W: { name: '백악의 성 카멜롯 — 5층', boss: 'boss_galahad', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
+    enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 1]],
+    palette: CAMELOT_TRIAL.W.palette },
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+};
+const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL };
 // 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
 const DEEP_ARRIVAL_LINES = [
   '발밑의 돌이 차갑게 식어 간다.',
@@ -253,7 +277,9 @@ const STORY_ARCHIVE = [
   { id: 'mordred_road', name: '반역의 기사', kind: 'cut', lines: () => MERLIN_MORDRED_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 9) },
   { id: 'mordred', name: '붉은 번개가 잦아들 때', kind: 'cut', lines: () => MORDRED_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 10) },
   { id: 'gareth_road', name: '부정의 기사', kind: 'cut', lines: () => MERLIN_GARETH_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 11) },
-  { id: 'gareth', name: '고운 손', kind: 'cut', lines: () => GARETH_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 12) }
+  { id: 'gareth', name: '고운 손', kind: 'cut', lines: () => GARETH_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 12) },
+  { id: 'galahad_road', name: '철벽의 기사', kind: 'cut', lines: () => MERLIN_GALAHAD_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 13) },
+  { id: 'galahad', name: '무너진 방패', kind: 'cut', lines: () => GALAHAD_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 14) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 // [사용자 결정] 문지기 조건을 없애기 전에 이미 문지기를 잡아 둔 사람은 그 1번을 심층 보스 1마리로 쳐 줌 (한 번만 바꿈)
