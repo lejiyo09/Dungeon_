@@ -327,17 +327,18 @@ class Game {
   runScoreRow(victory, o = {}) {
     const W = this.W, stage = o.stage ?? this.stageIndex + 1;
     return { name: this.profile ? this.profile.name : '', hero: this.save.selected, stage, label: o.label || stageLabel(this.worldIdx, this.levelIdx), deep: o.deep ?? (W && W.deep ? W.depth : 0), kills: o.kills ?? this.kills, victory: !!victory,
-      partySize: o.partySize || (this.coop && this.coop.host ? this.partyCount() : 1), partyNames: o.partyNames || (this.coop && this.coop.host ? Net.players.map((p) => p.name) : null) };
+      partySize: o.partySize || (this.coop && this.coop.host ? this.partyCount() : 1), partyNames: o.partyNames || (this.coop && this.coop.host ? Net.players.map((p) => p.name) : null), title: this.myTitleId() };
   }
   submitRunScore(victory, o) { if (!this.profile || this.admin || this.trialW) return; if (!o) { this.save.bestKills = Math.max(this.save.bestKills || 0, this.kills); writeSave(this.save); } Net.submitScore(this.runScoreRow(victory, o)); }
   backfillScore() { // 지금까지의 최고 도달·심층·한 판 처치 (계정마다 한 번)
     const s = this.save; if (!this.profile || this.admin || s.scoreBackfill || !Net.httpBase() || !(s.bestStage > 0)) return;
     const n = s.bestStage; s.scoreBackfill = 1; writeSave(s);
-    Net.submitScore({ name: this.profile.name, hero: s.selected, stage: n, label: stageLabel(Math.floor((n - 1) / STAGES_PER_WORLD), (n - 1) % STAGES_PER_WORLD), deep: s.bestDeep || 0, kills: s.bestKills || 0, victory: (s.clears || 0) > 0, partySize: 1 });
+    Net.submitScore({ name: this.profile.name, hero: s.selected, stage: n, label: stageLabel(Math.floor((n - 1) / STAGES_PER_WORLD), (n - 1) % STAGES_PER_WORLD), deep: s.bestDeep || 0, kills: s.bestKills || 0, victory: (s.clears || 0) > 0, partySize: 1, title: this.myTitleId() });
   }
   openRanking() {
     const o = this.overlay = { type: 'rank', tab: 0, data: null, err: null, loading: true }; this.input.mouse.down = false;
-    Net.flushScores().catch(() => {}).then(() => Net.syncScores()).then((d) => { o.data = d; o.loading = false; }).catch((e) => { o.err = Net.scoreErr(e); o.loading = false; }); // 서버가 초기화됐으면 이 브라우저의 사본으로 복구
+    const tp = this.profile && !this.admin ? Net.postTitle(this.profile.name, this.myTitleId()) : Promise.resolve(); /* 이미 얻은 칭호도 랭킹에 반영 */
+    tp.then(() => Net.flushScores()).catch(() => {}).then(() => Net.syncScores()).then((d) => { o.data = d; o.loading = false; }).catch((e) => { o.err = Net.scoreErr(e); o.loading = false; }); // 서버가 초기화됐으면 이 브라우저의 사본으로 복구
   }
   applyDeepKit(p) { // 로비에서 바로 심층에 들어갈 때의 시작 장비 (BALANCE.deepStart)
     const K = BALANCE.deepStart;
@@ -360,6 +361,7 @@ class Game {
     p.treasure = tr || null; if (tr && tr.apply) tr.apply(p);
     if (p === this.player) for (const w of p.weapons) this.discover(w.def.id);
   }
+  myTitleId() { const T = this.save.title && GUILD_TITLES.find((t) => t.id === this.save.title); return T && this.titleUnlocked(T) && !this.admin ? T.id : ''; } /* 랭킹에 보낼 장착 칭호 (얻은 것만) */
   titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
   visibleTitles() { return GUILD_TITLES.filter((T) => !T.hidden || this.titleUnlocked(T)); } /* 히든 칭호는 얻은 뒤에만 목록에 나옴 */
   discover(id) { if (!this.save.discovered.includes(id)) { this.save.discovered.push(id); writeSave(this.save); } }
@@ -935,7 +937,7 @@ class Game {
         if (click) for (let i = 0; i < 3; i++) if (hit(HUD.guildTab(i))) { o.tab = i; return; }
         if (!click) return;
         if (o.tab < 2) { const list = o.tab ? G.weekly : G.daily; list.forEach((q, i) => { if (hit(HUD.guildRow(i))) say(this.claimQuest(q)); }); }
-        else this.visibleTitles().forEach((T, i) => { if (hit(HUD.titleCell(i))) { if (!this.titleUnlocked(T)) say(['아직 얻지 못한 칭호입니다', '#ff9a9a']); else { this.save.title = this.save.title === T.id ? null : T.id; writeSave(this.save); say([this.save.title ? `칭호 장착: ${T.name}` : '칭호 해제', '#ffd84a']); } } });
+        else this.visibleTitles().forEach((T, i) => { if (hit(HUD.titleCell(i))) { if (!this.titleUnlocked(T)) say(['아직 얻지 못한 칭호입니다', '#ff9a9a']); else { this.save.title = this.save.title === T.id ? null : T.id; writeSave(this.save); if (this.profile && !this.admin) Net.postTitle(this.profile.name, this.myTitleId()); /* 랭킹 칭호도 바로 */ say([this.save.title ? `칭호 장착: ${T.name}` : '칭호 해제', '#ffd84a']); } } });
       } else if (o.type === 'hunt') {
         if (!click) return;
         G.offers.forEach((h, i) => { if (hit(HUD.guildRow(i))) say(this.acceptHunt(h)); });

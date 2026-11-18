@@ -57,6 +57,14 @@ async function ghSave() {
 }
 const SCORE_SORT = { stage: (a, b) => b.stage - a.stage || b.kills - a.kills, kills: (a, b) => b.kills - a.kills || b.stage - a.stage, deep: (a, b) => b.deep - a.deep || b.stage - a.stage, coop: (a, b) => b.stage - a.stage || b.kills - a.kills };
 const SCORE_VAL = { stage: (r) => r.stage, kills: (r) => r.kills, deep: (r) => r.deep, coop: (r) => r.stage };
+// 랭킹 칭호: 길드 칭호 id만 받음 (js/data/guild.js의 GUILD_TITLES와 같은 목록 — 아무 글자나 띄우지 못하게)
+const TITLE_IDS = new Set(['t_first', 't_boss', 't_slayer', 't_element', 't_sanctum', 't_deep', 't_worker', 't_hunter', 't_gambler', 't_merchant', 't_roundtable']);
+const cleanTitle = (t) => (TITLE_IDS.has(String(t || '')) ? String(t) : '');
+function setTitle(name, title) { /* 그 이름의 기록(파티 제외)에 지금 칭호를 붙임 — 최고 기록이 바뀌지 않아도 칭호는 최신으로 */
+  let changed = false; for (const cat of ['stage', 'kills', 'deep']) for (const r of scores[cat]) if (r.name === name && (r.title || '') !== title) { r.title = title; changed = true; }
+  if (changed) { scoresDirty = true; markDirty(); } return changed;
+}
+const titleIpAt = new Map();
 function addScoreRow(cat, row, quiet) {
   const list = scores[cat], key = cat === 'coop' ? row.party : row.name, i = list.findIndex((x) => (cat === 'coop' ? x.party : x.name) === key);
   if (i >= 0) { if (SCORE_SORT[cat](row, list[i]) >= 0) return false; list.splice(i, 1); } // 같은 이름(파티)은 최고 기록만
@@ -69,9 +77,10 @@ function submitScore(ip, b) {
   const now = Date.now(), key = ip + '|' + name; if (now - (scoreIpAt.get(key) || 0) < 15000) return '잠시 뒤에 다시 보내 주세요'; // 너무 자주 보내기 막기 (같은 집에서 함께 해도 사람마다 따로)
   if (scoreIpAt.size > 5000) scoreIpAt.clear();
   const n = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
-  const row = { name, hero: String(b.hero || '').slice(0, 32), stage: n(b.stage, 400), label: String(b.label || '').slice(0, 16), deep: n(b.deep, 300), kills: n(b.kills, 50000), party: n(b.partySize, 4) || 1, victory: !!b.victory, at: now };
+  const row = { name, hero: String(b.hero || '').slice(0, 32), stage: n(b.stage, 400), label: String(b.label || '').slice(0, 16), deep: n(b.deep, 300), kills: n(b.kills, 50000), party: n(b.partySize, 4) || 1, victory: !!b.victory, at: now, title: cleanTitle(b.title) };
   scoreIpAt.set(key, now);
   if (row.stage > 0) addScoreRow('stage', row); if (row.kills > 0) addScoreRow('kills', row); if (row.deep > 0) addScoreRow('deep', row); // 지난 기록 올리기는 처치 수가 없을 수 있음
+  setTitle(name, row.title); /* 예전 최고 기록에도 지금 칭호 */
   if (row.party > 1 && Array.isArray(b.partyNames)) { const names = b.partyNames.map((x) => String(x).replace(/[\u0000-\u001f<>]/g, '').slice(0, 12)).filter(Boolean).slice(0, 4); if (names.length > 1) addScoreRow('coop', Object.assign({}, row, { party: names.join(' · ') })); }
   return null;
 }
@@ -83,7 +92,7 @@ function restoreScores(ip, b) {
   let added = 0;
   for (const cat of ['stage', 'kills', 'deep', 'coop']) for (const r of (Array.isArray(b[cat]) ? b[cat] : []).slice(0, SCORE_KEEP)) {
     const name = clean(r.name, 12); if (!name || name === '게스트') continue;
-    const row = { name, hero: clean(r.hero, 32), stage: num(r.stage, 400), label: clean(r.label, 16), deep: num(r.deep, 300), kills: num(r.kills, 50000), party: cat === 'coop' ? clean(r.party, 60) : num(r.party, 4) || 1, victory: !!r.victory, at: Math.min(now, num(r.at, now)) };
+    const row = { name, hero: clean(r.hero, 32), stage: num(r.stage, 400), label: clean(r.label, 16), deep: num(r.deep, 300), kills: num(r.kills, 50000), party: cat === 'coop' ? clean(r.party, 60) : num(r.party, 4) || 1, victory: !!r.victory, at: Math.min(now, num(r.at, now)), title: cat === 'coop' ? '' : cleanTitle(r.title) };
     if (cat === 'coop' && !row.party) continue; if (cat === 'deep' && !row.deep) continue;
     if (addScoreRow(cat, row)) added++;
   }
@@ -101,7 +110,7 @@ const SCORE_VIEW = 15;
 let scoresView = null;
 function scoresResponse() {
   if (scoresView) return scoresView;
-  const v = { persist: !!(GH.token && GH.repo) }; for (const k of Object.keys(scores)) v[k] = scores[k].slice(0, SCORE_VIEW).map((r) => ({ name: r.name, hero: r.hero, stage: r.stage, label: r.label, deep: r.deep, kills: r.kills, victory: r.victory, party: r.party }));
+  const v = { persist: !!(GH.token && GH.repo) }; for (const k of Object.keys(scores)) v[k] = scores[k].slice(0, SCORE_VIEW).map((r) => ({ name: r.name, hero: r.hero, stage: r.stage, label: r.label, deep: r.deep, kills: r.kills, victory: r.victory, party: r.party, ...(r.title ? { title: r.title } : {}) }));
   const raw = Buffer.from(JSON.stringify(v)); scoresView = { raw, gz: zlib.gzipSync(raw), etag: '"s' + crypto.createHash('sha1').update(raw).digest('base64').slice(0, 12) + '"' };
   return scoresView;
 }
@@ -121,6 +130,15 @@ const server = http.createServer((req, res) => {
       req.on('end', () => { let b = {}; try { b = JSON.parse(body); } catch (e) { /* 무시 */ } const err = submitScore(req.headers['x-forwarded-for'] ? String(req.headers['x-forwarded-for']).split(',')[0].trim() : req.socket.remoteAddress, b);
         res.writeHead(err ? 429 : 200, Object.assign({ 'Content-Type': 'application/json' }, cors)); res.end(JSON.stringify({ ok: !err, error: err })); }); return; }
     res.writeHead(405, cors); res.end(); return;
+  }
+  if (p === '/api/title' && (req.method === 'POST' || req.method === 'OPTIONS')) { /* 칭호만 갱신 (이미 있는 기록에만, 새 기록은 만들지 않음) */
+    const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
+    if (req.method === 'OPTIONS') { res.writeHead(204, cors); res.end(); return; }
+    let body = ''; req.on('data', (c) => { body += c; if (body.length > 2000) req.destroy(); });
+    req.on('end', () => { let b = {}; try { b = JSON.parse(body); } catch (e) { /* 무시 */ } const ip = req.headers['x-forwarded-for'] ? String(req.headers['x-forwarded-for']).split(',')[0].trim() : req.socket.remoteAddress;
+      const name = String(b.name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12), key = ip + '|' + name, now = Date.now(); let ok = false;
+      if (name && now - (titleIpAt.get(key) || 0) >= 10000) { titleIpAt.set(key, now); if (titleIpAt.size > 5000) titleIpAt.clear(); ok = setTitle(name, cleanTitle(b.title)); }
+      res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, cors)); res.end(JSON.stringify({ ok })); }); return;
   }
   if (p === '/api/scores/restore' && (req.method === 'POST' || req.method === 'OPTIONS')) {
     const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };

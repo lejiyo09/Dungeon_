@@ -391,12 +391,13 @@ class HUD {
       else if (o.err) T(o.err, VIEW_W / 2, 120, '#ff9a9a', 'center', 9);
       else {
         const list = (o.data && o.data[keys[o.tab]]) || [], me = game.profile && game.profile.name;
-        T('순위', 30, 44, '#ffd84a'); T(o.tab === 3 ? '파티' : '이름', 62, 44, '#ffd84a'); if (o.tab !== 3) T('직업', 200, 44, '#ffd84a');
+        T('순위', 30, 44, '#ffd84a'); T(o.tab === 3 ? '파티' : '이름', 62, 44, '#ffd84a'); if (o.tab !== 3) { T('칭호', 140, 44, '#ffd84a'); T('직업', 236, 44, '#ffd84a'); }
         T(o.tab === 1 ? '처치' : o.tab === 2 ? '심층' : '도달', 330, 44, '#ffd84a', 'right'); T('기록', VIEW_W - 30, 44, '#ffd84a', 'right');
         if (!list.length) T('아직 기록이 없습니다. 탐험을 마치면 이름이 올라갑니다!', VIEW_W / 2, 120, '#888', 'center', 9);
         list.slice(0, 15).forEach((r, i) => { const y = 58 + i * 13, mine = o.tab === 3 ? (me && r.party.includes(me)) : r.name === me, col = i === 0 ? '#ffd84a' : i === 1 ? '#d8dce8' : i === 2 ? '#d89a5a' : mine ? '#7affc0' : '#e8e0f0';
           if (mine) { ctx.fillStyle = 'rgba(122,255,192,0.1)'; ctx.fillRect(24, y - 2, VIEW_W - 48, 12); }
-          T(String(i + 1), 34, y, col); T(o.tab === 3 ? r.party : r.name, 62, y, col); if (o.tab !== 3) { const h = game.data.heroes.get(r.hero); T(h ? h.name : '', 200, y, '#c8b890', 'left', 7); }
+          T(String(i + 1), 34, y, col); T(o.tab === 3 ? r.party : r.name, 62, y, col); if (o.tab !== 3) { const h = game.data.heroes.get(r.hero); T(h ? h.name : '', 236, y, '#c8b890', 'left', 7);
+            const tt = r.title && GUILD_TITLES.find((t) => t.id === r.title); if (tt) T('「' + tt.name + '」', 140, y + 1, tt.hidden ? '#ffd84a' : '#b8a8e8', 'left', 6); } /* 랭킹 칭호 (히든 칭호는 금색) */
           T(o.tab === 1 ? String(r.kills) : o.tab === 2 ? '심층 ' + r.deep : r.label || String(r.stage), 330, y, col, 'right');
           T(`${r.label || ''}${r.victory ? ' · 귀환' : ''} · 처치 ${r.kills}`, VIEW_W - 30, y, '#888', 'right', 7); });
         if (o.data && o.data.restored) T('서버가 다시 시작되어 비어 있던 기록을 이 기기의 사본으로 복구했어요', VIEW_W / 2, VIEW_H - 36, '#7affc0', 'center', 7);

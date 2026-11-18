@@ -124,6 +124,8 @@ const Net = {
   submitScore(row) { const b = this.httpBase(); if (!b) return; this.scoreMem = null;
     const keep = () => { try { const q = JSON.parse(localStorage.getItem('pd_score_queue') || '[]'); q.push(row); localStorage.setItem('pd_score_queue', JSON.stringify(q.slice(-10))); } catch (e) { /* 저장 공간 없음 */ } };
     return fetch(b + '/api/scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(row) }).then((r) => { if (!r.ok) keep(); return r.ok; }).catch(() => { keep(); return false; }); },
+  postTitle(name, title) { const b = this.httpBase(); if (!b || !name) return Promise.resolve(false); this.scoreMem = null; /* 랭킹 칭호만 갱신 */
+    return fetch(b + '/api/title', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, title: title || '' }) }).then((r) => r.ok).catch(() => false); },
   async flushScores() { // 보내지 못한 기록 다시 보내기 (같은 이름은 서버가 15초에 한 번만 받으므로 이름마다 가장 좋은 기록 하나씩)
     let q = []; try { q = JSON.parse(localStorage.getItem('pd_score_queue') || '[]'); localStorage.removeItem('pd_score_queue'); } catch (e) { return; }
     const best = new Map(); for (const r of q) { const o = best.get(r.name); if (!o) best.set(r.name, r); else best.set(r.name, Object.assign({}, r, { stage: Math.max(o.stage, r.stage), kills: Math.max(o.kills, r.kills), deep: Math.max(o.deep || 0, r.deep || 0), label: r.stage >= o.stage ? r.label : o.label, victory: o.victory || r.victory })); }
