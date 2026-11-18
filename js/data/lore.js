@@ -148,14 +148,14 @@ const GAWAIN_WIN_LINES = [
 ];
 const CAMELOT_TRIAL = {
   id: 'camelot', title: '로드 투 카멜롯', color: '#ffd870', intro: '태양의 기사 가웨인이 성문을 지키고 있습니다', reward: 500, questDone: 6,
-  confirm: ['백악의 성 카멜롯 — 성의 기사들을 뚫고 성문을 지키는 태양의 기사 가웨인과 싸웁니다', '롱고미니아드보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
+  confirm: ['백악의 성 카멜롯 — 성의 기사들을 뚫고 성문을 지키는 태양의 기사 가웨인과 싸웁니다', '롱고미니아드보다 강합니다. 고른 진화 단계로, 도감의 무기 중 2개를 골라 +3 강화해 들고 가고, 축복 3개를 직접 고릅니다'],
   winText: '가웨인을 쓰러뜨리고 성문을 열었습니다', winSub: '결정석 500개를 받았습니다 — 카멜롯 깊은 곳의 이야기는 다음에 이어집니다', winLines: () => GAWAIN_WIN_LINES,
   world: 9,
   W: { name: '백악의 성 카멜롯', boss: 'boss_gawain', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
     enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 1]],
     palette: { style: 'sanctum', accent: '#ffd870', floor: ['#b8b2a6', '#bcb6aa'], corridor: ['#a49e92', '#a8a296'], wall: '#d8d4ca', wallTop: '#ece8de',
       wallFace: '#c4beb0', faceLine: '#aea896', deco: 'rgba(255,216,112,0.4)' } },
-  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 0, picks: 3 }
 };
 // [사용자 결정] 카멜롯 2층 보스: 반전의 기사 트리스탄 (궁수), 보구 페일노트. 패턴·'반전'(3페이즈부터 화살이 지나간 뒤 되돌아옴)·수치·대사는 Claude가 정한 [제안]/[임시]
 const MERLIN_TRISTAN_LINES = [
@@ -173,13 +173,13 @@ const TRISTAN_WIN_LINES = [
 ];
 const CAMELOT2_TRIAL = {
   id: 'camelot2', title: '로드 투 카멜롯 — 2층', color: '#ff8aa0', intro: '반전의 기사 트리스탄이 기다리고 있습니다', reward: 600, questDone: 8,
-  confirm: ['백악의 성 2층 — 성의 기사들을 뚫고 반전의 기사 트리스탄과 싸웁니다', '가웨인보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
+  confirm: ['백악의 성 2층 — 성의 기사들을 뚫고 반전의 기사 트리스탄과 싸웁니다', '가웨인보다 강합니다. 고른 진화 단계로, 도감의 무기 중 2개를 골라 +4 강화해 들고 가고, 축복 3개를 직접 고릅니다'],
   winText: '트리스탄을 쓰러뜨리고 2층을 지났습니다', winSub: '결정석 600개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => TRISTAN_WIN_LINES,
   world: 9,
   W: { name: '백악의 성 카멜롯 — 2층', boss: 'boss_tristan', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
     enemies: [['enemy_camguard_001', 2], ['enemy_camxbow_001', 3], ['enemy_cammonk_001', 1]],
     palette: CAMELOT_TRIAL.W.palette },
-  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 4, buffs: 0, picks: 3 }
 };
 // [사용자 결정] 카멜롯 3층 보스: 폭주의 기사 모드레드. 보구 이름 '클래런트'(전승 속 모드레드가 든 검)·패턴·'폭주'(3페이즈부터 더 빨라짐)·수치·대사는 Claude가 정한 [제안]/[임시]
 const MERLIN_MORDRED_LINES = [
@@ -197,13 +197,13 @@ const MORDRED_WIN_LINES = [
 ];
 const CAMELOT3_TRIAL = {
   id: 'camelot3', title: '로드 투 카멜롯 — 3층', color: '#ff5a5a', intro: '폭주의 기사 모드레드가 기다리고 있습니다', reward: 700, questDone: 10,
-  confirm: ['백악의 성 3층 — 성의 기사들을 뚫고 폭주의 기사 모드레드와 싸웁니다', '트리스탄보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
+  confirm: ['백악의 성 3층 — 성의 기사들을 뚫고 폭주의 기사 모드레드와 싸웁니다', '트리스탄보다 강합니다. 고른 진화 단계로, 도감의 무기 중 2개를 골라 +5 강화해 들고 가고, 축복 3개를 직접 고릅니다'],
   winText: '모드레드를 쓰러뜨리고 3층을 지났습니다', winSub: '결정석 700개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => MORDRED_WIN_LINES,
   world: 9,
   W: { name: '백악의 성 카멜롯 — 3층', boss: 'boss_mordred', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
     enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 1]],
     palette: CAMELOT_TRIAL.W.palette },
-  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 5, buffs: 0, picks: 3 }
 };
 // [사용자 결정] 카멜롯 4층 보스: 부정의 기사 가레스. 보구 '보마인'(전승 속 가레스의 별명 '고운 손')·'부정'(하얀 원 안에서는 공격 불가, 3페이즈부터 주기적으로 모든 피해 무효)·수치·대사는 Claude가 정한 [제안]/[임시]
 const MERLIN_GARETH_LINES = [
@@ -221,13 +221,13 @@ const GARETH_WIN_LINES = [
 ];
 const CAMELOT4_TRIAL = {
   id: 'camelot4', title: '로드 투 카멜롯 — 4층', color: '#d8f0ff', intro: '부정의 기사 가레스가 기다리고 있습니다', reward: 800, questDone: 12,
-  confirm: ['백악의 성 4층 — 성의 기사들을 뚫고 부정의 기사 가레스와 싸웁니다', '모드레드보다 강합니다. 고른 진화 단계·축복을 받고, 도감의 무기 중 2개를 골라 +3 강화해 들고 갑니다'],
+  confirm: ['백악의 성 4층 — 성의 기사들을 뚫고 부정의 기사 가레스와 싸웁니다', '모드레드보다 강합니다. 고른 진화 단계로, 도감의 무기 중 2개를 골라 +6 강화해 들고 가고, 축복 3개를 직접 고릅니다'],
   winText: '가레스를 쓰러뜨리고 4층을 지났습니다', winSub: '결정석 800개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => GARETH_WIN_LINES,
   world: 9,
   W: { name: '백악의 성 카멜롯 — 4층', boss: 'boss_gareth', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
     enemies: [['enemy_camguard_001', 2], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 2]],
     palette: CAMELOT_TRIAL.W.palette },
-  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 6, buffs: 0, picks: 3 }
 };
 // [사용자 결정] 카멜롯 5층 보스: 철벽의 기사 갤러해드. 보구 '로드 카멜롯' [사용자 결정]·'철벽'(정면 공격은 방패가 막아 크게 줄어듦, 옆·뒤로 돌아가야 함)·수치·대사는 Claude가 정한 [제안]/[임시]
 const MERLIN_GALAHAD_LINES = [
@@ -245,13 +245,13 @@ const GALAHAD_WIN_LINES = [
 ];
 const CAMELOT5_TRIAL = {
   id: 'camelot5', title: '로드 투 카멜롯 — 5층', color: '#f4f4ff', intro: '철벽의 기사 갤러해드가 기다리고 있습니다', reward: 900, questDone: 14,
-  confirm: ['백악의 성 5층 — 성의 기사들을 뚫고 철벽의 기사 갤러해드와 싸웁니다', '가레스보다 강합니다. 정면 공격은 방패에 막히니 옆·뒤를 노리세요. 고른 진화 단계·축복과 +3 강화 무기 2개를 들고 갑니다'],
+  confirm: ['백악의 성 5층 — 성의 기사들을 뚫고 철벽의 기사 갤러해드와 싸웁니다', '가레스보다 강합니다. 정면 공격은 방패에 막히니 옆·뒤를 노리세요. 고른 진화 단계 · +7 강화 무기 2개 · 직접 고르는 축복 3개를 들고 갑니다'],
   winText: '갤러해드를 쓰러뜨리고 5층을 지났습니다', winSub: '결정석 900개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => GALAHAD_WIN_LINES,
   world: 9,
   W: { name: '백악의 성 카멜롯 — 5층', boss: 'boss_galahad', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
     enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 1]],
     palette: CAMELOT_TRIAL.W.palette },
-  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 7, buffs: 0, picks: 3 }
 };
 // [사용자 결정] 카멜롯 6층 보스: 치열의 기사 랜슬롯. 보구 '아론다이트'(전승 속 랜슬롯의 검)·'치열'(반격 자세 + 3페이즈부터 쉬지 않는 연격)·수치·대사는 Claude가 정한 [제안]/[임시]
 const MERLIN_LANCELOT_LINES = [
@@ -269,13 +269,13 @@ const LANCELOT_WIN_LINES = [
 ];
 const CAMELOT6_TRIAL = {
   id: 'camelot6', title: '로드 투 카멜롯 — 6층', color: '#8ab8ff', intro: '치열의 기사 랜슬롯이 기다리고 있습니다', reward: 1000, questDone: 16,
-  confirm: ['백악의 성 6층 — 성의 기사들을 뚫고 치열의 기사 랜슬롯과 싸웁니다', '갤러해드보다 강합니다. 그가 검을 세우고 멈추면(반격 자세) 공격을 멈추세요. 고른 진화 단계·축복과 +3 강화 무기 2개를 들고 갑니다'],
+  confirm: ['백악의 성 6층 — 성의 기사들을 뚫고 치열의 기사 랜슬롯과 싸웁니다', '갤러해드보다 강합니다. 그가 검을 세우고 멈추면(반격 자세) 공격을 멈추세요. 고른 진화 단계 · +8 강화 무기 2개 · 직접 고르는 축복 3개를 들고 갑니다'],
   winText: '랜슬롯을 쓰러뜨리고 6층을 지났습니다', winSub: '결정석 1000개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => LANCELOT_WIN_LINES,
   world: 9,
   W: { name: '백악의 성 카멜롯 — 6층', boss: 'boss_lancelot', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
     enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 1]],
     palette: CAMELOT_TRIAL.W.palette },
-  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 8, buffs: 0, picks: 3 }
 };
 // [사용자 결정] 카멜롯 7층 보스: 아그라베인. 이명 '철완의 기사'(전승 속 별명 '단단한 손')·보구 '단죄의 철완'·'감시의 눈'·'고발'(3페이즈 표식)·수치·대사는 Claude가 정한 [제안]/[임시]
 const MERLIN_AGRAVAIN_LINES = [
@@ -293,13 +293,13 @@ const AGRAVAIN_WIN_LINES = [
 ];
 const CAMELOT7_TRIAL = {
   id: 'camelot7', title: '로드 투 카멜롯 — 7층', color: '#d8b070', intro: '철완의 기사 아그라베인이 기다리고 있습니다', reward: 1100, questDone: 18,
-  confirm: ['백악의 성 7층 — 성의 기사들을 뚫고 철완의 기사 아그라베인과 싸웁니다', '랜슬롯보다 강합니다. 떠오르는 감시의 눈을 먼저 부수고, 붉은 표식이 붙으면 계속 움직이세요. 고른 진화 단계·축복과 +3 강화 무기 2개를 들고 갑니다'],
+  confirm: ['백악의 성 7층 — 성의 기사들을 뚫고 철완의 기사 아그라베인과 싸웁니다', '랜슬롯보다 강합니다. 떠오르는 감시의 눈을 먼저 부수고, 붉은 표식이 붙으면 계속 움직이세요. 고른 진화 단계 · +9 강화 무기 2개 · 직접 고르는 축복 3개를 들고 갑니다'],
   winText: '아그라베인을 쓰러뜨리고 7층을 지났습니다', winSub: '결정석 1100개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => AGRAVAIN_WIN_LINES,
   world: 9,
   W: { name: '백악의 성 카멜롯 — 7층', boss: 'boss_agravain', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
     enemies: [['enemy_camguard_001', 2], ['enemy_camxbow_001', 3], ['enemy_cammonk_001', 1]],
     palette: CAMELOT_TRIAL.W.palette },
-  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 9, buffs: 0, picks: 3 }
 };
 // [사용자 결정] 카멜롯 8층 보스: 충절의 기사 베디비어 — 2페이즈 '스위치 온 아가트람'(은빛 팔이 켜져 강화 + 패턴 추가), 3페이즈 '데드 엔드 아가트람' 해방(강력한 일격을 보구로)
 //  패턴·수치·대사는 Claude가 정한 [제안]/[임시]
@@ -318,13 +318,13 @@ const BEDIVERE_WIN_LINES = [
 ];
 const CAMELOT8_TRIAL = {
   id: 'camelot8', title: '로드 투 카멜롯 — 8층', color: '#c8e0ff', intro: '충절의 기사 베디비어가 기다리고 있습니다', reward: 1200, questDone: 20,
-  confirm: ['백악의 성 8층 — 성의 기사들을 뚫고 충절의 기사 베디비어와 싸웁니다', '아그라베인보다 강합니다. 3페이즈의 은빛 일격은 조준선이 붉게 바뀌어 고정되면 바로 옆으로 피하세요. 고른 진화 단계·축복과 +3 강화 무기 2개를 들고 갑니다'],
+  confirm: ['백악의 성 8층 — 성의 기사들을 뚫고 충절의 기사 베디비어와 싸웁니다', '아그라베인보다 강합니다. 3페이즈의 은빛 일격은 조준선이 붉게 바뀌어 고정되면 바로 옆으로 피하세요. 고른 진화 단계 · +10 강화 무기 2개 · 직접 고르는 축복 3개를 들고 갑니다'],
   winText: '베디비어를 쓰러뜨리고 8층을 지났습니다', winSub: '결정석 1200개를 받았습니다 — 카멜롯의 위층은 다음에 이어집니다', winLines: () => BEDIVERE_WIN_LINES,
   world: 9,
   W: { name: '백악의 성 카멜롯 — 8층', boss: 'boss_bedivere', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
     enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 1]],
     palette: CAMELOT_TRIAL.W.palette },
-  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 10, buffs: 0, picks: 3 }
 };
 // [사용자 결정] 카멜롯 마지막 층(왕좌) 보스: 로드 로그레스 [아서 왕] — 이상적인 왕. 체력은 다른 보스의 5/3, 체력바 5개, 엑스칼리버 사용, 롱고미니아드보다 훨씬 어렵게(사실상 못 깨게)
 //  [사용자 결정] 롱고미니아드가 연속 덫으로 격파됨 → 아서 왕은 모든 행동 방해(덫·경직·사슬·빙결·둔화·실명 등)에 면역
@@ -347,14 +347,15 @@ const ARTHUR_WIN_LINES = [
 ];
 const CAMELOT9_TRIAL = {
   id: 'camelot9', title: '로드 투 카멜롯 — 왕좌', color: '#ffe9a0', intro: '이상적인 왕이 왕좌에서 기다리고 있습니다', reward: 3000, questDone: 22, treasure: 'treasure_scabbard',
-  confirm: ['백악의 성 왕좌 — 로드 로그레스, 아서 왕과 싸웁니다 (체력바 5개 · 모든 행동 방해 면역)', '지금까지의 어떤 적과도 비교할 수 없습니다. 이길 수 있다고 생각하지 마세요. 고른 진화 단계·축복과 +3 강화 무기 2개를 들고 갑니다'],
+  confirm: ['백악의 성 왕좌 — 로드 로그레스, 아서 왕과 싸웁니다 (체력바 5개 · 모든 행동 방해 면역)', '지금까지의 어떤 적과도 비교할 수 없습니다. 이길 수 있다고 생각하지 마세요. 고른 진화 단계 · +10 강화 무기 2개 · 직접 고르는 축복 3개를 들고 갑니다'],
   winText: '101번째 원탁의 기사로 인정받았습니다', winSub: '보구 성검의 칼집 · 칭호 「101번째 원탁의 기사」 · 결정석 3000개 — 칭호는 탐험가 길드에서 장착', winLines: () => ARTHUR_WIN_LINES,
   world: 9,
   W: { name: '백악의 성 카멜롯 — 왕좌', boss: 'boss_arthur', trial: true, rooms: 3, sanctum: false, deep: false, waves: 2,
     enemies: [['enemy_camguard_001', 3], ['enemy_camxbow_001', 2], ['enemy_cammonk_001', 2]],
     palette: CAMELOT_TRIAL.W.palette },
-  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 3, buffs: 4 }
+  kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 10, buffs: 0, picks: 3 }
 };
+// [사용자 결정] 카멜롯: 층이 올라갈 때마다 무기 강화 +1 (1층 +3 → 8층부터 최대 +10), 시작할 때 무작위 축복 대신 '3개 중 1개 고르기'를 3번 (picks)
 const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL, camelot6: CAMELOT6_TRIAL, camelot7: CAMELOT7_TRIAL, camelot8: CAMELOT8_TRIAL, camelot9: CAMELOT9_TRIAL };
 // 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
 const DEEP_ARRIVAL_LINES = [

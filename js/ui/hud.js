@@ -311,7 +311,7 @@ class HUD {
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 26, o.msg.color, 'center', 9);
       hudText(ctx, o.returnToHeroInfo ? '숫자 키 / 클릭: 레벨업   ·   E / Esc: 상세 정보로' : '숫자 키 / 클릭: 레벨업   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
     } else if (o.type === 'buff') {
-      hudText(ctx, '보스 처치! 축복을 하나 고르세요', VIEW_W / 2, 50, '#ffd84a', 'center', 14);
+      hudText(ctx, o.title || '보스 처치! 축복을 하나 고르세요', VIEW_W / 2, 50, '#ffd84a', 'center', 14);
       o.options.forEach((b, i) => {
         const r = HUD.buffRect(i), hover = game.input.mouse.x >= r.x && game.input.mouse.x <= r.x + r.w && game.input.mouse.y >= r.y && game.input.mouse.y <= r.y + r.h;
         ctx.fillStyle = hover ? 'rgba(255,220,120,0.25)' : 'rgba(255,255,255,0.08)'; ctx.fillRect(r.x, r.y, r.w, r.h);

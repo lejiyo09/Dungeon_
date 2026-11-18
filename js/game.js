@@ -211,7 +211,7 @@ class Game {
       p.maxHp += K.hp; for (let i = 0; i < rank; i++) { p.maxHp += EVOLUTION.hp[i]; p.maxEnergy += EVOLUTION.energy[i]; } p.hp = p.maxHp; p.energy = p.maxEnergy;
       p.weapons = K.rarity.map((r) => new WeaponInstance(pick(DATA_WEAPONS.filter((d) => d.rarity === r && !d.questOnly)), K.lv)); p.slot = 0; // 기본값 (테스트 도구용)
       for (const b of shuffled(DATA_BUFFS).slice(0, K.buffs)) { b.apply(p); p.buffs.push(b.id); }
-      if (window.__toolMode) return;
+      if (window.__toolMode) { for (let i = 0; i < (K.picks || 0); i++) { const b = this.trialBuffOptions()[0]; b.apply(p); p.buffs.push(b.id); } return; } // 테스트 도구: 고르기 대신 무작위
       this.overlay = { type: 'trial_weapons', tab: 0, page: 0, picked: [], msg: null }; this.input.mouse.down = false; // 보스전 전에 무기 2개 고르기
     };
     this.loadStage();
@@ -221,7 +221,14 @@ class Game {
     const p = this.player, T = this.trialDef, K = T.kit;
     p.weapons = ids.map((id) => new WeaponInstance(this.data.weapons.get(id), K.lv)); p.slot = 0;
     this.overlay = null; this.input.mouse.down = false;
+    if (K.picks) { this.trialBuffPick(K.picks, K.picks); return; } /* 카멜롯: 무기를 고른 뒤 축복 3개 중 1개 고르기를 여러 번 */
     this.showBanner(T.W.name, `${p.line ? p.line.ranks[p.rank] + (p.rank === 2 ? '(최종 진화)' : `(${p.rank + 1}진)`) + ' · ' + p.skillName + ' · ' : ''}${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv})`, T.color);
+  }
+  trialBuffOptions() { const owned = new Set(this.player.buffs); return shuffled(DATA_BUFFS.filter((b) => !owned.has(b.id) || b.id === 'buff_atk' || b.id === 'buff_hp')).slice(0, 3); }
+  trialBuffPick(left, total) { /* 시련 시작 축복 고르기: 3개 중 1개 × total번 → 끝나면 장비 안내 */
+    const p = this.player, T = this.trialDef, K = T.kit;
+    if (left <= 0) { this.showBanner(T.W.name, `${p.line ? p.line.ranks[p.rank] + (p.rank === 2 ? '(최종 진화)' : `(${p.rank + 1}진)`) + ' · ' + p.skillName + ' · ' : ''}${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv}) · 축복 ${total}개`, T.color); return; }
+    this.overlay = { type: 'buff', options: this.trialBuffOptions(), title: `${T.title} — 축복 고르기 (${total - left + 1}/${total})`, after: () => this.trialBuffPick(left - 1, total) }; this.input.mouse.down = false;
   }
   endRhongoTrial(win) { this.endTrial(win); }
   endTrial(win) {
