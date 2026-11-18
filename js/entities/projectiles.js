@@ -344,6 +344,10 @@ class LightSatellites {
    공통: 피해는 world.damageEnemy에 trap(덫 피해 표시) · from(공격 위치: 갤러해드 방패 판정용) · shockStack(감전 누적) · prey(사냥터 각인 부여)를 실어 보냄
    보스 기믹을 무시하지 않음: 가레스의 부정의 원 안에서는 작동 정지, 갤러해드 방패는 설치물 위치 기준, 부정·성채 무적과 랜슬롯 반격은 그대로 적용 */
 function trapDenied(world, x, y) { for (const h of world.hazards) if (h.kind === 'deny' && h.t >= 0.35 && h.t < h.delay && Math.hypot(h.x - x, h.y - y) < h.r) return true; return false; }
+function trapHeal(world, holder, owner, amt) { /* 함정 계열 흡혈: 소수점은 모아 두었다가 1 이상일 때 회복, 회복 숫자는 0.4초에 한 번만 */
+  if (!owner || owner.state === 'DEAD' || !(amt > 0)) return; holder.healAcc = (holder.healAcc || 0) + amt; const h = Math.floor(holder.healAcc); if (h < 1) return; holder.healAcc -= h;
+  const got = Math.min(owner.maxHp - owner.hp, h); if (got > 0) { owner.hp += got; if (!(holder.healTxtT > world.time)) { world.effects.text(owner.x, owner.y - 24, '+' + got, '#7be36b'); holder.healTxtT = world.time + 0.4; } }
+}
 function trapBurn(dmg) { const B = BALANCE.TRAP.burn; return { type: 'burn', chance: 1, duration: B.duration, dps: dmg * B.dpsRatio }; }
 // 화염 투척: 조준 지점까지 포물선으로 날아가 적에 닿거나 도착하면 원형 폭발 (화상 · 밀쳐 냄 · 사냥터 각인)
 class FireBomb {
@@ -357,18 +361,20 @@ class FireBomb {
     this.alive = false; const fx = world.effects, R = this.radius;
     for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < R + e.radius) {
       const dx = e.x - this.x, dy = e.y - this.y, d = Math.hypot(dx, dy) || 1;
-      world.damageEnemy(e, { damage: this.dmg, mods: this.owner.mods, knockback: this.kb, status: trapBurn(this.dmg), prey: true, from: { x: this.x, y: this.y } }, dx / d, dy / d); }
+      const h0 = e.hp; world.damageEnemy(e, { damage: this.dmg, mods: this.owner.mods, knockback: this.kb, status: trapBurn(this.dmg), prey: true, from: { x: this.x, y: this.y } }, dx / d, dy / d);
+      trapHeal(world, this, this.owner, Math.max(0, h0 - Math.max(0, e.hp)) * (BALANCE.TRAP.firetoss.lifesteal || 0)); } /* 준 피해의 lifesteal 회복 */
     fx.ring(this.x, this.y, 8, '#fff4c0'); fx.explosion(this.x, this.y, R * 0.55, '#ff8a3a'); fx.ring(this.x, this.y, R, '#ff6a2a'); /* 백황색 섬광 → 주황·적색 확산 */
     for (let i = 0; i < 6; i++) { const a = Math.random() * TAU; fx.part(this.x, this.y, Math.cos(a) * 20, Math.sin(a) * 14 - 10, { color: 'rgba(40,30,30,0.6)', life: 0.9, size: 3, size2: 6, drag: 2 }); } /* 남는 연기 */
     world.addShake(0.1, 2); SFX.play('explode', 0.05);
   }
   render(ctx) { const x = Math.round(this.x), y = Math.round(this.y - (this.h || 0));
+    if (typeof drawTrapArt === 'function') { ctx.fillStyle = 'rgba(20,16,24,0.3)'; ctx.fillRect(Math.round(this.x) - 3, Math.round(this.y) + 2, 6, 2); if (drawTrapArt(ctx, 'bomb', Math.floor(this.t * 14) % 2 === 0, x, y + 5)) return; } /* 화염 투척 폭탄 스프라이트 (심지 불꽃 깜빡임) */
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.fillStyle = '#ff6a2a'; ctx.beginPath(); ctx.arc(x, y, 5, 0, TAU); ctx.fill();
     ctx.globalAlpha = 1; ctx.fillStyle = '#ffd04a'; ctx.beginPath(); ctx.arc(x, y, 3, 0, TAU); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 1, y - 1, 2, 2); ctx.restore(); }
 }
 // 전류 격자: 지면의 전기 격자 — 처음 들어온 적마다 한 번씩 전격 피해 + 기절(보스는 덫 규칙: 3번 묶이면 면역·절반 시간, 행동 방해 면역 보스는 기절 없음)
 //  피해 = dmg × min(maxMult, 1 + perHit × (격자 안 적 수 - 1)) · 같은 적은 한 격자에서 한 번만 기절 (무한 연장 방지)
-class ShockGrid { /* 전류 격자 = 디아블로 2 쇼크 웹: 던진 자리에서 전기 가시들이 둥글게 퍼져 박히고, 이웃한 가시끼리 전류가 이어짐 — 가시나 전류선에 닿아 있는 동안 지속 피해(최대 체력 %) */
+class ShockGrid { /* 전류 격자 = 디아블로 2 쇼크 웹: 던진 자리에서 전기 가시들이 둥글게 퍼져 박히고, 이웃한 가시끼리 전류가 이어짐 — 가시·전류선·그물 안에 닿아 있는 동안 지속 피해 */
   constructor(owner, x, y, o) { Object.assign(this, o); this.owner = owner; this.x = x; this.y = y; this.t = 0; this.alive = true; this.hit = new Set(); this.lit = 0;
     const n = this.spikes || 7, a0 = Math.random() * TAU; this.sp = [];
     for (let i = 0; i < n; i++) { const a = a0 + i * TAU / n + (Math.random() - 0.5) * 0.35; this.sp.push({ a, d: this.r * (0.78 + Math.random() * 0.22) }); } }
@@ -383,11 +389,12 @@ class ShockGrid { /* 전류 격자 = 디아블로 2 쇼크 웹: 던진 자리에
     this.lit = Math.max(0, this.lit - dt * 3);
     if (this.t < 0.03 || trapDenied(world, this.x, this.y)) return;
     const inside = world.enemies.filter((e) => e.targetable && this.touches(e)); if (!inside.length) return;
-    this.nextT = this.nextT || new Map(); const fixed = { attackBonus: 0, critChance: 0, critMultiplier: 1 };
+    this.nextT = this.nextT || new Map();
     for (const e of inside) {
       if (!this.hit.has(e)) { this.hit.add(e); world.trapRoot(e, e.def.boss ? this.stun * 0.5 : this.stun); } /* 처음 닿을 때 기절 (보스는 절반, 3번 뒤 면역은 trapRoot가 처리) */
       if (this.nextT.get(e) > this.t) continue; this.nextT.set(e, this.t + (this.tick || 1)); this.lit = 1; /* 지속 피해: 같은 적은 tick초에 한 번 */
-      world.damageEnemy(e, { damage: (e.maxHp || 0) * (this.dotPct || 0.05), mods: fixed, knockback: 0, trap: true, pct: true, prey: true, from: { x: this.x, y: this.y } }, 0, 0);
+      const h0 = e.hp; world.damageEnemy(e, { damage: this.dot, mods: this.owner.mods, knockback: 0, trap: true, prey: true, from: { x: this.x, y: this.y } }, 0, 0);
+      trapHeal(world, this, this.owner, Math.max(0, h0 - Math.max(0, e.hp)) * (this.lifesteal || 0)); /* 준 피해의 lifesteal 회복 */
       const A = this.spikePos(Math.floor(Math.random() * this.sp.length)); world.effects.lightning(A.x, A.y - 4, e.x, e.y - 4); }
   }
   render(ctx) {
@@ -398,7 +405,9 @@ class ShockGrid { /* 전류 격자 = 디아블로 2 쇼크 웹: 던진 자리에
       const mx = (A.x + B.x) / 2 + randInt(-3, 3), my = (A.y + B.y) / 2 + randInt(-3, 3) - 3;
       ctx.globalAlpha = (0.45 + 0.4 * this.lit) * k; ctx.strokeStyle = '#7ac8ff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(A.x, A.y - 3); ctx.lineTo(mx, my); ctx.lineTo(B.x, B.y - 3); ctx.stroke(); }
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k;
-    for (const A of P) { const x = Math.round(A.x), y = Math.round(A.y); ctx.fillStyle = 'rgba(20,16,24,0.35)'; ctx.fillRect(x - 2, y, 4, 1); ctx.fillStyle = '#5a6a8a'; ctx.fillRect(x - 1, y - 5, 2, 5); /* 박힌 가시 */
+    for (const A of P) { const x = Math.round(A.x), y = Math.round(A.y); ctx.fillStyle = 'rgba(20,16,24,0.35)'; ctx.fillRect(x - 2, y, 4, 1);
+      if (typeof drawTrapArt === 'function' && drawTrapArt(ctx, 'spike', this.lit > 0.25 || (Math.floor(this.t * 6) + x) % 5 === 0, x, y + 2)) continue; /* 가시 스프라이트 (전류가 흐르면 빛남) */
+      ctx.fillStyle = '#5a6a8a'; ctx.fillRect(x - 1, y - 5, 2, 5); /* 박힌 가시 */
       ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = (Math.floor(this.t * 10) + x) % 3 ? '#9ad8ff' : '#e0f4ff'; ctx.fillRect(x - 1, y - 6, 2, 2); ctx.globalCompositeOperation = 'source-over'; }
     ctx.restore(); ctx.globalAlpha = 1; ctx.lineWidth = 1;
   }
@@ -412,7 +421,7 @@ class TrapSentry {
   valid(e) { return e && e.alive && e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < this.P.range + e.radius; }
   update(dt, world) {
     const P = this.P; this.t += dt; if (this.t >= P.life) { this.alive = false; world.effects.burst(this.x, this.y, '#8a94a4', 6); return; }
-    for (const z of this.zaps) z.t -= dt; if (this.zaps.length) this.zaps = this.zaps.filter((z) => z.t > 0);
+    for (const z of this.zaps) z.t -= dt; if (this.zaps.length) this.zaps = this.zaps.filter((z) => z.t > 0); if (this.fireFx > 0) this.fireFx -= dt;
     this.disabled = trapDenied(world, this.x, this.y); if (this.disabled) { this.charging = -1; this.beamT = 0; return; } /* 가레스의 부정의 원: 작동 정지 */
     this.updateWaves(dt, world);
     if (this.kind === 'death') this.corpseT -= dt;
@@ -424,7 +433,7 @@ class TrapSentry {
     this.cd -= dt; if (this.cd <= 0 && tg) { this.cd = P.every; this.charging = 0; }
   }
   fire(world, tg) {
-    const P = this.P, fx = world.effects, a = Math.atan2(tg.y - this.y, tg.x - this.x);
+    const P = this.P, fx = world.effects, a = Math.atan2(tg.y - this.y, tg.x - this.x); this.fireFx = 0.3; /* 스프라이트 발사 프레임 */
     if (this.kind === 'bolt') { /* 차지드 볼트 센트리: 전하 볼트 여러 개를 대상 쪽으로 — 각각 지그재그로 흩어지며 따로 맞음, 감전 누적 */
       for (let i = 0; i < P.count; i++) { const b = a + (i / (P.count - 1) - 0.5) * P.spread;
         world.projectiles.push(new Projectile(Object.assign({ x: this.x, y: this.y - 6, dx: Math.cos(b), dy: Math.sin(b), speed: P.speed, range: P.range + 30, pierce: 0, color: '#9ad8ff', size: 2, owner: this.owner, srcId: 'trap_bolt', erratic: P.erratic || 0 }, this.src(this.dmg, { shockStack: true })))); }
@@ -441,14 +450,13 @@ class TrapSentry {
     if (this.kind === 'death' && dealt > 0) this.healOwner(world, dealt * BALANCE.TRAP.death.lifesteal);
     return dealt;
   }
-  healOwner(world, amt) { const o = this.owner; if (!o || o.state === 'DEAD' || amt <= 0) return; this.healAcc = (this.healAcc || 0) + amt; const h = Math.floor(this.healAcc); if (h < 1) return; this.healAcc -= h;
-    const got = Math.min(o.maxHp - o.hp, h); if (got > 0) { o.hp += got; if (!(this.healTxtT > world.time)) { world.effects.text(o.x, o.y - 24, '+' + got, '#7be36b'); this.healTxtT = world.time + 0.4; } } }
+  healOwner(world, amt) { trapHeal(world, this, this.owner, amt); }
   bolt(world, a) { /* 일직선 관통 번개: 사거리 끝(벽이 있으면 벽 앞)까지 선 위의 적을 한 번씩 */
     const P = this.P, x0 = this.x, y0 = this.y - 10, L = P.range + 20; let ex = x0 + Math.cos(a) * L, ey = y0 + Math.sin(a) * L;
     const st = sweepWall(x0, y0, ex, ey, world.map); if (st >= 0) { ex = x0 + (ex - x0) * st; ey = y0 + (ey - y0) * st; }
-    const W = P.width || 6, death = this.kind === 'death', fixed = { attackBonus: 0, critChance: 0, critMultiplier: 1 };
-    for (const e of world.enemies) if (e.targetable && segmentCircleHit(x0, y0, ex, ey, e.x, e.y - 4, W + e.radius) >= 0) { /* 망자의 파수기: 맞은 적 최대 체력의 boltPct (공격력·치명타·각인 영향 없음, 보스에게는 덫 배율) */
-      const src = death ? Object.assign(this.src((e.maxHp || 0) * BALANCE.TRAP.death.boltPct, { shockStack: true, prey: true, pct: true }), { mods: fixed }) : this.src(this.dmg, { shockStack: true });
+    const W = P.width || 6, death = this.kind === 'death';
+    for (const e of world.enemies) if (e.targetable && segmentCircleHit(x0, y0, ex, ey, e.x, e.y - 4, W + e.radius) >= 0) {
+      const src = this.src(this.dmg, { shockStack: true, prey: death });
       this.hurt(world, e, src, Math.cos(a), Math.sin(a)); world.effects.spark(e.x, e.y - 4, '#e0f4ff'); }
     world.effects.lightning(x0, y0, ex, ey); this.zaps.push({ x0, y0, x1: ex, y1: ey, t: 0.14 });
   }
@@ -486,6 +494,12 @@ class TrapSentry {
     const fire = this.kind === 'inferno' || this.kind === 'wave', core = this.kind === 'death' ? '#4a6aff' : fire ? (this.kind === 'wave' ? '#ffb04a' : '#ff5a2a') : '#7ac8ff';
     ctx.save(); ctx.globalAlpha = k * dim;
     ctx.fillStyle = 'rgba(20,16,24,0.35)'; ctx.beginPath(); ctx.ellipse(x, y + 4, 8, 3, 0, 0, TAU); ctx.fill(); /* 그림자 */
+    const art = typeof drawTrapArt === 'function' && trapArt(this.kind, false);
+    if (art) { /* 스프라이트 (대기 / 충전·발사 중) — 업화 분사기는 대상 쪽을 바라봄 */
+      const firing = this.charging >= 0 || this.beamT > 0 || this.fireFx > 0;
+      drawTrapArt(ctx, this.kind, firing, x, y + 5, this.kind === 'inferno' && Math.cos(this.beamT > 0 ? this.beamA : this.ang) < 0);
+      if (ch > 0 && this.kind !== 'inferno') { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = ch * 0.6 * k * dim; ctx.fillStyle = core; ctx.beginPath(); ctx.arc(x, y - (this.kind === 'thunder' ? 26 : this.kind === 'death' ? 16 : 10), 3 + ch * 3, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k * dim; } /* 충전 빛 */
+    } else {
     const big = this.kind === 'inferno' || this.kind === 'thunder' || this.kind === 'wave';
     ctx.fillStyle = this.kind === 'death' ? '#2a2438' : '#5a5e6a'; ctx.fillRect(x - (big ? 6 : 5), y - 4, big ? 12 : 10, 7); ctx.fillStyle = '#8a8e9a'; ctx.fillRect(x - (big ? 6 : 5), y - 4, big ? 12 : 10, 1); /* 받침 */
     if (this.kind === 'wave') for (let i = 0; i < 6; i++) { const a = i * TAU / 6 + t; ctx.fillStyle = '#c86a2a'; ctx.fillRect(Math.round(x + Math.cos(a) * 7) - 1, Math.round(y - 6 + Math.sin(a) * 4) - 1, 2, 2); } /* 원형 배출구 */
@@ -495,6 +509,7 @@ class TrapSentry {
     ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 1, y - 8, 2, 2);
     if (this.kind === 'thunder' && Math.sin(t * 9) > 0.8) { ctx.strokeStyle = '#e0f4ff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y - 10); ctx.lineTo(x + randInt(-4, 4), y - 15); ctx.lineTo(x + randInt(-3, 3), y - 19); ctx.stroke(); } /* 위로 튀는 작은 번개 */
     if (this.kind === 'inferno' && Math.random() < 0.3) { ctx.fillStyle = '#ff8a3a'; ctx.fillRect(x + Math.round(Math.cos(this.ang) * 8), y - 8, 1, 1); }
+    }
     if (this.beamT > 0) { const a = this.beamA, L = this.beamLen || this.P.range, ex = x + Math.cos(a) * L, ey = y - 6 + Math.sin(a) * L; /* 업화: 중심 백황색 · 외곽 주황·적색 */
       ctx.globalAlpha = 0.45 * dim; ctx.strokeStyle = '#ff4a2a'; ctx.lineWidth = this.P.width * 1.6; ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(ex, ey); ctx.stroke();
       ctx.globalAlpha = 0.8 * dim; ctx.strokeStyle = '#ffb04a'; ctx.lineWidth = this.P.width; ctx.stroke(); ctx.strokeStyle = '#fff4c0'; ctx.lineWidth = 3; ctx.stroke(); }

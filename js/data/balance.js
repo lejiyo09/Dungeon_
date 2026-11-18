@@ -54,9 +54,9 @@ const BALANCE = {
     burn: { duration: 3, dpsRatio: 0.25 },                                        // 화상: 초당 (직접 피해 × dpsRatio), duration초 → 총 추가 피해 = 직접 피해의 75%
     shock: { keep: 2.5, need: 3, stun: 0.75, immune: 3, bossNeed: 5, bossStun: 0.25, bossImmune: 5 }, // 감전 누적 → 마비 (보스는 짧은 경직)
     prey: { dur: 3, bonus: 0.2 },                                                // 사냥터 각인: 덫 장비·망자의 파수기에게 받는 피해 +bonus
-    firetoss: { dmg: 60, radius: 40, kb: 14, range: 210, speed: 320 },            // 화염 투척 (기본)
-    grid: { r: 46, life: 4, stun: 1, range: 200, dotPct: 0.05, tick: 1 }, // 전류 격자 (1차) = 쇼크 웹: 가시·전류선에 닿아 있는 동안 tick초마다 그 적 최대 체력의 dotPct 지속 피해 (공격력·치명타·각인 영향 없음, 보스에게는 덫 배율), 처음 닿을 때 stun초 기절 [사용자 결정]
-    death: { life: 15, range: 150, every: 0.6, boltPct: 0.025, corpseRange: 120, corpseR: 52, corpseEvery: 1.2, corpseHp: 0.8, corpseHeal: 0.1, lifesteal: 0.05 }, // 망자의 파수기 (2차) — 번개 = 맞은 적 최대 체력 × boltPct, 시체 폭발 피해 = 죽은 적 최대 체력 × corpseHp, 폭발 때 죽은 적 최대 체력 × corpseHeal 회복, 파수기가 준 피해 × lifesteal 회복 [사용자 결정]
+    firetoss: { dmg: 60, radius: 40, kb: 14, range: 210, speed: 320, lifesteal: 0.6 },            // 화염 투척 (기본) — 준 피해의 lifesteal 회복 [사용자 결정]
+    grid: { r: 46, life: 4, stun: 1, range: 200, dot: 60, tick: 1, lifesteal: 0.6 }, // 전류 격자 (1차) = 쇼크 웹: 가시·전류선·그물 안에 닿아 있는 동안 tick초마다 dot 전격 피해(스킬 피해 배율·공격력 적용), 처음 닿을 때 stun초 기절, 준 피해의 lifesteal 회복 [사용자 결정]
+    death: { life: 15, range: 150, every: 0.6, dmg: 26, corpseRange: 120, corpseR: 52, corpseEvery: 1.2, corpseHp: 0.8, corpseHeal: 0.1, lifesteal: 0.05 }, // 망자의 파수기 (2차) — 번개 = dmg(스킬 피해 배율·공격력 적용), 시체 폭발 피해 = 죽은 적 최대 체력 × corpseHp, 폭발 때 죽은 적 최대 체력 × corpseHeal 회복, 파수기가 준 피해 × lifesteal 회복 [사용자 결정]
     corpseLife: 6           // 시체가 남아 있는 시간(초)
   },
   upgrade: { maxLevel: 10, perLevel: 0.12, base: 30, chance: [1, 0.9, 0.75, 0.6, 0.45, 0.38, 0.32, 0.26, 0.2, 0.15],
