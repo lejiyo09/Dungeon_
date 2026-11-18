@@ -176,7 +176,7 @@ class HUD {
       ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 24, by + 34, bw - 48, 20);
       hudText(ctx, (o.code || '') + (Math.floor(game.time * 2) % 2 ? '_' : ' '), VIEW_W / 2, by + 39, '#ffffff', 'center', 11);
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, by + 64, o.msg.color, 'center', 8);
-      hudText(ctx, '영문·숫자 입력 · Enter 받기 · Backspace 지우기 · Esc 돌아가기', VIEW_W / 2, by + bh - 16, '#999', 'center', 7);
+      hudText(ctx, '영문·숫자 입력 (Ctrl+V 붙여넣기) · Enter 받기 · Backspace 지우기 · Esc 돌아가기', VIEW_W / 2, by + bh - 16, '#999', 'center', 7);
     } else if (o.type === 'codex' || o.type === 'armory' || o.type === 'trial_weapons') {
       const sv = game.save, disc = new Set(sv.discovered), armory = o.type === 'armory', tw = o.type === 'trial_weapons';
       const m = game.input.mouse;

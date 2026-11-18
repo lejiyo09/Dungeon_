@@ -891,6 +891,7 @@ class Game {
     } else if (o.type === 'gift') { // 선물 코드 입력 (영문·숫자 최대 16자)
       if (o.msg) o.msg.t -= STEP;
       for (const k of input.typed) { if (/^Key[A-Z]$/.test(k) && o.code.length < 16) o.code += k[3]; else if (/^Digit[0-9]$/.test(k) && o.code.length < 16) o.code += k[5]; else if (k === 'Backspace') o.code = o.code.slice(0, -1); }
+      if (input.pasted) o.code = (o.code + input.pasted.toUpperCase().replace(/[^A-Z0-9]/g, '')).slice(0, 16); /* 붙여넣기 (영문·숫자만) */
       if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; return; }
       if (input.wasPressed('Enter')) { const [text, color] = this.redeemGift(o.code); o.msg = { text, color, t: 4 }; if (color === '#ffd84a') o.code = ''; }
       return;
@@ -898,6 +899,7 @@ class Game {
       const name = this.netName(), hero = this.save.selected;
       if (o.mode === 'code') { // 방 코드 입력 (알파벳 4글자)
         for (const k of input.typed) { if (/^Key[A-Z]$/.test(k) && o.code.length < 4) o.code += k[3]; else if (k === 'Backspace') o.code = o.code.slice(0, -1); } // 누른 순서대로
+        if (input.pasted) o.code = (o.code + input.pasted.toUpperCase().replace(/[^A-Z]/g, '')).slice(0, 4); /* 방 코드 붙여넣기 */
         if (input.wasPressed('Escape')) { o.mode = 'menu'; o.code = ''; return; }
         if ((input.wasPressed('Enter')) && o.code.length === 4) { Net.join(o.code, name, hero); o.mode = 'menu'; }
         return;

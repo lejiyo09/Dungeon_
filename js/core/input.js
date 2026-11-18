@@ -8,16 +8,18 @@ class InputManager {
     this.down = new Set();
     this.pressed = new Set();
     this.typed = []; // 누른 순서대로 (방 코드 입력 등)
+    this.pasted = ''; // 붙여넣기(Ctrl+V)로 들어온 글자 (선물 코드·방 코드 입력)
     this.mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, rdown: false };
     const blocked = new Set(['Space', 'Tab', 'KeyQ', 'KeyE', 'KeyR', 'KeyF']);
     const typing = (e) => e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'); // 로그인 입력칸에서는 게임 키 무시
     window.addEventListener('keydown', (e) => {
       if (typing(e)) return;
       if (blocked.has(e.code)) e.preventDefault();
-      if (!this.down.has(e.code)) { this.pressed.add(e.code); this.typed.push(e.code); }
+      if (!this.down.has(e.code)) { this.pressed.add(e.code); this.typed.push(e.ctrlKey || e.metaKey ? 'Mod+' + e.code : e.code); } /* Ctrl·⌘와 함께 누른 키는 글자로 치지 않음 (Ctrl+V가 'V'로 들어가지 않게) */
       this.down.add(e.code);
     });
     window.addEventListener('keyup', (e) => this.down.delete(e.code));
+    window.addEventListener('paste', (e) => { if (typing(e)) return; const t = (e.clipboardData || window.clipboardData) ? (e.clipboardData || window.clipboardData).getData('text') : ''; if (t) { this.pasted += String(t).slice(0, 64); e.preventDefault(); } });
     window.addEventListener('blur', () => { this.down.clear(); this.mouse.down = false; });
     window.addEventListener('mousemove', (e) => this.updatePointer(e));
     window.addEventListener('mousedown', (e) => { /* 캔버스 밖(화면 비율이 달라 생긴 검은 여백)을 눌러도 게임 클릭으로 — 로그인 화면은 제외 */
@@ -66,5 +68,5 @@ class InputManager {
   }
   isDown(c) { return this.down.has(c); }
   wasPressed(c) { return this.pressed.has(c); }
-  endStep() { this.pressed.clear(); this.typed.length = 0; }
+  endStep() { this.pressed.clear(); this.typed.length = 0; this.pasted = ''; }
 }
