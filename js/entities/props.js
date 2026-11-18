@@ -383,7 +383,7 @@ function weaponTraits(d, max = 3) {
   if (d.lifesteal) t.push('흡혈'); if (d.chain) t.push('연쇄 번개'); if (d.ricochet) t.push('적 사이를 튕김');
   if (d.focus) t.push('계속 비추면 강해짐'); if (d.spinUp) t.push('누를수록 빨라짐'); if (d.grow) t.push('멀리 갈수록 강함');
   if (d.homing) t.push('유도'); if (d.bubble) t.push('느린 거품'); if (d.status) t.push(S[d.status.type]);
-  if (d.burst) t.push(`${d.burst.count}연사`); if (d.trap) t.push(d.trap.chain ? '번개 덫 설치' : '덫 설치 (밟으면 묶임)'); if (d.sentry) t.push(`파수기 설치 (최대 ${d.sentry.max}개 · 덫 장비 합산 ${BALANCE.TRAP.equipMax}개)`);
+  if (d.burst) t.push(`${d.burst.count}연사`); if (d.trap) t.push(d.trap.chain ? '번개 덫 설치' : '덫 설치 (밟으면 묶임)'); if (d.sentry) t.push(`파수기 설치 (최대 ${d.sentry.max}개)`);
   if (d.parallel) t.push(`나란히 ${n}발`); else if (n >= 8 && d.fanDeg) t.push('원형 탄막'); else if (n > 1) t.push(d.fanDeg ? `부채꼴 ${n}발` : `산탄 ${n}발`);
   if (d.explodeRadius && !d.mine) t.push('폭발'); if (d.bounce) t.push('벽 반사');
   if (d.pierce >= 99 && !d.flame) t.push('전부 관통'); else if (d.pierce > 0 && d.pierce < 99) t.push(`${d.pierce}회 관통`);

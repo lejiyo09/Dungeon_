@@ -82,9 +82,12 @@ class HUD {
       hudText(ctx, free ? '무제한' : `에너지 ${cost}`, VIEW_W - 128, VIEW_H - 22, warn ? '#ff5050' : free ? '#ffd84a' : '#8ab8ff', 'left', 8);
       if (w.charge > 0) hudBar(ctx, VIEW_W - 166, VIEW_H - 11, 30, 2, w.charge / w.def.chargeTime, '#f0c040');
     }
-    if (game.mode === 'dungeon' && ((p.line && p.line.id === 'trap') || p.weapons.some((q) => q.def.sentry))) { /* 함정: 설치 수 (덫 장비 합산 / 망자의 파수기) */
-      const Z = game.zones.filter((z) => z instanceof TrapSentry && z.alive && z.owner === p), eq = Z.filter((z) => z.kind !== 'death').length, ds = Z.length - eq, TR = BALANCE.TRAP;
-      hudText(ctx, `덫 ${eq}/${TR.equipMax}${p.line && p.line.id === 'trap' && p.rank >= 2 ? ` · 파수기 ${ds}/${TR.sentryMax}` : ''}`, VIEW_W - 170, VIEW_H - 48, eq >= TR.equipMax ? '#ff9a6a' : '#ffb07a', 'left', 8);
+    if (game.mode === 'dungeon' && ((p.line && p.line.id === 'trap') || p.weapons.some((q) => q.def.sentry))) { /* 함정: 설치 수 (덫 장비는 종류별 / 망자의 파수기) */
+      const Z = game.zones.filter((z) => z instanceof TrapSentry && z.alive && z.owner === p), TR = BALANCE.TRAP, parts = []; let full = false;
+      for (const q of p.weapons) if (q.def.sentry) { const n = Z.filter((z) => z.def === q.def).length; if (n >= q.def.sentry.max) full = true; parts.push(`${q.def.name.replace(/(탑|분사기)$/, '')} ${n}/${q.def.sentry.max}`); }
+      if (p.line && p.line.id === 'trap' && p.rank >= 2) parts.push(`파수기 ${Z.filter((z) => z.kind === 'death').length}/${TR.sentryMax}`);
+      if (parts.length) { const ty = p.treasure ? VIEW_H - 68 : VIEW_H - 52; /* 보구 칸(R)이 있으면 그 위로 — 겹치지 않게 */
+        ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(VIEW_W - 172, ty - 1, 168, 13); hudText(ctx, parts.join(' · '), VIEW_W - 168, ty, full ? '#ff9a6a' : '#ffb07a', 'left', 8); }
     }
     const other = p.weapons.find((x) => x !== w);
     ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(VIEW_W - 40, VIEW_H - 34, 32, 26);
@@ -96,9 +99,11 @@ class HUD {
     const by = VIEW_H - 33;
     hudText(ctx, '대시', 8, by, p.dashCooldown > 0 ? '#888' : '#7fe0ff', 'left', 9);
     hudBar(ctx, 34, by + 3, 86, 5, 1 - p.dashCooldown / p.dashCdMax, '#7fe0ff');
-    hudText(ctx, p.skillName, 8, by + 14, p.skillCooldown > 0 ? '#888' : '#ffd84a', 'left', 9);
-    hudBar(ctx, 66, by + 17, 54, 5, 1 - p.skillCooldown / p.skillCdMax, '#ffd84a');
-    if (p.skillCooldown <= 0) { // 스킬 준비 완료: 깜빡이는 테두리
+    const dsM = p.skillId === 'deathsentry' ? BALANCE.TRAP.sentryCharges : 0, dsN = dsM ? (p.dsCharges == null ? dsM : p.dsCharges) : 0, skReady = dsM ? dsN > 0 : p.skillCooldown <= 0;
+    hudText(ctx, p.skillName, 8, by + 14, skReady ? '#ffd84a' : '#888', 'left', 9);
+    hudBar(ctx, 66, by + 17, 54, 5, dsM ? (dsN >= dsM ? 1 : 1 - p.skillCooldown / (p.dsMax || BALANCE.TRAP.sentryRecharge)) : 1 - p.skillCooldown / p.skillCdMax, '#ffd84a');
+    if (dsM) for (let i = 0; i < dsM; i++) { ctx.fillStyle = i < dsN ? '#ffd84a' : 'rgba(255,255,255,0.18)'; ctx.fillRect(66 + i * 7, by + 11, 5, 3); } /* 망자의 파수기 충전 칸 */
+    if (skReady) { // 스킬 준비 완료: 깜빡이는 테두리
       ctx.strokeStyle = `rgba(255,216,74,${0.4 + 0.4 * Math.sin(game.time * 6)})`; ctx.strokeRect(64.5, by + 15.5, 57, 8);
     }
 

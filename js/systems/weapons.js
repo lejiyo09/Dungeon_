@@ -78,15 +78,12 @@ class WeaponSystem {
       SFX.play('magic', 0.08);
     }
   }
-  // 덫 장비 설치 검사: 4종 합산 BALANCE.TRAP.equipMax개 · 종류별 sentry.max개 (서로 따로 검사), 넘으면 설치하지 않고 알림 — 망자의 파수기(스킬)는 따로 셈
-  sentryBlocked(player, w) {
-    const all = this.world.zones.filter((z) => z instanceof TrapSentry && z.alive && z.owner === player && z.kind !== 'death'), same = all.filter((z) => z.def === w.def);
-    if (same.length >= w.def.sentry.max) return `${w.def.name}은(는) ${w.def.sentry.max}개까지 설치할 수 있습니다`;
-    if (all.length >= BALANCE.TRAP.equipMax) return `덫 장비는 모두 합쳐 ${BALANCE.TRAP.equipMax}개까지 설치할 수 있습니다`;
-    return null;
+  // 덫 장비 한도: 종류별 sentry.max개 [사용자 결정: 덫마다 5개, 합산 제한 없음] — 넘으면 디아블로 2처럼 그 종류에서 가장 오래된 것을 없애고 새로 설치 (망자의 파수기(스킬)는 따로 셈)
+  sentryMakeRoom(player, w) {
+    const same = this.world.zones.filter((z) => z instanceof TrapSentry && z.alive && z.owner === player && z.def === w.def);
+    while (same.length >= w.def.sentry.max) { const old = same.shift(); old.alive = false; this.world.effects.burst(old.x, old.y, '#8a94a4', 6); }
   }
   fireGun(player, w) {
-    if (w.def.sentry) { const why = this.sentryBlocked(player, w); if (why) { if (!(this.sentryMsgT > this.world.time)) { this.world.effects.text(player.x, player.y - 22, why, '#ff9a9a'); this.sentryMsgT = this.world.time + 1.2; } w.cooldown = Math.max(w.cooldown, 0.3); return; } }
     if (!this.canPay(player, w.def.energyCost)) { this.weakAttack(player, w); return; }
     if (!this.spend(player, w.def.energyCost)) return;
     w.cooldown += 1 / this.getFireRate(player, w);
@@ -117,6 +114,7 @@ class WeaponSystem {
     }
     if (w.def.sentry) { /* 덫 장비 설치: 마우스 위치(사거리 안), 벽·맵 밖이면 설치 안 함 */
       const pt = this.world.trapPoint(player, w.def.range); if (!pt) { player.energy = Math.min(player.maxEnergy, player.energy + (w.def.energyCost || 0)); return; }
+      this.sentryMakeRoom(player, w); /* 설치할 자리가 정해진 뒤에만 오래된 것을 없앰 (벽이라 못 깔면 그대로) */
       const S = w.def.sentry, t = new TrapSentry(player, pt.x, pt.y, S.kind, S, { dmg: w.def.damage, getMods: () => weaponMods(player, w) }); t.def = w.def;
       this.world.zones.push(t); this.world.effects.dust(pt.x, pt.y); this.world.effects.ring(pt.x, pt.y, 12, w.def.bulletColor); SFX.play('crate'); player.recoil = 0.4; return;
     }
