@@ -1293,13 +1293,13 @@ class Game {
       case 'trapgrid': { /* 함정 1차: 전류 격자 */
         const T = BALANCE.TRAP.grid, pt = this.trapPoint(p, T.range);
         if (!pt) { p.skillCooldown = 0.3; break; }
-        this.zones.push(new ShockGrid(p, pt.x, pt.y, { r: T.r, life: T.life, stun: T.stun, dotPct: T.dotPct, tick: T.tick })); this.effects.ring(pt.x, pt.y, T.r, '#7ac8ff'); SFX.play('react', 0.1); break; }
+        this.zones.push(new ShockGrid(p, pt.x, pt.y, { r: T.r, life: T.life, stun: T.stun, dot: D(T.dot), tick: T.tick, lifesteal: T.lifesteal })); this.effects.ring(pt.x, pt.y, T.r, '#7ac8ff'); SFX.play('react', 0.1); break; }
       case 'deathsentry': { /* 함정 2차: 망자의 파수기 — 마우스 위치, 충전 칸 1개 소비, 최대 sentryMax개 (넘으면 가장 오래된 것이 사라짐), 덫 장비와 따로 셈 */
         const T = BALANCE.TRAP.death, pt = this.trapPoint(p, 220);
         if (!pt) { p.dsCharges = Math.min(BALANCE.TRAP.sentryCharges, p.dsCharges + 1); break; } /* 설치 못 하면 칸 되돌림 */
         const mine = this.zones.filter((z) => z instanceof TrapSentry && z.kind === 'death' && z.owner === p && z.alive);
         while (mine.length >= BALANCE.TRAP.sentryMax) { mine.shift().alive = false; }
-        this.zones.push(new TrapSentry(p, pt.x, pt.y, 'death', { life: T.life, range: T.range, every: T.every, charge: 0.25 }, { dmg: 0 })); /* 번개 피해는 맞은 적 최대 체력 비율 (TrapSentry.bolt) */
+        this.zones.push(new TrapSentry(p, pt.x, pt.y, 'death', { life: T.life, range: T.range, every: T.every, charge: 0.25 }, { dmg: D(T.dmg) }));
         this.effects.ring(pt.x, pt.y, 18, '#6a7aff'); this.effects.dust(pt.x, pt.y); SFX.play('crate'); break; }
       case 'turret': this.allies.push(new Turret(p.x, p.y, p, { damage: D(8) })); break;
       case 'turret2': for (const dx of [-14, 14]) this.allies.push(new Turret(p.x + dx, p.y, p, { damage: D(7), life: 15, rate: 0.3 })); break;
