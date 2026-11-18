@@ -655,7 +655,7 @@ const DATA_ENEMIES = [
   // [사용자 결정] 멀린의 두 번째 시련 보스: 금발·초록 눈·갑옷·망토, 궁극기는 보구 롱고미니아드, 지금까지의 보스 중 가장 어려움
   //  수치·패턴은 Claude가 정한 값. 2페이즈부터 궁극기, 쿨타임 짧음 (ultFrom / ultCd)
   { id: 'boss_rhongomyniad', name: '신령 롱고미니아드', title: '세상 끝에서 빛나는 창', sprite: 'boss_rhongo', color: '#2a4a9a', phaseColors: ['#2a4a9a', '#3a3aa8', '#5a2ab0'],
-    boss: true, aiType: 'boss', health: 4200, damage: 30, moveSpeed: 72, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.5, bulletSpeed: 165,
+    boss: true, aiType: 'boss', health: 5600, damage: 34, moveSpeed: 72, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.45, bulletSpeed: 165,
     rewardGold: 0, ultFrom: 2, ultCd: 20, patterns: [
       { type: 'charge', dashes: 4, speed: 520, color: '#bfe6ff' },
       { type: 'aimed', volleys: 6, count: 9, spread: 0.11, color: '#ffffff' },
@@ -672,7 +672,7 @@ const DATA_ENEMIES = [
   // [사용자 결정] 로드 투 카멜롯 첫 보스: 태양의 원탁의 기사 가웨인 — 롱고미니아드보다 살짝 어렵게. 패턴·보구(갈라틴)·'정오' 강화는 Claude가 정한 [제안]
   //  정오(noon): 3페이즈에 들어서면 해가 가장 높이 떠 공격력 +15% (전승: 해가 높을수록 힘이 세짐)
   { id: 'boss_gawain', name: '가웨인', title: '태양의 원탁의 기사', sprite: 'boss_gawain', color: '#3a5aa8', phaseColors: ['#3a5aa8', '#c88a30', '#e0602a'],
-    boss: true, aiType: 'boss', health: 5000, damage: 33, moveSpeed: 76, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.5, bulletSpeed: 170,
+    boss: true, aiType: 'boss', health: 6000, damage: 37, moveSpeed: 76, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.46, bulletSpeed: 170,
     rewardGold: 0, ultFrom: 2, ultCd: 20, noon: 0.15, patterns: [
       { type: 'charge', dashes: 3, speed: 540, color: '#ffd870' },
       { type: 'slam', radius: 62, chain: 2, color: '#ffb040' },
@@ -688,7 +688,7 @@ const DATA_ENEMIES = [
   // [사용자 결정] 카멜롯 2층 보스: 반전의 기사 트리스탄 (궁수) · 보구 페일노트 — 패턴·수치는 Claude가 정한 [제안]
   //  rev: 3페이즈 '반전'부터 트리스탄이 쏜 화살이 rev초 뒤 방향을 뒤집어 되돌아옴 (추적 화살 제외)
   { id: 'boss_tristan', name: '트리스탄', title: '반전의 기사', sprite: 'boss_tristan', color: '#4a3a8a', phaseColors: ['#4a3a8a', '#6a3a8a', '#8a2a5a'],
-    boss: true, aiType: 'boss', health: 6600, damage: 44, moveSpeed: 92, hitboxHalf: 13, knockbackResist: 1, attackCooldown: 0.45, bulletSpeed: 215,
+    boss: true, aiType: 'boss', health: 7900, damage: 49, moveSpeed: 92, hitboxHalf: 13, knockbackResist: 1, attackCooldown: 0.41, bulletSpeed: 215,
     rewardGold: 0, ultFrom: 2, ultCd: 20, rev: 0.85, patterns: [
       { type: 'aimed', volleys: 7, count: 7, spread: 0.08, color: '#ff8aa0' },
       { type: 'split', volleys: 3, count: 3, spread: 0.28, speed: 200, splitAfter: 0.45, splitN: 8, color: '#d0a0ff' },
@@ -704,7 +704,7 @@ const DATA_ENEMIES = [
   // [사용자 결정] 카멜롯 3층 보스: 폭주의 기사 모드레드 — 보구 '클래런트'·패턴·수치는 Claude가 정한 [제안]
   //  rampage: 3페이즈 '폭주'부터 모든 행동 속도 ×rampage (회복 시간도 짧아짐)
   { id: 'boss_mordred', name: '모드레드', title: '폭주의 기사', sprite: 'boss_mordred', color: '#8a1a1a', phaseColors: ['#8a1a1a', '#a81a1a', '#c81a2a'],
-    boss: true, aiType: 'boss', health: 5600, damage: 27, moveSpeed: 100, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.4, bulletSpeed: 190,
+    boss: true, aiType: 'boss', health: 6700, damage: 30, moveSpeed: 100, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.37, bulletSpeed: 190,
     rewardGold: 0, ultFrom: 2, ultCd: 20, rampage: 1.25, patterns: [
       { type: 'rampage', dashes: 4, aim: 0.35, speed: 560, dist: 190, step: 22, radius: 12, delay: 0.45, burst: 10, color: '#ff3a3a' },
       { type: 'slam', radius: 64, chain: 2, color: '#ff5a5a' },
@@ -720,7 +720,7 @@ const DATA_ENEMIES = [
   // [사용자 결정] 카멜롯 4층 보스: 부정의 기사 가레스 — 보구 '보마인'·패턴·수치는 Claude가 정한 [제안]
   //  negate: 3페이즈 '부정'부터 every초마다 dur초 동안 하얀 빛을 둘러 모든 피해 무효
   { id: 'boss_gareth', name: '가레스', title: '부정의 기사', sprite: 'boss_gareth', color: '#5a8a7a', phaseColors: ['#5a8a7a', '#4a7a9a', '#6a6aa8'],
-    boss: true, aiType: 'boss', health: 7000, damage: 32, moveSpeed: 85, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.45, bulletSpeed: 185,
+    boss: true, aiType: 'boss', health: 8400, damage: 36, moveSpeed: 85, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.41, bulletSpeed: 185,
     rewardGold: 0, ultFrom: 2, ultCd: 20, negate: { every: 7, dur: 2 }, patterns: [
       { type: 'denyfield', zones: 3, zr: 34, life: 4.5, around: 90, volleys: 3, count: 7, spread: 0.12, color: '#d8f0ff' },
       { type: 'charge', dashes: 3, speed: 560, color: '#d8f0ff' },
@@ -737,7 +737,7 @@ const DATA_ENEMIES = [
   //  wall: 방패가 향한 쪽 ±cone(라디안) 안에서 들어온 공격은 피해 ×mult. 방패는 쫓는 동안만 turn(라디안/초)으로 천천히 돌고, 공격 중에는 멈춤 → 그 틈에 옆·뒤로
   //  3페이즈 '철벽': 원뿔이 넓어지고(cone3) 더 단단해짐(mult3)
   { id: 'boss_galahad', name: '갤러해드', title: '철벽의 기사', sprite: 'boss_galahad', color: '#5a6a9a', phaseColors: ['#5a6a9a', '#4a5a8a', '#3a4a7a'],
-    boss: true, aiType: 'boss', health: 6500, damage: 35, moveSpeed: 66, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.5, bulletSpeed: 175,
+    boss: true, aiType: 'boss', health: 7800, damage: 39, moveSpeed: 66, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.46, bulletSpeed: 175,
     rewardGold: 0, ultFrom: 2, ultCd: 20, wall: { cone: 1.05, mult: 0.25, turn: 1.3, cone3: 1.3, mult3: 0.15 }, patterns: [
       { type: 'rampart', waves: 4, width: 15, gapN: 3, step: 11, speed: 110, interval: 0.7, color: '#e8ecff' },
       { type: 'charge', dashes: 3, speed: 520, color: '#e8ecff' },
@@ -753,7 +753,7 @@ const DATA_ENEMIES = [
   // [사용자 결정] 카멜롯 6층 보스: 치열의 기사 랜슬롯 — 보구 '아론다이트'·패턴·수치는 Claude가 정한 [제안]
   //  반격 자세(riposte): 검을 세우고 멈춘 동안 맞으면 피해 절반 + 플레이어 뒤로 순간이동해 반격 / fierce: 3페이즈 '치열'부터 패턴이 끝날 때마다 바로 검기를 날리고 거의 쉬지 않음
   { id: 'boss_lancelot', name: '랜슬롯', title: '치열의 기사', sprite: 'boss_lancelot', color: '#2a3a6a', phaseColors: ['#2a3a6a', '#2a2a5a', '#3a1a5a'],
-    boss: true, aiType: 'boss', health: 6800, damage: 32, moveSpeed: 95, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.4, bulletSpeed: 200,
+    boss: true, aiType: 'boss', health: 8200, damage: 36, moveSpeed: 95, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.37, bulletSpeed: 200,
     rewardGold: 0, ultFrom: 2, ultCd: 20, fierce: 0.35, patterns: [
       { type: 'riposte', stance: 1.3, burst: 18, radius: 30, fan: 9, color: '#8ab8ff' },
       { type: 'charge', dashes: 4, speed: 620, color: '#bcd8ff' },
@@ -769,7 +769,7 @@ const DATA_ENEMIES = [
   // [사용자 결정] 카멜롯 7층 보스: 아그라베인 — 이명 '철완의 기사'·보구 '단죄의 철완'·패턴·수치는 Claude가 정한 [제안]
   //  감시의 눈(watchers): 방에 떠오른 눈이 조준 사격 (부술 수 있음) / accuse: 3페이즈 '고발'부터 every초마다 플레이어에게 붉은 표식 → mark초 뒤 그 자리에 철퇴
   { id: 'boss_agravain', name: '아그라베인', title: '철완의 기사', sprite: 'boss_agravain', color: '#3a3428', phaseColors: ['#3a3428', '#3a2a20', '#4a1a14'],
-    boss: true, aiType: 'boss', health: 7600, damage: 32, moveSpeed: 80, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.45, bulletSpeed: 190,
+    boss: true, aiType: 'boss', health: 9100, damage: 36, moveSpeed: 80, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.41, bulletSpeed: 190,
     rewardGold: 0, ultFrom: 2, ultCd: 20, accuse: { every: 5, mark: 1.5, radius: 34, bullets: 8 }, patterns: [
       { type: 'watchers', eyes: 3, life: 6, hp: 160, interval: 1.2, volley: 3, spread: 0.12, speed: 200, color: '#d8b070' },
       { type: 'charge', dashes: 3, speed: 560, color: '#d8b070' },
@@ -785,7 +785,7 @@ const DATA_ENEMIES = [
   // [사용자 결정] 카멜롯 8층 보스: 충절의 기사 베디비어 — 2페이즈 '스위치 온 아가트람'(강화 + 은빛 팔 패턴), 3페이즈부터 보구 '데드 엔드 아가트람'(강력한 일격). 패턴·수치는 Claude가 정한 [제안]
   //  arm: 2페이즈에 공격력 +arm, 은빛 팔이 빛남 / ultFrom 3: 보구는 3페이즈(해방)부터
   { id: 'boss_bedivere', name: '베디비어', title: '충절의 기사', sprite: 'boss_bedivere', color: '#3a4a7a', phaseColors: ['#3a4a7a', '#3a5a9a', '#4a6ab8'],
-    boss: true, aiType: 'boss', health: 8000, damage: 36, moveSpeed: 88, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.45, bulletSpeed: 195,
+    boss: true, aiType: 'boss', health: 9600, damage: 40, moveSpeed: 88, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.41, bulletSpeed: 195,
     rewardGold: 0, ultFrom: 3, ultCd: 16, arm: 0.15, patterns: [
       { type: 'charge', dashes: 3, speed: 580, color: '#c8e0ff' },
       { type: 'slam', radius: 62, chain: 2, color: '#c8e0ff' },

@@ -425,6 +425,10 @@ function endUltimate(e, world) {
   world.effects.ring(e.x, e.y, 60, '#ffffff'); world.effects.ring(e.x, e.y, 40, col); if (world.effects.rays) world.effects.rays(e.x, e.y, col, 16, 90, 0.6);
   world.addShake(0.35, 6); SFX.play('explode', 0.05);
 }
+function kingWaves(e, world, ang, n, arc, mult) { /* 아서 왕 근접 패턴의 검기 탄: ang 중심 arc 안에 n발 (한 바퀴면 원형) */
+  const full = arc >= TAU - 0.01, sp = (e.def.bulletSpeed || 200) * 1.05, dmg = Math.round(e.damage * mult);
+  for (let i = 0; i < n; i++) { const a = full ? ang + i * TAU / n : ang + (n > 1 ? (i / (n - 1) - 0.5) * arc : 0); world.enemyShoot(e.x + Math.cos(a) * 14, e.y + Math.sin(a) * 14, a, sp, dmg, i % 2 ? '#fff4c0' : '#ffe9a0', 4); }
+}
 const BOSS_PATTERNS = {
   // 왕의 돌진 (아서 왕): 탄 없이 검을 앞세워 일직선으로 꿰뚫고 지나가는 돌진 — 돌진할 길을 붉은 띠로 예고 → 아주 빠르게 돌진(길 위에 있으면 베임) → 여러 번, 마지막엔 멈춘 자리에서 크게 한 바퀴 베기
   kingcharge: {
@@ -439,8 +443,9 @@ const BOSS_PATTERNS = {
         world.eachTarget((q) => { if (segmentCircleHit(x0, y0, e.x, e.y, q.x, q.y, P.w + q.half) >= 0 || Math.hypot(q.x - e.x, q.y - e.y) < e.radius + q.half + 4) world.hitOnce(e, 'hits', q, () => world.damagePlayer(Math.round(e.damage * P.mult))); });
         fx.part(e.x - Math.cos(d.ang) * 6, e.y - Math.sin(d.ang) * 6, 0, 0, { color: '#fff4c0', life: 0.25, size: 4, size2: 0, drag: 0, add: true }); /* 금빛 잔상 */
         if (hit.x || hit.y || d.went >= d.len) { fx.slash(e.x, e.y, d.ang, 40, 1.6, '#fff4c0'); world.addShake(0.12, 3); d.n++; d.st = 'rest'; d.pt = 0;
+          kingWaves(e, world, d.ang, P.fan ?? 5, 1.0, 0.7); /* [사용자 결정] 돌진 끝마다 앞쪽으로 검기 탄 부채꼴 */
           if (d.n >= P.dashes && P.spinR) { world.eachTarget((q) => { if (Math.hypot(q.x - e.x, q.y - e.y) < P.spinR + q.half) world.damagePlayer(Math.round(e.damage * P.mult * 1.2)); });
-            fx.slash(e.x, e.y, d.ang, P.spinR, TAU - 0.05, '#fff4c0'); fx.ring(e.x, e.y, P.spinR, '#ffe9a0'); world.addShake(0.3, 6); SFX.play('heavy', 0.05); } }
+            fx.slash(e.x, e.y, d.ang, P.spinR, TAU - 0.05, '#fff4c0'); fx.ring(e.x, e.y, P.spinR, '#ffe9a0'); world.addShake(0.3, 6); SFX.play('heavy', 0.05); kingWaves(e, world, d.ang, 20, TAU, 0.7); } }
         return false; }
       if (d.st === 'rest') { if (d.pt >= (d.n >= P.dashes ? 0.3 : P.rest) / spd) { if (d.n >= P.dashes) return true; d.st = 'aim'; } return false; }
       return false;
@@ -461,6 +466,7 @@ const BOSS_PATTERNS = {
         world.eachTarget((q) => { const dx = q.x - e.x, dy = q.y - e.y, dd = Math.hypot(dx, dy), df = Math.abs(Math.atan2(Math.sin(Math.atan2(dy, dx) - d.ang), Math.cos(Math.atan2(dy, dx) - d.ang)));
           if (dd < R + q.half && (A >= TAU - 0.01 || df < A / 2 + Math.atan2(q.half, Math.max(dd, 1)))) world.damagePlayer(Math.round(e.damage * (last ? P.lastMult || P.mult : P.mult))); });
         fx.slash(e.x, e.y, d.ang, R, Math.min(A, TAU - 0.05), '#fff4c0'); if (A >= TAU - 0.01) { fx.ring(e.x, e.y, R, '#ffe9a0'); fx.ring(e.x, e.y, R * 0.6, '#ffffff'); }
+        kingWaves(e, world, d.ang, A >= TAU - 0.01 ? 18 : (P.waves ?? 5) + (last ? 2 : 0), Math.min(A, TAU), 0.7); /* [사용자 결정] 베기마다 베는 부채꼴을 따라 검기 탄 (마지막 회전 베기는 원형) */
         world.addShake(last ? 0.3 : 0.12, last ? 6 : 3); SFX.play('swing', 0.03); if (last) SFX.play('heavy', 0.05);
         d.n++; d.st = 'close'; d.pt = 0; return d.n >= P.combo; }
       return false;
