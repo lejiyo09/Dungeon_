@@ -37,7 +37,7 @@ const BALANCE = {
   // 특수방: 일반 스테이지마다 하나씩 무작위 (가격은 상점처럼 스테이지마다 오름)
   specialRooms: { chance: 0.5, weight: {},
     // 전직의 방: 진화 단계별로 나오기 시작하는 필드(0부터)와 다른 특수방 대비 가중치 (다른 특수방은 각각 1)
-    evolveByRank: [{ fromWorld: 0, weight: 1 }, { fromWorld: 3, weight: 1 }], // [사용자 결정] 3진(2차 진화) 전직의 방은 4필드부터, 가중치 둘 다 1 (예전: 8.3 · 2.3, 필드 제한 없음)
+    evolveByRank: [{ fromWorld: 0, weight: 2 }, { fromWorld: 3, weight: 1 }], // [사용자 결정] 1차 진화 전직의 방 가중치 2 · 3진(2차 진화)은 4필드부터 가중치 1 (예전: 8.3 · 2.3 → 1 · 1)
     pool: ['fountain', 'altar', 'gamble', 'challenge', 'forge', 'blood', 'rack', 'smithy', 'evolve'], fountainHeal: 0.4, altarPrice: 60, gamblePrice: 25,
     forgePrice: 35, forgeUpChance: 0.5, bloodCost: 0.2, // [사용자 결정] 제련 손해 완화 (예전: 50골드 · 30%)
     // 행운의 기계 확률표 (합 1). 골드 기대값 = 판돈의 0.8배 + 물약·에너지·무기 (예전엔 '두 배'가 실제로는 판돈의 40%만 돌려줘서 골드 기대값 0.1배)
