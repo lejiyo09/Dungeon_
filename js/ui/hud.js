@@ -86,7 +86,8 @@ class HUD {
       const Z = game.zones.filter((z) => z instanceof TrapSentry && z.alive && z.owner === p), TR = BALANCE.TRAP, parts = []; let full = false;
       for (const q of p.weapons) if (q.def.sentry) { const n = Z.filter((z) => z.def === q.def).length; if (n >= q.def.sentry.max) full = true; parts.push(`${q.def.name.replace(/(탑|분사기)$/, '')} ${n}/${q.def.sentry.max}`); }
       if (p.line && p.line.id === 'trap' && p.rank >= 2) parts.push(`파수기 ${Z.filter((z) => z.kind === 'death').length}/${TR.sentryMax}`);
-      if (parts.length) hudText(ctx, parts.join(' · '), VIEW_W - 170, VIEW_H - 48, full ? '#ff9a6a' : '#ffb07a', 'left', 8);
+      if (parts.length) { const ty = p.treasure ? VIEW_H - 68 : VIEW_H - 52; /* 보구 칸(R)이 있으면 그 위로 — 겹치지 않게 */
+        ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(VIEW_W - 172, ty - 1, 168, 13); hudText(ctx, parts.join(' · '), VIEW_W - 168, ty, full ? '#ff9a6a' : '#ffb07a', 'left', 8); }
     }
     const other = p.weapons.find((x) => x !== w);
     ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(VIEW_W - 40, VIEW_H - 34, 32, 26);
