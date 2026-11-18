@@ -113,7 +113,11 @@ const DEEP_WORLDS = [
   { id: 'deep_vault', name: '잠긴 황금 보물고', boss: 'boss_vault_keeper', waves: 2, deep: true,
     enemies: [['enemy_mimic_001', 3], ['enemy_goldstatue_001', 3], ['enemy_coinwisp_001', 3], ['enemy_vaulteye_001', 2]],
     palette: { style: 'vault', accent: '#ffd84a', floor: ['#4a2a24', '#4d2c26'], corridor: ['#3a201b', '#3c221d'], wall: '#4a3a2a', wallTop: '#5a4632',
-      wallFace: '#8a6a3a', faceLine: '#7a5a30', deco: 'rgba(255,216,74,0.35)' } }
+      wallFace: '#8a6a3a', faceLine: '#7a5a30', deco: 'rgba(255,216,74,0.35)' } },
+  { id: 'deep_arena', name: '잊힌 투기장', boss: 'boss_arena_champion', waves: 2, deep: true,
+    enemies: [['enemy_gladghost_001', 3], ['enemy_bonelion_001', 3], ['enemy_javelineer_001', 3], ['enemy_ballista_001', 2]],
+    palette: { style: 'arena', accent: '#ffd84a', floor: ['#8a7048', '#8d734a'], corridor: ['#5a4a32', '#5c4c34'], wall: '#6a5a46', wallTop: '#7a6a54',
+      wallFace: '#a8987c', faceLine: '#968670', deco: 'rgba(255,176,96,0.35)' } }
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {
