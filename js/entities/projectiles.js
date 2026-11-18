@@ -373,12 +373,13 @@ class ShockGrid { /* 전류 격자 = 디아블로 2 쇼크 웹: 던진 자리에
     const n = this.spikes || 7, a0 = Math.random() * TAU; this.sp = [];
     for (let i = 0; i < n; i++) { const a = a0 + i * TAU / n + (Math.random() - 0.5) * 0.35; this.sp.push({ a, d: this.r * (0.78 + Math.random() * 0.22) }); } }
   spikePos(k) { const s = Math.min(1, this.t / 0.3), q = this.sp[k]; return { x: this.x + Math.cos(q.a) * q.d * s, y: this.y + Math.sin(q.a) * q.d * s * 0.75 }; }
-  touches(e) { const n = this.sp.length; for (let k = 0; k < n; k++) { const A = this.spikePos(k), B = this.spikePos((k + 1) % n);
+  touches(e) { const n = this.sp.length, spread = this.t < 0.34; for (let k = 0; k < n; k++) { const A = this.spikePos(k), B = this.spikePos((k + 1) % n);
+      if (spread && segmentCircleHit(this.x, this.y, A.x, A.y, e.x, e.y, 4 + e.radius) >= 0) return true; /* 가시가 가운데에서 퍼져 나가는 동안: 지나가는 적도 맞음 (던진 자리의 적) */
       if (Math.hypot(e.x - A.x, e.y - A.y) < 7 + e.radius || segmentCircleHit(A.x, A.y, B.x, B.y, e.x, e.y, 4 + e.radius) >= 0) return true; } return false; }
   update(dt, world) {
     this.t += dt; if (this.t >= this.life) { this.alive = false; return; }
     this.lit = Math.max(0, this.lit - dt * 3);
-    if (this.t < 0.2 || trapDenied(world, this.x, this.y)) return;
+    if (this.t < 0.03 || trapDenied(world, this.x, this.y)) return;
     const inside = world.enemies.filter((e) => e.targetable && this.touches(e)); if (!inside.length) return;
     const mult = Math.min(this.maxMult, 1 + this.perHit * (inside.length - 1));
     for (const e of inside) if (!this.hit.has(e)) { this.hit.add(e); this.lit = 1;
