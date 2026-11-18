@@ -157,7 +157,7 @@ class HUD {
   }
   overlay(ctx, game) {
     const o = game.overlay;
-    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'hero_info' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' || o.type === 'rank' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'hero_info' || o.type === 'skins' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' || o.type === 'rank' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
@@ -167,8 +167,26 @@ class HUD {
       hudText(ctx, '원소 반응: 화상+빙결=열충격 · 화상+중독=독 연소 · 빙결+전격=감전 · 화상+전격=과부하 · 중독+전격=마비', VIEW_W / 2, 160, '#9ad8ff', 'center', 8);
       hudText(ctx, '실명+저주=일식 · 저주+중독=역병 · 화상+저주=지옥불 · 실명+전격=심판', VIEW_W / 2, 172, '#9ad8ff', 'center', 8);
       hudText(ctx, 'I  상세 정보 (특수방 확률 · 무기 강화 · 원소 반응 효과)   ·   G  선물 코드', VIEW_W / 2, 190, '#ffd84a', 'center', 9);
-      { const h = game.player.hero.id, K = SKINS.find((k) => k.hero === h && (game.save.skins || []).includes(k.id)); if (K) hudText(ctx, `K  스킨 '${K.name}' ${game.skinSprite(h) ? '켜짐 → 끄기' : '꺼짐 → 켜기'}`, VIEW_W / 2, 220, '#ffb0d8', 'center', 9); } /* 스킨이 있는 직업일 때만 */
+      { const h = game.player.hero.id, K = SKINS.find((k) => k.hero === h && (game.save.skins || []).includes(k.id)); hudText(ctx, `K  스킨 고르기${K && game.skinSprite(h) ? ` (지금: ${K.name})` : ''}`, VIEW_W / 2, 220, '#ffb0d8', 'center', 9); } /* 스킨 창 */
       hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기   ·   L 포기하고 로비로' : 'Esc 이어하기   ·   P 프롤로그 다시 보기   ·   L 로그아웃', VIEW_W / 2, 206, '#999', 'center', 9);
+    } else if (o.type === 'skins') { /* 스킨 고르기 */
+      const sv = game.save, m = game.input.mouse;
+      hudText(ctx, `스킨  ·  보유 ${SKINS.filter((k) => (sv.skins || []).includes(k.id)).length}/${SKINS.length}`, VIEW_W / 2, 10, '#ffb0d8', 'center', 12);
+      hudText(ctx, '외형만 바뀌고 능력은 그대로 · 정해진 직업·계열일 때만 보임', VIEW_W / 2, 26, '#aaa', 'center', 7);
+      SKINS.forEach((K, i) => {
+        const r = HUD.skinRect(i), owned = (sv.skins || []).includes(K.id), on = owned && sv.skinOn && sv.skinOn[K.hero] === K.id, hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        const hero = game.data.heroes.get(K.hero), L = jobLines(K.hero).find((l) => l.id === K.line);
+        ctx.fillStyle = on ? 'rgba(255,176,216,0.18)' : hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
+        ctx.strokeStyle = on ? '#ffb0d8' : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        const spr = heroSprite(heroWithLook(hero, { sprite: K.sprite }), Math.floor(game.time * 3) % 2); /* 미리보기 (걷기 2프레임 번갈아) */
+        if (!owned) ctx.globalAlpha = 0.25; drawSprite(ctx, spr, r.x + r.w / 2, r.y + 50, { scale: 2 }); ctx.globalAlpha = 1;
+        if (!owned) hudText(ctx, '🔒', r.x + r.w / 2, r.y + 22, '#fff', 'center', 10);
+        hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + 54, owned ? '#fff' : '#888', 'center', 8);
+        hudText(ctx, `${hero ? hero.name.split(' ')[0] : ''}${L ? ' · ' + L.name + ' 계열' : ''}`, r.x + r.w / 2, r.y + 66, '#c8c0d8', 'center', 6);
+        hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : '선물 코드로 획득', r.x + r.w / 2, r.y + 78, on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
+      });
+      if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 26, o.msg.color, 'center', 8);
+      hudText(ctx, '번호 키 / 클릭: 장착·해제   ·   G: 선물 코드   ·   Esc: 돌아가기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
     } else if (o.type === 'gift') { /* 선물 코드 입력 */
       const bw = 260, bh = 110, bx = VIEW_W / 2 - bw / 2, by = VIEW_H / 2 - bh / 2;
       ctx.fillStyle = 'rgba(20,16,30,0.95)'; ctx.fillRect(bx, by, bw, bh); ctx.strokeStyle = '#ffd84a'; ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
@@ -309,7 +327,7 @@ class HUD {
         });
       }
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 24, '#ffd84a', 'center', 8);
-      hudText(ctx, `숫자 키 / 클릭: ${lines.length > 1 ? '진화 루트 고르기' : '계열 보기'}   ·   J: 직업 레벨   ·   E / Esc: 닫기`, VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
+      hudText(ctx, `숫자 키 / 클릭: ${lines.length > 1 ? '진화 루트 고르기' : '계열 보기'}   ·   S: 스킨   ·   J: 직업 레벨   ·   E / Esc: 닫기`, VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
     } else if (o.type === 'joblevel') { // 직업 레벨 창
       const sv = game.save, J = BALANCE.jobLevel, m = game.input.mouse;
       hudText(ctx, `직업 레벨  ·  보유 ${CUR.name} ${sv.bank}`, VIEW_W / 2, 7, '#7ad0ff', 'center', 11);
@@ -578,6 +596,7 @@ class HUD {
   static gemRect(i) { return { x: VIEW_W / 2 + (i - 1) * 64 - 16, y: 70, w: 32, h: 44 }; }
   static reviveRect(i) { return { x: VIEW_W / 2 - 154 + i * 160, y: 151, w: 148, h: 30 }; }
   static jobRowRect(i) { return { x: 36, y: 36 + i * 27, w: VIEW_W - 72, h: 24 }; }
+  static skinRect(i) { const cols = 4, w = 112, h = 92, gap = 8, x0 = (VIEW_W - (cols * w + (cols - 1) * gap)) / 2; return { x: x0 + (i % cols) * (w + gap), y: 40 + Math.floor(i / cols) * (h + gap), w, h }; }
   static heroBranchRect(i, n) { return { x: 18 + (i % 2) * 240, y: 85 + Math.floor(i / 2) * 29, w: 236, h: 26 }; }
   static variantRect(i, n) { const cols = Math.min(3, n), w = 156, h = 58, gap = 8, rows = Math.ceil(n / cols), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % cols) * (w + gap), y: 66 + Math.floor(i / cols) * (h + gap) + (rows === 1 ? 30 : 0), w, h }; }
   // 컷신: 위아래 검은 띠 + 아래 띠에 한 자씩 나오는 대사

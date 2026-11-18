@@ -792,8 +792,7 @@ class Game {
       if (input.wasPressed('Escape')) this.overlay = null;
       else if (input.wasPressed('KeyI')) { this.overlay = { type: 'details', tab: 0 }; return; } // 상세 정보
       else if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; } // 선물 코드
-      else if (input.wasPressed('KeyK')) { const h = this.player.hero.id, K = SKINS.find((k) => k.hero === h && (this.save.skins || []).includes(k.id)); /* 켜 두면 그 갈래일 때만 보임 */ /* 스킨 켜기/끄기 */
-        if (K) { this.save.skinOn = this.save.skinOn || {}; this.save.skinOn[h] = this.save.skinOn[h] === K.id ? null : K.id; writeSave(this.save); this.showBanner(this.save.skinOn[h] ? `스킨: ${K.name}` : '스킨 끔', this.data.heroes.get(h).name, '#ffd84a'); this.overlay = null; } }
+      else if (input.wasPressed('KeyK')) { this.overlay = { type: 'skins', back: 'pause', msg: null }; return; } // 스킨 고르기 창
       else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
       else if (this.mode === 'lobby' && input.wasPressed('KeyP')) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => {} }; return; }
       else if (this.mode === 'dungeon' && input.wasPressed('KeyL')) { this.player.state = 'DEAD'; this.endRun(false); }
@@ -892,6 +891,17 @@ class Game {
       if (k < 0) return; const a = acts[k]; this.input.mouse.down = false;
       if ('ok' in a && !a.ok) { o.msg = { text: '지금은 쓸 수 없습니다', color: '#ff9a9a', t: 1.5 }; return; }
       const closes = /스테이지로|필드로|시련|진화/.test(a.name); a.run(); if (closes) this.overlay = null; else o.msg = { text: a.name.replace(/ \[.*\]/, '') + ' — 완료', color: '#ffd84a', t: 1.5 };
+    } else if (o.type === 'skins') { // 스킨 고르기: 카드 클릭·번호 키로 장착/해제
+      if (o.msg) o.msg.t -= STEP;
+      if (input.wasPressed('Escape') || input.wasPressed('KeyK') || input.wasPressed('KeyE')) { this.overlay = o.back === 'hero_info' ? { type: 'hero_info', heroId: this.save.selected, branchIndex: o.backIndex || 0 } : o.back === 'pause' ? { type: 'pause' } : null; return; }
+      if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; }
+      let ch = -1; SKINS.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) ch = i; });
+      if (input.wasPressed('Mouse0')) { const m = input.mouse; SKINS.forEach((_, i) => { const r = HUD.skinRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) ch = i; }); this.input.mouse.down = false; }
+      if (ch >= 0) { const K = SKINS[ch], sv = this.save; sv.skinOn = sv.skinOn || {};
+        if (!(sv.skins || []).includes(K.id)) o.msg = { text: `아직 없는 스킨입니다 — 선물 코드로 얻을 수 있어요 (G)`, color: '#ff9a9a', t: 2.5 };
+        else { const on = sv.skinOn[K.hero] === K.id; sv.skinOn[K.hero] = on ? null : K.id; writeSave(sv); SFX.play('ui');
+          const L = jobLines(K.hero).find((l) => l.id === K.line); o.msg = { text: on ? `'${K.name}' 해제 — 기본 외형` : `'${K.name}' 장착${L ? ` — ${this.data.heroes.get(K.hero).name} ${L.name} 계열일 때 보임` : ''}`, color: '#ffd84a', t: 2.5 }; } }
+      return;
     } else if (o.type === 'gift') { // 선물 코드 입력 (영문·숫자 최대 16자)
       if (o.msg) o.msg.t -= STEP;
       for (const k of input.typed) { if (/^Key[A-Z]$/.test(k) && o.code.length < 16) o.code += k[3]; else if (/^Digit[0-9]$/.test(k) && o.code.length < 16) o.code += k[5]; else if (k === 'Backspace') o.code = o.code.slice(0, -1); }
@@ -981,6 +991,7 @@ class Game {
       }
     } else if (o.type === 'hero_info') { // 캐릭터 상세: 패시브·직업 계열·진화 스킬
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
+      if (input.wasPressed('KeyS')) { this.overlay = { type: 'skins', back: 'hero_info', backIndex: o.branchIndex || 0, msg: null }; return; } // 스킨 고르기 창
       if (input.wasPressed('KeyJ')) {
         this.overlay = { type: 'joblevel', msg: null, returnToHeroInfo: true, branchIndex: o.branchIndex || 0 };
         return;
