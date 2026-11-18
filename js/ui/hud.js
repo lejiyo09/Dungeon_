@@ -82,6 +82,10 @@ class HUD {
       hudText(ctx, free ? '무제한' : `에너지 ${cost}`, VIEW_W - 128, VIEW_H - 22, warn ? '#ff5050' : free ? '#ffd84a' : '#8ab8ff', 'left', 8);
       if (w.charge > 0) hudBar(ctx, VIEW_W - 166, VIEW_H - 11, 30, 2, w.charge / w.def.chargeTime, '#f0c040');
     }
+    if (game.mode === 'dungeon' && ((p.line && p.line.id === 'trap') || p.weapons.some((q) => q.def.sentry))) { /* 함정: 설치 수 (덫 장비 합산 / 망자의 파수기) */
+      const Z = game.zones.filter((z) => z instanceof TrapSentry && z.alive && z.owner === p), eq = Z.filter((z) => z.kind !== 'death').length, ds = Z.length - eq, TR = BALANCE.TRAP;
+      hudText(ctx, `덫 ${eq}/${TR.equipMax}${p.line && p.line.id === 'trap' && p.rank >= 2 ? ` · 파수기 ${ds}/${TR.sentryMax}` : ''}`, VIEW_W - 170, VIEW_H - 48, eq >= TR.equipMax ? '#ff9a6a' : '#ffb07a', 'left', 8);
+    }
     const other = p.weapons.find((x) => x !== w);
     ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(VIEW_W - 40, VIEW_H - 34, 32, 26);
     if (other) drawWeaponCentered(ctx, other.def, VIEW_W - 24, VIEW_H - 23);

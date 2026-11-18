@@ -380,6 +380,20 @@ const DATA_WEAPONS = [
   { id: 'weapon_judgment_001', name: '심판의 광선', rarity: 'legendary', type: 'beam', shape: 'gun',
     damage: 7.9, tickRate: 0.07, energyPerSec: 2.8, range: 380, pierce: 2, knockback: 0,
     status: { type: 'burn', chance: 0.5, duration: 2, dps: 14 }, focus: 1, color: '#e0c060', len: 13, bulletColor: '#fff0a0' },
+  // ── 덫 장비 4종 [사용자 결정: 기술자 함정 계열과 함께 추가, 이름은 Claude가 지은 것] — 마우스 위치에 설치하는 파수기, 4종 합산 BALANCE.TRAP.equipMax개 + 종류별 sentry.max개
+  //  sentry: kind(공격 방식) · max(개별 제한) · life(지속) · every(공격 간격) · range(사거리) · 그 밖에 종류별 값. 피해는 damage (강화 적용)
+  { id: 'weapon_boltsentry_001', name: '산탄 전류탑', rarity: 'uncommon', type: 'gun', shape: 'gun',
+    damage: 30, fireRate: 1, energyCost: 4, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0,
+    sentry: { kind: 'bolt', max: 2, life: 18, every: 1.3, charge: 0.35, range: 150, count: 5, spread: 0.7, speed: 230 }, color: '#4a6a9a', len: 9, bulletColor: '#9ad8ff' },
+  { id: 'weapon_infernosentry_001', name: '업화 분사기', rarity: 'epic', type: 'gun', shape: 'gun',
+    damage: 48, fireRate: 1, energyCost: 5, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0,
+    sentry: { kind: 'inferno', max: 1, life: 18, every: 3, charge: 0.5, range: 130, beamTime: 1, tick: 0.15, width: 10 }, color: '#8a3a2a', len: 9, bulletColor: '#ffb04a' },
+  { id: 'weapon_wavesentry_001', name: '화염 파도탑', rarity: 'legendary', type: 'gun', shape: 'gun',
+    damage: 150, fireRate: 1, energyCost: 6, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0,
+    sentry: { kind: 'wave', max: 1, life: 20, every: 2.4, charge: 0.45, range: 150, bands: 3, fan: 0.36, waveSpeed: 150, halfW: 0.2 }, color: '#c86a2a', len: 9, bulletColor: '#ffd04a' },
+  { id: 'weapon_thundersentry_001', name: '뇌격탑', rarity: 'legendary', type: 'gun', shape: 'gun',
+    damage: 200, fireRate: 1, energyCost: 6, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0,
+    sentry: { kind: 'thunder', max: 1, life: 20, every: 1.6, charge: 0.4, range: 170, chain: 2, chainRange: 85, falloff: 0.6 }, color: '#3a4a8a', len: 9, bulletColor: '#e0f4ff' },
   // ── 덫·속성 무기 (추가)
   { id: 'weapon_beartrap_001', name: '사냥꾼의 덫', rarity: 'uncommon', type: 'gun', shape: 'gun',
     damage: 42, fireRate: 1.2, energyCost: 1.5, range: 150, projectileSpeed: 0, projectileCount: 1, knockback: 0,

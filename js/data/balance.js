@@ -44,6 +44,20 @@ const BALANCE = {
   // 무기 강화 (그 판 동안만): 단계마다 피해 +perLevel, 최대 maxLevel
   //  비용 = base × (다음 단계) × 등급 배율 × 스테이지 물가, 성공률은 다음 단계 기준 (실패해도 단계 유지)
   trialSkillRarity: { common: 0, uncommon: 0.03, rare: 0.06, epic: 0.1, legendary: 0.15 }, // 시련에서 스킬 피해에 더하는 무기 등급 몫 (+ 강화 단계당 perLevel의 1/4)
+  // [사용자 결정] 기술자 함정 계열 · 덫 장비 — 수치는 모두 [제안] 초기값 (여기서만 고치면 됨)
+  TRAP: {
+    equipMax: 3,            // 덫 장비(4종 합산) 동시 설치 수 — 장비별 개별 제한은 무기 데이터의 sentry.max
+    sentryMax: 2,           // 망자의 파수기(스킬) 동시 설치 수 — 덫 장비와 따로 셈
+    bossMult: 0.7,          // [보스전 최강 방지] 함정 계열·덫 장비 피해가 보스에게 들어갈 때 배율
+    scan: 0.25,             // 설치물이 적을 다시 찾는 간격(초) — 매 프레임 탐색하지 않음
+    burn: { duration: 3, dpsRatio: 0.25 },                                        // 화상: 초당 (직접 피해 × dpsRatio), duration초 → 총 추가 피해 = 직접 피해의 75%
+    shock: { keep: 2.5, need: 3, stun: 0.75, immune: 3, bossNeed: 5, bossStun: 0.25, bossImmune: 5 }, // 감전 누적 → 마비 (보스는 짧은 경직)
+    prey: { dur: 3, bonus: 0.2 },                                                // 사냥터 각인: 덫 장비·망자의 파수기에게 받는 피해 +bonus
+    firetoss: { dmg: 60, radius: 40, kb: 14, range: 210, speed: 320 },            // 화염 투척 (기본)
+    grid: { dmg: 45, r: 46, life: 4, stun: 1, perHit: 0.15, maxMult: 2, range: 200 }, // 전류 격자 (1차): 맞은 적 수만큼 피해 ×(1 + perHit × (n-1)), 최대 maxMult
+    death: { life: 15, range: 150, every: 0.6, dmg: 26, corpseRange: 120, corpseR: 52, corpseDmg: 46, corpseEvery: 1.2 }, // 망자의 파수기 (2차)
+    corpseLife: 6           // 시체가 남아 있는 시간(초)
+  },
   upgrade: { maxLevel: 10, perLevel: 0.12, base: 30, chance: [1, 0.9, 0.75, 0.6, 0.45, 0.38, 0.32, 0.26, 0.2, 0.15],
     rarityMult: { common: 1, uncommon: 1.2, rare: 1.5, epic: 1.8, legendary: 2.2 }, forgeRoomDiscount: 0.7, forgeRoomBonus: 0.1 },
   // 보스 강화 배율 (전직의 방 상위자는 제외): 체력·공격력·공격 간격

@@ -366,7 +366,7 @@ class Game {
   resetWorldLists(map) {
     this.map = map;
     this.enemies = []; this.projectiles = []; this.enemyBullets = []; this.pickups = [];
-    this.props = []; this.portals = []; this.hazards = []; this.allies = []; this.zones = [];
+    this.props = []; this.portals = []; this.hazards = []; this.allies = []; this.zones = []; this.corpses = []; /* corpses: 망자의 파수기가 터뜨릴 시체 */
     this.activeRoom = null; this.effects.clear(); this.interactTarget = null;
     this.flow = new Int16Array(map.width * map.height).fill(-1); this.flowTile = -1;
   }
@@ -1284,6 +1284,20 @@ class Game {
           this.damageEnemy(e, { damage: D(150), mods: Object.assign({}, p.mods, { critChance: 1 }), knockback: 8 }, (e.x - p.x) / 100, (e.y - p.y) / 100); this.effects.beamline(p.x, p.y, e.x, e.y, 2, '#ffd84a'); }
         this.addShake(0.3, 5); SFX.play('heavy'); })); break;
       // 기술자
+      case 'trapfire': { /* 함정 기본: 화염 투척 — 조준 지점(사거리 안)으로 */
+        const T = BALANCE.TRAP.firetoss, pt = this.trapPoint(p, T.range, true);
+        this.zones.push(new FireBomb(p, pt.x, pt.y, { dmg: D(T.dmg), radius: T.radius, kb: T.kb, speed: T.speed })); SFX.play('swing'); break; }
+      case 'trapgrid': { /* 함정 1차: 전류 격자 */
+        const T = BALANCE.TRAP.grid, pt = this.trapPoint(p, T.range);
+        if (!pt) { p.skillCooldown = 0.3; break; }
+        this.zones.push(new ShockGrid(p, pt.x, pt.y, { dmg: D(T.dmg), r: T.r, life: T.life, stun: T.stun, perHit: T.perHit, maxMult: T.maxMult })); this.effects.ring(pt.x, pt.y, T.r, '#7ac8ff'); SFX.play('react', 0.1); break; }
+      case 'deathsentry': { /* 함정 2차: 망자의 파수기 — 마우스 위치, 최대 sentryMax개 (넘으면 가장 오래된 것이 사라짐), 덫 장비와 따로 셈 */
+        const T = BALANCE.TRAP.death, pt = this.trapPoint(p, 220);
+        if (!pt) { p.skillCooldown = 0.3; break; }
+        const mine = this.zones.filter((z) => z instanceof TrapSentry && z.kind === 'death' && z.owner === p && z.alive);
+        while (mine.length >= BALANCE.TRAP.sentryMax) { mine.shift().alive = false; }
+        this.zones.push(new TrapSentry(p, pt.x, pt.y, 'death', { life: T.life, range: T.range, every: T.every, charge: 0.25 }, { dmg: D(T.dmg) }));
+        this.effects.ring(pt.x, pt.y, 18, '#6a7aff'); this.effects.dust(pt.x, pt.y); SFX.play('crate'); break; }
       case 'turret': this.allies.push(new Turret(p.x, p.y, p, { damage: D(8) })); break;
       case 'turret2': for (const dx of [-14, 14]) this.allies.push(new Turret(p.x + dx, p.y, p, { damage: D(7), life: 15, rate: 0.3 })); break;
       case 'barrage': { const c = at(200); this.zones.push(new SkillCast(p, p.x, p.y, { r: 20, time: 1, color: '#f0c030' }, () => {
@@ -1732,13 +1746,14 @@ class Game {
   damageEnemy(enemy, src, kx, ky, opts = {}) {
     if (enemy.negateT > 0) { if (!(enemy.negMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, enemy.fortress ? '막힘' : '부정', enemy.fortress ? '#e8ecff' : '#d8f0ff'); enemy.negMsgT = this.time + 0.35; } return; } /* 가레스의 부정: 모든 피해 무효 */
     let base = src.damage;
+    if (src.trap) { if (enemy.preyT > 0) base *= 1 + BALANCE.TRAP.prey.bonus; if (enemy.def.boss) base *= BALANCE.TRAP.bossMult; } /* 덫 장비·망자의 파수기: 사냥터 각인 +20% · 보스에게는 배율 (보스전 최강 방지) */
     if (enemy.iceVulnT > 0) base *= 1.5; /* 절대 영도로 얼어 있음 */
     if (enemy.huntT > 0) base *= 1.8; /* 사냥꾼의 표적 */
     if (enemy.auraVulnT > 0) base *= 1 + enemy.auraVuln; /* 맹독 안개 안 */
     if (enemy.blind > 0 && this.player && this.player.hybrid && this.player.hybrid.el === 'light') base *= 1.25; /* 빛의 마검사: 실명된 적 */
     if (enemy.riposteT > 0) { enemy.riposteHit = true; base *= 0.5; } /* 랜슬롯 반격 자세: 맞으면 피해 절반 + 곧바로 반격 */
     if (enemy.def.wall && enemy.shieldAng != null && !(window.__noWall)) { /* 갤러해드 철벽: 공격한 사람이 방패 정면(원뿔 안)에 있으면 피해가 크게 줄어듦 */
-      const A = this.player, da = Math.atan2(A.y - enemy.y, A.x - enemy.x) - enemy.shieldAng, df = Math.abs(Math.atan2(Math.sin(da), Math.cos(da)));
+      const A = src.from || this.player, da = Math.atan2(A.y - enemy.y, A.x - enemy.x) - enemy.shieldAng, df = Math.abs(Math.atan2(Math.sin(da), Math.cos(da)));
       if (df < (enemy.wallCone || enemy.def.wall.cone)) { base *= enemy.wallMult ?? enemy.def.wall.mult; if (!(enemy.wallMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, '막힘', '#c8c8d8'); enemy.wallMsgT = this.time + 0.5; } } }
     if (src.execute && enemy.hp < enemy.maxHp * 0.35) base *= 1 + src.execute; // 처형: 빈사 적 추가 피해
     if (enemy.markT > 0) base *= enemy.markMult;                                 // 약점 표시된 적
@@ -1746,6 +1761,8 @@ class Game {
     if (enemy.avalonUntil > this.time) base *= 1 + (enemy.avalonVuln || 0.2);        // 아발론의 꽃밭: 받는 피해 증가
     const { amount, crit } = rollDamage(base, src.mods);
     if (!enemy.takeHit(amount)) return;
+    if (src.prey) enemy.preyT = BALANCE.TRAP.prey.dur; /* 사냥터 각인 (중첩 없이 시간만 갱신) */
+    if (src.shockStack && enemy.alive) this.applyShock(enemy); /* 감전 누적 */
     if (!enemy.alive && enemy.huntT > 0 && enemy.huntOwner) { const o = enemy.huntOwner, left = enemy.huntT; o.skillCooldown *= 0.5; enemy.huntT = 0; /* 사냥꾼의 표적: 쓰러지면 쿨타임 절반 + 남은 시간만큼 가까운 다음 강한 적에게 옮겨 감 */
       const next = this.enemies.filter((e) => e.targetable && e !== enemy && Math.hypot(e.x - enemy.x, e.y - enemy.y) < 300).sort((a, b) => (b.def.boss ? 1e9 : b.hp) - (a.def.boss ? 1e9 : a.hp))[0];
       if (next) { next.huntT = Math.max(2, left); next.huntOwner = o; this.effects.beamline(enemy.x, enemy.y, next.x, next.y, 1, '#ff4a3a'); this.effects.text(next.x, next.y - next.radius - 14, '표적', '#ff6a5a'); } else o.huntT = 0;
@@ -1992,6 +2009,7 @@ class Game {
   onEnemyKilled(enemy) {
     if (enemy.rewardGiven) return;
     enemy.rewardGiven = true;
+    if (!enemy.def.boss && !enemy.def.dummy && !enemy.def.master) { const C = this.corpses || (this.corpses = []); C.push({ x: enemy.x, y: enemy.y, t: this.time, used: false }); if (C.length > 40) C.shift(); } /* 시체 (망자의 파수기용, BALANCE.TRAP.corpseLife초) */
     this.kills++;
     if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) { this.guildEvent('kills', 1, enemy.def.id); if (enemy.elite) this.guildEvent('elites'); if (enemy.def.boss) this.guildEvent('bosses', 1, enemy.def.id);
       const M = this.save.merlin; if (M) merlinGateToDeep(M); if (M && M.quest === 1 && enemy.def.boss) { if (enemy.def.id === 'boss_nameless_gatekeeper') M.gate = Math.min(MERLIN_TRIAL.gate, (M.gate || 0) + 1); if (this.W.deep) M.deep = Math.min(MERLIN_TRIAL.deep, (M.deep || 0) + 1); } } // 멀린의 시련 // 길드 퀘스트·토벌·칭호 집계
@@ -2021,6 +2039,25 @@ class Game {
     for (let i = 0; i < coins; i++) this.pickups.push(new Pickup('coin', enemy.x, enemy.y));
     if (Math.random() < B.killEnergyChance) this.pickups.push(new Pickup('energy', enemy.x, enemy.y, { value: B.killEnergyValue }));
     if (Math.random() < B.killHpChance) this.pickups.push(new Pickup('hp', enemy.x, enemy.y, { value: B.killHpValue }));
+  }
+  // 함정 계열·덫 장비 설치 지점: 마우스(월드 좌표)를 사거리 안으로 줄임. 벽·맵 밖이면 null (설치 안 함) — clampWall이면 벽 앞에 떨어뜨림(던지는 화염 투척)
+  trapPoint(p, range, clampWall) {
+    const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, range / d); let tx = p.x + dx * k, ty = p.y + dy * k;
+    const st = sweepWall(p.x, p.y, tx, ty, this.map);
+    if (st >= 0) { if (!clampWall) { this.effects.text(p.x, p.y - 22, '설치할 수 없는 곳입니다', '#ff9a9a'); return null; } tx = p.x + (tx - p.x) * Math.max(0, st - 0.05); ty = p.y + (ty - p.y) * Math.max(0, st - 0.05); }
+    if (this.map.isSolidAt(tx, ty) || tx < 0 || ty < 0 || tx > this.map.width * TILE || ty > this.map.height * TILE) { if (!clampWall) { this.effects.text(p.x, p.y - 22, '설치할 수 없는 곳입니다', '#ff9a9a'); return null; } tx = p.x; ty = p.y; }
+    return { x: tx, y: ty };
+  }
+  // 감전 누적 (함정 계열·덫 장비의 번개): 맞을 때마다 1중첩(같은 프레임에 한 번만), keep초 동안 안 맞으면 초기화 → need회면 마비(보스는 bossNeed회·짧은 경직), 마비 뒤 재마비 방지
+  applyShock(e) {
+    const S = BALANCE.TRAP.shock; if (e.shockAt === this.time) return; e.shockAt = this.time;
+    e.shockStacks = (e.shockStacks || 0) + 1; e.shockStackT = S.keep;
+    const boss = e.def.boss, need = boss ? S.bossNeed : S.need;
+    if (e.shockStacks < need) return;
+    if (e.paraImmT > 0 || e.def.ccImmune) { e.shockStacks = need - 1; return; } /* 면역 중에도 피해·누적은 들어가지만 마비는 안 걸림 */
+    e.shockStacks = 0; const st = boss ? S.bossStun : S.stun; e.stunT = Math.max(e.stunT || 0, st); e.paraT = st; e.paraImmT = st + (boss ? S.bossImmune : S.immune);
+    this.effects.ring(e.x, e.y - 4, 16, '#ffffff'); this.effects.ring(e.x, e.y - 4, 26, '#7ac8ff'); for (let i = 0; i < 3; i++) this.effects.lightning(e.x + randInt(-12, 12), e.y - 18, e.x + randInt(-8, 8), e.y + 2);
+    this.effects.text(e.x, e.y - e.radius - 10, boss ? '경직' : '마비', '#bfe8ff'); SFX.play('react', 0.05);
   }
   trapRoot(e, dur) { /* 덫에 묶임: 보스는 3번 묶이면 그 뒤로 덫에 면역 (피해는 그대로) */
     if (e.def.ccImmune) { if (!(e.trapMsgT > this.time)) { this.effects.text(e.x, e.y - e.radius - 10, '면역', '#ffe9a0'); e.trapMsgT = this.time + 1.5; } return; } /* 아서 왕: 덫에 아예 묶이지 않음 */

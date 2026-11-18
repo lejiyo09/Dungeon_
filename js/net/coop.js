@@ -30,7 +30,7 @@ const r1 = (v) => Math.round(v * 10) / 10;
 // 장판·소환물 공유: 클래스 이름으로 다시 만들어 그림만 그림 (처음엔 전부, 그다음엔 움직이는 값만)
 const COOP_CLASSES = {};
 ['RhongoTower', 'BossRhongoTower', 'ChainCircle', 'AvalonGarden', 'SkillAura', 'SkillCast', 'ExcaliburRaise', 'FxEmitter', 'DarkHole', 'ShadowStrike', 'Trap', 'Strike', 'Sanctuary', 'SpiritWolf', 'Turret', 'Drone', 'Puddle',
-  'ThornBurst', 'BleedTicker', 'GaeBolgThrow', 'ExplosionSigil', 'BladeRing', 'LightSatellites'].forEach((n) => { try { const c = Function('return typeof ' + n + " !== 'undefined' ? " + n + ' : null')(); if (c) COOP_CLASSES[n] = c; } catch (e) { /* 없는 클래스 */ } });
+  'ThornBurst', 'BleedTicker', 'GaeBolgThrow', 'ExplosionSigil', 'BladeRing', 'LightSatellites', 'FireBomb', 'ShockGrid', 'TrapSentry'].forEach((n) => { try { const c = Function('return typeof ' + n + " !== 'undefined' ? " + n + ' : null')(); if (c) COOP_CLASSES[n] = c; } catch (e) { /* 없는 클래스 */ } });
 const COOP_REF_RENDER = new Set(['SkillCast', 'ExcaliburRaise', 'ShadowStrike', 'Drone', 'BladeRing', 'LightSatellites']); // 그림에 주인(플레이어) 위치를 쓰는 장판·소환물
 // 이름표가 '보는 사람의 무기·체력'에 따라 바뀌는 물건: 방장 쪽 이름표 대신 값만 보내고, 참가자 화면에서 자기 기준으로 만듦 (강화대에 방장 무기가 뜨던 문제)
 const COOP_OWN_LABEL = { UpgradeAnvil: ['discount', 'bonus', 'room'], Forge: ['price', 'used'], BloodAltar: ['used'] };
@@ -40,7 +40,7 @@ function coopPackRef(v) { // 적·플레이어 같은 큰 객체는 위치 정�
   return undefined;
 }
 // 참가자 화면에서 미리 그려도 되는 단순한 탄 (곧게 날아가는 총탄) — 방장 쪽 같은 탄은 참가자에게 보내지 않음
-function coopPredictable(d) { return !!d && (d.type === 'gun' || (d.type === 'charge' && !d.beamShot)) && !(d.boomerang || d.homing || d.orbit || d.grenade || d.mine || d.firework || d.trail || d.flame || d.ricochet || d.deploy || d.summon || d.trap || d.meteor || d.bubble); } // 연사·평행·튕김·분열·충전·회전 총도 포함
+function coopPredictable(d) { return !!d && (d.type === 'gun' || (d.type === 'charge' && !d.beamShot)) && !(d.boomerang || d.homing || d.orbit || d.grenade || d.mine || d.firework || d.trail || d.flame || d.ricochet || d.deploy || d.summon || d.trap || d.sentry || d.meteor || d.bubble); } // 연사·평행·튕김·분열·충전·회전 총도 포함
 function coopVel(o, x, y, now) { // 받은 위치 두 개로 속도를 구해 둠 → 사이 시간은 앞으로 예측해서 그림 (뒤따라오는 느낌 줄임)
   if (o.snapT && o.tx !== undefined) { const dt = (now - o.snapT) / 1000; if (dt > 0.02 && dt < 0.5) { const vx = (x - o.tx) / dt, vy = (y - o.ty) / dt, sp = Math.hypot(vx, vy); const k = sp > 320 ? 320 / sp : 1; o.vx = vx * k; o.vy = vy * k; } }
   o.tx = x; o.ty = y; o.snapT = now;

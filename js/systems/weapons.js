@@ -78,7 +78,15 @@ class WeaponSystem {
       SFX.play('magic', 0.08);
     }
   }
+  // 덫 장비 설치 검사: 4종 합산 BALANCE.TRAP.equipMax개 · 종류별 sentry.max개 (서로 따로 검사), 넘으면 설치하지 않고 알림 — 망자의 파수기(스킬)는 따로 셈
+  sentryBlocked(player, w) {
+    const all = this.world.zones.filter((z) => z instanceof TrapSentry && z.alive && z.owner === player && z.kind !== 'death'), same = all.filter((z) => z.def === w.def);
+    if (same.length >= w.def.sentry.max) return `${w.def.name}은(는) ${w.def.sentry.max}개까지 설치할 수 있습니다`;
+    if (all.length >= BALANCE.TRAP.equipMax) return `덫 장비는 모두 합쳐 ${BALANCE.TRAP.equipMax}개까지 설치할 수 있습니다`;
+    return null;
+  }
   fireGun(player, w) {
+    if (w.def.sentry) { const why = this.sentryBlocked(player, w); if (why) { if (!(this.sentryMsgT > this.world.time)) { this.world.effects.text(player.x, player.y - 22, why, '#ff9a9a'); this.sentryMsgT = this.world.time + 1.2; } w.cooldown = Math.max(w.cooldown, 0.3); return; } }
     if (!this.canPay(player, w.def.energyCost)) { this.weakAttack(player, w); return; }
     if (!this.spend(player, w.def.energyCost)) return;
     w.cooldown += 1 / this.getFireRate(player, w);
@@ -106,6 +114,11 @@ class WeaponSystem {
       if (st >= 0) { tx = player.x + (tx - player.x) * Math.max(0, st - 0.05); ty = player.y + (ty - player.y) * Math.max(0, st - 0.05); } // 벽 앞에 떨어짐
       const t = new Trap(tx, ty, w.def, () => weaponMods(player, w)); this.world.zones.push(t);
       this.world.effects.dust(tx, ty); SFX.play('crate'); player.recoil = 0.5; return;
+    }
+    if (w.def.sentry) { /* 덫 장비 설치: 마우스 위치(사거리 안), 벽·맵 밖이면 설치 안 함 */
+      const pt = this.world.trapPoint(player, w.def.range); if (!pt) { player.energy = Math.min(player.maxEnergy, player.energy + (w.def.energyCost || 0)); return; }
+      const S = w.def.sentry, t = new TrapSentry(player, pt.x, pt.y, S.kind, S, { dmg: w.def.damage, getMods: () => weaponMods(player, w) }); t.def = w.def;
+      this.world.zones.push(t); this.world.effects.dust(pt.x, pt.y); this.world.effects.ring(pt.x, pt.y, 12, w.def.bulletColor); SFX.play('crate'); player.recoil = 0.4; return;
     }
     if (w.def.deploy) { // 포탑 설치: 최대 수를 넘으면 가장 오래된 포탑이 사라짐
       const D = w.def.deploy, mine = this.world.allies.filter((a) => a instanceof Turret && a.def === w.def);

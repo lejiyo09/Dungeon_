@@ -243,6 +243,9 @@ class Enemy extends Entity {
   }
   renderTelegraph(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y), def = this.def;
+    if (this.shockStacks > 0 && this.state !== 'DEAD' && Math.random() < 0.25 * this.shockStacks) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = this.shockStacks >= 2 ? '#bfe8ff' : '#7ac8ff'; ctx.lineWidth = 1; /* 감전 1·2중첩: 푸른 스파크 (2중첩은 더 자주·불규칙한 전류) */
+      const r = this.radius + 2, a = Math.random() * TAU; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * r, y - 4 + Math.sin(a) * r); ctx.lineTo(x + Math.cos(a + 0.4) * (r + 3), y - 4 + Math.sin(a + 0.4) * (r + 3)); if (this.shockStacks >= 2) ctx.lineTo(x + Math.cos(a + 0.9) * r, y - 4 + Math.sin(a + 0.9) * r); ctx.stroke(); ctx.restore(); }
+    if (this.preyT > 0 && this.state !== 'DEAD') { ctx.save(); ctx.globalAlpha = 0.7; ctx.strokeStyle = '#ff9a4a'; ctx.lineWidth = 1; const ry = y + this.radius - 1; ctx.beginPath(); ctx.ellipse(x, ry, this.radius + 2, 2.5, 0, 0, TAU); ctx.stroke(); ctx.restore(); } /* 사냥터 각인: 발밑 주황 고리 */
     if (this.huntT > 0 && this.state !== 'DEAD') { const ry = y - (this.def.boss ? 30 : 16), t = performance.now() / 1000, s = 6 + Math.sin(t * 8); ctx.save(); ctx.strokeStyle = '#ff4a3a'; ctx.lineWidth = 1.5; /* 사냥꾼의 표적 */
       ctx.beginPath(); ctx.arc(x, ry, s, 0, TAU); ctx.moveTo(x - s - 3, ry); ctx.lineTo(x - s + 2, ry); ctx.moveTo(x + s - 2, ry); ctx.lineTo(x + s + 3, ry); ctx.moveTo(x, ry - s - 3); ctx.lineTo(x, ry - s + 2); ctx.moveTo(x, ry + s - 2); ctx.lineTo(x, ry + s + 3); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; }
     if (this.fortress) { const F = this.fortress, t = performance.now() / 1000; ctx.save(); /* 갤러해드 로드 카멜롯: 하얀 성벽 돔 */
