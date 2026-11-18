@@ -43,6 +43,7 @@ const THEME = {
   wreck: { plank: '#5a4632', rope: '#a08a5a', torch: '#c8f0d8', ambient: [10, 24, 24, 0.38] },
   frost: { ice: '#d8f4ff', rune: '#7ac8ff', torch: '#bfe8ff', ambient: [10, 20, 40, 0.32] },
   vault: { gold: '#ffd84a', ruby: '#e8304a', torch: '#ffd070', ambient: [36, 24, 4, 0.3] },
+  babylon: { gold: '#ffd84a', lapis: '#6a9aff', torch: '#ffd070', ambient: [30, 22, 6, 0.28] },
   arena: { sand: '#d8b878', blood: '#8a2a20', torch: '#ffb060', ambient: [30, 18, 8, 0.3] },
   alchemy: { goo: '#7aff6a', glass: '#bfe8d8', torch: '#9aff8a', ambient: [10, 30, 10, 0.34] },
   dream: { star: '#fff4c0', cloud: '#e8d8ff', torch: '#d8b8ff', ambient: [24, 14, 40, 0.34] },
@@ -206,6 +207,12 @@ function drawFloorTile(g, x, y, base, style, tx = 0, ty = 0) {
     if (h(4) < 0.06) pxs(g, THEME.jungle.vine, [[x + 2, y + 10, 10, 1], [x + 5, y + 9, 1, 1], [x + 9, y + 11, 1, 1]]);
     return;
   }
+  if (style === 'babylon') { // 바빌로니아 알현실: 청금석 유약 타일 + 금 줄눈 + 가끔 금빛 별 문양
+    pxs(g, '#c8a040', [[x, y + 15, TILE, 1], [x + 15, y, 1, TILE]]); pxs(g, hi, [[x + 1, y + 1, 13, 1]]);
+    if ((tx + ty) % 4 === 0) pxs(g, THEME.babylon.gold, [[x + 7, y + 4, 2, 8], [x + 4, y + 7, 8, 2]]);
+    if (h(1) < 0.05) pxs(g, THEME.babylon.lapis, [[x + 3 + Math.floor(h(2) * 9), y + 3 + Math.floor(h(3) * 9), 2, 1]]);
+    return;
+  }
   if (style === 'arena') { // 투기장 모래판: 고운 모래 결 + 발자국 + 가끔 핏자국·부러진 화살
     if (h(1) < 0.5) pxs(g, lo, [[x + 1 + Math.floor(h(2) * 12), y + 2 + Math.floor(h(3) * 12), 3, 1]]); if (h(4) < 0.4) pxs(g, hi, [[x + 2 + Math.floor(h(5) * 11), y + 3 + Math.floor(h(6) * 10), 2, 1]]);
     if (h(7) < 0.04) fillEll(g, x + 8, y + 8, 3, 2, THEME.arena.blood);
@@ -332,6 +339,8 @@ function drawWallTile(g, x, y, pal, face, style, tx = 0, ty = 0) {
     if (face) { pxs(g, '#b89ae8', [[x, y + 10, TILE, 1]]); if (h(1) < 0.2) { pxs(g, '#fff4c0', [[x + 6, y + 3, 3, 1], [x + 5, y + 4, 1, 3], [x + 6, y + 7, 3, 1]]); } }
   } else if (style === 'jungle') { // 이끼 낀 석벽 + 늘어진 덩굴
     if (face) { pxs(g, '#5a6a4a', [[x, y + 5, TILE, 1]]); if (h(1) < 0.5) pxs(g, '#4a9a3a', [[x + 3 + Math.floor(h(2) * 9), y + 2, 1, 9], [x + 2 + Math.floor(h(2) * 9), y + 6, 3, 1]]); }
+  } else if (style === 'babylon') { // 청금석 유약 벽돌 + 금 테두리 + 금빛 사자 부조
+    if (face) { pxs(g, '#ffd84a', [[x, y + 2, TILE, 1], [x, y + 12, TILE, 1]]); pxs(g, '#2a3e90', [[x + ((ty % 2) ? 4 : 10), y + 3, 1, 9]]); if ((tx % 4) === 1) { pxs(g, '#ffd84a', [[x + 4, y + 6, 8, 3], [x + 3, y + 5, 3, 2], [x + 5, y + 9, 1, 2], [x + 10, y + 9, 1, 2]]); pxs(g, '#c8901a', [[x + 4, y + 5, 1, 1]]); } }
   } else if (style === 'arena') { // 관중석 석벽 + 붉은 깃발
     if (face) { pxs(g, '#9a8a70', [[x, y + 4, TILE, 1], [x, y + 8, TILE, 1]]); if ((tx % 3) === 0) { pxs(g, '#a02a24', [[x + 5, y + 2, 6, 8]]); pxs(g, '#ffd84a', [[x + 7, y + 4, 2, 2]]); pxs(g, '#a02a24', [[x + 5, y + 10, 2, 2], [x + 9, y + 10, 2, 2]]); } }
   } else if (style === 'vault') { // 금테 두른 석벽 + 보석 박힌 장식
@@ -401,6 +410,8 @@ function drawCover(g, x, y, style, tx, ty) {
     fillEll(g, x + 8, y + 10, 7, 4, OUTLINE); fillEll(g, x + 6, y + 9, 4, 3, '#e8d8ff'); fillEll(g, x + 10, y + 9, 4, 3, '#f4ecff'); fillEll(g, x + 8, y + 7, 3, 2, '#ffffff');
   } else if (style === 'jungle') { // 이끼 덮인 석상 머리
     fillEll(g, x + 8, y + 9, 6, 6, OUTLINE); fillEll(g, x + 8, y + 9, 5, 5, '#8a8a72'); pxs(g, '#3a3a2a', [[x + 6, y + 8, 1, 2], [x + 10, y + 8, 1, 2], [x + 7, y + 12, 3, 1]]); pxs(g, '#6aba4a', [[x + 4, y + 5, 5, 2], [x + 10, y + 4, 2, 2]]);
+  } else if (style === 'babylon') { // 금 항아리
+    fillEll(g, x + 8, y + 10, 6, 5, OUTLINE); fillEll(g, x + 8, y + 10, 5, 4, '#e0b030'); pxs(g, OUTLINE, [[x + 6, y + 3, 5, 3]]); pxs(g, '#ffd84a', [[x + 7, y + 4, 3, 2]]); pxs(g, '#2a48b8', [[x + 4, y + 10, 9, 1]]); pxs(g, '#fff4c0', [[x + 6, y + 8, 1, 2]]);
   } else if (style === 'arena') { // 쓰러진 기둥 조각 + 꽂힌 검
     fillEll(g, x + 8, y + 11, 7, 4, OUTLINE); fillEll(g, x + 8, y + 11, 6, 3, '#b8a888'); pxs(g, '#d8c8a8', [[x + 3, y + 9, 10, 1]]); pxs(g, OUTLINE, [[x + 11, y + 1, 2, 9]]); pxs(g, '#c8d0d8', [[x + 11, y + 2, 1, 7]]); pxs(g, '#8a5a30', [[x + 10, y + 7, 4, 1]]);
   } else if (style === 'vault') { // 금화 더미
@@ -482,6 +493,8 @@ function drawCrate(g, x, y, style) {
     pxs(g, OUTLINE, [[x + 2, y + 4, 12, 11]]); pxs(g, '#9a7ad8', [[x + 3, y + 5, 10, 9]]); pxs(g, '#fff4c0', [[x + 7, y + 5, 2, 9], [x + 3, y + 8, 10, 2]]); pxs(g, '#ffb8e8', [[x + 6, y + 3, 4, 2]]);
   } else if (style === 'jungle') { // 덩굴 감긴 나무 상자
     pxs(g, OUTLINE, [[x + 2, y + 4, 12, 11]]); pxs(g, '#6a4a2a', [[x + 3, y + 5, 10, 9]]); pxs(g, '#4a9a3a', [[x + 3, y + 7, 10, 1], [x + 5, y + 5, 1, 9], [x + 10, y + 9, 3, 1]]);
+  } else if (style === 'babylon') { // 청금석 보물 상자
+    pxs(g, OUTLINE, [[x + 2, y + 4, 12, 11]]); pxs(g, '#2a48b8', [[x + 3, y + 5, 10, 9]]); pxs(g, '#ffd84a', [[x + 3, y + 8, 10, 1], [x + 7, y + 5, 2, 9]]);
   } else if (style === 'arena') { // 무기 거치대 상자
     pxs(g, OUTLINE, [[x + 2, y + 4, 12, 11]]); pxs(g, '#7a5a3a', [[x + 3, y + 5, 10, 9]]); pxs(g, '#c8d0d8', [[x + 4, y + 2, 1, 8], [x + 7, y + 1, 1, 9], [x + 10, y + 3, 1, 7]]); pxs(g, '#5a3a20', [[x + 3, y + 9, 10, 1]]);
   } else if (style === 'vault') { // 금테 보물 상자

@@ -568,6 +568,38 @@ class WallBoard {
     signText(ctx, this.kind === 'hunt' ? '토벌 의뢰' : '길드 공지', x, y + 6, this.kind === 'hunt' ? '#ffb08a' : '#ffe9a0');
   }
 }
+// 바빌로니아: 영웅왕의 황금 왕좌 (계단 + 높은 등받이 + 청금석) — 그림만
+class GoldThrone {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 0; }
+  label() { return null; }
+  interact() {}
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), R = (c, a, b, w, h) => { ctx.fillStyle = c; ctx.fillRect(x + a, y + b, w, h); };
+    R(OUTLINE, -30, 8, 60, 14); R('#b8801a', -29, 9, 58, 4); R('#ffd84a', -29, 9, 58, 1); R('#9a6a14', -26, 13, 52, 4); R('#ffd84a', -26, 13, 52, 1); R('#7a5210', -23, 17, 46, 4); R('#e0b030', -23, 17, 46, 1); // 금 계단
+    R(OUTLINE, -15, -34, 30, 44); R('#c8901a', -14, -33, 28, 42); R('#2a48b8', -10, -29, 20, 26); R('#6a9aff', -10, -29, 20, 1); R('#ffd84a', -2, -27, 4, 22); R('#ffd84a', -8, -18, 16, 3); // 등받이·청금석·금 장식
+    R(OUTLINE, -19, -2, 38, 10); R('#e0b030', -18, -1, 36, 8); R('#ffd84a', -18, -1, 36, 1); R('#a0201e', -12, -3, 24, 4);                // 좌석·붉은 방석
+    R(OUTLINE, -21, -10, 6, 18); R('#ffd84a', -20, -9, 4, 16); R(OUTLINE, 15, -10, 6, 18); R('#ffd84a', 16, -9, 4, 16);                     // 팔걸이
+    for (const sx of [-18, 18]) { R(OUTLINE, sx - 3, -16, 6, 6); R('#ffe98a', sx - 2, -15, 4, 4); R('#c8901a', sx - 1, -14, 1, 1); }       // 팔걸이 위 금 사자 머리
+    R(OUTLINE, -3, -40, 6, 7); R('#ffd84a', -2, -39, 4, 5); R('#6a9aff', -1, -38, 2, 2);                                                   // 꼭대기 보석
+    if (game) { const a = 0.15 + 0.1 * Math.sin(game.time * 2); ctx.fillStyle = `rgba(255,216,74,${a})`; ctx.beginPath(); ctx.ellipse(x, y - 10, 34, 30, 0, 0, TAU); ctx.fill(); } // 은은한 금빛
+  }
+}
+// 게이트 오브 바빌론의 사슬: 플레이어 둘레의 금빛 파문에서 사슬이 뻗어 나와 묶음 (길가메시 장면 연출)
+class GateChains {
+  constructor(target) { this.target = target; this.alive = true; this.x = target.x; this.y = target.y; this.t0 = performance.now(); this.pts = []; for (let i = 0; i < 7; i++) { const a = i / 7 * TAU + 0.3; this.pts.push({ a, d: 46 + (i % 2) * 10 }); } }
+  update() { if (this.target) { this.x = this.target.x; this.y = this.target.y; } }
+  render(ctx) {
+    const t = (performance.now() - this.t0) / 1000, k = Math.min(1, t / 0.6), px = Math.round(this.x), py = Math.round(this.y) - 4;
+    ctx.save();
+    for (const q of this.pts) { const gx = px + Math.cos(q.a) * q.d, gy = py + Math.sin(q.a) * q.d * 0.6 - 10;
+      ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(255,216,74,${0.35 + 0.2 * Math.sin(t * 6 + q.a)})`; ctx.beginPath(); ctx.ellipse(gx, gy, 9, 6, 0, 0, TAU); ctx.fill(); // 금빛 파문
+      ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = '#fff4c0'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(gx, gy, 9, 6, 0, 0, TAU); ctx.stroke();
+      const ex = gx + (px - gx) * k, ey = gy + (py - gy) * k, n = 9; /* 사슬 고리 */
+      for (let i = 0; i <= n; i++) { const u = i / n, cx = gx + (ex - gx) * u, cy = gy + (ey - gy) * u; ctx.fillStyle = OUTLINE; ctx.fillRect(Math.round(cx) - 2, Math.round(cy) - 2, 4, 4); ctx.fillStyle = i % 2 ? '#ffd84a' : '#c8901a'; ctx.fillRect(Math.round(cx) - 1, Math.round(cy) - 1, 2, 2); } }
+    if (k >= 1) { ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(px, py + 2, 8, 5, 0, 0, TAU); ctx.stroke(); } // 몸에 감긴 사슬
+    ctx.restore(); ctx.lineWidth = 1;
+  }
+}
 // 탁자 + 의자 + 앉은 사람들 (상호작용: 대화, 도박 탁자면 결정석 도박)
 class GuildTable {
   constructor(x, y, seats, o = {}) { this.x = x; this.y = y; this.seats = seats; this.gamble = !!o.gamble; this.line = o.line; this.rumor = !!o.rumor; this.radius = 30; } /* rumor: 바빌로니아 소문을 들려주는 탁자 */

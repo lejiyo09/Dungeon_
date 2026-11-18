@@ -1185,6 +1185,7 @@ const BOSS_PATTERNS = {
 
 function updateEnemy(e, dt, world) {
   e.hurtFlash = Math.max(0, e.hurtFlash - dt);
+  if (e.scripted) { e.stateTime += dt; return; } /* 이야기 연출 중 (길가메시): 행동 멈춤 */
   if (e.state === 'DEAD') {
     e.stateTime += dt;
     if (e.stateTime >= (e.def.boss ? 1 : 0.35)) e.removed = true;

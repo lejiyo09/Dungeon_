@@ -175,7 +175,7 @@ class HUD {
       hudText(ctx, cam ? '카멜롯 — 층 고르기' : '빠른 이동', VIEW_W / 2, 30, '#ffd84a', 'center', 14);
       hudText(ctx, cam ? '갈 수 있는 층 (멀린의 시련으로 연 층)' : '로비에서 + 키로 언제든 열 수 있어요', VIEW_W / 2, 50, '#aaa', 'center', 7);
       items.forEach((id, i) => { const r = HUD.travelRect(i, items.length), hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
-        const T = cam ? TRIALS[id] : null, name = cam ? T.title.replace('로드 투 카멜롯 — ', '').replace('로드 투 카멜롯', '1층') + ' · ' + T.intro : id === 'camelot' ? '카멜롯 — 백악의 성 (멀린의 시련)' : '바빌로니아 — 영웅왕의 도시 [임시: 준비 중]';
+        const T = cam ? TRIALS[id] : null, name = cam ? T.title.replace('로드 투 카멜롯 — ', '').replace('로드 투 카멜롯', '1층') + ' · ' + T.intro : id === 'camelot' ? '카멜롯 — 백악의 성 (멀린의 시련)' : '바빌로니아 — 영웅왕의 왕좌';
         const col = cam ? T.color : id === 'camelot' ? '#ffd870' : '#ffbe28';
         ctx.fillStyle = hov ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = col; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
         hudText(ctx, `${i + 1}. ${name}`, r.x + 10, r.y + 10, col, 'left', cam ? 7 : 9); });

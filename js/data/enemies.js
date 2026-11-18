@@ -538,6 +538,14 @@ const DATA_ENEMIES = [
       { type: 'radial', rings: 3, count: 24, color: '#ff5a6a' },
       { type: 'laser', beams: 2, spreadAng: Math.PI, sweep: 1.0, duration: 2.0, width: 7, telegraph: 0.9, color: '#ff8a9a' }],
     finalPatterns: [{ type: 'vortex', name: '붉은 달', duration: 3.5, pull: 44, arms: 4, interval: 0.1, spin: -2.0, color: '#ff5a6a' }] },
+  // [사용자 결정] 영웅왕 길가메시 (바빌로니아 왕좌) — 쉬운 보스전, 체력 1에서 멈춤(hpFloor) → 이야기로 이어짐. 패턴은 게이트 오브 바빌론의 보물(검·창)을 쏘는 것 [임시]
+  { id: 'boss_gilgamesh', name: '길가메시', title: '영웅왕 — 바빌로니아의 왕', sprite: 'boss_gilgamesh', color: '#c8901a', phaseColors: ['#c8901a', '#d8a020', '#e8b030'],
+    boss: true, aiType: 'boss', health: 1100, damage: 16, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.25, bulletSpeed: 150, hpFloor: true, phaseAt: [0.5, -1], /* 2페이즈까지만 (체력 1에서 이야기로 넘어가므로 3페이즈·궁극기 없음) */
+    rewardGold: 0, patterns: [
+      { type: 'lances', name: '왕의 보물', count: 8, delay: 0.9, speed: 260, color: '#ffd84a' },
+      { type: 'aimed', volleys: 3, count: 5, spread: 0.2, color: '#ffe9a0' },
+      { type: 'rain', duration: 1.8, interval: 0.11, speed: 160, slant: 0.2, color: '#ffd84a' }],
+    phase2Patterns: [{ type: 'orbit', count: 12, radius: 46, spinTime: 1.1, spin: 2.5, speed: 140, color: '#ffe9a0' }] },
   // ── 심층: 연금술 공방 (임시 디자인)
   { id: 'enemy_flaskslime_001', name: '플라스크 점액', sprite: 'flaskslime', color: '#5aca4a', aiType: 'exploder',
     health: 150, damage: 26, moveSpeed: 84, hitboxHalf: 6, telegraphTime: 0.55, explodeRadius: 36, rewardGold: 6 },

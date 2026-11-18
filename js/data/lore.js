@@ -131,6 +131,35 @@ const BABYLON_GATE_LINES = [ /* 금빛 포탈에 들어갔을 때 — 주인공�
   '(언제든 다시 올 수 있게 이 길을 기억해 두자.)',
   '이제 로비에서 + 키를 누르면 카멜롯과 바빌로니아로 바로 갈 수 있다.'
 ];
+// [사용자 결정] 금빛 포탈 → 길가메시의 왕좌: 쉬운 보스전, 체력 1에서 멈춤 → 게이트 오브 바빌론으로 묶고 바빌로니아 지하로 떨어뜨림 (그 뒤는 아직 없음) — 대사는 [임시]
+const GILGAMESH_INTRO_LINES = [
+  '금빛 포탈을 지나자, 눈부신 빛과 함께 황금으로 뒤덮인 거대한 알현실이 펼쳐진다.',
+  '계단 위 왕좌에 한 남자가 턱을 괴고 앉아 있다. 온몸에서 숨 막히는 위압감이 흘러나온다.',
+  '「…잡종이 감히 여기를 어디라고 들어오느냐.」',
+  '「이곳은 영웅왕의 도시, 바빌로니아. 이 세상의 모든 보물이 잠든 나의 보고(寶庫)다.」',
+  '「좋다. 오늘은 기분이 나쁘지 않으니 — 잠깐 놀아 주마. 실망시키지 마라.」'
+];
+const GILGAMESH_YIELD_LINES = [
+  '「…호오.」',
+  '「꽤 하는군, 잡종. 이 몸에게 상처를 낸 자는 실로 오랜만이다.」'
+];
+const GILGAMESH_FINAL_LINES = [
+  '허공 곳곳에 금빛 파문이 열리고, 그 안에서 쏟아져 나온 사슬이 온몸을 휘감는다.',
+  '「하지만 — 여기까지다.」',
+  '「나의 보고를 엿보려면 아직 멀었다. 밑바닥부터 기어 올라와 보아라.」'
+];
+const BABYLON_FALL_LINES = [
+  '발밑의 황금 바닥이 갈라지고, 사슬에 묶인 채 끝없는 어둠 속으로 떨어진다…',
+  '(…여긴 어디지. 바빌로니아의, 지하…?)',
+  '[임시] 바빌로니아 지하는 아직 준비 중입니다. 이야기는 다음에 이어집니다.'
+];
+const BABYLON_TRIAL = { /* 길가메시의 왕좌 (시련 틀을 빌려 씀) */
+  id: 'babylon', title: '바빌로니아 — 영웅왕의 왕좌', color: '#ffd84a', intro: '영웅왕 길가메시가 왕좌에서 내려다보고 있습니다', reward: 0,
+  W: { name: '바빌로니아 — 영웅왕의 왕좌', boss: 'boss_gilgamesh', trial: true, rooms: 2, sanctum: false, deep: false, waves: 0,
+    palette: { style: 'babylon', accent: '#ffd84a', floor: ['#26346a', '#283770'], corridor: ['#1c2650', '#1d2852'], wall: '#2a3a7a', wallTop: '#34489a',
+      wallFace: '#3a56b8', faceLine: '#2e48a0', deco: 'rgba(255,216,74,0.4)' } },
+  kit: { hp: 0, rarity: ['legendary', 'epic'], lv: 3, buffs: 0, picks: 0 }
+};
 const MERLIN_SPEAR_LINES = [
   '「아발론의 꽃은 마음에 들었나.」',
   '「…왕에게는 검 말고도 창이 하나 있었다. 세상의 끝을 붙들어 두는 빛의 창이지.」',
@@ -378,7 +407,7 @@ const CAMELOT9_TRIAL = {
   kit: { hp: 135, rarity: ['legendary', 'epic'], lv: 10, buffs: 0, picks: 3 }
 };
 // [사용자 결정] 카멜롯: 층이 올라갈 때마다 무기 강화 +1 (1층 +3 → 8층부터 최대 +10), 시작할 때 무작위 축복 대신 '3개 중 1개 고르기'를 3번 (picks)
-const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL, camelot6: CAMELOT6_TRIAL, camelot7: CAMELOT7_TRIAL, camelot8: CAMELOT8_TRIAL, camelot9: CAMELOT9_TRIAL };
+const TRIALS = { rhongo: RHONGO_TRIAL, camelot: CAMELOT_TRIAL, camelot2: CAMELOT2_TRIAL, camelot3: CAMELOT3_TRIAL, camelot4: CAMELOT4_TRIAL, camelot5: CAMELOT5_TRIAL, camelot6: CAMELOT6_TRIAL, camelot7: CAMELOT7_TRIAL, camelot8: CAMELOT8_TRIAL, camelot9: CAMELOT9_TRIAL, babylon: BABYLON_TRIAL };
 // 심층에 처음 들어설 때 (대사 [임시] — 심층의 정체·세계관 연결은 미정, 기획서 10장)
 const DEEP_ARRIVAL_LINES = [
   '발밑의 돌이 차갑게 식어 간다.',

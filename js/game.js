@@ -199,11 +199,51 @@ class Game {
   askRhongoTrial() { this.askTrial('rhongo'); }
   babylonRumorReady() { const M = this.save.merlin; return !!(M && M.quest >= 4) && !(this.save.babylon && this.save.babylon.rumor); } /* 롱고미니아드를 쓰러뜨렸고 아직 소문을 안 들음 */
   babylonOpen() { const M = this.save.merlin; return !!(M && M.quest >= 4); } /* 금빛 포탈이 나오는 조건: 롱고미니아드 처치 */
-  enterBabylon() { /* [사용자 결정] 바빌로니아 금빛 포탈 — 던전 내부는 아직 없음: 장면만 보여 주고 '가 봄'으로 기록 (탐험은 이어짐) */
+  enterBabylon() { /* [사용자 결정] 금빛 포탈: 길가메시의 왕좌로 (멀티에서는 아직 예전처럼 장면만) */
     const B = this.save.babylon = this.save.babylon || {}, first = !B.visited; B.visited = true; writeSave(this.save);
-    for (const q of this.allPlayers()) q.y += 30; /* 포탈에서 밀어내기 (다시 밟히지 않게) */
-    if (this.coop && this.coop.host) Net.relay({ k: 'babylon' }); /* 동료도 '가 봄' */
-    this.playCutscene(BABYLON_GATE_LINES, { always: true, force: true, focus: { x: this.player.x, y: this.player.y - 30 }, done: () => { if (first) this.showBanner('빠른 이동 열림', '로비에서 + 키: 카멜롯 · 바빌로니아', '#ffd84a'); } });
+    if (this.coop) { /* 멀티: 왕좌는 아직 혼자일 때만 */
+      for (const q of this.allPlayers()) q.y += 30;
+      if (this.coop.host) Net.relay({ k: 'babylon' });
+      this.playCutscene(BABYLON_GATE_LINES, { always: true, force: true, focus: { x: this.player.x, y: this.player.y - 30 }, done: () => { if (first) this.showBanner('빠른 이동 열림', '로비에서 + 키: 카멜롯 · 바빌로니아 (왕좌는 혼자일 때)', '#ffd84a'); } });
+      return; }
+    const pending = this.mode === 'dungeon' && !this.trialW ? this.settleRun() : null; /* 심층 탐험은 귀환처럼 정산해 두고 (결과는 왕좌 장면 뒤에) */
+    this.startBabylonThrone(pending);
+  }
+  settleRun() { /* 귀환과 같은 정산 (결과 창만 나중에) */
+    this.submitRunScore(true); this.guildEvent('runs'); SFX.stopMusic(); this.save.run = null; this.save.runReviveUsed = false;
+    const { stages, bosses, reward } = this.runReward(true); this.save.clears++; writeSave(this.save); return { victory: true, stages, bosses, reward };
+  }
+  startBabylonThrone(pending) { /* 길가메시의 왕좌: 지금 캐릭터 그대로 (로비에서 바로 오면 심층 기본 장비) */
+    this.babylonPending = pending || null; this.babylonFall = null;
+    const fromLobby = this.mode !== 'dungeon' || !this.player || this.trialW;
+    this.trialId = 'babylon'; this.trialRank = 2; this.mode = 'dungeon';
+    this.trialW = Object.assign({}, worldDef(DEEP_START + 9), BABYLON_TRIAL.W); this.worldIdx = DEEP_START + 9; this.levelIdx = STAGES_PER_WORLD - 1;
+    if (fromLobby) { this.gold = 0; this.kills = 0; this.player = this.makePlayer(0, 0); const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) this.player.treasure = tr; }
+    const p = this.player; p.fallK = 0; p.hp = p.maxHp; p.shield = p.maxShield; p.energy = p.maxEnergy;
+    this.loadStage();
+    const room = this.map.roomOf('boss'), c = this.map.tileCenter(room.cx, room.cy);
+    this.props.push(new GoldThrone(c.x, (room.y0 + 3) * TILE)); p.x = c.x; p.y = c.y + 3 * TILE; /* 왕좌 앞으로 소환 */
+    const begin = () => this.playCutscene(GILGAMESH_INTRO_LINES, { always: true, force: true, focus: { x: c.x, y: (room.y0 + 3) * TILE } });
+    if (fromLobby) this.askVariant(() => { this.applyDeepKit(this.player); begin(); }); else begin();
+  }
+  gilgameshYield(e) { /* 체력 1: 꽤 하는군 → 게이트 오브 바빌론의 사슬 → 하지만 여기까지다 → 지하로 */
+    e.scripted = true; e.laser = null; e.setState('IDLE'); this.enemyBullets.length = 0; this.hazards.length = 0;
+    const p = this.player; p.castLock = 99; this.addShake(0.2, 3);
+    this.playCutscene(GILGAMESH_YIELD_LINES, { always: true, force: true, focus: { x: e.x, y: e.y }, done: () => {
+      this.zones.push(new GateChains(p)); this.screenFlash = 0.25; this.flashColor = '255,216,74'; SFX.play('gate'); this.addShake(0.3, 4);
+      this.playCutscene(GILGAMESH_FINAL_LINES, { always: true, force: true, focus: { x: p.x, y: p.y }, done: () => { this.babylonFall = { t: 0 }; SFX.play('explode'); } }); } });
+  }
+  updateBabylonFall(dt) { /* 바닥이 갈라지고 떨어짐 */
+    const F = this.babylonFall, p = this.player; F.t += dt; p.fallK = Math.min(1, F.t / 1.3); this.addShake(0.1, 3 + 3 * p.fallK);
+    if (Math.random() < 0.6) this.effects.part(p.x + randInt(-14, 14), p.y + randInt(-4, 8), randInt(-20, 20), -30 - Math.random() * 30, { color: Math.random() < 0.5 ? '#ffd84a' : '#2a48b8', life: 0.6, size: 2, size2: 0, drag: 1 });
+    if (F.t >= 1.8 && !F.done) { F.done = true; this.transition = { t: 0, swapped: false, action: () => this.finishBabylon(false) }; }
+  }
+  finishBabylon(died) { /* 왕좌 장면 끝 → (떨어진 뒤는 아직 없음) → 심층 탐험 결과 또는 로비 */
+    this.babylonFall = null; this.trialW = null; this.trialId = null; if (this.player) { this.player.fallK = 0; this.player.castLock = 0; } this.zones = []; this.enemies = []; this.enemyBullets = [];
+    const P = this.babylonPending; this.babylonPending = null;
+    const toEnd = () => { if (P) this.overlay = Object.assign({ type: 'result' }, P, { after: died ? '길가메시에게 쓰러졌다… (심층 탐험 보상은 그대로)' : '바빌로니아의 지하로 떨어졌다 — [임시] 이야기는 다음에 이어집니다' }); else this.enterLobby(); };
+    if (died) { toEnd(); return; }
+    this.overlay = { type: 'story', lines: BABYLON_FALL_LINES, i: 0, t: 0, done: toEnd };
   }
   camelotFloors() { /* 갈 수 있는 카멜롯 층 (멀린의 시련 진행도: N층은 quest >= 3 + 2N) */
     const q = (this.save.merlin && this.save.merlin.quest) || 0, out = [];
@@ -647,6 +687,7 @@ class Game {
     return true;
   }
   endRun(victory) {
+    if (this.trialW && this.trialId === 'babylon') { SFX.stopMusic(); this.finishBabylon(true); return; } /* 길가메시에게 쓰러짐 */
     if (this.trialW) { this.endTrial(victory); return; }
     if (this.coop && this.coop.guest) { this.coopGuestEnd({ victory: false, quit: true }); return; }
     this.submitRunScore(victory); // 랭킹판에 기록
@@ -726,6 +767,7 @@ class Game {
       if (this.transition.t >= 0.9) this.transition = null;
       input.endStep(); return;
     }
+    if (this.babylonFall && !this.cutscene && !this.overlay) { this.updateBabylonFall(dt); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } /* 바빌로니아 지하로 떨어지는 중 */
     if (this.cutscene) { if (this.coop && this.coop.host) this.coopHostSend(dt); this.screenFlash = Math.max(0, this.screenFlash - dt); this.shake = Math.max(0, (this.shake || 0) - dt); this.updateCutscene(dt, input); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } // 컷신이 먼저 (창이 함께 떠 있어도 컷신을 넘길 수 있게, 창은 컷신이 끝난 뒤) · 컷신 중에는 세계가 멈춤 (번쩍임·흔들림은 가라앉음)
     if (this.overlay) { this.updateOverlay(input); input.endStep(); if (!(this.coop && this.coop.host) || !this.overlay) return; input = NULL_INPUT; } // 멀티 방장: 창을 열어도 다른 사람 때문에 세계는 계속 돌아감 (내 캐릭터만 멈춤)
     if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; input.endStep(); return; }
@@ -919,7 +961,7 @@ class Game {
       if (ch < 0) return;
       if (o.sub === 'camelot') { this.askTrial(items[ch]); return; }
       if (items[ch] === 'camelot') { if (this.camelotFloors().length) o.sub = 'camelot'; else o.msg = { text: '아직 카멜롯에 갈 수 없습니다 — 멀린의 시련을 진행하세요', color: '#ff9a9a', t: 2.5 }; }
-      else o.msg = { text: '[임시] 바빌로니아 던전은 아직 준비 중입니다', color: '#ffd84a', t: 2.5 };
+      else { this.overlay = null; this.transition = { t: 0, swapped: false, action: () => this.startBabylonThrone(null) }; } /* 길가메시의 왕좌로 */
       return;
     } else if (o.type === 'skins') { // 스킨 고르기: 카드 클릭·번호 키로 장착/해제
       if (o.msg) o.msg.t -= STEP;
