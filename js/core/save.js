@@ -18,7 +18,7 @@ function sanitizeSave(s) {
   for (const k of ['jobLv', 'skinOn', 'lineChoice']) if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = D[k];
   for (const k of ['bank', 'clears', 'bestStage']) if (typeof s[k] !== 'number' || !isFinite(s[k])) s[k] = D[k];
   if (s.stats && typeof s.stats !== 'object') s.stats = {};
-  for (const k of ['guild', 'merlin']) if (s[k] && (typeof s[k] !== 'object' || Array.isArray(s[k]))) delete s[k]; // 다시 만들어짐
+  for (const k of ['guild', 'merlin', 'babylon']) if (s[k] && (typeof s[k] !== 'object' || Array.isArray(s[k]))) delete s[k]; // 다시 만들어짐
   if (s.supplies && !Array.isArray(s.supplies)) s.supplies = [];
   if (s.deepCheckpoints && typeof s.deepCheckpoints !== 'object') s.deepCheckpoints = {};
   if (s.gambleCards && !(Array.isArray(s.gambleCards) && s.gambleCards.length === 3)) s.gambleCards = null;

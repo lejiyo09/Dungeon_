@@ -570,11 +570,12 @@ class WallBoard {
 }
 // 탁자 + 의자 + 앉은 사람들 (상호작용: 대화, 도박 탁자면 결정석 도박)
 class GuildTable {
-  constructor(x, y, seats, o = {}) { this.x = x; this.y = y; this.seats = seats; this.gamble = !!o.gamble; this.line = o.line; this.radius = 30; }
+  constructor(x, y, seats, o = {}) { this.x = x; this.y = y; this.seats = seats; this.gamble = !!o.gamble; this.line = o.line; this.rumor = !!o.rumor; this.radius = 30; } /* rumor: 바빌로니아 소문을 들려주는 탁자 */
   label() { return this.gamble ? '[E] 결정석 도박 탁자' : `[E] ${this.line[0]}에게 말 걸기`; }
   get labelColor() { return this.gamble ? CUR.color : '#e0d0b0'; }
   interact(game) {
     if (this.gamble) { game.overlay = { type: 'gamble', msg: null, roll: 0 }; return; }
+    if (this.rumor && game.babylonRumorReady()) { game.playCutscene(BABYLON_RUMOR_LINES, { always: true, force: true, focus: { x: this.x, y: this.y - 10 }, done: () => { const B = game.save.babylon = game.save.babylon || {}; B.rumor = true; writeSave(game.save); } }); return; } /* 바빌로니아 소문 */
     const who = this.seats.filter(([, k]) => k); this.bubble = { text: this.line[1], t: 3.5, dx: pick(who)[0] }; // 앉은 사람 중 한 명이 말함
   }
   render(ctx, game) {
@@ -588,7 +589,8 @@ class GuildTable {
     if (this.gamble) { ctx.fillStyle = CUR.color; for (let i = 0; i < 3; i++) { const a = game.time * 1.5 + i * 2.1; ctx.fillRect(Math.round(x + Math.cos(a) * 8) - 1, Math.round(y + Math.sin(a) * 3) - 2, 3, 3); } signText(ctx, '결정석 도박', x, y + 14, CUR.color); }
     else { ctx.fillStyle = '#e8dcc0'; ctx.fillRect(x - 6, y - 3, 3, 4); ctx.fillRect(x + 4, y - 2, 3, 4); ctx.fillStyle = '#c89a40'; ctx.fillRect(x - 6, y - 3, 3, 1); ctx.fillRect(x + 4, y - 2, 3, 1); } // 술잔
   }
-  renderTop(ctx) { if (this.bubble && this.bubble.t > 0) { this.bubble.t -= 1 / 60; drawBubble(ctx, Math.round(this.x) + this.bubble.dx, Math.round(this.y) - 30, this.bubble.text); } } // 말풍선은 캐릭터 위에
+  renderTop(ctx) { if (this.bubble && this.bubble.t > 0) { this.bubble.t -= 1 / 60; drawBubble(ctx, Math.round(this.x) + this.bubble.dx, Math.round(this.y) - 30, this.bubble.text); } // 말풍선은 캐릭터 위에
+    if (this.rumor && typeof game !== 'undefined' && game.babylonRumorReady && game.babylonRumorReady()) { const bob = Math.round(Math.sin(game.time * 4) * 1.5); hudText(ctx, '!', Math.round(this.x), Math.round(this.y) - 34 + bob, '#ffd84a', 'center', 14); } } /* 소문이 있으면 느낌표 */
 }
 
 // 오른쪽 구석의 탁자: 후드를 쓴 백발의 젊은 마법사 (멀린). 보구가 없으면 말풍선에 '…'만

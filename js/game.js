@@ -197,6 +197,17 @@ class Game {
   //  (로드 투 카멜롯도 같은 방식: TRIALS[id]에 이름·던전·장비·대사)
   get trialDef() { return TRIALS[this.trialId] || RHONGO_TRIAL; }
   askRhongoTrial() { this.askTrial('rhongo'); }
+  babylonRumorReady() { const M = this.save.merlin; return !!(M && M.quest >= 4) && !(this.save.babylon && this.save.babylon.rumor); } /* 롱고미니아드를 쓰러뜨렸고 아직 소문을 안 들음 */
+  babylonOpen() { const M = this.save.merlin; return !!(M && M.quest >= 4); } /* 금빛 포탈이 나오는 조건: 롱고미니아드 처치 */
+  enterBabylon() { /* [사용자 결정] 바빌로니아 금빛 포탈 — 던전 내부는 아직 없음: 장면만 보여 주고 '가 봄'으로 기록 (탐험은 이어짐) */
+    const B = this.save.babylon = this.save.babylon || {}, first = !B.visited; B.visited = true; writeSave(this.save);
+    for (const q of this.allPlayers()) q.y += 30; /* 포탈에서 밀어내기 (다시 밟히지 않게) */
+    if (this.coop && this.coop.host) Net.relay({ k: 'babylon' }); /* 동료도 '가 봄' */
+    this.playCutscene(BABYLON_GATE_LINES, { always: true, force: true, focus: { x: this.player.x, y: this.player.y - 30 }, done: () => { if (first) this.showBanner('빠른 이동 열림', '로비에서 + 키: 카멜롯 · 바빌로니아', '#ffd84a'); } });
+  }
+  camelotFloors() { /* 갈 수 있는 카멜롯 층 (멀린의 시련 진행도: N층은 quest >= 3 + 2N) */
+    const q = (this.save.merlin && this.save.merlin.quest) || 0, out = [];
+    for (let n = 1; n <= 9; n++) if (q >= 3 + 2 * n) out.push(n === 1 ? 'camelot' : 'camelot' + n); return out; }
   askTrial(id) { this.overlay = { type: 'trial_confirm', id }; this.input.mouse.down = false; }
   startRhongoTrial(rank = 2) { this.startQuestTrial('rhongo', rank); }
   startQuestTrial(id, rank = 2) { /* rank: 고른 진화 단계 0~2 (1진·2진·3진) */
@@ -420,7 +431,7 @@ class Game {
     { const c = gp(26, 32); this.props.push(new GuildClerk(c.x, c.y, 'trade', 'clerk2', 29.6 * TILE)); }    // 보급품 접수원
     this.props.push(new WallBoard(7.5 * TILE, 22 * TILE, 'hunt'), new WallBoard(23 * TILE, 22 * TILE, 'notice')); // 벽에 붙은 게시판
     const tbl = (tx, ty, seats, o) => this.props.push(new GuildTable((tx + 1) * TILE, ty * TILE + 8, seats, o));
-    tbl(6, 26, [[-22, 'a'], [22, 'b']], { line: GUILD_CHATTER[0] });
+    tbl(6, 26, [[-22, 'a'], [22, 'b']], { line: GUILD_CHATTER[0], rumor: true }); /* 바빌로니아 소문 탁자 */
     tbl(6, 31, [[-22, 'c'], [22, null]], { line: GUILD_CHATTER[3] });
     tbl(20, 26, [[-22, 'd'], [22, 'e']], { line: GUILD_CHATTER[1] });
     tbl(20, 31, [[-22, 'f'], [22, 'dealer']], { gamble: true });
@@ -718,6 +729,7 @@ class Game {
     if (this.cutscene) { if (this.coop && this.coop.host) this.coopHostSend(dt); this.screenFlash = Math.max(0, this.screenFlash - dt); this.shake = Math.max(0, (this.shake || 0) - dt); this.updateCutscene(dt, input); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } // 컷신이 먼저 (창이 함께 떠 있어도 컷신을 넘길 수 있게, 창은 컷신이 끝난 뒤) · 컷신 중에는 세계가 멈춤 (번쩍임·흔들림은 가라앉음)
     if (this.overlay) { this.updateOverlay(input); input.endStep(); if (!(this.coop && this.coop.host) || !this.overlay) return; input = NULL_INPUT; } // 멀티 방장: 창을 열어도 다른 사람 때문에 세계는 계속 돌아감 (내 캐릭터만 멈춤)
     if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; input.endStep(); return; }
+    if (this.mode === 'lobby' && (input.wasPressed('Equal') || input.wasPressed('NumpadAdd')) && this.save.babylon && this.save.babylon.visited) { this.overlay = { type: 'travel', sub: null, msg: null }; input.endStep(); return; } /* + 빠른 이동 */
     if (this.admin && input.wasPressed('Backquote')) { this.overlay = { type: 'admin', msg: null }; input.endStep(); return; }
     if (this.hitStopT > 0) { this.hitStopT -= dt; return; }
     this.screenFlash = Math.max(0, this.screenFlash - dt);
@@ -898,6 +910,17 @@ class Game {
       if (k < 0) return; const a = acts[k]; this.input.mouse.down = false;
       if ('ok' in a && !a.ok) { o.msg = { text: '지금은 쓸 수 없습니다', color: '#ff9a9a', t: 1.5 }; return; }
       const closes = /스테이지로|필드로|시련|진화/.test(a.name); a.run(); if (closes) this.overlay = null; else o.msg = { text: a.name.replace(/ \[.*\]/, '') + ' — 완료', color: '#ffd84a', t: 1.5 };
+    } else if (o.type === 'travel') { // + 빠른 이동: 카멜롯(층 고르기) · 바빌로니아
+      if (o.msg) o.msg.t -= STEP;
+      if (input.wasPressed('Escape') || input.wasPressed('Equal') || input.wasPressed('NumpadAdd')) { if (o.sub) { o.sub = null; return; } this.overlay = null; return; }
+      const items = o.sub === 'camelot' ? this.camelotFloors() : ['camelot', 'babylon'];
+      let ch = -1; items.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) ch = i; });
+      if (input.wasPressed('Mouse0')) { const m = input.mouse; items.forEach((_, i) => { const r = HUD.travelRect(i, items.length); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) ch = i; }); this.input.mouse.down = false; }
+      if (ch < 0) return;
+      if (o.sub === 'camelot') { this.askTrial(items[ch]); return; }
+      if (items[ch] === 'camelot') { if (this.camelotFloors().length) o.sub = 'camelot'; else o.msg = { text: '아직 카멜롯에 갈 수 없습니다 — 멀린의 시련을 진행하세요', color: '#ff9a9a', t: 2.5 }; }
+      else o.msg = { text: '[임시] 바빌로니아 던전은 아직 준비 중입니다', color: '#ffd84a', t: 2.5 };
+      return;
     } else if (o.type === 'skins') { // 스킨 고르기: 카드 클릭·번호 키로 장착/해제
       if (o.msg) o.msg.t -= STEP;
       if (input.wasPressed('Escape') || input.wasPressed('KeyK') || input.wasPressed('KeyE')) { this.overlay = o.back === 'hero_info' ? { type: 'hero_info', heroId: this.save.selected, branchIndex: o.backIndex || 0 } : o.back === 'pause' ? { type: 'pause' } : null; return; }
@@ -1680,6 +1703,7 @@ class Game {
           this.props.push(new Chest(c.x, c.y - 24, 'weapon'));
           this.portals.push(new Portal(c.x + (W.deep ? 26 : 0), c.y + 24, () => this.advanceStage(), `${stageLabel(this.worldIdx + 1, 0)} ${next.name}`, next.deep ? [120, 200, 255] : undefined));
           if (W.deep) this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90])); // 심층: 여기서 돌아가거나 더 내려감
+          if (W.deep && W.depth === 10 && this.babylonOpen()) { this.portals.push(new Portal(c.x, c.y + 60, () => this.enterBabylon(), '금빛 포탈 — 바빌로니아', [255, 190, 40])); this.effects.rays(c.x, c.y + 60, '#ffd84a', 14, 50, 1); } /* [사용자 결정] 심층 10-4: 바빌로니아로 가는 금빛 포탈 */
         }
       };
       const owned = new Set(this.player.buffs);

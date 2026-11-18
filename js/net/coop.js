@@ -139,6 +139,7 @@ Object.assign(Game.prototype, {
       else if (d.k === 'msg') this.showBanner(d.text, null, '#7ad0ff');
       else if (d.k === 'cut') { this.cutscene = { lines: d.lines, i: 0, t: 0, lt: 0, focus: d.focus, id: null, done: null }; this.input.mouse.down = false; }
       else if (d.k === 'ov') this.coopGuestOverlay(d.o);
+      else if (d.k === 'babylon') { const B = this.save.babylon = this.save.babylon || {}; B.visited = true; writeSave(this.save); } // 동료도 바빌로니아 '가 봄'
       else if (d.k === 'gev') { for (const [st, a, t] of d.e || []) { this.guildEvent(st, a, t); if (st === 'bosses') this.coopGuestMerlinBoss(t); } } // 함께 한 일 → 내 퀘스트·기록
       else if (d.k === 'sanctum') this.coopGuestSanctum(d);
       else if (d.k === 'herodrop' && Math.random() < (d.p || 0)) { const left = DATA_TREASURES.filter((t) => t.heroDrop && !this.save.treasures.includes(t.id)); if (left.length) { const T = pick(left); this.save.treasures.push(T.id); writeSave(this.save); this.treasureToast = { T, start: performance.now() }; } }

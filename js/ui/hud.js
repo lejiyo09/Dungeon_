@@ -157,7 +157,7 @@ class HUD {
   }
   overlay(ctx, game) {
     const o = game.overlay;
-    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'hero_info' || o.type === 'skins' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' || o.type === 'rank' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'hero_info' || o.type === 'skins' || o.type === 'travel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' || o.type === 'rank' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
       hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
@@ -168,7 +168,19 @@ class HUD {
       hudText(ctx, '실명+저주=일식 · 저주+중독=역병 · 화상+저주=지옥불 · 실명+전격=심판', VIEW_W / 2, 172, '#9ad8ff', 'center', 8);
       hudText(ctx, 'I  상세 정보 (특수방 확률 · 무기 강화 · 원소 반응 효과)   ·   G  선물 코드', VIEW_W / 2, 190, '#ffd84a', 'center', 9);
       { const h = game.player.hero.id, K = SKINS.find((k) => k.hero === h && (game.save.skins || []).includes(k.id)); hudText(ctx, `K  스킨 고르기${K && game.skinSprite(h) ? ` (지금: ${K.name})` : ''}`, VIEW_W / 2, 220, '#ffb0d8', 'center', 9); } /* 스킨 창 */
+      if (game.mode === 'lobby' && game.save.babylon && game.save.babylon.visited) hudText(ctx, '+  빠른 이동 (카멜롯 · 바빌로니아)', VIEW_W / 2, 234, '#ffbe28', 'center', 9);
       hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기   ·   L 포기하고 로비로' : 'Esc 이어하기   ·   P 프롤로그 다시 보기   ·   L 로그아웃', VIEW_W / 2, 206, '#999', 'center', 9);
+    } else if (o.type === 'travel') { /* + 빠른 이동 */
+      const m = game.input.mouse, cam = o.sub === 'camelot', items = cam ? game.camelotFloors() : ['camelot', 'babylon'];
+      hudText(ctx, cam ? '카멜롯 — 층 고르기' : '빠른 이동', VIEW_W / 2, 30, '#ffd84a', 'center', 14);
+      hudText(ctx, cam ? '갈 수 있는 층 (멀린의 시련으로 연 층)' : '로비에서 + 키로 언제든 열 수 있어요', VIEW_W / 2, 50, '#aaa', 'center', 7);
+      items.forEach((id, i) => { const r = HUD.travelRect(i, items.length), hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        const T = cam ? TRIALS[id] : null, name = cam ? T.title.replace('로드 투 카멜롯 — ', '').replace('로드 투 카멜롯', '1층') + ' · ' + T.intro : id === 'camelot' ? '카멜롯 — 백악의 성 (멀린의 시련)' : '바빌로니아 — 영웅왕의 도시 [임시: 준비 중]';
+        const col = cam ? T.color : id === 'camelot' ? '#ffd870' : '#ffbe28';
+        ctx.fillStyle = hov ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = col; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        hudText(ctx, `${i + 1}. ${name}`, r.x + 10, r.y + 10, col, 'left', cam ? 7 : 9); });
+      if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 30, o.msg.color, 'center', 8);
+      hudText(ctx, `번호 키 / 클릭: 선택   ·   Esc / +: ${cam ? '뒤로' : '닫기'}`, VIEW_W / 2, VIEW_H - 14, '#888', 'center', 7);
     } else if (o.type === 'skins') { /* 스킨 고르기 */
       const sv = game.save, m = game.input.mouse;
       hudText(ctx, `스킨  ·  보유 ${SKINS.filter((k) => (sv.skins || []).includes(k.id)).length}/${SKINS.length}`, VIEW_W / 2, 10, '#ffb0d8', 'center', 12);
@@ -596,6 +608,7 @@ class HUD {
   static gemRect(i) { return { x: VIEW_W / 2 + (i - 1) * 64 - 16, y: 70, w: 32, h: 44 }; }
   static reviveRect(i) { return { x: VIEW_W / 2 - 154 + i * 160, y: 151, w: 148, h: 30 }; }
   static jobRowRect(i) { return { x: 36, y: 36 + i * 27, w: VIEW_W - 72, h: 24 }; }
+  static travelRect(i, n) { const w = 300, h = 30, x = (VIEW_W - w) / 2, y0 = 70; return { x, y: y0 + i * (h + 6), w, h }; }
   static skinRect(i) { const cols = 4, w = 112, h = 92, gap = 8, x0 = (VIEW_W - (cols * w + (cols - 1) * gap)) / 2; return { x: x0 + (i % cols) * (w + gap), y: 40 + Math.floor(i / cols) * (h + gap), w, h }; }
   static heroBranchRect(i, n) { return { x: 18 + (i % 2) * 240, y: 85 + Math.floor(i / 2) * 29, w: 236, h: 26 }; }
   static variantRect(i, n) { const cols = Math.min(3, n), w = 156, h = 58, gap = 8, rows = Math.ceil(n / cols), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % cols) * (w + gap), y: 66 + Math.floor(i / cols) * (h + gap) + (rows === 1 ? 30 : 0), w, h }; }
