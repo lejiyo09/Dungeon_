@@ -1176,6 +1176,7 @@ function updateEnemy(e, dt, world) {
   if (e.burn > 0 && Math.random() < 0.25) world.effects.status(e.x, e.y, 'burn');
   if (e.slow > 0 && Math.random() < 0.12) world.effects.status(e.x, e.y, 'freeze');
   if (e.poison > 0 && Math.random() < 0.08) world.effects.status(e.x, e.y, 'poison');
+  if (e.iceVulnT > 0) e.iceVulnT -= dt; if (e.huntT > 0) e.huntT -= dt; if (e.auraVulnT > 0) e.auraVulnT -= dt;
   if (e.def.ccImmune) { e.stunT = 0; e.chainT = 0; e.slow = 0; e.blind = 0; e.shock = 0; } /* 아서 왕: 모든 행동 방해 면역 (덫·경직·사슬·빙결·둔화·실명·감전) */
   if (e.stunT > 0) { e.stunT -= dt; return; } // 엑스칼리버 빛에 맞아 경직
   if (e.chainT > 0) { e.chainT -= dt; return; } // 황금 사슬에 묶임: 이동·공격 정지 (지속 피해는 계속)

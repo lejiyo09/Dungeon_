@@ -52,6 +52,7 @@ class Player extends Entity {
     this.dashInvuln = Math.max(0, this.dashInvuln - dt);
     this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
     if (this.denyT > 0) this.denyT -= dt; /* 가레스의 부정 장판 */
+    if (this.huntT > 0) this.huntT -= dt; /* 사냥꾼의 표적 (탄이 휘어 들어감) */
     if (this.aegisT > 0) this.aegisT = Math.max(0, this.aegisT - dt);
     if (this.scabbardT > 0) this.scabbardT -= dt; if (this.scabGuardT > 0) this.scabGuardT -= dt; /* 성검의 칼집 */ if (this.fleeceT > 0) this.fleeceT = Math.max(0, this.fleeceT - dt); /* 아킬레우스의 방패 · 황금 양털 */
     this.overdrive = Math.max(0, this.overdrive - dt); this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt); this.treasureCd = Math.max(0, this.treasureCd - dt); this.solomon = Math.max(0, this.solomon - dt); this.hadesT = Math.max(0, (this.hadesT || 0) - dt);
@@ -242,6 +243,8 @@ class Enemy extends Entity {
   }
   renderTelegraph(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y), def = this.def;
+    if (this.huntT > 0 && this.state !== 'DEAD') { const ry = y - (this.def.boss ? 30 : 16), t = performance.now() / 1000, s = 6 + Math.sin(t * 8); ctx.save(); ctx.strokeStyle = '#ff4a3a'; ctx.lineWidth = 1.5; /* 사냥꾼의 표적 */
+      ctx.beginPath(); ctx.arc(x, ry, s, 0, TAU); ctx.moveTo(x - s - 3, ry); ctx.lineTo(x - s + 2, ry); ctx.moveTo(x + s - 2, ry); ctx.lineTo(x + s + 3, ry); ctx.moveTo(x, ry - s - 3); ctx.lineTo(x, ry - s + 2); ctx.moveTo(x, ry + s - 2); ctx.lineTo(x, ry + s + 3); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; }
     if (this.fortress) { const F = this.fortress, t = performance.now() / 1000; ctx.save(); /* 갤러해드 로드 카멜롯: 하얀 성벽 돔 */
       ctx.globalAlpha = 0.14 * F.k + 0.04; ctx.fillStyle = '#e8ecff'; ctx.beginPath(); ctx.ellipse(x, y - 4, F.r, F.r * 0.85, 0, 0, TAU); ctx.fill();
       ctx.globalAlpha = 0.9 * F.k; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y - 4, F.r, F.r * 0.85, 0, 0, TAU); ctx.stroke();

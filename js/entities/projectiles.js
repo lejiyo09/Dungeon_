@@ -309,6 +309,36 @@ class BladeRing {
     ctx.restore(); ctx.lineWidth = 1; ctx.globalAlpha = 1;
   }
 }
+/* 정해진 시간 뒤에 한 번 실행 (절대 영도의 얼음 깨짐 등) — 그림 없음 */
+class DelayCall {
+  constructor(t, fn) { this.t = t; this.fn = fn; this.alive = true; }
+  update(dt, world) { this.t -= dt; if (this.t <= 0) { this.alive = false; this.fn(world); } }
+  render() {}
+}
+/* 성광 위성 (빛의 대마도사 3진): 빛의 구체가 주인 둘레를 돌며 가까운 적에게 광선(실명), 주인은 체력 회복 */
+class LightSatellites {
+  constructor(owner, o) { Object.assign(this, o); this.owner = owner; this.x = owner.x; this.y = owner.y; this.t = 0; this.fireT = 0.2; this.alive = true; this.beams = []; }
+  orb(i) { const a = this.t * 2.6 + i * TAU / this.n; return [this.owner.x + Math.cos(a) * this.r, this.owner.y - 6 + Math.sin(a) * this.r * 0.7]; }
+  update(dt, world) {
+    const p = this.owner; this.t += dt; this.x = p.x; this.y = p.y;
+    if (this.t >= this.life || p.state === 'DEAD') { this.alive = false; return; }
+    p.hp = Math.min(p.maxHp, p.hp + this.heal * dt);
+    for (const b of this.beams) b.t -= dt; this.beams = this.beams.filter((b) => b.t > 0);
+    this.fireT -= dt; if (this.fireT > 0) return; this.fireT = this.every;
+    for (let i = 0; i < this.n; i++) { const [ox, oy] = this.orb(i); let tgt = null, best = this.range;
+      for (const e of world.enemies) if (e.targetable) { const d = Math.hypot(e.x - ox, e.y - oy); if (d < best) { best = d; tgt = e; } }
+      if (!tgt) continue; world.damageEnemy(tgt, { damage: this.dmg, mods: p.mods, knockback: 1, status: tgt.def.boss ? null : { type: 'blind', chance: 1, duration: 1.5 } }, tgt.x - ox, tgt.y - oy, { quiet: true }); /* 보스는 실명시키지 않음 (계속 빗나가게 만드는 것 방지) */
+      this.beams.push({ x1: ox, y1: oy, x2: tgt.x, y2: tgt.y, t: 0.12 }); }
+    if (this.beams.length) SFX.play('beam', 0.1);
+  }
+  render(ctx) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (const b of this.beams) { ctx.globalAlpha = b.t / 0.12; ctx.strokeStyle = '#fff4c0'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(b.x1, b.y1); ctx.lineTo(b.x2, b.y2); ctx.stroke(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.stroke(); }
+    const k = Math.min(1, (this.life - this.t) / 0.5);
+    for (let i = 0; i < this.n; i++) { const [ox, oy] = this.orb(i); ctx.globalAlpha = 0.35 * k; ctx.fillStyle = '#fff4c0'; ctx.beginPath(); ctx.arc(ox, oy, 6, 0, TAU); ctx.fill(); ctx.globalAlpha = k; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(ox, oy, 2.5, 0, TAU); ctx.fill(); }
+    ctx.restore(); ctx.lineWidth = 1; ctx.globalAlpha = 1;
+  }
+}
 class Hazard {
   constructor(x, y, o) { Object.assign(this, o); this.x = x; this.y = y; this.t = 0; this.alive = true; }
   update(dt, world) {
@@ -618,6 +648,7 @@ class SkillAura {
     }
     let hit = 0;
     for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < this.r + e.radius) {
+      if (this.vuln) { e.auraVulnT = this.tick + 0.15; e.auraVuln = this.vuln; } /* 맹독 안개: 안의 적 받는 피해 증가 */
       world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: p.mods, knockback: 1, status: this.status }, 0, 0, { quiet: true }); hit++; }
     if (this.lifesteal && hit) p.hp = Math.min(p.maxHp, p.hp + Math.min(3, hit * this.lifesteal));
     for (let i = 0; i < 3; i++) { const a = Math.random() * TAU, d = this.r * (0.4 + Math.random() * 0.6);

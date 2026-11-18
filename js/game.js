@@ -1160,6 +1160,8 @@ class Game {
         const st = p.hybrid ? p.hybrid.status : null, col = p.hybrid ? p.hybrid.color : '#d8e0e8';
         p.whirl = 0.5; p.whirlTick = 0; p.whirlStatus = st;
         for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.projectiles.push(new Projectile({ x: p.x, y: p.y, dx: Math.cos(a), dy: Math.sin(a), speed: 260, range: 170, damage: D(52), pierce: 99, knockback: 4, mods: p.mods, color: col, size: 3, wave: true, status: st })); }
+        if (p.hybrid && p.hybrid.el === 'nature') for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 90 + e.radius) e.stunT = Math.max(e.stunT || 0, 1.5); /* 자연: 주변 1.5초 속박 */
+        if (p.hybrid && p.hybrid.el === 'light') { const n = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 170).length; const h = Math.round(p.maxHp * Math.min(0.3, 0.04 * n)); if (h > 0) { p.hp = Math.min(p.maxHp, p.hp + h); this.effects.text(p.x, p.y - 26, '+' + h, '#7be36b'); this.effects.heal(p.x, p.y); } } /* 빛: 주변 적마다 체력 4% 회복 */
         this.effects.ring(p.x, p.y, 36, col); this.effects.ring(p.x, p.y, 22, '#ffffff'); this.effects.burst(p.x, p.y, col, 16); break; }
       case 'whirlwind2': p.whirl = 0.5; p.whirlTick = 0; p.whirlStatus = null;
         for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.projectiles.push(new Projectile({ x: p.x, y: p.y, dx: Math.cos(a), dy: Math.sin(a), speed: 260, range: 160, damage: D(45), pierce: 99, knockback: 4, mods: p.mods, color: '#d8e0e8', size: 3, wave: true })); }
@@ -1180,9 +1182,9 @@ class Game {
         p.swing = { t: 0, dur: 0.15, ang: A, arc: 0.3, thrust: true }; this.addShake(0.1, 2); SFX.play('melee'); break;
       case 'skyspear': { // 천공 투창: 거대한 창이 꿰뚫고 날아가 끝에서 폭발
         const a = A, L = 300, wt = sweepWall(p.x, p.y, p.x + Math.cos(a) * L, p.y + Math.sin(a) * L, this.map, 3), LL = wt < 0 ? L : wt * L, x1 = p.x + Math.cos(a) * LL, y1 = p.y + Math.sin(a) * LL;
-        for (const e of this.enemies) if (e.targetable && segmentCircleHit(p.x, p.y, x1, y1, e.x, e.y, e.radius + 10) >= 0) this.damageEnemy(e, { damage: D(170), mods: p.mods, knockback: 10 }, Math.cos(a), Math.sin(a));
+        for (const e of this.enemies) if (e.targetable && segmentCircleHit(p.x, p.y, x1, y1, e.x, e.y, e.radius + 13) >= 0) this.damageEnemy(e, { damage: D(221), mods: p.mods, knockback: 10 }, Math.cos(a), Math.sin(a)); /* 상향: 피해 +30%, 판정 +30% */
         this.effects.beamline(p.x, p.y, x1, y1, 9, '#c8d8f0'); this.effects.beamline(p.x, p.y, x1, y1, 3, '#ffffff');
-        this.zones.push(new Strike(x1, y1, 0.25, 54, { damage: D(120), mods: p.mods, knockback: 12 }, '#c8d8f0', false));
+        this.zones.push(new Strike(x1, y1, 0.25, 70, { damage: D(156), mods: p.mods, knockback: 12 }, '#c8d8f0', false));
         this.addShake(0.3, 5); this.hitStop(0.05); SFX.play('heavy'); break; }
       case 'quake': this.zones.push(new SkillCast(p, p.x, p.y, { r: 140, time: 1, color: '#e0b070' }, () => {
         this.explodeAt(p.x, p.y, 140, { color: '#e0b070', hurtEnemies: true, src: { damage: D(150), mods: p.mods, knockback: 16 } });
@@ -1198,6 +1200,23 @@ class Game {
       // 얼음
       case 'icelance': shoot({ n: 3, fan: 0.25, p: { damage: 28, pierce: 99, color: '#bfefff', size: 2, speed: 380, arrow: true, status: { type: 'freeze', chance: 0.7, duration: 1.6, slow: 0.4 } } }); break;
       case 'frost_nova': nova(100, 40, { color: '#9ad8ff', clear: true, status: { type: 'freeze', chance: 1, duration: 2.5, slow: 0.15 } }); break;
+      case 'absolutezero': { /* 절대 영도: 내 주변을 얼려 멈춤 + 받는 피해 증가 → 3초 뒤 얼음이 깨지며 한 번 더 */
+        const R = 120, list = [];
+        for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < R + e.radius) { const t = e.def.boss ? 1.5 : 3; e.stunT = Math.max(e.stunT || 0, t); e.slow = Math.max(e.slow || 0, t); e.slowK = 0.2; e.iceVulnT = t;
+          this.damageEnemy(e, { damage: D(90), mods: p.mods, knockback: 0 }, 0, 0); list.push(e); }
+        this.zones.push(new DelayCall(3, (w) => { for (const e of list) if (e.alive) { w.damageEnemy(e, { damage: D(150), mods: p.mods, knockback: 6 }, e.x - p.x, e.y - p.y); w.effects.burst(e.x, e.y, '#bfefff', 10); } SFX.play('react', 0.1); }));
+        this.effects.ring(p.x, p.y, R, '#ffffff'); this.effects.ring(p.x, p.y, R * 0.7, '#9ad8ff'); this.effects.rays(p.x, p.y, '#bfefff', 18, R, 0.6);
+        for (let i = 0; i < 30; i++) { const a = Math.random() * TAU, s = 40 + Math.random() * 120; this.effects.part(p.x, p.y, Math.cos(a) * s, Math.sin(a) * s * 0.7, { color: i % 2 ? '#ffffff' : '#9ad8ff', life: 0.7, size: 2, size2: 0, drag: 3, add: true }); }
+        this.screenFlash = 0.2; this.flashColor = '180,230,255'; this.addShake(0.2, 4); SFX.play('magic'); break; }
+      case 'lightsat': { /* 성광 위성 */
+        this.zones = this.zones.filter((z) => !(z instanceof LightSatellites && z.owner === p));
+        this.zones.push(new LightSatellites(p, { n: 3, life: 8, r: 26, every: 0.55, range: 160, dmg: D(20), heal: 1 })); this.effects.ring(p.x, p.y, 30, '#fff4c0'); this.effects.rays(p.x, p.y, '#fff4c0', 14, 60, 0.5); SFX.play('magic'); break; }
+      case 'huntmark': { /* 사냥꾼의 표적 */
+        const cand = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 420), tgt = cand.find((e) => e.def.boss) || cand.sort((a, b) => b.hp - a.hp)[0];
+        if (!tgt) { this.effects.text(p.x, p.y - 20, '표적이 없습니다', '#aaa'); p.skillCooldown = 1; break; }
+        for (const e of this.enemies) if (e.huntOwner === p) e.huntT = 0;
+        tgt.huntT = 8; tgt.huntOwner = p; p.huntT = 8;
+        { const a0 = Math.atan2(tgt.y - p.y, tgt.x - p.x); for (const da of [-0.08, 0, 0.08]) this.projectiles.push(new Projectile({ x: p.x, y: p.y - 1, dx: Math.cos(a0 + da), dy: Math.sin(a0 + da), speed: 620, range: 520, damage: D(110), pierce: 99, knockback: 6, mods: p.mods, color: '#ff8a6a', size: 3, arrow: true })); } /* 표적 사격: 꿰뚫는 강한 탄 3발 */ this.effects.ring(tgt.x, tgt.y, 22, '#ff4a3a'); this.effects.text(tgt.x, tgt.y - tgt.radius - 14, '표적', '#ff6a5a', true); SFX.play('crit', 0.05); break; }
       case 'blizzard': { const c = at(180); this.zones.push(new Puddle(c.x, c.y, { r: 64, life: 5, tick: 0.3, dmg: D(14), status: { type: 'freeze', chance: 0.6, duration: 1.2, slow: 0.35 }, color: '#bfefff' }, p.mods)); this.effects.ring(c.x, c.y, 64, '#ffffff'); break; }
       // 자연
       case 'thorns': nova(95, 20, { color: '#7adf4a', root: 1.8, kb: 0, status: { type: 'poison', chance: 1, duration: 4, dps: 10 } }); break;
@@ -1225,7 +1244,7 @@ class Game {
           this.effects.ring(c.x, c.y, 90, '#ffffff'); this.screenFlash = 0.3; this.flashColor = '160,110,230'; this.addShake(0.5, 8); this.hitStop(0.08); SFX.play('excal'); })); break; }
       // 사수
       case 'overdrive': p.overdrive = 5; p.odDmg = 0; p.odRate = 0; p.odDouble = false; this.effects.text(p.x, p.y - 18, '과부하!', '#ffd84a'); break;
-      case 'overdrive3': p.overdrive = 8; p.odDmg = 0.15; p.odRate = 0.5; p.odDouble = true; this.effects.text(p.x, p.y - 18, '탄환의 폭풍!', '#ffd84a'); this.effects.ring(p.x, p.y, 34, '#ffd84a'); this.effects.ring(p.x, p.y, 20, '#ffffff'); this.addShake(0.15, 3); break;
+      case 'overdrive3': p.overdrive = 6; p.odDmg = 0.15; p.odRate = 0.5; p.odDouble = true; this.effects.text(p.x, p.y - 18, '탄환의 폭풍!', '#ffd84a'); this.effects.ring(p.x, p.y, 34, '#ffd84a'); this.effects.ring(p.x, p.y, 20, '#ffffff'); this.addShake(0.15, 3); break;
       case 'overdrive2': p.overdrive = 7; p.odDmg = 0.4; p.odRate = 0; p.odDouble = false; this.effects.text(p.x, p.y - 18, '탄막 폭주!', '#ffd84a'); this.effects.ring(p.x, p.y, 26, '#ffd84a'); break;
       // 사수 · 저격 갈래
       case 'snipe': case 'snipe2': { const two = p.skillId === 'snipe2';
@@ -1314,7 +1333,7 @@ class Game {
         this.effects.burst(p.x, p.y, '#c8a070', 18); this.effects.ring(p.x, p.y, 34, '#c8a070'); this.effects.text(p.x, p.y - 20, '곰의 힘!', '#e0c090'); this.addShake(0.15, 3); break; }
       // 암살자 · 독 갈래
       case 'venomfan': shoot({ n: 7, fan: 0.9, p: { damage: 32, pierce: 1, color: '#9aff5a', size: 2, speed: 340, arrow: true, status: { type: 'poison', chance: 1, duration: 4, dps: 18 } } }); SFX.play('bow'); break;
-      case 'plaguecloud': this.zones.push(new SkillAura(p, { r: 70, life: 7, tick: 0.3, dmg: 30, color: '#7adf4a', kind: 'flame', status: { type: 'poison', chance: 1, duration: 3, dps: 18 } }));
+      case 'plaguecloud': this.zones.push(new SkillAura(p, { r: 88, life: 7, tick: 0.3, dmg: 30, color: '#7adf4a', kind: 'flame', vuln: 0.2, status: { type: 'poison', chance: 1, duration: 3, dps: 18 } })); /* 상향: 범위 +25%, 안의 적 받는 피해 +20% */
         p.hasteT = 7; this.effects.ring(p.x, p.y, 70, '#7adf4a'); this.effects.text(p.x, p.y - 18, '맹독 안개!', '#9aff5a'); break;
       // 암살자 · 칼날 갈래
       case 'bladestorm': { /* [사용자 결정] 칼날 3진: 칼날을 사방으로 펼쳤다가 다시 나에게 모음 (나갈 때·돌아올 때 각각 피해) */
@@ -1334,8 +1353,8 @@ class Game {
       // 사제
       case 'sanctuary': this.zones.push(new Sanctuary(p.x, p.y, p, { r: 64, heal: 6, dmg: 14 })); this.effects.ring(p.x, p.y, 64, '#ffe9a0'); break;
       case 'sanctuary2': this.zones.push(new Sanctuary(p.x, p.y, p, { r: 90, life: 8, heal: 12, boost: true, dmg: 20 })); this.effects.ring(p.x, p.y, 90, '#ffe9a0'); break;
-      case 'descent': this.zones.push(new SkillCast(p, p.x, p.y, { r: 110, time: 1, color: '#ffe9a0' }, () => {
-        p.blinkInv = 2; p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.4)); this.effects.heal(p.x, p.y); nova(110, 170, { color: '#ffe9a0', clear: true });
+      case 'descent': this.zones.push(new SkillCast(p, p.x, p.y, { r: 110, time: 0.4, color: '#ffe9a0' }, () => {
+        p.blinkInv = 2; p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.4)); this.effects.heal(p.x, p.y); nova(110, 238, { color: '#ffe9a0', clear: true });
         this.effects.solomonSeal(p.x, p.y); this.screenFlash = 0.3; this.flashColor = '255,233,160'; SFX.play('solomon'); })); break;
       // 광전사
       case 'rage': p.rage = 5; p.rageAtk = 0.7; p.rageVamp = 0; this.effects.text(p.x, p.y - 18, '분노!', '#ff5a3a'); this.effects.ring(p.x, p.y, 30, '#ff5a3a'); this.addShake(0.15, 3); break;
@@ -1345,7 +1364,8 @@ class Game {
       // 드루이드
       case 'wolves': for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 12, p.y, p, { dmg: 5, life: 12 })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); break;
       case 'wolves2': for (let i = 0; i < 4; i++) this.allies.push(new SpiritWolf(p.x + (i - 1.5) * 12, p.y, p, { dmg: 5, life: 16, slow: true })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); this.effects.ring(p.x, p.y, 30, '#9ad8ff'); break;
-      case 'guardian': this.allies.push(new SpiritWolf(p.x, p.y - 10, p, { big: true, dmg: 20, life: 18 }));
+      case 'guardian': this.allies.push(new SpiritWolf(p.x, p.y - 10, p, { big: true, dmg: 28, life: 18 })); /* 상향: 곰 공격력 +40%, 나타날 때 주변 기절 */
+        for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 80 + e.radius) e.stunT = Math.max(e.stunT || 0, 1);
         for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 14, p.y, p, { dmg: 5, life: 18, slow: true })); this.effects.ring(p.x, p.y, 40, '#9ad8ff'); this.addShake(0.2, 3); break;
     }
     this.skillFx(p, at, A);
@@ -1397,7 +1417,7 @@ class Game {
       case 'plaguecloud': emit(7, (w, x, y, t) => { if (Math.random() < 0.5) { const a = Math.random() * TAU, d = Math.random() * 70; E.part(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.6, 0, -18, { color: Math.random() < 0.5 ? '#9aff5a' : '#5aa03a', life: 0.8, size: 1.5, size2: 3.5, drag: 1, shape: 'ring' }); } }, p);
         E.rays(p.x, p.y, '#7adf4a', 14, 80, 0.6); break;
       case 'bladestorm': E.rays(p.x, p.y, '#e8eef4', 16, 70, 0.5); break; /* 칼날이 펼쳐지는 순간 빛살 (칼날 자체는 BladeRing이 그림) */
-      case 'descent': later(1, () => { E.skyBeam(p.x, p.y, '#ffffff', 0, 18); E.skyBeam(p.x, p.y, '#ffe9a0', 0.05, 30); E.rays(p.x, p.y, '#ffe9a0', 20, 120, 0.8);
+      case 'descent': later(0.4, () => { E.skyBeam(p.x, p.y, '#ffffff', 0, 18); E.skyBeam(p.x, p.y, '#ffe9a0', 0.05, 30); E.rays(p.x, p.y, '#ffe9a0', 20, 120, 0.8);
         for (let i = 0; i < 20; i++) P(p.x + randInt(-30, 30), p.y + randInt(-10, 10), randInt(-10, 10), -50 - Math.random() * 60, '#fff4c0', 1); }); break;
       case 'bloodstorm': emit(6, (w, x, y, t) => { if (Math.random() < 0.5) { const a = t * 5 + Math.random() * 1.5, d = 30 + Math.random() * 20; E.part(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.7, -Math.sin(a) * 60, Math.cos(a) * 40, { color: Math.random() < 0.5 ? '#ff3a3a' : '#8a0a0a', life: 0.5, size: 2.5, size2: 0, drag: 2 }); } }, p);
         E.rays(p.x, p.y, '#ff3a3a', 16, 70, 0.6); break;
@@ -1698,6 +1718,10 @@ class Game {
   damageEnemy(enemy, src, kx, ky, opts = {}) {
     if (enemy.negateT > 0) { if (!(enemy.negMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, enemy.fortress ? '막힘' : '부정', enemy.fortress ? '#e8ecff' : '#d8f0ff'); enemy.negMsgT = this.time + 0.35; } return; } /* 가레스의 부정: 모든 피해 무효 */
     let base = src.damage;
+    if (enemy.iceVulnT > 0) base *= 1.5; /* 절대 영도로 얼어 있음 */
+    if (enemy.huntT > 0) base *= 1.8; /* 사냥꾼의 표적 */
+    if (enemy.auraVulnT > 0) base *= 1 + enemy.auraVuln; /* 맹독 안개 안 */
+    if (enemy.blind > 0 && this.player && this.player.hybrid && this.player.hybrid.el === 'light') base *= 1.25; /* 빛의 마검사: 실명된 적 */
     if (enemy.riposteT > 0) { enemy.riposteHit = true; base *= 0.5; } /* 랜슬롯 반격 자세: 맞으면 피해 절반 + 곧바로 반격 */
     if (enemy.def.wall && enemy.shieldAng != null && !(window.__noWall)) { /* 갤러해드 철벽: 공격한 사람이 방패 정면(원뿔 안)에 있으면 피해가 크게 줄어듦 */
       const A = this.player, da = Math.atan2(A.y - enemy.y, A.x - enemy.x) - enemy.shieldAng, df = Math.abs(Math.atan2(Math.sin(da), Math.cos(da)));
@@ -1708,6 +1732,10 @@ class Game {
     if (enemy.avalonUntil > this.time) base *= 1 + (enemy.avalonVuln || 0.2);        // 아발론의 꽃밭: 받는 피해 증가
     const { amount, crit } = rollDamage(base, src.mods);
     if (!enemy.takeHit(amount)) return;
+    if (!enemy.alive && enemy.huntT > 0 && enemy.huntOwner) { const o = enemy.huntOwner, left = enemy.huntT; o.skillCooldown *= 0.5; enemy.huntT = 0; /* 사냥꾼의 표적: 쓰러지면 쿨타임 절반 + 남은 시간만큼 가까운 다음 강한 적에게 옮겨 감 */
+      const next = this.enemies.filter((e) => e.targetable && e !== enemy && Math.hypot(e.x - enemy.x, e.y - enemy.y) < 300).sort((a, b) => (b.def.boss ? 1e9 : b.hp) - (a.def.boss ? 1e9 : a.hp))[0];
+      if (next) { next.huntT = Math.max(2, left); next.huntOwner = o; this.effects.beamline(enemy.x, enemy.y, next.x, next.y, 1, '#ff4a3a'); this.effects.text(next.x, next.y - next.radius - 14, '표적', '#ff6a5a'); } else o.huntT = 0;
+      this.effects.text(o.x, o.y - 22, '표적 처치 — 쿨타임 절반', '#ff9a8a'); }
     let kb = (src.knockback || 0) * (1 - (enemy.def.knockbackResist || 0));
     if (kb < 0) kb = -Math.min(-kb, Math.max(0, Math.hypot(enemy.x - this.player.x, enemy.y - this.player.y) - 14)); // 끌어당김: 플레이어 앞에서 멈춤
     if (enemy.alive && kb !== 0 && !(enemy.state === 'ATTACK' && (enemy.def.aiType === 'charger' || enemy.def.boss)))

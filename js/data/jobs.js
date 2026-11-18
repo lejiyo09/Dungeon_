@@ -42,7 +42,7 @@ const JOB_LINES = {
       skills: [
         { id: 'icelance', name: '얼음 창', desc: '적을 꿰뚫는 얼음 창 3개 (빙결)', cd: 4 },
         { id: 'frost_nova', name: '서리 폭발', desc: '주변 적 피해 + 강한 빙결, 탄환 제거', cd: 6 },
-        { id: 'blizzard', name: '블리자드', desc: '조준 지점에 5초간 눈보라 (지속 피해 + 빙결)', cd: 11 }] },
+        { id: 'absolutezero', name: '절대 영도', desc: '내 주변 넓은 범위를 얼려 적을 3초간 완전히 멈춤(보스 1.5초), 얼어 있는 적은 받는 피해 +50% — 3초 뒤 얼음이 깨지며 한 번 더 피해', cd: 12 }] }, /* [사용자 결정] 블리자드 → 절대 영도 */
     nature: { name: '자연', desc: '독안개 지팡이 · 묶고 중독', startWeapon: 'weapon_poisonstaff_001', ranks: ['자연의 마도사', '숲의 술사', '태고의 대마도사'], color: '#7adf4a', look: { body: '#3a8a3a', accent: '#c8e070' },
       skills: [
         { id: 'thorns', name: '가시 덩굴', desc: '주변 적을 덩굴로 묶고 중독', cd: 7 },
@@ -57,7 +57,7 @@ const JOB_LINES = {
       skills: [
         { id: 'lightarrow', name: '빛의 화살', desc: '적을 따라가 꿰뚫는 빛의 화살 5개 (실명)', cd: 4 },
         { id: 'radiance', name: '광휘', desc: '체력 회복 + 주변 적 피해(실명), 탄환 제거', cd: 6 },
-        { id: 'judgment', name: '심판의 빛', desc: '1.5초 시전(이동 불가) → 조준 지점에 빛기둥, 큰 피해(실명) + 체력 회복', cd: 11 }] },
+        { id: 'lightsat', name: '성광 위성', desc: '8초간 빛의 구체 3개가 내 주위를 돌며 가까운 적에게 자동으로 광선(보스 외 실명), 그동안 체력이 조금씩 회복', cd: 13 }] }, /* [사용자 결정] 심판의 빛 → 성광 위성 */
     dark: { name: '어둠', desc: '저주 지팡이 · 약점과 흡인', startWeapon: 'weapon_cursestaff_001', ranks: ['어둠의 마도사', '저주술사', '공허의 대마도사'], color: '#a070e0', look: { body: '#2e2242', accent: '#b070ff' },
       skills: [
         { id: 'curseshot', name: '저주탄', desc: '맞은 적이 오래 약해지는(받는 피해 +40%) 저주 구체 (저주)', cd: 4 },
@@ -69,12 +69,12 @@ const JOB_LINES = {
     skills: [
       { id: 'overdrive', name: '과부하 사격', desc: '5초간 공격 속도 2배, 에너지 무소모', cd: 15 },
       { id: 'overdrive2', name: '탄막 폭주', desc: '7초간 공격 속도 2배·공격력 +40%, 에너지 무소모', cd: 15 },
-      { id: 'overdrive3', name: '탄환의 폭풍', desc: '8초간 공격 속도 2.5배·공격력 +15%·총알이 2발씩 나감, 에너지 무소모', cd: 15 }] },
+      { id: 'overdrive3', name: '탄환의 폭풍', desc: '6초간 공격 속도 2.5배·공격력 +15%·총알이 2발씩 나감, 에너지 무소모', cd: 15 }] },
     sniper: { name: '저격', desc: '부싯돌 권총 · 느리지만 멀리, 강하게 관통', startWeapon: 'weapon_flintlock_001', ranks: ['저격수', '명사수', '일격필살'], color: '#ffe9a0',
       skills: [
         { id: 'snipe', name: '관통 저격', desc: '조준 방향으로 모든 적을 꿰뚫는 강한 탄 한 발', cd: 5 },
         { id: 'snipe2', name: '철갑 연사', desc: '꿰뚫는 강한 탄 세 발을 부채꼴로', cd: 6 },
-        { id: 'railshot', name: '일격필살', desc: '0.8초 조준(이동 불가) → 화면 끝까지 뻗는 일직선 사격, 엄청난 피해', cd: 12 }] },
+        { id: 'huntmark', name: '사냥꾼의 표적', desc: '가장 강한 적(보스 우선)에게 꿰뚫는 강한 탄 3발을 쏘고 8초간 표적 — 받는 피해 +80%, 내 탄이 그쪽으로 살짝 휘어 들어감, 표적이 쓰러지면 쿨타임 절반 회복 + 남은 시간만큼 가까운 다음 적에게 표적이 옮겨 감', cd: 12 }] }, /* [사용자 결정] 일격필살 → 사냥꾼의 표적 */
     demo: { name: '폭파', desc: '터지는 것으로 넓게 정리', ranks: ['폭파병', '폭탄 전문가', '파괴 공작원'], color: '#ff9a4a',
       skills: [
         { id: 'grenade', name: '수류탄', desc: '조준 지점에 던져 폭발 (화상)', cd: 5 },
@@ -106,7 +106,7 @@ const JOB_LINES = {
     skills: [
       { id: 'blink', name: '그림자 습격', desc: '조준 방향으로 순간이동하며 지나간 적을 벰 (잠깐 무적)', cd: 5 },
       { id: 'venomfan', name: '독 단검 부채', desc: '부채꼴로 독 단검 7개를 던짐 (관통 1, 강한 중독)', cd: 4 },
-      { id: 'plaguecloud', name: '맹독 안개', desc: '7초간 자기 주위에 독안개 (지속 피해 + 중독), 안에서 이동 속도 +20%', cd: 11 }] },
+      { id: 'plaguecloud', name: '맹독 안개', desc: '7초간 자기 주위에 넓은 독안개 (지속 피해 + 중독, 안의 적은 받는 피해 +20%), 안에서 이동 속도 +20%', cd: 11 }] },
     blade: { name: '칼날', desc: '몸 주위를 도는 칼날로 싸우는 근접형', ranks: ['암살자', '칼춤꾼', '천 개의 칼날'], color: '#d8e0e8',
     skills: [
       { id: 'blink', name: '그림자 습격', desc: '조준 방향으로 순간이동하며 지나간 적을 벰 (잠깐 무적)', cd: 5 },
@@ -117,7 +117,7 @@ const JOB_LINES = {
     skills: [
       { id: 'sanctuary', name: '성역', desc: '6초간 빛의 원: 안에 있으면 회복, 원 안의 적 지속 피해, 들어오는 적 탄 소멸', cd: 13 },
       { id: 'sanctuary2', name: '대성역', desc: '더 넓고 오래, 회복·피해 2배, 안에 있으면 공격력 +35%', cd: 13 },
-      { id: 'descent', name: '신성 강림', desc: '1초 기도(이동 불가) → 2초 무적, 체력 40% 회복, 주변 큰 피해', cd: 15 }] },
+      { id: 'descent', name: '신성 강림', desc: '0.4초 기도(이동 불가) → 2초 무적, 체력 40% 회복, 주변 아주 큰 피해', cd: 15 }] },
     smite: { name: '심판', desc: '빛으로 직접 내리치는 공격형', ranks: ['심판관', '대심판관', '빛의 집행자'], color: '#fff4c0',
       skills: [
         { id: 'holybolt', name: '빛의 창', desc: '꿰뚫는 빛의 창 3개 (실명)', cd: 5 },
@@ -149,7 +149,7 @@ const JOB_LINES = {
     skills: [
       { id: 'wolves', name: '영혼 늑대', desc: '12초간 적을 물어뜯는 늑대 3마리 소환', cd: 13 },
       { id: 'wolves2', name: '야수의 무리', desc: '16초간 강한 늑대 4마리 (물면 둔화)', cd: 13 },
-      { id: 'guardian', name: '대지의 수호수', desc: '18초간 거대한 곰(내려치기 범위 피해) + 강한 늑대 3마리 소환', cd: 15 }] },
+      { id: 'guardian', name: '대지의 수호수', desc: '18초간 거대한 곰(강한 내려치기 범위 피해) + 강한 늑대 3마리 소환, 곰이 나타날 때 주변 적 1초 기절', cd: 15 }] },
     thorn: { name: '가시', desc: '가시와 뿌리로 묶고 찌름', ranks: ['가시 수호자', '덤불의 주인', '고대 뿌리의 현자'], color: '#7adf4a',
       skills: [
         { id: 'thornfield', name: '가시 덤불', desc: '조준 지점에 6초간 가시 덤불 (지속 피해 + 중독)', cd: 8 },
@@ -180,7 +180,7 @@ const HYBRID_JOBS = {
 const ELEMENT_STATUS = {
   fire: { type: 'burn', chance: 1, duration: 3, dps: 10 },
   ice: { type: 'freeze', chance: 1, duration: 2, slow: 0.45 },
-  nature: { type: 'poison', chance: 1, duration: 4, dps: 10 },
+  nature: { type: 'poison', chance: 1, duration: 4, dps: 20 }, /* 마검사 자연 강화: 독 2배 (+ 마력 검무에 1.5초 속박) */
   lightning: { type: 'shock', chance: 1, duration: 3 },
   light: { type: 'blind', chance: 1, duration: 3 },
   dark: { type: 'curse', chance: 1, duration: 4 }
