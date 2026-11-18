@@ -419,9 +419,13 @@ class Game {
     p.treasure = tr || null; if (tr && tr.apply) tr.apply(p);
     if (p === this.player) for (const w of p.weapons) this.discover(w.def.id);
   }
-  skinSprite(heroId, lineId) { /* 이 직업에 켜 둔 스킨의 외형 이름 (없으면 null) — lineId를 주면 그 갈래에서 쓸 수 있는 스킨만, 안 주면(undefined) 갈래 검사 없이 */
-    const id = this.save.skinOn && this.save.skinOn[heroId], K = id && (this.save.skins || []).includes(id) && SKINS.find((k) => k.id === id && k.hero === heroId);
-    if (!K) return null; if (lineId !== undefined && K.line && K.line !== lineId) return null; return K.sprite; }
+  skinOnMap() { /* 예전 장착 기록(직업 키)을 직업·계열 키로 옮김 */
+    const sv = this.save, M = sv.skinOn = sv.skinOn || {};
+    for (const k of Object.keys(M)) if (!k.includes('|')) { const K = SKINS.find((q) => q.id === M[k] && q.hero === k); if (K && K.line) { M[skinKey(K)] = K.id; delete M[k]; } }
+    return M; }
+  skinSprite(heroId, lineId) { /* 이 직업·계열에 켜 둔 스킨의 외형 이름 (없으면 null) — lineId를 안 주면 로비에서 고른 진화 루트 기준 */
+    const lid = lineId === undefined ? this.chosenLine(heroId).id : lineId, M = this.skinOnMap(), own = this.save.skins || [];
+    const K = SKINS.find((k) => k.hero === heroId && (!k.line || k.line === lid) && own.includes(k.id) && M[skinKey(k)] === k.id); return K ? K.sprite : null; }
   chosenLine(heroId) { /* [사용자 결정] 로비에서 고른 진화 루트 (없으면 첫 갈래) */
     const lines = jobLines(heroId), id = this.save.lineChoice && this.save.lineChoice[heroId]; return lines.find((l) => l.id === id) || lines[0]; }
   playerLineId(p) { return p.line ? p.line.id : this.mode === 'lobby' ? this.chosenLine(p.hero.id).id : null; } /* 스킨 판정용: 로비에서는 고른 진화 루트 */
@@ -431,7 +435,7 @@ class Game {
     const sv = this.save; sv.giftsUsed = sv.giftsUsed || []; sv.skins = sv.skins || []; sv.skinOn = sv.skinOn || {};
     if (sv.giftsUsed.includes(G.hash)) return ['이미 받은 선물입니다', '#ffb07a'];
     sv.giftsUsed.push(G.hash); const K = SKINS.find((k) => k.id === G.skin);
-    if (K && !sv.skins.includes(K.id)) sv.skins.push(K.id); if (K) sv.skinOn[K.hero] = K.id; /* 받자마자 켬 */
+    if (K && !sv.skins.includes(K.id)) sv.skins.push(K.id); if (K) this.skinOnMap()[skinKey(K)] = K.id; /* 받자마자 켬 */
     writeSave(sv); SFX.play('victory'); if (this.profile == null) return [`스킨 '${K.name}' 획득! (게스트는 저장되지 않아요)`, '#ffd84a'];
     return [`스킨 '${K ? K.name : '?'}' 획득! — ${K ? this.data.heroes.get(K.hero).name : ''} 외형이 바뀝니다 (Esc → K로 켜기/끄기)`, '#ffd84a'];
   }
@@ -971,7 +975,7 @@ class Game {
       if (input.wasPressed('Mouse0')) { const m = input.mouse; SKINS.forEach((_, i) => { const r = HUD.skinRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) ch = i; }); this.input.mouse.down = false; }
       if (ch >= 0) { const K = SKINS[ch], sv = this.save; sv.skinOn = sv.skinOn || {};
         if (!(sv.skins || []).includes(K.id)) o.msg = { text: `아직 없는 스킨입니다 — 선물 코드로 얻을 수 있어요 (G)`, color: '#ff9a9a', t: 2.5 };
-        else { const on = sv.skinOn[K.hero] === K.id; sv.skinOn[K.hero] = on ? null : K.id; writeSave(sv); SFX.play('ui');
+        else { const M = this.skinOnMap(), key = skinKey(K), on = M[key] === K.id; M[key] = on ? null : K.id; writeSave(sv); SFX.play('ui');
           const L = jobLines(K.hero).find((l) => l.id === K.line); o.msg = { text: on ? `'${K.name}' 해제 — 기본 외형` : `'${K.name}' 장착${L ? ` — ${this.data.heroes.get(K.hero).name} ${L.name} 계열일 때 보임` : ''}`, color: '#ffd84a', t: 2.5 }; } }
       return;
     } else if (o.type === 'gift') { // 선물 코드 입력 (영문·숫자 최대 16자)

@@ -186,7 +186,7 @@ class HUD {
       hudText(ctx, `스킨  ·  보유 ${SKINS.filter((k) => (sv.skins || []).includes(k.id)).length}/${SKINS.length}`, VIEW_W / 2, 10, '#ffb0d8', 'center', 12);
       hudText(ctx, '외형만 바뀌고 능력은 그대로 · 정해진 직업·계열일 때만 보임', VIEW_W / 2, 26, '#aaa', 'center', 7);
       SKINS.forEach((K, i) => {
-        const r = HUD.skinRect(i), owned = (sv.skins || []).includes(K.id), on = owned && sv.skinOn && sv.skinOn[K.hero] === K.id, hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        const r = HUD.skinRect(i), owned = (sv.skins || []).includes(K.id), on = owned && game.skinOnMap()[skinKey(K)] === K.id, hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
         const hero = game.data.heroes.get(K.hero), L = jobLines(K.hero).find((l) => l.id === K.line);
         ctx.fillStyle = on ? 'rgba(255,176,216,0.18)' : hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
         ctx.strokeStyle = on ? '#ffb0d8' : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
