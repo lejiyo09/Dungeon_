@@ -51,14 +51,15 @@ const BALANCE = {
     sentryMax: 3,           // 망자의 파수기(스킬) 동시 설치 수 — 덫 장비와 따로 셈 (넘으면 가장 오래된 것이 사라짐) [사용자 결정]
     sentryCharges: 3,       // 망자의 파수기 충전 칸: 설치할 때마다 1칸 소비, 설치 재사용 대기시간은 없음 [사용자 결정]
     sentryRecharge: 4,      // 충전 칸 하나가 다시 차는 시간(초) — 스킬 쿨타임 감소(집중 등)도 같은 비율로 적용
+    equipBossMult: 0.35,    // 덫 장비(무기) 피해가 보스에게 들어갈 때 배율 — 종류마다 5개까지 깔 수 있어서 스킬보다 낮음
     bossMult: 0.7,          // [보스전 최강 방지] 함정 계열·덫 장비 피해가 보스에게 들어갈 때 배율
     scan: 0.25,             // 설치물이 적을 다시 찾는 간격(초) — 매 프레임 탐색하지 않음
     burn: { duration: 3, dpsRatio: 0.25 },                                        // 화상: 초당 (직접 피해 × dpsRatio), duration초 → 총 추가 피해 = 직접 피해의 75%
     shock: { keep: 2.5, need: 3, stun: 0.75, immune: 3, bossNeed: 5, bossStun: 0.25, bossImmune: 5 }, // 감전 누적 → 마비 (보스는 짧은 경직)
     prey: { dur: 3, bonus: 0.2 },                                                // 사냥터 각인: 덫 장비·망자의 파수기에게 받는 피해 +bonus
     firetoss: { dmg: 60, radius: 40, kb: 14, range: 210, speed: 320 },            // 화염 투척 (기본)
-    grid: { r: 46, life: 4, stun: 1, range: 200, dotPct: 0.05, tick: 1 }, // 전류 격자 (1차) = 쇼크 웹: 가시·전류선에 닿아 있는 동안 tick초마다 그 적 최대 체력의 dotPct 지속 피해 (공격력·치명타·각인 영향 없음, 보스에게는 덫 배율), 처음 닿을 때 stun초 기절 [사용자 결정]
-    death: { life: 15, range: 150, every: 0.6, boltPct: 0.025, corpseRange: 120, corpseR: 52, corpseEvery: 1.2, corpseHp: 0.8, corpseHeal: 0.1, lifesteal: 0.05 }, // 망자의 파수기 (2차) — 번개 = 맞은 적 최대 체력 × boltPct, 시체 폭발 피해 = 죽은 적 최대 체력 × corpseHp, 폭발 때 죽은 적 최대 체력 × corpseHeal 회복, 파수기가 준 피해 × lifesteal 회복 [사용자 결정]
+    grid: { r: 46, life: 4, stun: 1, range: 200, dotPct: 0.05, tick: 1, bossDmg: 20 }, /* 보스에게는 최대 체력 % 대신 고정 피해 bossDmg (스킬 배율 적용) */ // 전류 격자 (1차) = 쇼크 웹: 가시·전류선에 닿아 있는 동안 tick초마다 그 적 최대 체력의 dotPct 지속 피해 (공격력·치명타·각인 영향 없음, 보스에게는 덫 배율), 처음 닿을 때 stun초 기절 [사용자 결정]
+    death: { life: 15, range: 150, every: 0.6, boltPct: 0.025, corpseRange: 120, corpseR: 52, corpseEvery: 1.2, corpseHp: 0.8, corpseHeal: 0.1, lifesteal: 0.05, bossBolt: 16, bossCorpse: 60, healCap: 0.05, corpseHealCap: 0.04 }, /* 보스: 번개·시체 폭발은 % 대신 고정 bossBolt·bossCorpse (스킬 배율) · 회복: 시체 1개당 최대 체력 corpseHealCap, 흡혈 포함 1초에 최대 healCap까지 */ // 망자의 파수기 (2차) — 번개 = 맞은 적 최대 체력 × boltPct, 시체 폭발 피해 = 죽은 적 최대 체력 × corpseHp, 폭발 때 죽은 적 최대 체력 × corpseHeal 회복, 파수기가 준 피해 × lifesteal 회복 [사용자 결정]
     corpseLife: 6           // 시체가 남아 있는 시간(초)
   },
   upgrade: { maxLevel: 10, perLevel: 0.12, base: 30, chance: [1, 0.9, 0.75, 0.6, 0.45, 0.38, 0.32, 0.26, 0.2, 0.15],

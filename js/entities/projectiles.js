@@ -387,7 +387,7 @@ class ShockGrid { /* 전류 격자 = 디아블로 2 쇼크 웹: 던진 자리에
     for (const e of inside) {
       if (!this.hit.has(e)) { this.hit.add(e); world.trapRoot(e, e.def.boss ? this.stun * 0.5 : this.stun); } /* 처음 닿을 때 기절 (보스는 절반, 3번 뒤 면역은 trapRoot가 처리) */
       if (this.nextT.get(e) > this.t) continue; this.nextT.set(e, this.t + (this.tick || 1)); this.lit = 1; /* 지속 피해: 같은 적은 tick초에 한 번 */
-      world.damageEnemy(e, { damage: (e.maxHp || 0) * (this.dotPct || 0.05), mods: fixed, knockback: 0, trap: true, pct: true, prey: true, from: { x: this.x, y: this.y } }, 0, 0);
+      world.damageEnemy(e, { damage: e.def.boss ? world.skillDmg(BALANCE.TRAP.grid.bossDmg) : (e.maxHp || 0) * (this.dotPct || 0.05), mods: fixed, /* 보스는 % 대신 고정 (보스 체력·체력바 무시 방지) */ knockback: 0, trap: true, pct: true, prey: true, from: { x: this.x, y: this.y } }, 0, 0);
       const A = this.spikePos(Math.floor(Math.random() * this.sp.length)); world.effects.lightning(A.x, A.y - 4, e.x, e.y - 4); }
   }
   render(ctx) {
@@ -408,7 +408,7 @@ class ShockGrid { /* 전류 격자 = 디아블로 2 쇼크 웹: 던진 자리에
 class TrapSentry {
   constructor(owner, x, y, kind, P, o) { Object.assign(this, o); this.owner = owner; this.x = x; this.y = y; this.kind = kind; this.P = P; this.t = 0; this.alive = true; this.cd = 0.6; this.scanT = 0; this.target = null; this.ang = -Math.PI / 2;
     this.charging = -1; this.beamT = 0; this.waves = []; this.zaps = []; this.corpseT = 0.8; }
-  src(dmg, extra) { return Object.assign({ damage: dmg, mods: this.getMods ? this.getMods() : this.owner.mods, knockback: 1, trap: true, from: { x: this.x, y: this.y } }, extra); }
+  src(dmg, extra) { return Object.assign({ damage: dmg, mods: this.getMods ? this.getMods() : this.owner.mods, knockback: 1, trap: true, equip: this.kind !== 'death', from: { x: this.x, y: this.y } }, extra); } /* equip: 덫 장비(무기) — 보스에게 따로 배율 */
   valid(e) { return e && e.alive && e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < this.P.range + e.radius; }
   update(dt, world) {
     const P = this.P; this.t += dt; if (this.t >= P.life) { this.alive = false; world.effects.burst(this.x, this.y, '#8a94a4', 6); return; }
@@ -441,14 +441,15 @@ class TrapSentry {
     if (this.kind === 'death' && dealt > 0) this.healOwner(world, dealt * BALANCE.TRAP.death.lifesteal);
     return dealt;
   }
-  healOwner(world, amt) { const o = this.owner; if (!o || o.state === 'DEAD' || amt <= 0) return; this.healAcc = (this.healAcc || 0) + amt; const h = Math.floor(this.healAcc); if (h < 1) return; this.healAcc -= h;
+  healOwner(world, amt) { const o = this.owner; if (!o || o.state === 'DEAD' || amt <= 0) return;
+    if (!(o.dsHealEnd > world.time)) { o.dsHealEnd = world.time + 1; o.dsHealSum = 0; } amt = Math.min(amt, o.maxHp * BALANCE.TRAP.death.healCap - o.dsHealSum); if (amt <= 0) return; o.dsHealSum += amt; /* 모든 망자의 파수기 합쳐 1초에 최대 체력 healCap까지 */ this.healAcc = (this.healAcc || 0) + amt; const h = Math.floor(this.healAcc); if (h < 1) return; this.healAcc -= h;
     const got = Math.min(o.maxHp - o.hp, h); if (got > 0) { o.hp += got; if (!(this.healTxtT > world.time)) { world.effects.text(o.x, o.y - 24, '+' + got, '#7be36b'); this.healTxtT = world.time + 0.4; } } }
   bolt(world, a) { /* 일직선 관통 번개: 사거리 끝(벽이 있으면 벽 앞)까지 선 위의 적을 한 번씩 */
     const P = this.P, x0 = this.x, y0 = this.y - 10, L = P.range + 20; let ex = x0 + Math.cos(a) * L, ey = y0 + Math.sin(a) * L;
     const st = sweepWall(x0, y0, ex, ey, world.map); if (st >= 0) { ex = x0 + (ex - x0) * st; ey = y0 + (ey - y0) * st; }
     const W = P.width || 6, death = this.kind === 'death', fixed = { attackBonus: 0, critChance: 0, critMultiplier: 1 };
     for (const e of world.enemies) if (e.targetable && segmentCircleHit(x0, y0, ex, ey, e.x, e.y - 4, W + e.radius) >= 0) { /* 망자의 파수기: 맞은 적 최대 체력의 boltPct (공격력·치명타·각인 영향 없음, 보스에게는 덫 배율) */
-      const src = death ? Object.assign(this.src((e.maxHp || 0) * BALANCE.TRAP.death.boltPct, { shockStack: true, prey: true, pct: true }), { mods: fixed }) : this.src(this.dmg, { shockStack: true });
+      const src = death ? Object.assign(this.src(e.def.boss ? world.skillDmg(BALANCE.TRAP.death.bossBolt) : (e.maxHp || 0) * BALANCE.TRAP.death.boltPct, { shockStack: true, prey: true, pct: true }), { mods: fixed }) : this.src(this.dmg, { shockStack: true });
       this.hurt(world, e, src, Math.cos(a), Math.sin(a)); world.effects.spark(e.x, e.y - 4, '#e0f4ff'); }
     world.effects.lightning(x0, y0, ex, ey); this.zaps.push({ x0, y0, x1: ex, y1: ey, t: 0.14 });
   }
@@ -476,8 +477,8 @@ class TrapSentry {
     c.used = true; this.corpseT = D.corpseEvery;
     const fx = world.effects, hp = c.maxHp || 0, dmg = hp * D.corpseHp; /* 데스 센트리: 죽은 적 최대 체력의 corpseHp (공격력 보정·치명타·사냥터 각인 없이 고정 비율, 보스에게는 덫 배율) */
     const fixed = { attackBonus: 0, critChance: 0, critMultiplier: 1 };
-    if (dmg > 0) for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - c.x, e.y - c.y) < D.corpseR + e.radius) this.hurt(world, e, Object.assign(this.src(dmg, { prey: true, corpse: true, from: { x: c.x, y: c.y } }), { mods: fixed }), e.x - c.x, e.y - c.y);
-    this.healOwner(world, hp * D.corpseHeal); /* 시체를 터뜨리면 죽은 적 최대 체력의 corpseHeal만큼 회복 */
+    if (dmg > 0) for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - c.x, e.y - c.y) < D.corpseR + e.radius) this.hurt(world, e, Object.assign(this.src(e.def.boss ? Math.min(dmg, world.skillDmg(D.bossCorpse)) : dmg, { prey: true, corpse: true, from: { x: c.x, y: c.y } }), { mods: fixed }), e.x - c.x, e.y - c.y);
+    this.healOwner(world, Math.min(hp * D.corpseHeal, (this.owner ? this.owner.maxHp : 0) * D.corpseHealCap)); /* 시체를 터뜨리면 죽은 적 최대 체력의 corpseHeal만큼 회복 */
     fx.corpseBlast(c.x, c.y, D.corpseR); if (world.addShake) world.addShake(0.12, 2.5); /* 시체 폭발 이펙트 */
     world.effects.lightning(this.x, this.y - 10, c.x, c.y); SFX.play('explode', 0.06); return true;
   }
