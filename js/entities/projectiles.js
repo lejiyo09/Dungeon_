@@ -433,11 +433,18 @@ class TrapSentry {
       this.bolt(world, a); SFX.play('react', 0.08);
     }
   }
+  hurt(world, e, src, kx, ky, opts) { /* 피해를 주고 실제로 깎인 체력을 돌려줌 — 망자의 파수기는 그중 lifesteal만큼 주인 체력 회복 */
+    const h0 = e.hp; world.damageEnemy(e, src, kx, ky, opts); const dealt = Math.max(0, h0 - Math.max(0, e.hp));
+    if (this.kind === 'death' && dealt > 0) this.healOwner(world, dealt * BALANCE.TRAP.death.lifesteal);
+    return dealt;
+  }
+  healOwner(world, amt) { const o = this.owner; if (!o || o.state === 'DEAD' || amt <= 0) return; this.healAcc = (this.healAcc || 0) + amt; const h = Math.floor(this.healAcc); if (h < 1) return; this.healAcc -= h;
+    const got = Math.min(o.maxHp - o.hp, h); if (got > 0) { o.hp += got; if (!(this.healTxtT > world.time)) { world.effects.text(o.x, o.y - 24, '+' + got, '#7be36b'); this.healTxtT = world.time + 0.4; } } }
   bolt(world, a) { /* 일직선 관통 번개: 사거리 끝(벽이 있으면 벽 앞)까지 선 위의 적을 한 번씩 */
     const P = this.P, x0 = this.x, y0 = this.y - 10, L = P.range + 20; let ex = x0 + Math.cos(a) * L, ey = y0 + Math.sin(a) * L;
     const st = sweepWall(x0, y0, ex, ey, world.map); if (st >= 0) { ex = x0 + (ex - x0) * st; ey = y0 + (ey - y0) * st; }
     const W = P.width || 6;
-    for (const e of world.enemies) if (e.targetable && segmentCircleHit(x0, y0, ex, ey, e.x, e.y - 4, W + e.radius) >= 0) { world.damageEnemy(e, this.src(this.dmg, { shockStack: true, prey: this.kind === 'death' }), Math.cos(a), Math.sin(a)); world.effects.spark(e.x, e.y - 4, '#e0f4ff'); }
+    for (const e of world.enemies) if (e.targetable && segmentCircleHit(x0, y0, ex, ey, e.x, e.y - 4, W + e.radius) >= 0) { this.hurt(world, e, this.src(this.dmg, { shockStack: true, prey: this.kind === 'death' }), Math.cos(a), Math.sin(a)); world.effects.spark(e.x, e.y - 4, '#e0f4ff'); }
     world.effects.lightning(x0, y0, ex, ey); this.zaps.push({ x0, y0, x1: ex, y1: ey, t: 0.14 });
   }
   zap(world, x0, y0, e, dmg) { world.damageEnemy(e, this.src(dmg, { shockStack: true, prey: this.kind === 'death' }), e.x - x0, e.y - y0); world.effects.lightning(x0, y0, e.x, e.y - 4); this.zaps.push({ x0, y0, x1: e.x, y1: e.y - 4, t: 0.12 }); world.effects.spark(e.x, e.y - 4, '#e0f4ff'); }
@@ -461,8 +468,11 @@ class TrapSentry {
   tryCorpse(world) { /* 망자의 파수기(데스 센트리): 이번 발사를 주변의 쓰이지 않은 시체 폭발로 (시체는 used 표시로 한 번만 — 다른 파수기도 다시 못 씀, 폭발 간격은 corpseEvery) */
     const D = BALANCE.TRAP.death; if (this.corpseT > 0) return false;
     const c = (world.corpses || []).find((q) => !q.used && world.time - q.t < BALANCE.TRAP.corpseLife && Math.hypot(q.x - this.x, q.y - this.y) < D.corpseRange); if (!c) return false;
-    c.used = true; this.corpseT = D.corpseEvery; const fx = world.effects, dmg = world.skillDmg(D.corpseDmg);
-    for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - c.x, e.y - c.y) < D.corpseR + e.radius) world.damageEnemy(e, this.src(dmg, { prey: true, from: { x: c.x, y: c.y } }), e.x - c.x, e.y - c.y);
+    c.used = true; this.corpseT = D.corpseEvery;
+    const fx = world.effects, hp = c.maxHp || 0, dmg = hp * D.corpseHp; /* 데스 센트리: 죽은 적 최대 체력의 corpseHp (공격력 보정·치명타·사냥터 각인 없이 고정 비율, 보스에게는 덫 배율) */
+    const fixed = { attackBonus: 0, critChance: 0, critMultiplier: 1 };
+    if (dmg > 0) for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - c.x, e.y - c.y) < D.corpseR + e.radius) this.hurt(world, e, Object.assign(this.src(dmg, { prey: true, corpse: true, from: { x: c.x, y: c.y } }), { mods: fixed }), e.x - c.x, e.y - c.y);
+    this.healOwner(world, hp * D.corpseHeal); /* 시체를 터뜨리면 죽은 적 최대 체력의 corpseHeal만큼 회복 */
     fx.ring(c.x, c.y, 10, '#ff7ad0'); fx.ring(c.x, c.y, D.corpseR, '#a03a6a'); fx.ring(c.x, c.y, D.corpseR * 0.7, '#7a3aaa'); /* 짙은 적색·보라 충격파 */
     for (let i = 0; i < 10; i++) { const a = Math.random() * TAU, s = 40 + Math.random() * 50; fx.part(c.x, c.y, Math.cos(a) * s, Math.sin(a) * s * 0.7, { color: i % 2 ? '#a03a6a' : '#6a2a8a', life: 0.5, size: 2, size2: 0, drag: 3, add: true }); }
     for (let i = 0; i < 4; i++) fx.part(c.x + randInt(-6, 6), c.y, 0, -10, { color: 'rgba(40,20,40,0.55)', life: 1, size: 3, size2: 7, drag: 1 });

@@ -1749,7 +1749,7 @@ class Game {
   damageEnemy(enemy, src, kx, ky, opts = {}) {
     if (enemy.negateT > 0) { if (!(enemy.negMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, enemy.fortress ? '막힘' : '부정', enemy.fortress ? '#e8ecff' : '#d8f0ff'); enemy.negMsgT = this.time + 0.35; } return; } /* 가레스의 부정: 모든 피해 무효 */
     let base = src.damage;
-    if (src.trap) { if (enemy.preyT > 0) base *= 1 + BALANCE.TRAP.prey.bonus; if (enemy.def.boss) base *= BALANCE.TRAP.bossMult; } /* 덫 장비·망자의 파수기: 사냥터 각인 +20% · 보스에게는 배율 (보스전 최강 방지) */
+    if (src.trap) { if (enemy.preyT > 0 && !src.corpse) base *= 1 + BALANCE.TRAP.prey.bonus; if (enemy.def.boss) base *= BALANCE.TRAP.bossMult; } /* 덫 장비·망자의 파수기: 사냥터 각인 +20% · 보스에게는 배율 (보스전 최강 방지) */
     if (enemy.iceVulnT > 0) base *= 1.5; /* 절대 영도로 얼어 있음 */
     if (enemy.huntT > 0) base *= 1.8; /* 사냥꾼의 표적 */
     if (enemy.auraVulnT > 0) base *= 1 + enemy.auraVuln; /* 맹독 안개 안 */
@@ -2018,7 +2018,7 @@ class Game {
   onEnemyKilled(enemy) {
     if (enemy.rewardGiven) return;
     enemy.rewardGiven = true;
-    if (!enemy.def.boss && !enemy.def.dummy && !enemy.def.master) { const C = this.corpses || (this.corpses = []); C.push({ x: enemy.x, y: enemy.y, t: this.time, used: false }); if (C.length > 40) C.shift(); } /* 시체 (망자의 파수기용, BALANCE.TRAP.corpseLife초) */
+    if (!enemy.def.boss && !enemy.def.dummy && !enemy.def.master) { const C = this.corpses || (this.corpses = []); C.push({ x: enemy.x, y: enemy.y, t: this.time, used: false, maxHp: enemy.maxHp }); if (C.length > 40) C.shift(); } /* 시체 (망자의 파수기용, BALANCE.TRAP.corpseLife초) */
     this.kills++;
     if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) {
       this.guildEvent('kills', 1, enemy.def.id);

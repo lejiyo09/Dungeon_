@@ -78,7 +78,7 @@ class WeaponSystem {
       SFX.play('magic', 0.08);
     }
   }
-  // 덫 장비 한도: 종류별 sentry.max개 [사용자 결정: 덫마다 5개, 합산 제한 없음] — 넘으면 디아블로 2처럼 그 종류에서 가장 오래된 것을 없애고 새로 설치 (망자의 파수기(스킬)는 따로 셈)
+  // 덫 장비 한도: 종류별 sentry.max개 [사용자 결정: 덫마다 4개, 합산 제한 없음] — 넘으면 디아블로 2처럼 그 종류에서 가장 오래된 것을 없애고 새로 설치 (망자의 파수기(스킬)는 따로 셈)
   sentryMakeRoom(player, w) {
     const same = this.world.zones.filter((z) => z instanceof TrapSentry && z.alive && z.owner === player && z.def === w.def);
     while (same.length >= w.def.sentry.max) { const old = same.shift(); old.alive = false; this.world.effects.burst(old.x, old.y, '#8a94a4', 6); }
