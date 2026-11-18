@@ -49,9 +49,9 @@ class Player extends Entity {
     if (this.state === 'DEAD') { this.deathTimer += dt; return; }
     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
     this.skillCooldown = Math.max(0, this.skillCooldown - dt * (this.solomon > 0 && this.treasure && this.treasure.skillHaste ? this.treasure.skillHaste : 1)); // 솔로몬의 반지: 스킬 쿨타임 빨리 회복
-    if (this.skillId === 'deathsentry') { /* 망자의 파수기 충전: 쿨타임이 돌 때마다 1칸, 다 차면 멈춤 */
-      const M = BALANCE.TRAP.sentryCharges; if (this.dsCharges == null) this.dsCharges = M; if (this.dsGap > 0) this.dsGap -= dt;
-      if (this.dsCharges < M && this.skillCooldown <= 0) { this.dsCharges++; if (this.dsCharges < M) this.skillCooldown = this.skillCdMax; } }
+    if (this.skillId === 'deathsentry') { /* 망자의 파수기 충전: 칸 하나에 sentryRecharge초(스킬 쿨타임 감소 비율 적용), 다 차면 멈춤 — skillCooldown은 이 충전 진행을 보여 주는 데 씀 */
+      const M = BALANCE.TRAP.sentryCharges, T = BALANCE.TRAP.sentryRecharge * (this.skillBaseCd ? this.skillCdMax / this.skillBaseCd : 1); if (this.dsCharges == null) this.dsCharges = M;
+      if (this.dsCharges >= M) this.skillCooldown = 0; else { if (!(this.dsT > 0)) this.dsT = T; this.dsT -= dt * (this.solomon > 0 && this.treasure && this.treasure.skillHaste ? this.treasure.skillHaste : 1); if (this.dsT <= 0) { this.dsCharges++; this.dsT = this.dsCharges < M ? T : 0; } this.skillCooldown = Math.max(0, this.dsT); this.dsMax = T; } }
     this.dashInvuln = Math.max(0, this.dashInvuln - dt);
     this.hurtInvuln = Math.max(0, this.hurtInvuln - dt);
     if (this.denyT > 0) this.denyT -= dt; /* 가레스의 부정 장판 */
