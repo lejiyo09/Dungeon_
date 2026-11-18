@@ -1293,7 +1293,7 @@ class Game {
       case 'trapgrid': { /* 함정 1차: 전류 격자 */
         const T = BALANCE.TRAP.grid, pt = this.trapPoint(p, T.range);
         if (!pt) { p.skillCooldown = 0.3; break; }
-        this.zones.push(new ShockGrid(p, pt.x, pt.y, { dmg: D(T.dmg), r: T.r, life: T.life, stun: T.stun, perHit: T.perHit, maxMult: T.maxMult })); this.effects.ring(pt.x, pt.y, T.r, '#7ac8ff'); SFX.play('react', 0.1); break; }
+        this.zones.push(new ShockGrid(p, pt.x, pt.y, { r: T.r, life: T.life, stun: T.stun, dotPct: T.dotPct, tick: T.tick })); this.effects.ring(pt.x, pt.y, T.r, '#7ac8ff'); SFX.play('react', 0.1); break; }
       case 'deathsentry': { /* 함정 2차: 망자의 파수기 — 마우스 위치, 충전 칸 1개 소비, 최대 sentryMax개 (넘으면 가장 오래된 것이 사라짐), 덫 장비와 따로 셈 */
         const T = BALANCE.TRAP.death, pt = this.trapPoint(p, 220);
         if (!pt) { p.dsCharges = Math.min(BALANCE.TRAP.sentryCharges, p.dsCharges + 1); break; } /* 설치 못 하면 칸 되돌림 */
@@ -1749,7 +1749,7 @@ class Game {
   damageEnemy(enemy, src, kx, ky, opts = {}) {
     if (enemy.negateT > 0) { if (!(enemy.negMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, enemy.fortress ? '막힘' : '부정', enemy.fortress ? '#e8ecff' : '#d8f0ff'); enemy.negMsgT = this.time + 0.35; } return; } /* 가레스의 부정: 모든 피해 무효 */
     let base = src.damage;
-    if (src.trap) { if (enemy.preyT > 0 && !src.corpse) base *= 1 + BALANCE.TRAP.prey.bonus; if (enemy.def.boss) base *= BALANCE.TRAP.bossMult; } /* 덫 장비·망자의 파수기: 사냥터 각인 +20% · 보스에게는 배율 (보스전 최강 방지) */
+    if (src.trap) { if (enemy.preyT > 0 && !src.corpse && !src.pct) base *= 1 + BALANCE.TRAP.prey.bonus; if (enemy.def.boss) base *= BALANCE.TRAP.bossMult; } /* 덫 장비·망자의 파수기: 사냥터 각인 +20% · 보스에게는 배율 (보스전 최강 방지) */
     if (enemy.iceVulnT > 0) base *= 1.5; /* 절대 영도로 얼어 있음 */
     if (enemy.huntT > 0) base *= 1.8; /* 사냥꾼의 표적 */
     if (enemy.auraVulnT > 0) base *= 1 + enemy.auraVuln; /* 맹독 안개 안 */

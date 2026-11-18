@@ -368,12 +368,14 @@ class FireBomb {
 }
 // 전류 격자: 지면의 전기 격자 — 처음 들어온 적마다 한 번씩 전격 피해 + 기절(보스는 덫 규칙: 3번 묶이면 면역·절반 시간, 행동 방해 면역 보스는 기절 없음)
 //  피해 = dmg × min(maxMult, 1 + perHit × (격자 안 적 수 - 1)) · 같은 적은 한 격자에서 한 번만 기절 (무한 연장 방지)
-class ShockGrid { /* 전류 격자 = 디아블로 2 쇼크 웹: 던진 자리에서 전기 가시들이 둥글게 퍼져 박히고, 이웃한 가시끼리 전류가 이어짐 — 가시나 전류선에 닿은 적이 맞음 */
+class ShockGrid { /* 전류 격자 = 디아블로 2 쇼크 웹: 던진 자리에서 전기 가시들이 둥글게 퍼져 박히고, 이웃한 가시끼리 전류가 이어짐 — 가시나 전류선에 닿아 있는 동안 지속 피해(최대 체력 %) */
   constructor(owner, x, y, o) { Object.assign(this, o); this.owner = owner; this.x = x; this.y = y; this.t = 0; this.alive = true; this.hit = new Set(); this.lit = 0;
     const n = this.spikes || 7, a0 = Math.random() * TAU; this.sp = [];
     for (let i = 0; i < n; i++) { const a = a0 + i * TAU / n + (Math.random() - 0.5) * 0.35; this.sp.push({ a, d: this.r * (0.78 + Math.random() * 0.22) }); } }
   spikePos(k) { const s = Math.min(1, this.t / 0.3), q = this.sp[k]; return { x: this.x + Math.cos(q.a) * q.d * s, y: this.y + Math.sin(q.a) * q.d * s * 0.75 }; }
-  touches(e) { const n = this.sp.length, spread = this.t < 0.34; for (let k = 0; k < n; k++) { const A = this.spikePos(k), B = this.spikePos((k + 1) % n);
+  touches(e) { const n = this.sp.length, spread = this.t < 0.34;
+    if (!spread) { const dx = e.x - this.x, dy = (e.y - this.y) / 0.75, inR = this.inR || (this.inR = Math.min(...this.sp.map((q) => q.d))); if (Math.hypot(dx, dy) < inR + e.radius) return true; } /* 다 퍼진 뒤: 그물 안쪽 전체가 전기 지대 (지속 피해) */
+    for (let k = 0; k < n; k++) { const A = this.spikePos(k), B = this.spikePos((k + 1) % n);
       if (spread && segmentCircleHit(this.x, this.y, A.x, A.y, e.x, e.y, 4 + e.radius) >= 0) return true; /* 가시가 가운데에서 퍼져 나가는 동안: 지나가는 적도 맞음 (던진 자리의 적) */
       if (Math.hypot(e.x - A.x, e.y - A.y) < 7 + e.radius || segmentCircleHit(A.x, A.y, B.x, B.y, e.x, e.y, 4 + e.radius) >= 0) return true; } return false; }
   update(dt, world) {
@@ -381,10 +383,11 @@ class ShockGrid { /* 전류 격자 = 디아블로 2 쇼크 웹: 던진 자리에
     this.lit = Math.max(0, this.lit - dt * 3);
     if (this.t < 0.03 || trapDenied(world, this.x, this.y)) return;
     const inside = world.enemies.filter((e) => e.targetable && this.touches(e)); if (!inside.length) return;
-    const mult = Math.min(this.maxMult, 1 + this.perHit * (inside.length - 1));
-    for (const e of inside) if (!this.hit.has(e)) { this.hit.add(e); this.lit = 1;
-      world.damageEnemy(e, { damage: this.dmg * mult, mods: this.owner.mods, knockback: 0, prey: true, from: { x: this.x, y: this.y } }, 0, 0);
-      if (e.alive) world.trapRoot(e, e.def.boss ? this.stun * 0.5 : this.stun); /* 보스는 기존 덫처럼 절반 (3번 뒤 면역은 trapRoot가 처리) */
+    this.nextT = this.nextT || new Map(); const fixed = { attackBonus: 0, critChance: 0, critMultiplier: 1 };
+    for (const e of inside) {
+      if (!this.hit.has(e)) { this.hit.add(e); world.trapRoot(e, e.def.boss ? this.stun * 0.5 : this.stun); } /* 처음 닿을 때 기절 (보스는 절반, 3번 뒤 면역은 trapRoot가 처리) */
+      if (this.nextT.get(e) > this.t) continue; this.nextT.set(e, this.t + (this.tick || 1)); this.lit = 1; /* 지속 피해: 같은 적은 tick초에 한 번 */
+      world.damageEnemy(e, { damage: (e.maxHp || 0) * (this.dotPct || 0.05), mods: fixed, knockback: 0, trap: true, pct: true, prey: true, from: { x: this.x, y: this.y } }, 0, 0);
       const A = this.spikePos(Math.floor(Math.random() * this.sp.length)); world.effects.lightning(A.x, A.y - 4, e.x, e.y - 4); }
   }
   render(ctx) {
