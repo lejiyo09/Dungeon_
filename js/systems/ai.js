@@ -472,6 +472,29 @@ const BOSS_PATTERNS = {
       return false;
     }
   },
+  // 원탁의 맹세 (아서 왕 2페이즈~): 플레이어를 둘러싸고 원탁처럼 검 swords자루가 떠오름(한 자리는 비어 있음 = 빠져나갈 틈)
+  //  → 시계 방향으로 한 자루씩 중심을 꿰뚫고 날아감 → 마지막에 중심에서 맹세의 일격(예고 원 뒤 원형 탄) — 틈으로 빠져나가야 함
+  roundtable: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, fx = world.effects; d.t = (d.t || 0) + dt;
+      if (d.st === undefined) { d.st = 'rise'; d.cx = p.x; d.cy = p.y; d.a0 = Math.random() * TAU; d.gap = randInt(0, P.swords - 1); d.swords = []; d.k = 0; d.t = 0;
+        for (let i = 0; i < P.swords; i++) { if (i === d.gap) { d.swords.push(null); continue; } const a = d.a0 + i * TAU / P.swords, blades = [];
+          for (let j = 0; j < 3; j++) { const rr = P.radius + j * 7, b = new EnemyBullet(d.cx + Math.cos(a) * rr, d.cy + Math.sin(a) * rr, 0, 0, Math.round(e.damage * P.mult), j === 0 ? '#ffffff' : P.color, j === 0 ? 4 : 3); b.life = P.rise + P.swords * P.interval + 2; world.enemyBullets.push(b); blades.push(b); }
+          d.swords.push({ a, blades }); fx.ring(d.cx + Math.cos(a) * P.radius, d.cy + Math.sin(a) * P.radius, 8, P.color); }
+        fx.ring(d.cx, d.cy, P.radius, '#ffe9a0'); fx.ring(d.cx, d.cy, P.radius + 14, '#ffffff'); SFX.play('skill', 0.05); world.addShake(0.15, 3); return false; }
+      if (d.st === 'rise') { if (d.t >= P.rise / spd) { d.st = 'fire'; d.t = P.interval; } return false; }
+      if (d.st === 'fire') { /* 시계 방향으로 한 자루씩 중심을 향해 */
+        if (d.t >= P.interval / spd) { d.t = 0; let S = null; while (d.k < P.swords && !(S = d.swords[d.k])) d.k++;
+          if (S) { const vx = -Math.cos(S.a) * P.speed, vy = -Math.sin(S.a) * P.speed; for (const b of S.blades) if (b.alive) { b.vx = vx; b.vy = vy; b.life = 2.5; }
+            fx.slash(S.blades[0].x, S.blades[0].y, S.a + Math.PI, 18, 0.8, '#fff4c0'); SFX.play('swing', 0.03); d.k++; }
+          if (d.k >= P.swords) { d.st = 'oath'; d.t = 0; world.hazards.push(new Hazard(d.cx, d.cy, { r: P.blastR, delay: P.oathDelay / spd, damage: Math.round(e.damage * P.mult * 1.3), color: '#ff5a5a' })); } }
+        return false; }
+      if (d.st === 'oath') { if (d.t < P.oathDelay / spd) return false; /* 맹세의 일격: 중심에서 원형 탄 */
+        for (let i = 0; i < P.ring; i++) { const a = i * TAU / P.ring + (d.a0 || 0); world.enemyShoot(d.cx, d.cy, a, P.speed * 0.6, Math.round(e.damage * P.mult), i % 2 ? '#ffffff' : P.color, 4); }
+        fx.ring(d.cx, d.cy, P.blastR, '#ffffff'); fx.ring(d.cx, d.cy, P.blastR * 1.6, P.color); if (fx.rays) fx.rays(d.cx, d.cy, '#fff4c0', 14, P.blastR * 2, 0.5); world.addShake(0.3, 6); SFX.play('heavy', 0.05); return true; }
+      return false;
+    }
+  },
   // 엑스칼리버 엑셀수스 (아서 왕 마지막 페이즈 전용 보구): 하늘로 거대한 빛기둥들을 세우며 오래 빛을 모음(조준선이 따라오다 마지막에 붉게 고정) → 방 끝까지 관통하는 초거대 일격(맞으면 치명적)
   //  → 곧이어 양옆으로 비스듬히 빛의 충격파 두 줄기 + 원형 빛탄. 쓰는 동안 페이즈 전환 없음
   excelsus: {

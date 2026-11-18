@@ -824,6 +824,7 @@ const DATA_ENEMIES = [
       { type: 'silverchase', blinks: 6, ring: 110, width: 17, gapN: 3, step: 11, speed: 180, interval: 0.48, color: '#ffe9a0' },
       { type: 'denyfield', zones: 4, zr: 34, life: 4.5, around: 100, volleys: 5, count: 9, spread: 0.11, color: '#ffffff' },
       { type: 'meteor', count: 14, delay: 0.5, stagger: 0.14, radius: 30, bullets: 8, color: '#ffe9a0' },
+      { type: 'roundtable', name: '원탁의 맹세', swords: 12, radius: 120, rise: 0.6, interval: 0.12, speed: 300, mult: 0.8, oathDelay: 0.6, blastR: 46, ring: 24, color: '#ffe9a0' }, /* [사용자 결정] 패턴 추가: 원탁의 맹세 */
       { type: 'spiral', duration: 3.2, arms: 7, interval: 0.055, spin: 2.8, color: '#7ab8ff' },
       { type: 'ringOut', rings: 6, count: 34, gap: 4, speed: 165, interval: 0.36, color: '#ffe9a0' }],
     finalPatterns: [{ type: 'excalibur', name: '엑스칼리버', charge: 1.4, lockT: 0.4, duration: 1.3, width: 26, turn: 0.45, mult: 1.7, radius: 90, bullets: 26, color: '#ffe9a0' },
