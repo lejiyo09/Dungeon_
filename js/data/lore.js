@@ -59,8 +59,8 @@ const DATA_TREASURES = [
     radius: 92, range: 200, duration: 6, damage: 280, weak: 1.7, color: '#ffd84a',
     desc: '전방의 아주 넓은 원형 범위에 황금 사슬을 소환해 적을 6초간 묶고 큰 피해, 묶인 적은 받는 피해 +70%' },
   { id: 'treasure_excalibur', name: '엑스칼리버', origin: '아서왕', use: 'beam', cooldown: 70, sfx: 'excal', icon: 'excalibur',
-    damage: 780, width: 28, range: 300, blast: 86, blastRatio: 0.3, stun: 1, color: '#ffe9a0', // blast: 끝 폭발 반경, blastRatio: 폭발 추가 피해 비율 · [사용자 결정] 너프 (예전: 피해 1050 · 폭발 35% · 경직 1.5초 · 쿨 65초)
-    desc: '검을 들어 빛기둥을 세운 뒤 조준 방향으로 내려꽂아 일직선에 큰 피해(벽 관통), 조준한 지점에서 폭발, 맞은 적은 1초 경직' },
+    damage: 950, width: 28, range: 300, blast: 86, blastRatio: 0.3, stun: 1, color: '#ffe9a0', // blast: 끝 폭발 반경, blastRatio: 폭발 추가 피해 비율 · [사용자 결정] 너프하되 보구 중 가장 강한 한 방은 유지 (예전: 피해 1050 · 폭발 35% · 경직 1.5초 · 쿨 65초)
+    desc: '검을 들어 빛기둥을 세운 뒤 조준 방향으로 내려꽂아 일직선에 압도적인 피해(벽 관통), 조준한 지점에서 폭발, 맞은 적은 1초 경직 — 보구 중 가장 강한 한 방' },
   { id: 'treasure_ring_of_solomon', name: '솔로몬의 반지', origin: '솔로몬', use: 'blessing', cooldown: 68, sfx: 'solomon', icon: 'ring',
     duration: 12, atk: 0.6, rate: 0.45, speed: 0.3, guard: 0.4, heal: 0.3, skillHaste: 1.5, color: '#c8a0ff', // [사용자 결정] 너프 (예전: 15초 · 공격력 +90% · 공속 +70% · 이동 +35% · 피해 -60% · 체력 50% · 스킬 2배)
     desc: '12초간 공격력 +60%·공격 속도 +45%·이동 속도 +30%·받는 피해 -40%·스킬 쿨타임 1.5배 빨리 회복, 체력 30%·에너지·보호막 회복, 스킬 쿨타임 초기화' },
