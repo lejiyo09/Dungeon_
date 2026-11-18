@@ -339,7 +339,7 @@ Object.assign(Game.prototype, {
     SFX.stopMusic(); this.overlay = null; this.cutscene = null; this.cinematic = null; this.slowMo = null; this.trialW = null;
     this.coop = { guest: true, hostId, loading: true, others: new Map(), enemies: new Map(), inT: 0, ev: [], warp: -1 };
     this.mode = 'dungeon'; this.gold = 0; this.kills = 0;
-    const switched = deep ? this.deepEntryHero() : null; if (switched) { Net.profile(this.netName(), switched); this.showBanner(`심층 입장 — ${this.heroDef(switched).name}(으)로 바꿈`, '이 직업으로 10-4를 깬 기록이 없어 가장 최근에 10-4를 깬 캐릭터로', '#9ad8ff'); } // 참가자도 같은 규칙
+    const switched = deep ? this.deepEntryHero() : null; if (switched) { Net.profile(this.netName(), switched); this.showBanner(`심층 입장 — ${this.heroDef(switched).name}(으)로 바꿈`, '이 직업·진화 루트로 10-4를 깬 기록이 없어 가장 최근에 10-4를 깬 캐릭터로', '#9ad8ff'); } // 참가자도 같은 규칙
     this.player = this.makePlayer(0, 0);
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) this.player.treasure = tr;
     const cp = deep && this.deepCheckpoint(this.save.selected); // 심층: 내 직업으로 10-4를 깬 캐릭터가 있으면 그대로
@@ -425,7 +425,7 @@ Object.assign(Game.prototype, {
     this.zones = zl; this.allies = al;
   },
   coopGuestSanctum(d) { // 방장과 함께 10-4를 깸: 성역 도달·이 캐릭터 저장(심층 입장용)·보구 선택 (내 화면에서)
-    const sv = this.save; sv.sanctumReached = true; if (d.cp) { sv.deepCheckpoints = sv.deepCheckpoints || {}; sv.deepCheckpoints[sv.selected] = d.cp; } writeSave(sv);
+    const sv = this.save; sv.sanctumReached = true; if (d.cp) { const c = this.deepCps(); c[this.deepKey(sv.selected, d.cp.line || null)] = d.cp; } writeSave(sv); /* 직업·계열마다 따로 */
     this.overlay = { type: 'story', sanctum: true, lines: SANCTUM_LINES, i: 0, t: 0, done: () => { this.overlay = { type: 'treasure_pick', msg: null }; } }; this.input.mouse.down = false;
   },
   coopGuestOverlay(o) { // 방장이 보내 준 내 창 (축복·전직·갈래)

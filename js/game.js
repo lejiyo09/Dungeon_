@@ -349,12 +349,19 @@ class Game {
     for (const b of shuffled(DATA_BUFFS).slice(0, K.buffs)) { b.apply(p); p.buffs.push(b.id); }
     if (p === this.player) this.showBanner('심층 입장', `최종 진화 · ${p.weapons.map((w) => w.def.name).join(' + ')} (+${K.lv}) · 축복 ${K.buffs}개`, '#9ad8ff');
   }
-  deepCheckpoint(heroId) { const c = this.save.deepCheckpoints; return (c && c[heroId]) || null; } // 직업마다 10-4를 깼을 때의 캐릭터
-  deepEntryHero() { // 로비에서 심층 입장: 고른 직업에 10-4 기록이 없으면 가장 최근에 10-4를 깬 직업으로 바꿈 → 바꿨으면 그 직업 id
-    const c = this.save.deepCheckpoints || {}; if (c[this.save.selected]) return null;
-    let best = null; for (const [id, cp] of Object.entries(c)) if (cp && typeof cp === 'object' && this.data.heroes.get(id) && (!best || (cp.t || 0) > (c[best].t || 0))) best = id;
-    if (best) { this.save.selected = best; writeSave(this.save); }
-    return best;
+  // [사용자 결정] 심층 입장 기록: 직업 안에서도 진화 루트(계열)마다 따로 — 키 '직업|계열'
+  deepKey(heroId, lineId) { return heroId + '|' + (lineId || this.chosenLine(heroId).id); }
+  deepCps() { /* 예전 기록(직업만 키)은 그 기록의 계열로 옮김 */
+    const c = this.save.deepCheckpoints = this.save.deepCheckpoints || {}; let moved = false;
+    for (const k of Object.keys(c)) if (!k.includes('|')) { const cp = c[k]; delete c[k]; moved = true; if (cp && typeof cp === 'object' && this.data.heroes.get(k)) { const nk = this.deepKey(k, cp.line || null); if (!c[nk] || (c[nk].t || 0) < (cp.t || 0)) c[nk] = cp; } }
+    if (moved) writeSave(this.save); return c; }
+  deepCheckpoint(heroId, lineId) { return this.deepCps()[this.deepKey(heroId, lineId)] || null; } // 직업·계열마다 10-4를 깼을 때의 캐릭터
+  deepEntryHero() { // 로비에서 심층 입장: 고른 직업·진화 루트에 10-4 기록이 없으면 가장 최근에 10-4를 깬 직업·계열로 바꿈 → 바꿨으면 그 직업 id
+    const c = this.deepCps(); if (c[this.deepKey(this.save.selected)]) return null;
+    let best = null; for (const [k, cp] of Object.entries(c)) { const [hid, lid] = k.split('|'); if (cp && typeof cp === 'object' && this.data.heroes.get(hid) && jobLines(hid).some((l) => l.id === lid) && (!best || (cp.t || 0) > (c[best].t || 0))) best = k; }
+    if (!best) return null; const [hid, lid] = best.split('|');
+    this.save.selected = hid; this.save.lineChoice = this.save.lineChoice || {}; this.save.lineChoice[hid] = lid; writeSave(this.save); /* 그 기록의 진화 루트로 */
+    return hid;
   }
   useCheckpoint(p, cp, tr) { // 체력·에너지 가득, 보구는 지금 장착한 것
     p.hp = p.maxHp; p.energy = p.maxEnergy; p.shield = p.maxShield; p.skillCooldown = 0;
@@ -456,7 +463,7 @@ class Game {
     this.guild(); this.applySupplies(); // 길드 퀘스트 준비 · 거래상에서 산 보급품
     this.loadStage();
     if (cp) {
-      this.showBanner(switched ? `심층 입장 — ${this.player.hero.name}(으)로 바꿈` : '심층 입장', `${switched ? '이 직업으로 10-4를 깬 기록이 없어 가장 최근에 10-4를 깬 캐릭터로 · ' : '10-4를 깬 그대로 · '}${this.player.weapons.map((w) => w.def.name).join(' + ')} · 축복 ${this.player.buffs.length}개`, '#9ad8ff'); if (switched && Net.inRoom) Net.profile(this.netName(), switched); }
+      this.showBanner(switched ? `심층 입장 — ${this.player.hero.name}(으)로 바꿈` : '심층 입장', `${switched ? '이 직업·진화 루트로 10-4를 깬 기록이 없어 가장 최근에 10-4를 깬 캐릭터로 · ' : `${this.player.line ? this.player.line.name + ' 계열 · ' : ''}10-4를 깬 그대로 · `}${this.player.weapons.map((w) => w.def.name).join(' + ')} · 축복 ${this.player.buffs.length}개`, '#9ad8ff'); if (switched && Net.inRoom) Net.profile(this.netName(), switched); }
     else { const after = deep ? () => this.applyDeepKit(this.player) : null; // 이 직업의 10-4 기록이 없으면 기본 심층 장비
       if (!this.save.prologueSeen) this.showPrologue(() => this.askVariant(after)); else this.askVariant(after); }
     if (Net.inRoom && Net.isHost && Net.players.length > 1) this.coopHostStart(); // 멀티: 방 사람들과 함께 출발
@@ -498,7 +505,7 @@ class Game {
   // 기원의 성역 깊은 곳: 전설의 존재와 마주함 → 소원이 드러남 → 보구 선택
   enterSanctum() {
     this.save.sanctumReached = true;
-    if (!this.trialW && this.player) { const c = this.save.deepCheckpoints = this.save.deepCheckpoints || {}; c[this.player.hero.id] = Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() }); } // 10-4를 깬 캐릭터 저장 → 로비에서 심층 입장 시 그대로
+    if (!this.trialW && this.player) { const c = this.deepCps(); c[this.deepKey(this.player.hero.id, this.player.line && this.player.line.id)] = Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() }); } /* 직업·계열마다 따로 */ // 10-4를 깬 캐릭터 저장 → 로비에서 심층 입장 시 그대로
     writeSave(this.save);
     if (this.coop && this.coop.host) for (const R of this.remotes.values()) { // 멀티: 동료도 성역 도달·10-4 캐릭터 저장·보구 선택
       const cp = this.withPlayer(R.p, () => Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() })); Net.relay({ k: 'sanctum', cp }, R.id); }
