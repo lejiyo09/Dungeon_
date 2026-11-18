@@ -1140,9 +1140,9 @@ class Game {
     const p = this.player;
     if (p.castLock > 0) return;
     const charged = p.skillId === 'deathsentry'; /* 망자의 파수기: 충전 칸이 있으면 쿨타임 중에도 사용 (칸마다 1개 설치) */
-    if (charged ? (p.dsCharges == null ? BALANCE.TRAP.sentryCharges : p.dsCharges) <= 0 || p.dsGap > 0 : p.skillCooldown > 0) return;
+    if (charged ? (p.dsCharges == null ? BALANCE.TRAP.sentryCharges : p.dsCharges) <= 0 : p.skillCooldown > 0) return;
     if (p.denyT > 0) { this.effects.text(p.x, p.y - 20, '부정됨', '#d8f0ff'); return; } /* 가레스의 부정 장판 안: 스킬 금지 */
-    if (charged) { if (p.dsCharges == null) p.dsCharges = BALANCE.TRAP.sentryCharges; p.dsCharges--; p.dsGap = 0.35; if (p.skillCooldown <= 0) p.skillCooldown = p.skillCdMax; } /* 충전은 쿨타임마다 1칸씩 (actors.js) */
+    if (charged) { if (p.dsCharges == null) p.dsCharges = BALANCE.TRAP.sentryCharges; p.dsCharges--; } /* 재사용 대기 없음 — 칸은 actors.js에서 sentryRecharge초마다 1칸씩 참 */
     else p.skillCooldown = p.skillCdMax;
     this.guildEvent('skills');
     SFX.play('skill');
@@ -1296,7 +1296,7 @@ class Game {
         this.zones.push(new ShockGrid(p, pt.x, pt.y, { dmg: D(T.dmg), r: T.r, life: T.life, stun: T.stun, perHit: T.perHit, maxMult: T.maxMult })); this.effects.ring(pt.x, pt.y, T.r, '#7ac8ff'); SFX.play('react', 0.1); break; }
       case 'deathsentry': { /* 함정 2차: 망자의 파수기 — 마우스 위치, 충전 칸 1개 소비, 최대 sentryMax개 (넘으면 가장 오래된 것이 사라짐), 덫 장비와 따로 셈 */
         const T = BALANCE.TRAP.death, pt = this.trapPoint(p, 220);
-        if (!pt) { p.dsCharges = Math.min(BALANCE.TRAP.sentryCharges, p.dsCharges + 1); if (p.dsCharges >= BALANCE.TRAP.sentryCharges) p.skillCooldown = 0; break; } /* 설치 못 하면 칸 되돌림 */
+        if (!pt) { p.dsCharges = Math.min(BALANCE.TRAP.sentryCharges, p.dsCharges + 1); break; } /* 설치 못 하면 칸 되돌림 */
         const mine = this.zones.filter((z) => z instanceof TrapSentry && z.kind === 'death' && z.owner === p && z.alive);
         while (mine.length >= BALANCE.TRAP.sentryMax) { mine.shift().alive = false; }
         this.zones.push(new TrapSentry(p, pt.x, pt.y, 'death', { life: T.life, range: T.range, every: T.every, charge: 0.25 }, { dmg: D(T.dmg) }));

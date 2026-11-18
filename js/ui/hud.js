@@ -100,7 +100,7 @@ class HUD {
     hudBar(ctx, 34, by + 3, 86, 5, 1 - p.dashCooldown / p.dashCdMax, '#7fe0ff');
     const dsM = p.skillId === 'deathsentry' ? BALANCE.TRAP.sentryCharges : 0, dsN = dsM ? (p.dsCharges == null ? dsM : p.dsCharges) : 0, skReady = dsM ? dsN > 0 : p.skillCooldown <= 0;
     hudText(ctx, p.skillName, 8, by + 14, skReady ? '#ffd84a' : '#888', 'left', 9);
-    hudBar(ctx, 66, by + 17, 54, 5, dsM && dsN >= dsM ? 1 : 1 - p.skillCooldown / p.skillCdMax, '#ffd84a');
+    hudBar(ctx, 66, by + 17, 54, 5, dsM ? (dsN >= dsM ? 1 : 1 - p.skillCooldown / (p.dsMax || BALANCE.TRAP.sentryRecharge)) : 1 - p.skillCooldown / p.skillCdMax, '#ffd84a');
     if (dsM) for (let i = 0; i < dsM; i++) { ctx.fillStyle = i < dsN ? '#ffd84a' : 'rgba(255,255,255,0.18)'; ctx.fillRect(66 + i * 7, by + 11, 5, 3); } /* 망자의 파수기 충전 칸 */
     if (skReady) { // 스킬 준비 완료: 깜빡이는 테두리
       ctx.strokeStyle = `rgba(255,216,74,${0.4 + 0.4 * Math.sin(game.time * 6)})`; ctx.strokeRect(64.5, by + 15.5, 57, 8);
