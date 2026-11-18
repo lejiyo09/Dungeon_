@@ -439,7 +439,7 @@ class TrapSentry {
         world.projectiles.push(new Projectile(Object.assign({ x: this.x, y: this.y - 6, dx: Math.cos(b), dy: Math.sin(b), speed: P.speed, range: P.range + 30, pierce: 0, color: '#9ad8ff', size: 2, owner: this.owner, srcId: 'trap_bolt', erratic: P.erratic || 0 }, this.src(this.dmg, { shockStack: true })))); }
       fx.ring(this.x, this.y - 6, 9, '#e0f4ff'); SFX.play('react', 0.08);
     } else if (this.kind === 'inferno') { this.beamT = P.beamTime; this.beamA = a; this.tickT = 0; this.beamLen = 0; SFX.play('beam', 0.1); /* 웨이크 오브 인페르노: 화염 줄기를 뿜으며 천천히 대상을 따라 돎 */
-    } else if (this.kind === 'wave') { for (let i = 0; i < P.bands; i++) this.waves.push({ a: a + (i - (P.bands - 1) / 2) * P.fan, d: 8, hit: new Set() }); fx.ring(this.x, this.y, 12, '#ffd04a'); SFX.play('explode', 0.08); /* 웨이크 오브 파이어: 가장 가까운 적 쪽으로 부채꼴(약 86°) 화염 파도 한 줄이 퍼져 나가며 닿는 적을 모두 관통 */
+    } else if (this.kind === 'wave') { this.waves.push({ a, d: 8, next: 0, ribs: [], hit: new Set() }); fx.ring(this.x, this.y, 12, '#ffd04a'); SFX.play('explode', 0.08); /* 웨이크 오브 파이어: 가운데 화염이 가장 가까운 적 쪽으로 나가며, 지나간 자리에서 좌우 비스듬히 앞쪽으로 화염이 갈라져 나감 (헤링본·V자) — 닿는 적은 파도마다 한 번 */
     } else if (this.kind === 'thunder' || this.kind === 'death') { /* 라이트닝 센트리·데스 센트리: 대상 쪽으로 일직선 관통 번개 (선 위의 적 모두) */
       if (this.kind === 'death' && this.tryCorpse(world)) return; /* 데스 센트리: 쓸 수 있는 시체가 있으면 번개 대신 시체 폭발 */
       this.bolt(world, a); SFX.play('react', 0.08);
@@ -470,15 +470,20 @@ class TrapSentry {
     if (this.tickT > 0) return; this.tickT = P.tick;
     for (const e of world.enemies) if (e.targetable && segmentCircleHit(this.x, this.y, ex, ey, e.x, e.y, P.width + e.radius) >= 0) world.damageEnemy(e, this.src(this.dmg, { status: trapBurn(this.dmg), knockback: 0 }), Math.cos(a), Math.sin(a), { quiet: true });
   }
-  updateWaves(dt, world) { /* 화염 파도탑: 띠마다 이동하며 닿은 적에게 한 번 */
+  updateWaves(dt, world) { /* 화염 파도탑 (헤링본): 머리(가운데 화염)가 waveSpeed로 전진, ribEvery픽셀마다 좌우로 ±ribAng 방향 갈비 화염 2개를 내보냄 */
     if (!this.waves.length) return; const P = this.P;
-    for (const w of this.waves) { w.d += P.waveSpeed * dt;
-      for (const e of world.enemies) if (e.targetable && !w.hit.has(e)) { const dx = e.x - this.x, dy = e.y - this.y, d = Math.hypot(dx, dy), df = Math.abs(Math.atan2(Math.sin(Math.atan2(dy, dx) - w.a), Math.cos(Math.atan2(dy, dx) - w.a)));
-        if (Math.abs(d - w.d) < 9 + e.radius && df < P.halfW) { w.hit.add(e); world.damageEnemy(e, this.src(this.dmg, { status: trapBurn(this.dmg) }), dx / (d || 1), dy / (d || 1), { quiet: true }); } }
-      for (let k = 0; k < 2; k++) { const aa = w.a + (Math.random() * 2 - 1) * P.halfW; /* 파도 위에서 피어오르는 불꽃·연기 */
-        world.effects.part(this.x + Math.cos(aa) * w.d, this.y + Math.sin(aa) * w.d * 0.85, randInt(-6, 6), -22 - Math.random() * 14, { color: pick(['#ffd04a', '#ff8a3a', '#ff5a2a']), life: 0.28, size: 2, size2: 0, drag: 2, add: true }); }
-      if (Math.random() < 0.35) { const aa = w.a + (Math.random() * 2 - 1) * P.halfW; world.effects.part(this.x + Math.cos(aa) * w.d, this.y + Math.sin(aa) * w.d * 0.85, 0, -12, { color: 'rgba(50,30,30,0.5)', life: 0.6, size: 2, size2: 4, drag: 1 }); } }
-    this.waves = this.waves.filter((w) => w.d < P.range);
+    const burn = (w, x, y, r) => { for (const e of world.enemies) if (e.targetable && !w.hit.has(e) && Math.hypot(e.x - x, e.y - y) < r + e.radius) { w.hit.add(e); const dx = e.x - this.x, dy = e.y - this.y, d = Math.hypot(dx, dy) || 1; world.damageEnemy(e, this.src(this.dmg, { status: trapBurn(this.dmg) }), dx / d, dy / d, { quiet: true }); } };
+    for (const w of this.waves) {
+      if (w.d < P.range) { w.d += P.waveSpeed * dt; const hx = this.x + Math.cos(w.a) * w.d, hy = this.y + Math.sin(w.a) * w.d * 0.85;
+        if (world.map.isSolidAt(hx, hy)) w.d = P.range; else { burn(w, hx, hy, 7);
+          while (w.next <= w.d && w.next < P.range) { const bx = this.x + Math.cos(w.a) * w.next, by = this.y + Math.sin(w.a) * w.next * 0.85; /* 갈비 화염: 멀리서 갈라진 것일수록 조금 더 길게 */
+            for (const sg of [-1, 1]) { const ra = w.a + sg * P.ribAng; w.ribs.push({ x: bx, y: by, vx: Math.cos(ra) * P.ribSpeed, vy: Math.sin(ra) * P.ribSpeed * 0.85, t: 0, life: P.ribLife * (0.6 + 0.6 * w.next / P.range) }); }
+            w.next += P.ribEvery; }
+          if (Math.random() < 0.6) world.effects.part(hx, hy, randInt(-6, 6), -24, { color: pick(['#ffd04a', '#ff8a3a']), life: 0.25, size: 2, size2: 0, drag: 2, add: true }); } }
+      for (const r of w.ribs) { if (r.t >= r.life) continue; r.t += dt; const nx = r.x + r.vx * dt, ny = r.y + r.vy * dt; if (world.map.isSolidAt(nx, ny)) { r.t = r.life; continue; } r.x = nx; r.y = ny; burn(w, r.x, r.y, 6);
+        if (Math.random() < 0.25) world.effects.part(r.x, r.y, 0, -14, { color: Math.random() < 0.5 ? '#ff6a2a' : 'rgba(50,30,30,0.45)', life: 0.35, size: 2, size2: 3, drag: 1 }); }
+      w.ribs = w.ribs.filter((r) => r.t < r.life); }
+    this.waves = this.waves.filter((w) => w.d < P.range || w.ribs.length);
   }
   tryCorpse(world) { /* 망자의 파수기(데스 센트리): 이번 발사를 주변의 쓰이지 않은 시체 폭발로 (시체는 used 표시로 한 번만 — 다른 파수기도 다시 못 씀, 폭발 간격은 corpseEvery) */
     const D = BALANCE.TRAP.death; if (this.corpseT > 0) return false;
@@ -516,13 +521,11 @@ class TrapSentry {
     if (this.beamT > 0) { const a = this.beamA, L = this.beamLen || this.P.range, ex = x + Math.cos(a) * L, ey = y - 6 + Math.sin(a) * L; /* 업화: 중심 백황색 · 외곽 주황·적색 */
       ctx.globalAlpha = 0.45 * dim; ctx.strokeStyle = '#ff4a2a'; ctx.lineWidth = this.P.width * 1.6; ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(ex, ey); ctx.stroke();
       ctx.globalAlpha = 0.8 * dim; ctx.strokeStyle = '#ffb04a'; ctx.lineWidth = this.P.width; ctx.stroke(); ctx.strokeStyle = '#fff4c0'; ctx.lineWidth = 3; ctx.stroke(); }
-    for (const w of this.waves) { const f = 1 - w.d / this.P.range, H = this.P.halfW; /* 화염 파도: 부채꼴 호를 따라 늘어선 불길 */
-      ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.85); ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = (0.35 + 0.45 * f) * dim; ctx.strokeStyle = '#ff5a2a'; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(0, 0, w.d, w.a - H, w.a + H); ctx.stroke();
-      ctx.globalAlpha = (0.5 + 0.5 * f) * dim; ctx.strokeStyle = '#ffb04a'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
-      const n = Math.max(4, Math.round(w.d * H * 2 / 7)); ctx.globalAlpha = (0.55 + 0.45 * f) * dim;
-      for (let i = 0; i <= n; i++) { const aa = w.a - H + (2 * H) * i / n, px = Math.round(x + Math.cos(aa) * w.d), py = Math.round(y + Math.sin(aa) * w.d * 0.85), fl = 3 + ((i * 7 + Math.floor(this.t * 20)) % 3);
-        ctx.fillStyle = '#ff6a2a'; ctx.fillRect(px - 1, py - fl, 3, fl); ctx.fillStyle = '#ffe08a'; ctx.fillRect(px, py - fl + 1, 1, fl - 1); } }
+    for (const w of this.waves) { /* 화염 파도 (헤링본): 가운데 머리 불길 + 좌우로 갈라져 나가는 갈비 불길 */
+      const tuft = (px, py, sz, a) => { px = Math.round(px); py = Math.round(py); const fl = sz + ((px * 3 + py + Math.floor(this.t * 20)) % 3); ctx.globalAlpha = a * dim;
+        ctx.fillStyle = '#c8301a'; ctx.fillRect(px - 2, py - fl + 1, 5, fl); ctx.fillStyle = '#ff7a2a'; ctx.fillRect(px - 1, py - fl, 3, fl); ctx.fillStyle = '#ffe08a'; ctx.fillRect(px, py - fl + 2, 1, fl - 2); };
+      for (const r of w.ribs) tuft(r.x, r.y, 3, 1 - 0.6 * (r.t / r.life));
+      if (w.d < this.P.range) tuft(x + Math.cos(w.a) * w.d, y + Math.sin(w.a) * w.d * 0.85, 5, 1); }
     for (const z of this.zaps) { ctx.globalAlpha = (z.t / 0.12) * dim; ctx.strokeStyle = this.kind === 'death' ? '#9ab0ff' : '#e0f4ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(z.x0, z.y0); const mx = (z.x0 + z.x1) / 2 + randInt(-5, 5), my = (z.y0 + z.y1) / 2 + randInt(-5, 5); ctx.lineTo(mx, my); ctx.lineTo(z.x1, z.y1); ctx.stroke(); }
     ctx.restore(); ctx.lineWidth = 1; ctx.globalAlpha = 1;
   }
