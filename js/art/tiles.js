@@ -39,6 +39,7 @@ const THEME = {
   library: { ink: '#2a2a4a', paper: '#e8dcc0', torch: '#ffd890', ambient: [30, 15, 30, 0.36] },
   theater: { velvet: '#8a2a34', gold: '#ffd86a', torch: '#ffd86a', ambient: [30, 10, 10, 0.36] },
   hive: { honey: '#ffb02a', wax: '#d8b060', torch: '#ffc04a', ambient: [40, 20, 0, 0.3] },
+  salt: { crystal: '#ffd6e8', vein: '#e88ab0', torch: '#ffc8e0', ambient: [24, 10, 20, 0.3] },
   bloodmoon: { blood: '#a02a3a', grass: '#5a2a30', torch: '#ff5a6a', ambient: [60, 0, 10, 0.4] },
   ember: { ember: '#ff8a3a', ash: '#6a5a56', torch: '#ff8a3a', ambient: [60, 15, 0, 0.36] },
   fungal: { glow: '#e07aff', cap: '#c87ad8', moss: '#5a8a4a', torch: '#e07aff', ambient: [30, 0, 40, 0.4] },
@@ -181,6 +182,12 @@ function drawFloorTile(g, x, y, base, style, tx = 0, ty = 0) {
     if (h(4) < 0.05) pxs(g, '#c02a3a', [[x + 3 + Math.floor(h(2) * 9), y + 3 + Math.floor(h(3) * 9), 2, 1]]);
     return;
   }
+  if (style === 'salt') { // 소금 바닥: 갈라진 결정 무늬 + 분홍 광맥 조각
+    pxs(g, lo, [[x + 2, y + 5, 5, 1], [x + 6, y + 6, 1, 4], [x + 9, y + 11, 5, 1]]);
+    if (h(1) < 0.07) pxs(g, THEME.salt.crystal, [[x + 4 + Math.floor(h(2) * 8), y + 4 + Math.floor(h(3) * 8), 2, 2]]);
+    if (h(4) < 0.04) pxs(g, THEME.salt.vein, [[x + 3 + Math.floor(h(5) * 9), y + 9, 3, 1]]);
+    return;
+  }
   if (style === 'hive') { // 육각 벌집 칸 + 꿀 고임
     const ox = (ty % 2) ? 4 : 0; pxs(g, lo, [[x + ox, y + 4, 1, 8], [x + ox + 8, y + 4, 1, 8], [x + ox + 1, y + 3, 6, 1], [x + ox + 1, y + 12, 6, 1]]);
     if (h(1) < 0.08) fillEll(g, x + ox + 4, y + 8, 2.5, 3, THEME.hive.honey);
@@ -271,6 +278,8 @@ function drawWallTile(g, x, y, pal, face, style, tx = 0, ty = 0) {
     if (face) { for (let i = 0; i < 4; i++) pxs(g, ['#8a3a3a', '#3a5a8a', '#6a5a3a', '#4a6a4a'][Math.floor(h(i) * 4)], [[x + 1 + i * 4, y + 6, 3, 5]]); pxs(g, '#3a2a20', [[x, y + 11, TILE, 1]]); }
   } else if (style === 'theater') { // 붉은 벨벳 커튼 + 금술
     if (face) { for (let i = 0; i < 4; i++) pxs(g, i % 2 ? '#6a1a24' : '#a0323e', [[x + i * 4, y + 4, 4, 7]]); pxs(g, '#ffd86a', [[x, y + 11, TILE, 1]]); }
+  } else if (style === 'salt') { // 소금 암벽 + 분홍 광맥 + 돋아난 결정
+    if (face) { pxs(g, '#c8b8c4', [[x, y + 10, TILE, 1]]); if (h(1) < 0.5) pxs(g, '#e88ab0', [[x + 2 + Math.floor(h(2) * 10), y + 6, 4, 1], [x + 5 + Math.floor(h(2) * 6), y + 7, 2, 1]]); if (h(3) < 0.3) pxs(g, '#ffffff', [[x + 4 + Math.floor(h(4) * 8), y + 3, 1, 3]]); }
   } else if (style === 'hive') { // 밀랍 벽 + 흘러내린 꿀
     if (face) { pxs(g, '#d8b060', [[x, y + 10, TILE, 1]]); if (h(1) < 0.4) pxs(g, '#ffb02a', [[x + 3 + Math.floor(h(2) * 9), y + 8, 2, 4]]); }
   } else if (style === 'bloodmoon') { // 붉은 이끼
@@ -324,6 +333,8 @@ function drawCover(g, x, y, style, tx, ty) {
     pxs(g, OUTLINE, [[x + 2, y + 4, 12, 11]]); pxs(g, '#8a3a3a', [[x + 3, y + 11, 10, 3]]); pxs(g, '#3a5a8a', [[x + 4, y + 8, 8, 3]]); pxs(g, '#6a5a3a', [[x + 3, y + 5, 9, 3]]); pxs(g, '#e8dcc0', [[x + 12, y + 11, 1, 3], [x + 11, y + 8, 1, 3]]);
   } else if (style === 'theater') { // 쓰러진 무대 소품 상자 + 가면
     pxs(g, OUTLINE, [[x + 2, y + 5, 12, 10]]); pxs(g, '#6a4a30', [[x + 3, y + 6, 10, 8]]); fillEll(g, x + 8, y + 9, 3, 2.5, '#f4ecd8'); pxs(g, OUTLINE, [[x + 7, y + 9], [x + 9, y + 9]]);
+  } else if (style === 'salt') { // 소금 결정 무더기
+    pxs(g, OUTLINE, [[x + 4, y + 5, 3, 10], [x + 8, y + 2, 4, 13], [x + 12, y + 8, 3, 7]]); pxs(g, '#f4eaf0', [[x + 5, y + 6, 1, 8], [x + 9, y + 3, 2, 11], [x + 13, y + 9, 1, 5]]); pxs(g, '#ffb8d8', [[x + 10, y + 4, 1, 9]]); pxs(g, '#ffffff', [[x + 9, y + 3, 1, 2]]);
   } else if (style === 'hive') { // 굳은 호박 덩어리
     fillEll(g, x + 8, y + 9, 6, 5, OUTLINE); fillEll(g, x + 8, y + 9, 5, 4, '#c8801a'); fillEll(g, x + 7, y + 7, 2.5, 1.5, '#ffd070'); pxs(g, '#4a2a0a', [[x + 9, y + 10, 2, 1]]);
   } else if (style === 'bloodmoon') { // 마른 나무 그루터기
@@ -389,6 +400,8 @@ function drawCrate(g, x, y, style) {
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#5a4030', [[x + 3, y + 4, 10, 10]]); pxs(g, '#6a5040', [[x + 3, y + 4, 10, 1]]); pxs(g, '#e8dcc0', [[x + 4, y + 7, 8, 2]]);
   } else if (style === 'theater') { // 소품 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#5a3a26', [[x + 3, y + 4, 10, 10]]); pxs(g, '#ffd86a', [[x + 3, y + 4, 10, 1], [x + 7, y + 4, 2, 10]]);
+  } else if (style === 'salt') { // 광부의 나무 상자 + 소금 덩이
+    pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#6a5040', [[x + 3, y + 4, 10, 10]]); pxs(g, '#7a6050', [[x + 3, y + 4, 10, 1]]); pxs(g, '#f4eaf0', [[x + 4, y + 5, 4, 3], [x + 9, y + 6, 3, 2]]);
   } else if (style === 'hive') { // 밀랍 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#b8903a', [[x + 3, y + 4, 10, 10]]); pxs(g, '#d8b060', [[x + 3, y + 4, 10, 1]]); pxs(g, '#ffb02a', [[x + 5, y + 8, 2, 3], [x + 9, y + 6, 2, 2]]);
   } else if (style === 'bloodmoon') { // 핏자국 상자

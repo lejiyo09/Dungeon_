@@ -97,7 +97,11 @@ const DEEP_WORLDS = [
   { id: 'deep_hive', name: '호박빛 벌집', boss: 'boss_amber_queen', waves: 2, deep: true,
     enemies: [['enemy_drone_bee_001', 4], ['enemy_beetle_001', 3], ['enemy_honeymage_001', 2], ['enemy_waxtower_001', 2]],
     palette: { style: 'hive', accent: '#ffb02a', floor: ['#4a3618', '#4d391a'], corridor: ['#352610', '#372811'], wall: '#5a3e14', wallTop: '#6a4a18',
-      wallFace: '#a0701e', faceLine: '#8a601a', deco: 'rgba(255,176,42,0.35)' } }
+      wallFace: '#a0701e', faceLine: '#8a601a', deco: 'rgba(255,176,42,0.35)' } },
+  { id: 'deep_saltmine', name: '소금 결정 광산', boss: 'boss_salt_king', waves: 2, deep: true,
+    enemies: [['enemy_saltgolem_001', 3], ['enemy_crystalbat_001', 4], ['enemy_minerghost_001', 2], ['enemy_saltpillar_001', 2]],
+    palette: { style: 'salt', accent: '#ff8ac0', floor: ['#4a4248', '#4d454b'], corridor: ['#332d32', '#352f34'], wall: '#5a5058', wallTop: '#6a6068',
+      wallFace: '#a898a4', faceLine: '#908490', deco: 'rgba(255,138,192,0.35)' } }
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {
