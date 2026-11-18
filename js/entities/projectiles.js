@@ -923,7 +923,7 @@ class DarkHole {
   }
   renderTop(ctx) { if (this.hole) this.renderHole(ctx); }
   renderHole(ctx) { /* 블랙홀: 빛을 삼키는 새까만 중심 + 빛나는 광자 고리 + 기울어진 강착 원반(뒤쪽은 중심 뒤로 가려짐) + 빨려 드는 나선 + 끝에 수축 */
-    const T = this.t, L = this.life, grow = Math.min(1, T / 0.5), col = Math.max(0, Math.min(1, (L - T) / 0.25)), k = grow * col;
+    const T = this.t, L = this.life, grow = Math.min(1, T / Math.min(0.5, L * 0.3)), /* 커지는 시간: 지속시간에 맞춤 (1초면 0.3초) */ col = Math.max(0, Math.min(1, (L - T) / 0.25)), k = grow * col;
     const x = Math.round(this.x), y = Math.round(this.y), R = this.r, core = Math.max(1, R * 0.2 * k), spin = T * 5;
     ctx.save();
     const g = ctx.createRadialGradient(x, y, core, x, y, R * 1.1); g.addColorStop(0, 'rgba(10,0,20,0.75)'); g.addColorStop(0.45, 'rgba(30,8,50,0.35)'); g.addColorStop(1, 'rgba(30,8,50,0)');

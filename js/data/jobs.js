@@ -62,7 +62,7 @@ const JOB_LINES = {
       skills: [
         { id: 'curseshot', name: '저주탄', desc: '맞은 적이 오래 약해지는(받는 피해 +40%) 저주 구체 (저주)', cd: 4 },
         { id: 'abyss', name: '심연 소용돌이', desc: '조준 지점에 적을 빨아들이는 어둠 (저주)', cd: 8 },
-        { id: 'voidcollapse', name: '블랙홀', desc: '2초 시전(이동 불가)하며 블랙홀로 주변 적을 모두 빨아들인 뒤 터뜨려 엄청난 피해', cd: 13 }] }
+        { id: 'voidcollapse', name: '블랙홀', desc: '1초 시전(이동 불가)하며 블랙홀로 주변 적을 모두 빨아들인 뒤 터뜨려 엄청난 피해', cd: 13 }] }
   },
   hero_gunner: { title: '사격 방식 선택',
     base: { name: '속사', desc: '빠른 연사 · 공격 속도 강화', ranks: ['사수', '건마스터', '폭풍의 총잡이'], color: '#ffd84a',

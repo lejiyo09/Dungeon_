@@ -1255,8 +1255,8 @@ class Game {
       // 어둠
       case 'curseshot': shoot({ p: { damage: 36, explodeRadius: 26, color: '#a070e0', size: 4, speed: 260, mark: { mult: 1.4, dur: 6 }, status: { type: 'curse', chance: 1, duration: 6 } } }); break;
       case 'abyss': { const c = at(170); this.zones.push(new DarkHole(c.x, c.y, p, { r: 62, life: 2.5, pull: 75, dmg: 8, status: { type: 'curse', chance: 1, duration: 5 } })); break; }
-      case 'voidcollapse': { const c = at(180); this.zones.push(new DarkHole(c.x, c.y, p, { r: 90, life: 2, pull: 110, dmg: 7, hole: true, status: { type: 'curse', chance: 1, duration: 6 } }));
-        this.zones.push(new SkillCast(p, c.x, c.y, { r: 90, time: 2, color: '#a070e0' }, () => {
+      case 'voidcollapse': { const c = at(180); this.zones.push(new DarkHole(c.x, c.y, p, { r: 90, life: 1, pull: 220, dmg: 14, hole: true, /* [사용자 결정] 시전 1초 (예전 2초) — 같은 거리를 빨아들이도록 끌어당김 2배, 빨아들이는 피해도 2배 (총량 그대로) */ status: { type: 'curse', chance: 1, duration: 6 } }));
+        this.zones.push(new SkillCast(p, c.x, c.y, { r: 90, time: 1, color: '#a070e0' }, () => {
           this.explodeAt(c.x, c.y, 80, { color: '#a070e0', hurtEnemies: true, src: { damage: D(414), mods: p.mods, knockback: 10, status: { type: 'curse', chance: 1, duration: 6 } } });
           this.effects.ring(c.x, c.y, 90, '#ffffff'); this.screenFlash = 0.3; this.flashColor = '160,110,230'; this.addShake(0.5, 8); this.hitStop(0.08); SFX.play('excal'); })); break; }
       // 사수
@@ -1431,7 +1431,7 @@ class Game {
           if (Math.random() < 0.05) E.ring(x, y, 170, '#bfe8ff'); if (Math.random() < 0.3) P(x + randInt(-10, 10), y + randInt(-8, 4), randInt(-40, 40), randInt(-40, 10), '#ffffff', 0.25, 1.5); }, p);
         E.rays(p.x, p.y, '#bfe8ff', 16, 120, 0.6); break;
       case 'judgment': { const c = at(190); later(1.5, () => { E.skyBeam(c.x, c.y, '#ffffff', 0, 14); E.skyBeam(c.x, c.y, '#fff4c0', 0.05, 24); E.rays(c.x, c.y, '#fff4c0', 18, 90, 0.7); E.solomonSeal(c.x, c.y, 1.2); }); break; }
-      case 'voidcollapse': { const c = at(180); emit(2, (w, x, y, t) => { for (let i = 0; i < 2; i++) { const a = Math.random() * TAU, d = 100; E.part(c.x + Math.cos(a) * d, c.y + Math.sin(a) * d * 0.6, -Math.cos(a) * 160, -Math.sin(a) * 100, { color: i ? '#a070e0' : '#e0c8ff', life: 0.6, size: 2, size2: 0, drag: 0, add: true }); } }); // 빨려 드는 빛
+      case 'voidcollapse': { const c = at(180); emit(1, (w, x, y, t) => { for (let i = 0; i < 2; i++) { const a = Math.random() * TAU, d = 100; E.part(c.x + Math.cos(a) * d, c.y + Math.sin(a) * d * 0.6, -Math.cos(a) * 160, -Math.sin(a) * 100, { color: i ? '#a070e0' : '#e0c8ff', life: 0.6, size: 2, size2: 0, drag: 0, add: true }); } }); // 빨려 드는 빛
         later(2, () => { E.rays(c.x, c.y, '#b070ff', 20, 120, 0.8); E.ring(c.x, c.y, 100, '#ffffff'); E.ring(c.x, c.y, 60, '#7040c0'); for (let i = 0; i < 20; i++) P(c.x, c.y, randInt(-120, 120), randInt(-80, 80), '#c8a0ff', 0.7); }); break; }
       case 'deadeye': later(0.7, () => { E.rays(p.x, p.y, '#ffd84a', 12, 50, 0.5);
         for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 320) { E.ring(e.x, e.y, 12, '#ffd84a'); E.burst(e.x, e.y, '#ffe9a0', 6); } }); // 맞힌 자리마다 조준 고리
