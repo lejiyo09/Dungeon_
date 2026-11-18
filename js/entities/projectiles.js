@@ -640,8 +640,8 @@ class SkillAura {
     if (this.next > 0) return;
     this.next = this.tick;
     if (this.kind === 'thunder') { // 범위 안 무작위 적 2명에게 하늘에서 번개
-      const list = world.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < this.r);
-      for (let i = 0; i < 2 && list.length; i++) { const e = list.splice(randInt(0, list.length - 1), 1)[0];
+      const list = world.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < this.r), all = list.slice();
+      for (let i = 0; i < 2 && all.length; i++) { if (!list.length) list.push(...all); /* 적이 하나뿐이면 남은 번개도 그 적에게 */ const e = list.splice(randInt(0, list.length - 1), 1)[0];
         world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: p.mods, knockback: 2, status: this.status || null }, 0, 1, { quiet: true }); world.effects.lightning(e.x + randInt(-6, 6), e.y - 90, e.x, e.y); }
       if (list.length || Math.random() < 0.5) SFX.play('react', 0.12);
       return;

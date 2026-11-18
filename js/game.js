@@ -1064,7 +1064,14 @@ class Game {
     this.addShake(0.4, 7); this.screenFlash = 0.22; this.flashColor = '255,60,80'; this.hitStop(0.1); SFX.play('explode');
   }
   // ── 직업 계열·진화
-  skillDmg(base) { return base * (1 + (this.scale.hp - 1) * 0.5); } // 스킬 피해: 깊이 내려갈수록 조금씩 커짐
+  // 스킬 피해: 깊이 내려갈수록 조금씩 커짐 (스테이지 배율의 절반)
+  //  [사용자 결정·@하요 정리] 시련(롱고미니아드·카멜롯)에서는 배율을 100% 받고, 든 무기의 등급·강화만큼 더 셈 — 무기 화력을 키우는 사수 스킬과의 차이를 줄임 (심층·일반 던전은 그대로)
+  skillDmg(base) {
+    const trial = this.mode === 'dungeon' && this.trialW;
+    let m = base * (1 + (this.scale.hp - 1) * (trial ? 1 : 0.5));
+    if (trial) { const w = this.player && this.player.weapon; if (w) m *= 1 + (BALANCE.trialSkillRarity[w.def.rarity] || 0) + (w.lv || 0) * BALANCE.upgrade.perLevel * 0.25; }
+    return m;
+  }
   setJob(p, line, rank) {
     const sk = line.skills[rank], ratio = p.skillCdMax / (p.skillBaseCd || p.skillCdMax); // '집중' 같은 쿨타임 감소 유지
     if (line.look) p.hero = heroWithLook(this.data.heroes.get(p.hero.id) || p.hero, line.look); // 갈래별 옷색 (마도사 속성)
@@ -1134,7 +1141,7 @@ class Game {
     const at = (range) => { const dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, range / d); return { x: p.x + dx * k, y: p.y + dy * k }; }; // 조준 지점 (사거리 제한)
     const nova = (r, dmg, o = {}) => { // 자기 주변 범위 피해
       for (const e of this.enemies) { if (!e.targetable || Math.hypot(e.x - p.x, e.y - p.y) > r + e.radius) continue;
-        this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: o.kb ?? 6, status: o.status || null }, (e.x - p.x) / 50, (e.y - p.y) / 50);
+        this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: o.kb ?? 6, status: (o.status && o.status.dps && this.trialW) ? Object.assign({}, o.status, { dps: D(o.status.dps) }) : o.status || null }, (e.x - p.x) / 50, (e.y - p.y) / 50); /* 시련: 범위 스킬의 중독·화상도 스킬 피해만큼 커짐 */
         if (o.root) e.chainT = Math.max(e.chainT || 0, o.root); }
       if (o.clear) for (const b of this.enemyBullets) if (Math.hypot(b.x - p.x, b.y - p.y) < r) b.alive = false;
       this.effects.ring(p.x, p.y, r, o.color || '#fff'); this.effects.ring(p.x, p.y, r * 0.6, '#ffffff'); this.effects.burst(p.x, p.y, o.color || '#fff', 16);
@@ -1187,7 +1194,7 @@ class Game {
         this.zones.push(new Strike(x1, y1, 0.25, 70, { damage: D(156), mods: p.mods, knockback: 12 }, '#c8d8f0', false));
         this.addShake(0.3, 5); this.hitStop(0.05); SFX.play('heavy'); break; }
       case 'quake': this.zones.push(new SkillCast(p, p.x, p.y, { r: 140, time: 0.6, color: '#e0b070' }, () => {
-        this.explodeAt(p.x, p.y, 140, { color: '#e0b070', hurtEnemies: true, src: { damage: D(210), mods: p.mods, knockback: 16 } });
+        this.explodeAt(p.x, p.y, 140, { color: '#e0b070', hurtEnemies: true, src: { damage: D(250), mods: p.mods, knockback: 16 } });
         for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.effects.explosion(p.x + Math.cos(a) * 80, p.y + Math.sin(a) * 50, 16, '#c8a070'); }
         this.addShake(0.5, 9); this.hitStop(0.08); SFX.play('heavy'); })); break;
       // 불
@@ -1222,7 +1229,7 @@ class Game {
       case 'thorns': nova(95, 20, { color: '#7adf4a', root: 1.8, kb: 0, status: { type: 'poison', chance: 1, duration: 4, dps: 10 } }); break;
       case 'bog': { const c = at(170); this.zones.push(new Puddle(c.x, c.y, { r: 56, life: 6, tick: 0.4, dmg: D(12), status: { type: 'poison', chance: 1, duration: 3, dps: 10 }, color: '#5aa03a' }, p.mods)); break; }
       case 'worldtree': this.zones.push(new SkillCast(p, p.x, p.y, { r: 150, time: 0.8, color: '#7adf4a' }, () => {
-        nova(150, 200, { color: '#7adf4a', root: 4, kb: 0, status: { type: 'poison', chance: 1, duration: 6, dps: 30 } }); p.hp = Math.min(p.maxHp, p.hp + 30); this.effects.heal(p.x, p.y); this.addShake(0.3, 4); })); break;
+        nova(150, 260, { color: '#7adf4a', root: 4, kb: 0, status: { type: 'poison', chance: 1, duration: 6, dps: 40 } }); p.hp = Math.min(p.maxHp, p.hp + 30); this.effects.heal(p.x, p.y); this.addShake(0.3, 4); })); break;
       // 번개
       case 'shockorb': shoot({ p: { damage: 32, bounce: 3, color: '#bfe8ff', size: 4, speed: 260, range: 420, chain: { count: 3, range: 85, falloff: 0.8 }, status: { type: 'shock', chance: 1, duration: 3 } } }); break;
       case 'thunder': { const list = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 180).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)).slice(0, 6);
@@ -1305,7 +1312,7 @@ class Game {
       case 'bless': case 'bless2': { const big = p.skillId === 'bless2';
         p.buffT = big ? 10 : 8; p.buffAtk = big ? 0.55 : 0.4; p.buffSpeed = big ? 0.2 : 0.15; p.buffGuard = big ? 0.25 : 0; p.buffKillHeal = 0; p.hp = Math.min(p.maxHp, p.hp + (big ? 25 : 15));
         this.effects.heal(p.x, p.y); this.effects.ring(p.x, p.y, 30, '#ffd8a0'); this.effects.text(p.x, p.y - 18, big ? '큰 축복!' : '축복!', '#ffd8a0'); break; }
-      case 'miracle': p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.5)); p.blinkInv = 3; p.buffT = 10; p.buffAtk = 0.8; p.buffSpeed = 0.2; p.buffGuard = 0.25; p.buffKillHeal = 0;
+      case 'miracle': p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.5)); p.blinkInv = 3; p.buffT = 10; p.buffAtk = 1.0; p.buffSpeed = 0.2; p.buffGuard = 0.25; nova(110, 200, { color: '#fff4c0', clear: true }); /* 기적: 주변에 빛의 파동 */ p.buffKillHeal = 0;
         this.effects.heal(p.x, p.y); this.effects.solomonSeal(p.x, p.y, 1.4); this.effects.text(p.x, p.y - 20, '기적!', '#ffd8a0', true); SFX.play('solomon'); break;
       // 광전사 · 함성 갈래 / 피의 서약 갈래
       case 'shout': case 'shout2': { const big = p.skillId === 'shout2', R = big ? 110 : 90;
@@ -1313,7 +1320,7 @@ class Game {
         for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < R + e.radius) { e.stunT = Math.max(e.stunT || 0, (big ? 1.6 : 1.4) * (e.def.boss ? 0.5 : 1)); if (big) e.curse = Math.max(e.curse || 0, 6); }
         this.addShake(0.2, 4); SFX.play('boss', 0.3); this.effects.text(p.x, p.y - 20, big ? '공포의 함성!' : '함성!', '#e0b070'); break; }
       case 'earthshatter': p.blinkInv = 0.7; this.zones.push(new SkillCast(p, p.x, p.y, { r: 140, time: 0.55, color: '#e0b070' }, () => {
-        this.explodeAt(p.x, p.y, 140, { color: '#e0b070', hurtEnemies: true, src: { damage: D(235), mods: p.mods, knockback: 14 } });
+        this.explodeAt(p.x, p.y, 140, { color: '#e0b070', hurtEnemies: true, src: { damage: D(280), mods: p.mods, knockback: 14 } });
         for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 140 + e.radius) e.stunT = Math.max(e.stunT || 0, e.def.boss ? 1 : 2);
         this.addShake(0.5, 9); this.hitStop(0.08); SFX.play('heavy'); })); break;
       case 'bloodpact': case 'bloodpact2': case 'bloodmoon': { const C = { bloodpact: [0.1, 6, 0.9, 0], bloodpact2: [0.1, 8, 1.3, 8], bloodmoon: [0.15, 8, 1.2, 6] }[p.skillId];
@@ -1325,8 +1332,8 @@ class Game {
       case 'thornfield': { const c = at(170); this.zones.push(new Puddle(c.x, c.y, { r: 56, life: 6, tick: 0.35, dmg: D(9), status: { type: 'poison', chance: 1, duration: 3, dps: 10 }, color: '#5a9a3a' }, p.mods)); break; }
       case 'thornburst': for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; this.projectiles.push(new Projectile({ x: p.x, y: p.y, dx: Math.cos(a), dy: Math.sin(a), speed: 320, range: 200, damage: D(44), pierce: 2, knockback: 3, mods: p.mods, color: '#7adf4a', size: 2, arrow: true, status: { type: 'poison', chance: 1, duration: 3, dps: 10 } })); }
         this.effects.ring(p.x, p.y, 30, '#7adf4a'); break;
-      case 'ancientroot': nova(140, 120, { color: '#7adf4a', root: 3, kb: 0, status: { type: 'poison', chance: 1, duration: 5, dps: 27 } }); this.addShake(0.3, 5); break;
-      case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [8, 0.4, 0.4, 0], bearform2: [10, 0.45, 0.4, 10], primal: [12, 0.55, 0.4, 12] }[p.skillId];
+      case 'ancientroot': nova(140, 170, { color: '#7adf4a', root: 3, kb: 0, status: { type: 'poison', chance: 1, duration: 5, dps: 36 } }); this.addShake(0.3, 5); break;
+      case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [8, 0.4, 0.4, 0], bearform2: [10, 0.45, 0.4, 10], primal: [12, 0.75, 0.4, 16] }[p.skillId];
         p.buffT = C[0]; p.buffAtk = C[1]; p.buffGuard = C[2]; p.buffSpeed = 0; p.buffKillHeal = 0;
         if (C[3]) this.zones.push(new SkillAura(p, { r: p.skillId === 'primal' ? 60 : 44, life: C[0], tick: 0.3, dmg: C[3], color: '#c8a070', kind: 'blood', lifesteal: p.skillId === 'primal' ? 0.3 : 0 }));
         if (p.skillId === 'primal') p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.2));
@@ -1349,18 +1356,18 @@ class Game {
         this.effects.burst(p.x, p.y, '#e8eef4', 12); SFX.play('melee'); break; }
       case 'execution': { // 그림자 분신 둘과 셋이서 연달아 습격 + 처형
         const list = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 240).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)).slice(0, 9);
-        this.zones.push(new ShadowStrike(p, list, D(125))); p.blinkInv = 1.2; this.effects.burst(p.x, p.y, '#3a3048', 14); SFX.play('react'); break; }
+        this.zones.push(new ShadowStrike(p, list, D(165))); p.blinkInv = 1.2; this.effects.burst(p.x, p.y, '#3a3048', 14); SFX.play('react'); break; }
       // 사제
       case 'sanctuary': this.zones.push(new Sanctuary(p.x, p.y, p, { r: 64, heal: 6, dmg: 14 })); this.effects.ring(p.x, p.y, 64, '#ffe9a0'); break;
       case 'sanctuary2': this.zones.push(new Sanctuary(p.x, p.y, p, { r: 90, life: 8, heal: 12, boost: true, dmg: 20 })); this.effects.ring(p.x, p.y, 90, '#ffe9a0'); break;
       case 'descent': this.zones.push(new SkillCast(p, p.x, p.y, { r: 110, time: 0.4, color: '#ffe9a0' }, () => {
-        p.blinkInv = 2; p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.4)); this.effects.heal(p.x, p.y); nova(110, 300, { color: '#ffe9a0', clear: true });
+        p.blinkInv = 2; p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.4)); this.effects.heal(p.x, p.y); nova(110, 360, { color: '#ffe9a0', clear: true });
         this.effects.solomonSeal(p.x, p.y); this.screenFlash = 0.3; this.flashColor = '255,233,160'; SFX.play('solomon'); })); break;
       // 광전사
       case 'rage': p.rage = 5; p.rageAtk = 0.7; p.rageVamp = 0; this.effects.text(p.x, p.y - 18, '분노!', '#ff5a3a'); this.effects.ring(p.x, p.y, 30, '#ff5a3a'); this.addShake(0.15, 3); break;
       case 'rage2': p.rage = 8; p.rageAtk = 1.0; p.rageVamp = 5; this.effects.text(p.x, p.y - 18, '광란!', '#ff5a3a'); this.effects.ring(p.x, p.y, 36, '#ff5a3a'); this.addShake(0.2, 4); break;
       case 'bloodstorm': p.rage = 6; p.rageAtk = 0.8; p.rageVamp = 4;
-        this.zones.push(new SkillAura(p, { r: 50, life: 6, tick: 0.25, dmg: 14, color: '#ff3a3a', kind: 'blood', lifesteal: 0.5 })); this.effects.text(p.x, p.y - 18, '피의 폭풍!', '#ff3a3a'); this.addShake(0.25, 5); break;
+        this.zones.push(new SkillAura(p, { r: 60, life: 6, tick: 0.25, dmg: 24, color: '#ff3a3a', kind: 'blood', lifesteal: 0.5 })); this.effects.text(p.x, p.y - 18, '피의 폭풍!', '#ff3a3a'); this.addShake(0.25, 5); break;
       // 드루이드
       case 'wolves': for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 12, p.y, p, { dmg: 5, life: 12 })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); break;
       case 'wolves2': for (let i = 0; i < 4; i++) this.allies.push(new SpiritWolf(p.x + (i - 1.5) * 12, p.y, p, { dmg: 5, life: 16, slow: true })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); this.effects.ring(p.x, p.y, 30, '#9ad8ff'); break;

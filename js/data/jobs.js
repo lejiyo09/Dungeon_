@@ -127,7 +127,7 @@ const JOB_LINES = {
       skills: [
         { id: 'bless', name: '축복', desc: '8초간 공격력 +40%·이동 속도 +15%, 체력 15 회복', cd: 12 },
         { id: 'bless2', name: '큰 축복', desc: '10초간 공격력 +55%·이동 속도 +20%·받는 피해 -25%, 체력 25 회복', cd: 13 },
-        { id: 'miracle', name: '기적', desc: '체력 50% 회복 + 3초 무적 + 10초간 큰 축복', cd: 18 }] } },
+        { id: 'miracle', name: '기적', desc: '체력 50% 회복 + 3초 무적 + 주변에 빛의 파동 + 10초간 아주 큰 축복', cd: 18 }] } },
   hero_berserker: { title: '전투 방식 선택',
     base: { name: '분노', desc: '분노로 공격력과 속도를 끌어올림', ranks: ['광전사', '전쟁광', '피의 군주'], color: '#ff5a3a',
     skills: [
@@ -159,7 +159,7 @@ const JOB_LINES = {
       skills: [
         { id: 'bearform', name: '곰 변신', desc: '8초간 받는 피해 -40%·공격력 +40%', cd: 13 },
         { id: 'bearform2', name: '성난 곰', desc: '10초간 받는 피해 -40%·공격력 +45% + 주위를 할퀴는 기운', cd: 13 },
-        { id: 'primal', name: '원시의 분노', desc: '12초간 받는 피해 -40%·공격력 +55% + 넓게 할퀴는 기운 + 체력 회복', cd: 16 }] } }
+        { id: 'primal', name: '원시의 분노', desc: '12초간 받는 피해 -40%·공격력 +75% + 넓게 할퀴는 기운 + 체력 회복', cd: 16 }] } }
 };
 // 직업의 갈래 목록 (title 제외)
 function jobLines(heroId) { const J = JOB_LINES[heroId] || {}; return Object.keys(J).filter((k) => J[k] && typeof J[k] === 'object').map((k) => Object.assign({ id: k }, J[k])); }
