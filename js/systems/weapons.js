@@ -207,7 +207,7 @@ class WeaponSystem {
     const pow = def.nth && w.shots % def.nth.every === 0; // N번째 휘두르기 강화
     const src = { damage: def.damage * (pow ? def.nth.mult : 1), knockback: def.knockback * (pow ? 1.5 : 1), status: def.status || (player.hybrid && Math.random() < player.hybrid.passiveChance ? player.hybrid.status : null), // 마검사: 근접 공격에 속성
       mods: weaponMods(player, w),
-      execute: def.execute || 0, mark: def.mark || null, killEnergy: def.killEnergy || 0 };
+      execute: def.execute || 0, mark: def.mark || null, killEnergy: def.killEnergy || 0, weaponId: def.id };
     if (pow) { world.addShake(0.12, 3); SFX.play('crit', 0.05); }
     let hits = 0;
     for (const e of world.enemies) {
@@ -223,10 +223,10 @@ class WeaponSystem {
     world.breakCratesInArc(player.x, player.y, ang, arc, def.range);
     if (def.slam) // 지면 강타: 내리친 자리에 충격파
       world.explodeAt(player.x + Math.cos(ang) * def.range * 0.8, player.y + Math.sin(ang) * def.range * 0.8, def.slam.r,
-        { color: '#d8b070', hurtEnemies: true, src: { damage: def.slam.damage, mods: weaponMods(player, w), knockback: def.knockback, status: def.status || null } });
+        { color: '#d8b070', hurtEnemies: true, src: { damage: def.slam.damage, mods: weaponMods(player, w), knockback: def.knockback, status: def.status || null, weaponId: def.id } });
     if (def.wave) // 검기: 베면 관통하는 초승달 모양 기운이 날아감
       world.projectiles.push(new Projectile({ x: player.x + Math.cos(ang) * 10, y: player.y - 1 + Math.sin(ang) * 10, dx: Math.cos(ang), dy: Math.sin(ang),
-        speed: def.wave.speed, range: def.wave.range, damage: def.wave.damage, pierce: 99, knockback: 3, mods: weaponMods(player, w), color: def.color, size: 3, wave: true }));
+        speed: def.wave.speed, range: def.wave.range, damage: def.wave.damage, pierce: 99, knockback: 3, mods: weaponMods(player, w), color: def.color, size: 3, wave: true, weaponId: def.id }));
     if (def.lifesteal && hits > 0) player.hp = Math.min(player.maxHp, player.hp + Math.min(3, hits * def.lifesteal));
     if (def.deflect) {
       for (const b of world.enemyBullets) {
@@ -276,8 +276,8 @@ class WeaponSystem {
     const interval = def.tickRate / (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 + (player.odRate || 0) : 0));
     while (w.beamTick <= 0) {
       w.beamTick += interval;
-      if (target) world.damageEnemy(target, { damage: def.damage * (1 + (def.focus || 0) * (w.focusK || 0)), mods: bm, knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
-      for (const e of extra) if (e.alive) world.damageEnemy(e, { damage: def.damage, mods: bm, knockback: 0, status: def.status || null }, player.aim.x, player.aim.y, { quiet: true });
+      if (target) world.damageEnemy(target, { damage: def.damage * (1 + (def.focus || 0) * (w.focusK || 0)), mods: bm, knockback: 0, status: def.status || null, weaponId: def.id }, player.aim.x, player.aim.y, { quiet: true });
+      for (const e of extra) if (e.alive) world.damageEnemy(e, { damage: def.damage, mods: bm, knockback: 0, status: def.status || null, weaponId: def.id }, player.aim.x, player.aim.y, { quiet: true });
     }
   }
 }

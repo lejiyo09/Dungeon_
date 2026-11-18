@@ -30,6 +30,7 @@ const GUILD_TITLES = [
   { id: 't_hunter', name: '토벌대장', desc: '토벌 의뢰 5개 완료', test: (s) => (s.hunts || 0) >= 5 },
   { id: 't_gambler', name: '행운아', desc: '결정석 도박에서 5번 이김', test: (s) => (s.gambleWins || 0) >= 5 },
   { id: 't_merchant', name: '단골손님', desc: '거래상에게 보급품 10번 구매', test: (s) => (s.trades || 0) >= 10 },
+  { id: 't_origin', name: '근본', desc: '캐릭터의 기본 시작 무기로 몬스터 2,000마리 처치', hidden: true, test: (s) => (s.startKills || 0) >= 2000 }, /* [사용자 결정] 히든 칭호: 얻기 전에는 목록에 안 보임 */
   { id: 't_roundtable', name: '101번째 원탁의 기사', desc: '아서 왕에게 원탁의 기사로 인정받음', hidden: true, test: (s, sv) => !!(sv.merlin && sv.merlin.quest >= 22) } /* [사용자 결정] 아서 왕 처치 칭호 — 히든 칭호: 얻기 전에는 목록에 아예 안 보임 */
 ];
 // 거래상 보급품: 하루에 3개가 진열됨(날마다 바뀜), 사면 다음 탐험 시작 때 한 번 적용

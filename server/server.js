@@ -58,7 +58,7 @@ async function ghSave() {
 const SCORE_SORT = { stage: (a, b) => b.stage - a.stage || b.kills - a.kills, kills: (a, b) => b.kills - a.kills || b.stage - a.stage, deep: (a, b) => b.deep - a.deep || b.stage - a.stage, coop: (a, b) => b.stage - a.stage || b.kills - a.kills };
 const SCORE_VAL = { stage: (r) => r.stage, kills: (r) => r.kills, deep: (r) => r.deep, coop: (r) => r.stage };
 // 랭킹 칭호: 길드 칭호 id만 받음 (js/data/guild.js의 GUILD_TITLES와 같은 목록 — 아무 글자나 띄우지 못하게)
-const TITLE_IDS = new Set(['t_first', 't_boss', 't_slayer', 't_element', 't_sanctum', 't_deep', 't_worker', 't_hunter', 't_gambler', 't_merchant', 't_roundtable']);
+const TITLE_IDS = new Set(['t_first', 't_boss', 't_slayer', 't_element', 't_sanctum', 't_deep', 't_worker', 't_hunter', 't_gambler', 't_merchant', 't_origin', 't_roundtable']);
 const cleanTitle = (t) => (TITLE_IDS.has(String(t || '')) ? String(t) : '');
 function setTitle(name, title) { /* 그 이름의 기록(파티 제외)에 지금 칭호를 붙임 — 최고 기록이 바뀌지 않아도 칭호는 최신으로 */
   let changed = false; for (const cat of ['stage', 'kills', 'deep']) for (const r of scores[cat]) if (r.name === name && (r.title || '') !== title) { r.title = title; changed = true; }

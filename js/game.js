@@ -100,7 +100,7 @@ class Game {
   guildEvent(stat, amt = 1, target) { // 게임 중 행동 → 평생 기록 · 퀘스트 · 토벌 진행
     if (this.coop && this.coop.host && this.remotes) { // 멀티: 함께 한 일(처치·보스·스테이지 등)은 참가자 기록에도, 참가자 혼자 한 일(스킬)은 그 사람 기록에만
       const R = [...this.remotes.values()].find((q) => q.p === this.player);
-      if (R && stat === 'skills') { (R.gev = R.gev || []).push([stat, amt, target]); return; }
+      if (R && (stat === 'skills' || stat === 'startKills')) { (R.gev = R.gev || []).push([stat, amt, target]); return; } /* 그 사람 혼자 한 일 */
       if (['kills', 'bosses', 'elites', 'stages', 'reactions', 'gold'].includes(stat)) for (const Q of this.remotes.values()) (Q.gev = Q.gev || []).push([stat, amt, target]);
     }
     const sv = this.save; if (!sv) return;
@@ -1796,6 +1796,7 @@ class Game {
   damageEnemy(enemy, src, kx, ky, opts = {}) {
     if (enemy.negateT > 0) { if (!(enemy.negMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, enemy.fortress ? '막힘' : '부정', enemy.fortress ? '#e8ecff' : '#d8f0ff'); enemy.negMsgT = this.time + 0.35; } return; } /* 가레스의 부정: 모든 피해 무효 */
     let base = src.damage;
+    { const wid = src.weaponId || (src.wdef && src.wdef.id) || (src.srcId && String(src.srcId).startsWith('weapon_') ? src.srcId : null); if (wid) enemy.lastWeapon = wid; } /* 마지막으로 때린 무기 (칭호 '근본' 집계) */
     if (src.trap) { if (enemy.preyT > 0 && !src.corpse && !src.pct) base *= 1 + BALANCE.TRAP.prey.bonus; if (enemy.def.boss) base *= src.equip ? BALANCE.TRAP.equipBossMult : BALANCE.TRAP.bossMult; } /* 덫 장비·망자의 파수기: 사냥터 각인 +20% · 보스에게는 배율 (보스전 최강 방지) */
     if (src.treasure) base *= this.treasureBossMult(enemy); /* 공격형 보구: 심층 보스는 절반 */
     if (enemy.iceVulnT > 0) base *= 1.5; /* 절대 영도로 얼어 있음 */
@@ -2072,6 +2073,7 @@ class Game {
     if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) {
       this.guildEvent('kills', 1, enemy.def.id);
       if (enemy.elite) this.guildEvent('elites');
+      { const p = this.player; if (enemy.lastWeapon && p && (enemy.lastWeapon === p.hero.startWeapon || (p.line && enemy.lastWeapon === p.line.startWeapon))) this.guildEvent('startKills'); } /* 기본 시작 무기로 처치 (칭호 '근본') */
       if (enemy.def.boss) this.guildEvent('bosses', 1, enemy.def.id);
 
       // 멀린의 1번 시련: 심층 필드의 보스 처치 진행도를 즉시 저장한다.
