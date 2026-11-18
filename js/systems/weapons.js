@@ -157,7 +157,7 @@ class WeaponSystem {
       if (player.huntT > 0 && !opt.mine && !opt.boomerang) opt.homing = Math.max(opt.homing || 0, 2.2); /* 사냥꾼의 표적: 탄이 살짝 휘어 들어감 */
       if (odDouble(player) && !opt.mine) { /* 같은 탄을 옆으로 조금 벌려 한 발 더 */
         const px = -Math.sin(base) * 3, py = Math.cos(base) * 3;
-        this.world.projectiles.push(new Projectile(Object.assign({}, opt, { x: opt.x + px, y: opt.y + py })));
+        this.world.projectiles.push(new Projectile(Object.assign({}, opt, { x: opt.x + px, y: opt.y + py, damage: opt.damage * 0.4 }))); /* 두 번째 탄은 피해 40% */
         opt.x -= px; opt.y -= py;
       }
       this.world.projectiles.push(new Projectile(opt));
