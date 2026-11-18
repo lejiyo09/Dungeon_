@@ -39,7 +39,9 @@ const BALANCE = {
     // 전직의 방: 진화 단계별로 나오기 시작하는 필드(0부터)와 다른 특수방 대비 가중치 (다른 특수방은 각각 1)
     evolveByRank: [{ fromWorld: 0, weight: 1 }, { fromWorld: 3, weight: 1 }], // [사용자 결정] 3진(2차 진화) 전직의 방은 4필드부터, 가중치 둘 다 1 (예전: 8.3 · 2.3, 필드 제한 없음)
     pool: ['fountain', 'altar', 'gamble', 'challenge', 'forge', 'blood', 'rack', 'smithy', 'evolve'], fountainHeal: 0.4, altarPrice: 60, gamblePrice: 25,
-    forgePrice: 50, forgeUpChance: 0.3, bloodCost: 0.2,
+    forgePrice: 35, forgeUpChance: 0.5, bloodCost: 0.2, // [사용자 결정] 제련 손해 완화 (예전: 50골드 · 30%)
+    // 행운의 기계 확률표 (합 1). 골드 기대값 = 판돈의 0.8배 + 물약·에너지·무기 (예전엔 '두 배'가 실제로는 판돈의 40%만 돌려줘서 골드 기대값 0.1배)
+    gambleTable: { lose: 0.2, refund: 0.15, double: 0.25, triple: 0.05, hp: 0.15, energy: 0.12, weapon: 0.08 },
     challenge: { waves: 3, extra: 2, hp: 1.3, dmg: 1.15 } }, // 도전방: 웨이브 수, 웨이브당 추가 몬스터, 정예 위에 더 곱하는 체력·공격력
   // 무기 강화 (그 판 동안만): 단계마다 피해 +perLevel, 최대 maxLevel
   //  비용 = base × (다음 단계) × 등급 배율 × 스테이지 물가, 성공률은 다음 단계 기준 (실패해도 단계 유지)

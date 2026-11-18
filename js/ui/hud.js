@@ -405,7 +405,7 @@ class HUD {
       T('상세 정보', VIEW_W / 2, 6, '#ffd84a', 'center', 11);
       if (o.tab === 0) {
         const SR = BALANCE.specialRooms, ER = SR.evolveByRank, others = SR.pool.filter((t) => t !== 'evolve'), w = (t) => (SR.weight && SR.weight[t]) || 1;
-        const NAME = { fountain: ['회복의 샘', '체력 40%·에너지·보호막 회복'], altar: ['축복의 제단', '골드를 내고 버프 1개'], gamble: ['행운의 기계', '골드를 걸고 뽑기 (꽝·골드·물약·에너지·무기)'],
+        const NAME = { fountain: ['회복의 샘', '체력 40%·에너지·보호막 회복'], altar: ['축복의 제단', '골드를 내고 버프 1개'], gamble: ['행운의 기계', '골드를 걸고 뽑기 (꽝·본전·2배·3배·물약·에너지·무기)'],
           challenge: ['도전의 방', '강화된 정예 3웨이브 → 희귀 이상 무기'], forge: ['제련소', '골드를 내고 든 무기를 같은 등급 이상으로 바꿈 (' + pct(SR.forgeUpChance) + ' 등급 상승)'],
           blood: ['피의 제단', '최대 체력 ' + pct(SR.bloodCost) + '를 바치고 영웅 이상 무기'], rack: ['무기 진열대', '무기 3개 중 1개'], smithy: ['강화소', '싸고 성공률 높은 강화'], evolve: ['전직의 방', '상위자와 대결하거나 골드를 내고 진화'] };
         T(`보스가 아닌 스테이지마다 ${pct(SR.chance)} 확률로 특수방 1개 (보물방·상점·출구는 항상 따로 있음)`, 40, 44, '#c8c0d8');

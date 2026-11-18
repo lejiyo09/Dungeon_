@@ -103,12 +103,15 @@ class SlotMachine {
     if (this.spin > 0) return;
     if (game.gold < this.price) { game.effects.text(p.x, p.y - 18, '골드가 부족합니다', '#ff7070'); SFX.play('deny'); return; }
     game.gold -= this.price; this.spin = 0.6; SFX.play('coin');
-    const r = Math.random(), c = { x: this.x, y: this.y + 16 };
+    const T = BALANCE.specialRooms.gambleTable, c = { x: this.x, y: this.y + 16 }; let r = Math.random();
+    const gold = (n) => { const k = Math.min(10, n); for (let i = 0; i < k; i++) game.pickups.push(new Pickup('coin', c.x, c.y, { value: Math.floor(n / k) + (i < n % k ? 1 : 0) })); }; /* 동전 최대 10개로 나눠 정확히 n골드 */
     let msg, col;
-    if (r < 0.35) { msg = '꽝!'; col = '#888'; this.face = [0, 1, 2]; }
-    else if (r < 0.6) { msg = '골드 두 배!'; col = '#ffd84a'; this.face = [3, 3, 3]; for (let i = 0; i < Math.ceil(this.price * 2 / 5); i++) game.pickups.push(new Pickup('coin', c.x, c.y)); }
-    else if (r < 0.78) { msg = '체력 물약'; col = '#ff7a7a'; this.face = [1, 1, 1]; game.pickups.push(new Pickup('hp', c.x, c.y, { value: 30 })); }
-    else if (r < 0.92) { msg = '에너지'; col = '#7ab0ff'; this.face = [2, 2, 2]; for (let i = 0; i < 6; i++) game.pickups.push(new Pickup('energy', c.x, c.y, { value: 12 })); }
+    if ((r -= T.lose) < 0) { msg = '꽝!'; col = '#888'; this.face = [0, 1, 2]; }
+    else if ((r -= T.refund) < 0) { msg = '본전!'; col = '#e0d0a0'; this.face = [3, 3, 0]; gold(this.price); }
+    else if ((r -= T.double) < 0) { msg = '골드 두 배!'; col = '#ffd84a'; this.face = [3, 3, 3]; gold(this.price * 2); }
+    else if ((r -= T.triple) < 0) { msg = '잭팟! 골드 세 배!'; col = '#ffd84a'; this.face = [3, 3, 3]; gold(this.price * 3); game.effects.burst(this.x, this.y, '#ffd84a', 20); }
+    else if ((r -= T.hp) < 0) { msg = '체력 물약'; col = '#ff7a7a'; this.face = [1, 1, 1]; game.pickups.push(new Pickup('hp', c.x, c.y, { value: 30 })); }
+    else if ((r -= T.energy) < 0) { msg = '에너지'; col = '#7ab0ff'; this.face = [2, 2, 2]; for (let i = 0; i < 6; i++) game.pickups.push(new Pickup('energy', c.x, c.y, { value: 12 })); }
     else { msg = '대박! 무기'; col = '#c070ff'; this.face = [4, 4, 4]; game.pickups.push(new Pickup('weapon', c.x, c.y, { def: game.randomWeaponDef(), still: true })); game.effects.burst(this.x, this.y, '#ffd84a', 16); }
     this.result = { msg, col, t: 0.6 };
   }
