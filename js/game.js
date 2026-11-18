@@ -1317,8 +1317,12 @@ class Game {
       case 'plaguecloud': this.zones.push(new SkillAura(p, { r: 70, life: 7, tick: 0.3, dmg: 30, color: '#7adf4a', kind: 'flame', status: { type: 'poison', chance: 1, duration: 3, dps: 18 } }));
         p.hasteT = 7; this.effects.ring(p.x, p.y, 70, '#7adf4a'); this.effects.text(p.x, p.y - 18, '맹독 안개!', '#9aff5a'); break;
       // 암살자 · 칼날 갈래
-      case 'bladeorbit': case 'bladestorm': {
-        const storm = p.skillId === 'bladestorm', n = storm ? 6 : 4, life = 8;
+      case 'bladestorm': { /* [사용자 결정] 칼날 3진: 칼날을 사방으로 펼쳤다가 다시 나에게 모음 (나갈 때·돌아올 때 각각 피해) */
+        this.zones = this.zones.filter((z) => !(z instanceof BladeRing && z.owner === p));
+        this.zones.push(new BladeRing(p, { n: 16, R: 125, out: 0.3, hold: 0.9, back: 0.35, dmgOut: D(240), dmgBack: D(300) }));
+        p.blinkInv = 0.45; this.effects.ring(p.x, p.y, 30, '#e8eef4'); this.effects.burst(p.x, p.y, '#e8eef4', 14); this.addShake(0.15, 3); SFX.play('melee'); break; }
+      case 'bladeorbit': {
+        const storm = false, n = 4, life = 8;
         this.projectiles = this.projectiles.filter((q) => !(q.orbit && q.srcId === 'skill_blade')); // 이전 칼날은 교체
         for (let i = 0; i < n; i++) this.projectiles.push(new Projectile({ x: p.x, y: p.y, dx: 1, dy: 0, speed: 0, range: 9999, damage: D(38), pierce: 99, knockback: 3, mods: p.mods,
           color: '#e8eef4', size: 3, rehit: 0.22, srcId: 'skill_blade', orbit: { owner: p, r: storm ? 44 : 40, speed: storm ? 6 : 5, life, ang: i / n * TAU } }));
@@ -1392,8 +1396,7 @@ class Game {
         emit(1.2, (w, x, y, t) => { if (Math.random() < 0.6) E.part(x + randInt(-12, 12), y + randInt(-10, 6), randInt(-20, 20), -30, { color: '#3a2a50', life: 0.5, size: 3, size2: 0, drag: 1 }); }, p); break;
       case 'plaguecloud': emit(7, (w, x, y, t) => { if (Math.random() < 0.5) { const a = Math.random() * TAU, d = Math.random() * 70; E.part(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.6, 0, -18, { color: Math.random() < 0.5 ? '#9aff5a' : '#5aa03a', life: 0.8, size: 1.5, size2: 3.5, drag: 1, shape: 'ring' }); } }, p);
         E.rays(p.x, p.y, '#7adf4a', 14, 80, 0.6); break;
-      case 'bladestorm': emit(8, (w, x, y, t) => { if (Math.random() < 0.4) { const a = t * 7 + Math.random() * TAU, d = 36; P(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.85, -Math.sin(a) * 40, Math.cos(a) * 30, '#ffffff', 0.3, 1.5); } }, p);
-        E.rays(p.x, p.y, '#e8eef4', 16, 70, 0.5); break;
+      case 'bladestorm': E.rays(p.x, p.y, '#e8eef4', 16, 70, 0.5); break; /* 칼날이 펼쳐지는 순간 빛살 (칼날 자체는 BladeRing이 그림) */
       case 'descent': later(1, () => { E.skyBeam(p.x, p.y, '#ffffff', 0, 18); E.skyBeam(p.x, p.y, '#ffe9a0', 0.05, 30); E.rays(p.x, p.y, '#ffe9a0', 20, 120, 0.8);
         for (let i = 0; i < 20; i++) P(p.x + randInt(-30, 30), p.y + randInt(-10, 10), randInt(-10, 10), -50 - Math.random() * 60, '#fff4c0', 1); }); break;
       case 'bloodstorm': emit(6, (w, x, y, t) => { if (Math.random() < 0.5) { const a = t * 5 + Math.random() * 1.5, d = 30 + Math.random() * 20; E.part(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.7, -Math.sin(a) * 60, Math.cos(a) * 40, { color: Math.random() < 0.5 ? '#ff3a3a' : '#8a0a0a', life: 0.5, size: 2.5, size2: 0, drag: 2 }); } }, p);

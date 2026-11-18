@@ -111,7 +111,7 @@ const JOB_LINES = {
     skills: [
       { id: 'blink', name: '그림자 습격', desc: '조준 방향으로 순간이동하며 지나간 적을 벰 (잠깐 무적)', cd: 5 },
       { id: 'bladeorbit', name: '회전 칼날', desc: '8초간 칼날 4개가 몸 주위를 돌며 닿는 적을 벰', cd: 8 },
-      { id: 'bladestorm', name: '칼날 폭풍', desc: '8초간 칼날 6개가 넓게 돌고, 순간 회오리로 주변 적을 베고 적 탄환을 지움', cd: 12 }] } },
+      { id: 'bladestorm', name: '칼날 폭풍', desc: '칼날 16개를 사방으로 펼쳤다가 잠시 뒤 다시 나에게 모음 — 나갈 때·돌아올 때 닿은 적에게 각각 큰 피해, 펼치는 순간 잠깐 무적', cd: 10 }] } },
   hero_priest: { title: '신앙의 길 선택',
     base: { name: '성역', desc: '빛의 원으로 회복하고 탄을 막음', ranks: ['사제', '대사제', '성자'], color: '#ffe9a0',
     skills: [

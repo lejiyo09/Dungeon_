@@ -285,6 +285,30 @@ class WatchEye {
     ctx.restore(); ctx.globalAlpha = 1;
   }
 }
+/* 칼날 폭풍 (어쌔신 칼날 3진): 칼날이 사방으로 펼쳐졌다가(out) 잠시 맴돌고(hold) 주인에게 되돌아옴(back) — 나갈 때·돌아올 때 적마다 한 번씩 피해 */
+class BladeRing {
+  constructor(owner, o) { Object.assign(this, o); this.owner = owner; this.x = owner.x; this.y = owner.y; this.t = 0; this.alive = true; this.a0 = Math.random() * TAU; this.hitOut = new Set(); this.hitBack = new Set(); this.blades = []; }
+  get total() { return this.out + this.hold + this.back; }
+  radiusAt(t) { return t < this.out ? this.R * (t / this.out) : t < this.out + this.hold ? this.R : this.R * (1 - (t - this.out - this.hold) / this.back); }
+  update(dt, world) {
+    this.t += dt; if (this.t >= this.total) { this.alive = false; world.effects.burst(this.owner.x, this.owner.y, '#e8eef4', 10); SFX.play('melee', 0.05); return; }
+    const back = this.t >= this.out + this.hold, cx = back ? this.owner.x : this.x, cy = back ? this.owner.y : this.y, r = this.radiusAt(this.t), spin = this.a0 + this.t * (back ? 5 : 2.5);
+    if (!back) { this.x = this.x; } /* 펼쳐질 때는 처음 자리 기준, 돌아올 때는 주인을 향해 모임 */
+    this.blades = []; for (let i = 0; i < this.n; i++) { const a = spin + i * TAU / this.n; this.blades.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.85, a]); }
+    const set = back ? this.hitBack : this.hitOut, dmg = back ? this.dmgBack : this.dmgOut;
+    if (this.t < this.out || back) for (const e of world.enemies) if (e.targetable && !set.has(e)) for (const [bx, by] of this.blades) if (Math.hypot(e.x - bx, e.y - by) < e.radius + 10) {
+      set.add(e); world.damageEnemy(e, { damage: dmg, mods: this.owner.mods, knockback: 2 }, e.x - cx, e.y - cy); world.effects.spark(bx, by, '#ffffff'); break; }
+  }
+  render(ctx) {
+    const back = this.t >= this.out + this.hold, cx = back ? this.owner.x : this.x, cy = back ? this.owner.y : this.y, r = this.radiusAt(this.t), spin = this.a0 + this.t * (back ? 5 : 2.5);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < this.n; i++) { const a = spin + i * TAU / this.n, bx = cx + Math.cos(a) * r, by = cy + Math.sin(a) * r * 0.85, fa = back ? a + Math.PI : a; /* 칼날은 날아가는 방향을 향함 */
+      ctx.globalAlpha = 0.35; ctx.strokeStyle = '#9ab0c8'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bx - Math.cos(fa) * 9, by - Math.sin(fa) * 9 * 0.85); ctx.lineTo(bx, by); ctx.stroke(); /* 잔상 */
+      ctx.globalAlpha = 1; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bx - Math.cos(fa) * 4, by - Math.sin(fa) * 3.4); ctx.lineTo(bx + Math.cos(fa) * 4, by + Math.sin(fa) * 3.4); ctx.stroke();
+      ctx.fillStyle = '#e8eef4'; ctx.fillRect(Math.round(bx) - 1, Math.round(by) - 1, 2, 2); }
+    ctx.restore(); ctx.lineWidth = 1; ctx.globalAlpha = 1;
+  }
+}
 class Hazard {
   constructor(x, y, o) { Object.assign(this, o); this.x = x; this.y = y; this.t = 0; this.alive = true; }
   update(dt, world) {
