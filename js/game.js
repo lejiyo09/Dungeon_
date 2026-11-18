@@ -789,7 +789,7 @@ class Game {
     this.fxT = (this.fxT || 0) - dt;
     if (this.fxT <= 0 && p.state !== 'DEAD') {
       if (p.state === 'DASH') { // 잔상
-        const spr = heroSprite(p.hero, 0), img = p.faceVis < 0 ? spr.f : spr.n;
+        const SH = p.shownHero ? p.shownHero() : p.hero, D4 = heroHasDirs(SH), spr = heroSprite(SH, 0, p.dir4 || 'down'), img = p.faceVis < 0 && !D4 ? spr.f : spr.n; /* 잔상도 스킨 외형 */
         this.effects.afterimage(img, p.x - spr.w / 2, p.y + 7 - spr.h, spr.w, spr.h); this.fxT = 0.025;
       } else if (p.moving) { this.effects.dust(p.x, p.y + 6); this.fxT = 0.22; }
     }

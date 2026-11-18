@@ -147,11 +147,16 @@ class Player extends Entity {
     ctx.globalAlpha = 0.7; ctx.strokeStyle = '#fff4d0'; ctx.lineWidth = 1; for (let i = 0; i < 3; i++) { const a = t * 3 + i * TAU / 3; ctx.beginPath(); ctx.arc(x, y, R - 2.5, a, a + 0.8); ctx.stroke(); }
     ctx.restore(); ctx.lineWidth = 1; ctx.globalAlpha = 1;
   }
+  shownHero() { /* 화면에 그릴 외형 (켜 둔 스킨 반영) — 살아 있을 때·쓰러졌을 때·대시 잔상 모두 같은 외형 */
+    const sk = this.skinShown !== undefined ? this.skinShown /* 멀티 참가자 화면: 방장이 이미 갈래까지 확인해 보낸 값 */ : this.remoteSkin !== undefined ? (this.remoteSkin && skinAllowed(this.remoteSkin, this.hero.id, this.line && this.line.id) ? this.remoteSkin : null) /* 방장 쪽 동료: 갈래 확인 */ : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id, game.playerLineId(this)) : null); /* 내 캐릭터 */
+    if (sk && (!this._skinH || this._skinH.src !== this.hero || this._skinH.sk !== sk)) this._skinH = { src: this.hero, sk, h: heroWithLook(this.hero, { sprite: sk }) };
+    return sk ? this._skinH.h : this.hero;
+  }
   renderBody(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y);
     const face = this.faceVis;
     if (this.state === 'DEAD') {
-      const spr = heroSprite(this.hero, 0);
+      const DH = this.shownHero(), spr = heroSprite(DH, 0, this.dir4 || 'down'); /* 쓰러져도 스킨 그대로 */
       ctx.save(); ctx.translate(x, y + 3); ctx.rotate(face * Math.PI / 2); ctx.globalAlpha = 0.85;
       ctx.drawImage(spr.n, -spr.w / 2, -spr.h / 2); ctx.restore(); ctx.globalAlpha = 1; return;
     }
@@ -173,9 +178,7 @@ class Player extends Entity {
       ctx.fillStyle = `rgba(255,200,60,${0.25 + 0.15 * Math.sin(this.time * 20)})`;
       ctx.beginPath(); ctx.arc(x, y - 1, 12, 0, TAU); ctx.fill();
     }
-    const sk = this.skinShown !== undefined ? this.skinShown /* 멀티 참가자 화면: 방장이 이미 갈래까지 확인해 보낸 값 */ : this.remoteSkin !== undefined ? (this.remoteSkin && skinAllowed(this.remoteSkin, this.hero.id, this.line && this.line.id) ? this.remoteSkin : null) /* 방장 쪽 동료: 갈래 확인 */ : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id, game.playerLineId(this)) : null); /* 내 캐릭터 */
-    if (sk && (!this._skinH || this._skinH.src !== this.hero || this._skinH.sk !== sk)) this._skinH = { src: this.hero, sk, h: heroWithLook(this.hero, { sprite: sk }) };
-    const HH = sk ? this._skinH.h : this.hero;
+    const HH = this.shownHero();
     if (heroHasDirs(HH)) { /* 상하좌우 그림 스킨: 내 캐릭터는 누른 이동 방향, 동료는 움직인 방향 */
       if (typeof game !== 'undefined' && game.player === this && this.lastMoveDir) this.dir4 = heroDir4(this.lastMoveDir.x, this.lastMoveDir.y, this.dir4);
       else { const dx = this.x - (this._dpx ?? this.x), dy = this.y - (this._dpy ?? this.y); if (Math.hypot(dx, dy) > 0.15) this.dir4 = heroDir4(dx, dy, this.dir4); }
