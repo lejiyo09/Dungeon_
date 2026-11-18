@@ -54,8 +54,10 @@ const DATA_HEROES = [
 const SKINS = [
   { id: 'skin_flamewitch', name: '불꽃 마녀', hero: 'hero_mage', line: 'fire', sprite: 'flamewitch', desc: '불 마도사 외형: 끝이 꺾인 마녀 모자와 붉은 원피스' },
   { id: 'skin_redgunner', name: '붉은 머리 총잡이', hero: 'hero_gunner', line: 'base', sprite: 'redgunner', desc: '속사 사수 외형: 붉은 머리와 보안관 별을 단 남색 조끼' },
-  { id: 'skin_silverelf', name: '은빛 엘프 마법사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', desc: '빛 마도사 외형: 은발 양갈래 엘프, 흰 옷에 금테 — 상하좌우 걷는 그림이 따로 있음' }
+  { id: 'skin_silverelf', name: '은빛 엘프 마법사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', grade: 'special', desc: '빛 마도사 외형: 은발 양갈래 엘프, 흰 옷에 금테 — 상하좌우 걷는 그림이 따로 있음' }
 ];
+// 스킨 등급 [사용자 결정] 은빛 엘프 마법사 = 특별 등급 (grade 없는 스킨은 등급 표시 없음)
+const SKIN_GRADES = { special: { name: '특별', color: '#ffd84a', glow: '#fff2a8' } };
 // 선물 코드: 글자 그대로 두지 않고 해시로만 보관 (giftHash) — 코드 하나에 보상 하나, 계정마다 한 번
 const GIFT_CODES = [
   { hash: 'd6b73fd4', skin: 'skin_flamewitch' },

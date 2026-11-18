@@ -189,11 +189,15 @@ class HUD {
         const r = HUD.skinRect(i), owned = (sv.skins || []).includes(K.id), on = owned && sv.skinOn && sv.skinOn[K.hero] === K.id, hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
         const hero = game.data.heroes.get(K.hero), L = jobLines(K.hero).find((l) => l.id === K.line);
         ctx.fillStyle = on ? 'rgba(255,176,216,0.18)' : hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
-        ctx.strokeStyle = on ? '#ffb0d8' : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        const GR = K.grade && SKIN_GRADES[K.grade]; /* 스킨 등급 (특별 등급: 금빛 테두리가 반짝이고 왼쪽 위에 ★ 특별) */
+        if (GR) { const a = 0.55 + 0.35 * Math.sin(game.time * 4); ctx.fillStyle = `rgba(255,216,74,${owned ? 0.08 : 0.04})`; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.globalAlpha = owned ? a : 0.35; ctx.strokeStyle = GR.color; ctx.strokeRect(r.x - 0.5, r.y - 0.5, r.w + 1, r.h + 1); ctx.globalAlpha = 1; }
+        ctx.strokeStyle = on ? '#ffb0d8' : GR ? GR.color : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        if (GR) { ctx.fillStyle = GR.color; ctx.fillRect(r.x + 1, r.y + 1, 30, 11); hudText(ctx, `★ ${GR.name}`, r.x + 16, r.y + 2, '#2a1a08', 'center', 7);
+          if (owned) { const t = (game.time * 0.6) % 1, sx = r.x + 6 + t * (r.w - 12); ctx.fillStyle = GR.glow; ctx.globalAlpha = 0.8 * Math.sin(Math.PI * t); ctx.fillRect(Math.round(sx), r.y + 1, 1, 1); ctx.fillRect(Math.round(r.x + r.w - 6 - t * (r.w - 12)), r.y + r.h - 2, 1, 1); ctx.globalAlpha = 1; } }
         const SH = heroWithLook(hero, { sprite: K.sprite }), spr = heroHasDirs(SH) ? heroSprite(SH, HERO_WALK4[Math.floor(game.time * 6) % 4], 'down') /* 방향별 스킨: 앞모습으로 걷기 */ : heroSprite(SH, Math.floor(game.time * 3) % 2); /* 미리보기 (걷기 2프레임 번갈아) */
         if (!owned) ctx.globalAlpha = 0.25; drawSprite(ctx, spr, r.x + r.w / 2, r.y + 50, { scale: 2 }); ctx.globalAlpha = 1;
         if (!owned) hudText(ctx, '🔒', r.x + r.w / 2, r.y + 22, '#fff', 'center', 10);
-        hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + 54, owned ? '#fff' : '#888', 'center', 8);
+        hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + 54, owned ? (GR ? GR.color : '#fff') : '#888', 'center', 8);
         hudText(ctx, `${hero ? hero.name.split(' ')[0] : ''}${L ? ' · ' + L.name + ' 계열' : ''}`, r.x + r.w / 2, r.y + 66, '#c8c0d8', 'center', 6);
         hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : '선물 코드로 획득', r.x + r.w / 2, r.y + 78, on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
       });

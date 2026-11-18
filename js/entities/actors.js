@@ -185,14 +185,16 @@ class Player extends Entity {
     /* 상하좌우 그림 스킨: 몸 방향에 따라 무기를 드는 손 위치·몸 앞뒤가 달라짐 (조준은 그대로 마우스 쪽)
        앞모습: 몸 앞(위로 겨눌 때만 뒤) · 뒷모습: 몸 뒤에 가려짐(아래로 겨눌 때만 앞) · 옆모습: 바라보는 쪽 손, 반대쪽으로 겨누면 몸 뒤 */
     const behind = !D4 ? sa < -0.4 : D4 === 'down' ? sa < -0.75 : D4 === 'up' ? sa < 0.55 : (D4 === 'left' ? ca > 0.35 : ca < -0.35) || sa < -0.6;
-    const hand = !D4 ? { x: 0, y: 2 } : D4 === 'down' ? { x: 0, y: 3 } : D4 === 'up' ? { x: 0, y: 1 } : { x: D4 === 'left' ? -2 : 2, y: 2 };
+    /* 손 위치 = 그림의 소매 끝 (발밑 y+7 기준): 앞·뒷모습은 겨누는 쪽 손, 옆모습은 바라보는 쪽 손 (반대로 겨누면 뒤쪽 손) */
+    const hand = !D4 ? { x: 0, y: 2, r: 4 } : D4 === 'down' ? { x: ca >= 0 ? 4 : -4, y: -1, r: 2 } : D4 === 'up' ? { x: ca >= 0 ? 4 : -4, y: -2, r: 2 }
+      : { x: (D4 === 'left' ? -3 : 3) * (behind ? -1 : 1), y: -3, r: 2 };
     const w = this.weapon;
     const drawW = () => {
       if (!w) return;
       const ang = this.weaponAngle();
       const reach = this.swing && this.swing.thrust ? Math.sin(Math.PI * this.swing.t / this.swing.dur) * 10 : 0;
       // 손 위치: 어깨(몸 중앙 약간 아래)를 중심으로 도는 궤도, 반동 시 뒤로 밀림
-      const R = 4 + reach - this.recoil * 2.5;
+      const R = hand.r + reach - this.recoil * 2.5;
       const hx = x + hand.x + Math.cos(ang) * R, hy = y + hand.y + Math.sin(ang) * R * 0.75;
       drawWeapon(ctx, w.def, hx, hy, ang);
     };
