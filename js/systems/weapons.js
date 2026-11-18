@@ -78,11 +78,10 @@ class WeaponSystem {
       SFX.play('magic', 0.08);
     }
   }
-  // 덫 장비 설치 검사: 4종 합산 BALANCE.TRAP.equipMax개 · 종류별 sentry.max개 (서로 따로 검사), 넘으면 설치하지 않고 알림 — 망자의 파수기(스킬)는 따로 셈
+  // 덫 장비 설치 검사: 종류별 sentry.max개 [사용자 결정: 덫마다 5개, 합산 제한 없음], 넘으면 설치하지 않고 알림 — 망자의 파수기(스킬)는 따로 셈
   sentryBlocked(player, w) {
-    const all = this.world.zones.filter((z) => z instanceof TrapSentry && z.alive && z.owner === player && z.kind !== 'death'), same = all.filter((z) => z.def === w.def);
+    const same = this.world.zones.filter((z) => z instanceof TrapSentry && z.alive && z.owner === player && z.def === w.def);
     if (same.length >= w.def.sentry.max) return `${w.def.name}은(는) ${w.def.sentry.max}개까지 설치할 수 있습니다`;
-    if (all.length >= BALANCE.TRAP.equipMax) return `덫 장비는 모두 합쳐 ${BALANCE.TRAP.equipMax}개까지 설치할 수 있습니다`;
     return null;
   }
   fireGun(player, w) {
