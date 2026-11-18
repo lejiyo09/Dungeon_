@@ -207,7 +207,7 @@ class Enemy extends Entity {
     this.def = def; this.room = room;
     const B = def.boss && !def.master ? (scale.deep ? BALANCE.bossDeep : BALANCE.boss) : null; // 보스 강화 배율 (심층은 더 강함)
     this.maxHp = Math.round(def.health * (def.dummy ? 1 : scale.hp) * (B ? B.hp : 1)); this.hp = this.maxHp;
-    this.damage = Math.round(def.damage * scale.dmg * (B ? B.dmg : 1)); this.cdMul = B ? B.cooldown : 1;
+    this.damage = Math.round(def.damage * scale.dmg * (B ? B.dmg : 1) * (!def.boss && !def.dummy && !def.master && scale.deep ? BALANCE.mobDeep.dmg : 1)); this.cdMul = B ? B.cooldown : 1; /* 심층 일반 몬스터는 공격력 ×mobDeep.dmg */
     this.state = def.dummy ? 'IDLE' : 'SPAWN'; this.stateTime = 0; this.attackCd = 0.5 + Math.random() * 0.8;
     this.hurtFlash = 0; this.rewardGiven = false; this.face = 1; this.exploded = false;
     this.strafe = Math.random() < 0.5 ? -1 : 1; this.strafeT = 1 + Math.random() * 2;

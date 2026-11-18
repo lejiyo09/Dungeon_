@@ -101,7 +101,15 @@ const DEEP_WORLDS = [
   { id: 'deep_saltmine', name: '소금 결정 광산', boss: 'boss_salt_king', waves: 2, deep: true,
     enemies: [['enemy_saltgolem_001', 3], ['enemy_crystalbat_001', 4], ['enemy_minerghost_001', 2], ['enemy_saltpillar_001', 2]],
     palette: { style: 'salt', accent: '#ff8ac0', floor: ['#4a4248', '#4d454b'], corridor: ['#332d32', '#352f34'], wall: '#5a5058', wallTop: '#6a6068',
-      wallFace: '#a898a4', faceLine: '#908490', deco: 'rgba(255,138,192,0.35)' } }
+      wallFace: '#a898a4', faceLine: '#908490', deco: 'rgba(255,138,192,0.35)' } },
+  { id: 'deep_wreck', name: '안개 낀 난파선 묘지', boss: 'boss_mist_captain', waves: 2, deep: true,
+    enemies: [['enemy_anchorknight_001', 3], ['enemy_bonegull_001', 4], ['enemy_lampkeeper_001', 2], ['enemy_wreckcannon_001', 2]],
+    palette: { style: 'wreck', accent: '#9affd0', floor: ['#3a3026', '#3d3329'], corridor: ['#29231c', '#2b251e'], wall: '#33291f', wallTop: '#3e3226',
+      wallFace: '#5a4632', faceLine: '#4a3a2a', deco: 'rgba(154,255,208,0.35)' } },
+  { id: 'deep_frost', name: '서리 궁전', boss: 'boss_winter_empress', waves: 2, deep: true,
+    enemies: [['enemy_frostguard_001', 3], ['enemy_blizzardwisp_001', 3], ['enemy_icepriestess_001', 2], ['enemy_iciclespire_001', 2]],
+    palette: { style: 'frost', accent: '#bfe8ff', floor: ['#3a4a62', '#3d4d66'], corridor: ['#2a364a', '#2c384c'], wall: '#4a5a7a', wallTop: '#5a6c90',
+      wallFace: '#9ab8d8', faceLine: '#86a4c4', deco: 'rgba(191,232,255,0.35)' } }
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {

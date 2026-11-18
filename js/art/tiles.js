@@ -40,6 +40,8 @@ const THEME = {
   theater: { velvet: '#8a2a34', gold: '#ffd86a', torch: '#ffd86a', ambient: [30, 10, 10, 0.36] },
   hive: { honey: '#ffb02a', wax: '#d8b060', torch: '#ffc04a', ambient: [40, 20, 0, 0.3] },
   salt: { crystal: '#ffd6e8', vein: '#e88ab0', torch: '#ffc8e0', ambient: [24, 10, 20, 0.3] },
+  wreck: { plank: '#5a4632', rope: '#a08a5a', torch: '#c8f0d8', ambient: [10, 24, 24, 0.38] },
+  frost: { ice: '#d8f4ff', rune: '#7ac8ff', torch: '#bfe8ff', ambient: [10, 20, 40, 0.32] },
   bloodmoon: { blood: '#a02a3a', grass: '#5a2a30', torch: '#ff5a6a', ambient: [60, 0, 10, 0.4] },
   ember: { ember: '#ff8a3a', ash: '#6a5a56', torch: '#ff8a3a', ambient: [60, 15, 0, 0.36] },
   fungal: { glow: '#e07aff', cap: '#c87ad8', moss: '#5a8a4a', torch: '#e07aff', ambient: [30, 0, 40, 0.4] },
@@ -182,6 +184,18 @@ function drawFloorTile(g, x, y, base, style, tx = 0, ty = 0) {
     if (h(4) < 0.05) pxs(g, '#c02a3a', [[x + 3 + Math.floor(h(2) * 9), y + 3 + Math.floor(h(3) * 9), 2, 1]]);
     return;
   }
+  if (style === 'wreck') { // 난파선 갑판: 젖은 판자 + 못 + 해초
+    pxs(g, lo, [[x, y + 5, TILE, 1], [x, y + 11, TILE, 1], [x + ((ty % 2) ? 4 : 10), y, 1, 5], [x + ((ty % 2) ? 12 : 6), y + 6, 1, 5]]);
+    if (h(1) < 0.12) pxs(g, '#2a2420', [[x + 3 + Math.floor(h(2) * 10), y + 2, 1, 1]]);
+    if (h(3) < 0.05) pxs(g, '#3a6a4a', [[x + 2 + Math.floor(h(4) * 11), y + 8, 3, 1], [x + 3 + Math.floor(h(4) * 11), y + 7, 1, 1]]);
+    return;
+  }
+  if (style === 'frost') { // 얼음 궁전 바닥: 매끈한 얼음 판 + 서리 무늬 + 푸른 룬
+    pxs(g, hi, [[x + 1, y + 1, 6, 1], [x + 9, y + 9, 5, 1]]); pxs(g, lo, [[x, y + 15, TILE, 1], [x + 15, y, 1, TILE]]);
+    if (h(1) < 0.1) pxs(g, THEME.frost.ice, [[x + 4 + Math.floor(h(2) * 7), y + 5, 1, 3], [x + 3 + Math.floor(h(2) * 7), y + 6, 3, 1]]);
+    if (h(3) < 0.03) pxs(g, THEME.frost.rune, [[x + 5, y + 7, 6, 1], [x + 7, y + 5, 2, 5]]);
+    return;
+  }
   if (style === 'salt') { // 소금 바닥: 갈라진 결정 무늬 + 분홍 광맥 조각
     pxs(g, lo, [[x + 2, y + 5, 5, 1], [x + 6, y + 6, 1, 4], [x + 9, y + 11, 5, 1]]);
     if (h(1) < 0.07) pxs(g, THEME.salt.crystal, [[x + 4 + Math.floor(h(2) * 8), y + 4 + Math.floor(h(3) * 8), 2, 2]]);
@@ -278,6 +292,10 @@ function drawWallTile(g, x, y, pal, face, style, tx = 0, ty = 0) {
     if (face) { for (let i = 0; i < 4; i++) pxs(g, ['#8a3a3a', '#3a5a8a', '#6a5a3a', '#4a6a4a'][Math.floor(h(i) * 4)], [[x + 1 + i * 4, y + 6, 3, 5]]); pxs(g, '#3a2a20', [[x, y + 11, TILE, 1]]); }
   } else if (style === 'theater') { // 붉은 벨벳 커튼 + 금술
     if (face) { for (let i = 0; i < 4; i++) pxs(g, i % 2 ? '#6a1a24' : '#a0323e', [[x + i * 4, y + 4, 4, 7]]); pxs(g, '#ffd86a', [[x, y + 11, TILE, 1]]); }
+  } else if (style === 'wreck') { // 부서진 선체 벽 + 밧줄 + 녹색 등불 얼룩
+    if (face) { pxs(g, '#3a2e22', [[x, y + 4, TILE, 1], [x, y + 8, TILE, 1]]); pxs(g, '#a08a5a', [[x, y + 11, TILE, 1]]); if (h(1) < 0.25) pxs(g, '#4a8a6a', [[x + 3 + Math.floor(h(2) * 9), y + 5, 2, 2]]); }
+  } else if (style === 'frost') { // 얼음 벽돌 + 고드름
+    if (face) { pxs(g, '#c8e8f8', [[x, y + 6, TILE, 1], [x + ((tx % 2) ? 4 : 11), y + 2, 1, 4]]); pxs(g, '#ffffff', [[x + 2 + Math.floor(h(1) * 10), y + 11, 1, 3], [x + 6 + Math.floor(h(2) * 6), y + 11, 1, 2]]); }
   } else if (style === 'salt') { // 소금 암벽 + 분홍 광맥 + 돋아난 결정
     if (face) { pxs(g, '#c8b8c4', [[x, y + 10, TILE, 1]]); if (h(1) < 0.5) pxs(g, '#e88ab0', [[x + 2 + Math.floor(h(2) * 10), y + 6, 4, 1], [x + 5 + Math.floor(h(2) * 6), y + 7, 2, 1]]); if (h(3) < 0.3) pxs(g, '#ffffff', [[x + 4 + Math.floor(h(4) * 8), y + 3, 1, 3]]); }
   } else if (style === 'hive') { // 밀랍 벽 + 흘러내린 꿀
@@ -333,6 +351,10 @@ function drawCover(g, x, y, style, tx, ty) {
     pxs(g, OUTLINE, [[x + 2, y + 4, 12, 11]]); pxs(g, '#8a3a3a', [[x + 3, y + 11, 10, 3]]); pxs(g, '#3a5a8a', [[x + 4, y + 8, 8, 3]]); pxs(g, '#6a5a3a', [[x + 3, y + 5, 9, 3]]); pxs(g, '#e8dcc0', [[x + 12, y + 11, 1, 3], [x + 11, y + 8, 1, 3]]);
   } else if (style === 'theater') { // 쓰러진 무대 소품 상자 + 가면
     pxs(g, OUTLINE, [[x + 2, y + 5, 12, 10]]); pxs(g, '#6a4a30', [[x + 3, y + 6, 10, 8]]); fillEll(g, x + 8, y + 9, 3, 2.5, '#f4ecd8'); pxs(g, OUTLINE, [[x + 7, y + 9], [x + 9, y + 9]]);
+  } else if (style === 'wreck') { // 쓰러진 닻 + 나무통 조각
+    fillEll(g, x + 8, y + 10, 6, 4, OUTLINE); fillEll(g, x + 8, y + 10, 5, 3, '#5a4632'); pxs(g, OUTLINE, [[x + 7, y + 2, 3, 10]]); pxs(g, '#6a7480', [[x + 8, y + 3, 1, 8], [x + 4, y + 11, 9, 1]]); pxs(g, '#8a94a0', [[x + 6, y + 2, 5, 1]]);
+  } else if (style === 'frost') { // 얼음 기둥 덩어리
+    fillEll(g, x + 8, y + 12, 6, 3, OUTLINE); pxs(g, OUTLINE, [[x + 4, y + 2, 9, 11]]); pxs(g, '#a8d8f0', [[x + 5, y + 3, 7, 10]]); pxs(g, '#e8f8ff', [[x + 6, y + 3, 2, 9]]); pxs(g, '#7ac8ff', [[x + 10, y + 6, 1, 5]]);
   } else if (style === 'salt') { // 소금 결정 무더기
     pxs(g, OUTLINE, [[x + 4, y + 5, 3, 10], [x + 8, y + 2, 4, 13], [x + 12, y + 8, 3, 7]]); pxs(g, '#f4eaf0', [[x + 5, y + 6, 1, 8], [x + 9, y + 3, 2, 11], [x + 13, y + 9, 1, 5]]); pxs(g, '#ffb8d8', [[x + 10, y + 4, 1, 9]]); pxs(g, '#ffffff', [[x + 9, y + 3, 1, 2]]);
   } else if (style === 'hive') { // 굳은 호박 덩어리
@@ -400,6 +422,10 @@ function drawCrate(g, x, y, style) {
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#5a4030', [[x + 3, y + 4, 10, 10]]); pxs(g, '#6a5040', [[x + 3, y + 4, 10, 1]]); pxs(g, '#e8dcc0', [[x + 4, y + 7, 8, 2]]);
   } else if (style === 'theater') { // 소품 상자
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#5a3a26', [[x + 3, y + 4, 10, 10]]); pxs(g, '#ffd86a', [[x + 3, y + 4, 10, 1], [x + 7, y + 4, 2, 10]]);
+  } else if (style === 'wreck') { // 젖은 화물 상자 + 쇠테
+    pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#4a3a2a', [[x + 3, y + 4, 10, 10]]); pxs(g, '#6a7480', [[x + 3, y + 6, 10, 1], [x + 3, y + 11, 10, 1]]); pxs(g, '#3a6a4a', [[x + 4, y + 13, 3, 1]]);
+  } else if (style === 'frost') { // 얼어붙은 상자
+    pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#5a6a80', [[x + 3, y + 4, 10, 10]]); pxs(g, '#c8e8f8', [[x + 3, y + 4, 10, 2], [x + 3, y + 4, 2, 10]]); pxs(g, '#ffffff', [[x + 4, y + 4, 3, 1]]);
   } else if (style === 'salt') { // 광부의 나무 상자 + 소금 덩이
     pxs(g, OUTLINE, [[x + 2, y + 3, 12, 12]]); pxs(g, '#6a5040', [[x + 3, y + 4, 10, 10]]); pxs(g, '#7a6050', [[x + 3, y + 4, 10, 1]]); pxs(g, '#f4eaf0', [[x + 4, y + 5, 4, 3], [x + 9, y + 6, 3, 2]]);
   } else if (style === 'hive') { // 밀랍 상자

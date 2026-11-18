@@ -387,6 +387,39 @@ Object.assign(PIX, {
     P.rect(4, 13, 8, 3, 'b'); P.tri(4, 13, 8, 1, 12, 13, 'a'); P.line(8, 2, 8, 12, 'c');                      // 받침·결정 기둥
     P.px(7, 6, 'p'); P.px(9, 9, 'p'); P.px(8, 3, 'w');                                                       // 빛나는 광맥
   } },
+  // ── 심층: 안개 낀 난파선 묘지 [임시 디자인]
+  anchorknight: { tint: '#5a6470', w: 16, h: 16, pal: { g: '#7affc0', r: '#8a5a3a' }, proc: (P) => {
+    P.rect(4, 6, 8, 8, 'a'); P.rect(5, 14, 2, 2, 'b'); P.rect(9, 14, 2, 2, 'b'); P.rect(5, 1, 6, 5, 'b'); P.rect(6, 3, 4, 1, 'k'); P.px(7, 3, 'g'); P.px(9, 3, 'g'); // 녹슨 투구 갑옷
+    P.line(13, 3, 13, 13, 'c'); P.line(11, 12, 15, 12, 'c'); P.px(11, 11, 'c'); P.px(15, 11, 'c'); P.px(4, 9, 'r'); P.px(10, 11, 'r');                       // 닻·녹
+  } },
+  bonegull: { tint: '#e8e0d0', w: 16, h: 16, pal: { g: '#7affc0', y: '#e8b04a' }, proc: (P) => {
+    P.tri(0, 7, 7, 6, 5, 10, 'b'); P.tri(16, 7, 9, 6, 11, 10, 'b'); P.ell(8, 8, 3, 3, 'a'); P.line(2, 8, 6, 8, 'k'); P.line(10, 8, 14, 8, 'k'); // 뼈 날개·몸
+    P.px(7, 7, 'g'); P.px(9, 7, 'g'); P.rect(7, 10, 2, 2, 'y');                                                                                // 눈·부리
+  } },
+  lampkeeper: { tint: '#3a4a4a', w: 16, h: 16, pal: { g: '#9affd0', w: '#e8fff4' }, proc: (P) => {
+    robe(P, 'b'); P.ell(7, 5, 3, 3, 'b'); P.px(6, 5, 'g'); P.px(8, 5, 'g');                                                                     // 두건 쓴 망령
+    P.line(12, 3, 12, 13, 'c'); P.rect(11, 1, 3, 3, 'g'); P.px(12, 2, 'w');                                                                    // 초록 등불
+  } },
+  wreckcannon: { tint: '#4a4a52', w: 16, h: 16, pal: { r: '#8a5a3a', y: '#ffd86a' }, proc: (P) => {
+    P.rect(3, 11, 10, 3, 'r'); P.ell(5, 14, 2, 2, 'k'); P.ell(11, 14, 2, 2, 'k'); P.rect(4, 6, 9, 5, 'a'); P.rect(12, 7, 3, 3, 'b'); P.px(14, 8, 'k'); // 포가·포신
+    P.px(6, 7, 'c'); P.px(5, 5, 'y');                                                                                                          // 심지 불꽃
+  } },
+  // ── 심층: 서리 궁전 [임시 디자인]
+  frostguard: { tint: '#7a9ac8', w: 16, h: 16, pal: { w: '#e8f8ff', i: '#bfe8ff' }, proc: (P) => {
+    P.rect(4, 6, 8, 8, 'a'); P.rect(5, 14, 2, 2, 'b'); P.rect(9, 14, 2, 2, 'b'); P.rect(5, 1, 6, 5, 'a'); P.rect(6, 3, 4, 1, 'k'); P.px(8, 0, 'i'); // 얼음 갑옷·투구 장식
+    P.rect(1, 6, 3, 7, 'i'); P.px(2, 7, 'w'); P.line(13, 2, 13, 12, 'w');                                                                     // 얼음 방패·창
+  } },
+  blizzardwisp: { tint: '#bfe8ff', w: 16, h: 16, pal: { w: '#ffffff' }, proc: (P) => {
+    P.ell(8, 8, 5, 5, 'a'); P.ell(8, 8, 3, 3, 'w'); P.px(7, 7, 'k'); P.px(9, 7, 'k');                                                          // 눈보라 정령
+    P.px(2, 4, 'w'); P.px(14, 5, 'w'); P.px(3, 12, 'w'); P.px(13, 12, 'w'); P.line(1, 8, 3, 8, 'b'); P.line(13, 8, 15, 8, 'b');                // 흩날리는 눈
+  } },
+  icepriestess: { tint: '#5a7ab0', w: 16, h: 16, pal: { w: '#e8f8ff', i: '#7ac8ff' }, proc: (P) => {
+    robe(P, 'w'); P.ell(7, 5, 3, 3, 'w'); P.px(6, 5, 'i'); P.px(8, 5, 'i'); P.tri(4, 3, 7, 0, 10, 3, 'i');                                     // 흰 얼굴·서리 관
+    P.line(12, 3, 12, 13, 'c'); P.tri(11, 3, 12, 0, 13, 3, 'w');                                                                               // 고드름 지팡이
+  } },
+  iciclespire: { tint: '#9ac8e8', w: 16, h: 16, pal: { w: '#ffffff', i: '#7ac8ff' }, proc: (P) => {
+    P.rect(4, 13, 8, 3, 'b'); P.tri(4, 13, 6, 2, 8, 13, 'a'); P.tri(7, 13, 10, 0, 12, 13, 'a'); P.line(10, 2, 10, 12, 'w'); P.px(6, 8, 'i'); P.px(10, 6, 'i'); // 고드름 첨탑
+  } },
   brazier: { tint: '#6a5a50', w: 16, h: 16, pal: { y: '#ffb04a', r: '#ff6a2a', w: '#ffe94a' }, proc: (P) => {
     P.rect(4, 13, 8, 3, 'b'); P.rect(6, 9, 4, 4, 'a'); P.rect(3, 7, 10, 3, 'a'); P.rect(3, 7, 10, 1, 'c');        // 받침·화로
     P.tri(4, 7, 12, 7, 8, 1, 'r'); P.tri(6, 7, 10, 7, 8, 3, 'y'); P.px(8, 5, 'w');                               // 불꽃
