@@ -38,8 +38,7 @@ const Auth = {
   },
   // 관리자 계정: 모든 것이 해금된 테스트용 계정 (이 기기에 하나, 계정 수 제한에 포함되지 않음). 비밀번호는 정해진 값 (해시로만 보관, 일반 계정과 달리 숫자 4자리가 아님)
   ADMIN_SALT: 'pd_admin', ADMIN_HASH: 'ebfedd46a74ea966d17ab29e709bf0dee0fa0ebb20c5a08fdd152bf58236d6dd',
-  ADMIN_HASH_EXTRA: ['5dc2169c13dd3612bd62a617bce252ee64ead765c7b3cff6efe1fd8894f60c74'], // [사용자 결정] 기존 비밀번호와 함께 '1234'도 관리자 비밀번호로 허용
-  async verifyAdminPin(pin) { const h = await this.hashPin(pin || '', this.ADMIN_SALT); return h === this.ADMIN_HASH || this.ADMIN_HASH_EXTRA.includes(h); },
+  async verifyAdminPin(pin) { return (await this.hashPin(pin || '', this.ADMIN_SALT)) === this.ADMIN_HASH; },
   fixAdmin() { // 예전에 만든 관리자 계정도 지금 비밀번호로 맞춤
     const all = this.list(), p = all.find((x) => x.admin);
     if (p && (p.pinHash !== this.ADMIN_HASH || p.salt !== this.ADMIN_SALT)) { p.salt = this.ADMIN_SALT; p.pinHash = this.ADMIN_HASH; this.saveList(all); }
@@ -50,7 +49,7 @@ const Auth = {
     if (!p) { p = { id: 'p_admin', name: '관리자', admin: true, salt: this.ADMIN_SALT, pinHash: this.ADMIN_HASH, created: Date.now(), last: Date.now() }; all.push(p); this.saveList(all); }
     return p;
   },
-  async verify(p, pin) { if (p.admin) return this.verifyAdminPin(pin); return !p.pinHash || (await this.hashPin(pin || '', p.salt)) === p.pinHash; },
+  async verify(p, pin) { return !p.pinHash || (await this.hashPin(pin || '', p.salt)) === p.pinHash; },
   remove(p) {
     this.saveList(this.list().filter((x) => x.id !== p.id));
     try { localStorage.removeItem(this.saveKeyOf(p)); } catch (e) { /* 무시 */ }
