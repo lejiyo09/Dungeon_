@@ -370,8 +370,9 @@ class Game {
     const out = [];
     for (const P of Net.peers.values()) { if (P.mode !== 'lobby' || performance.now() - P.seen > 8000) continue;
       const base = this.data.heroes.get(P.hero) || DATA_HEROES[0], sk = skinSpriteOk(P.sk), hero = P.look || sk ? heroWithLook(base, Object.assign({}, P.look || {}, sk ? { sprite: sk } : {})) : base, name = Net.nameOf(P.id), t = this.time; /* 동료 스킨 */
-      out.push({ y: P.y, render: (ctx) => { const spr = heroSprite(hero, P.moving ? Math.floor(t * 8) % 2 : 0); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(Math.round(P.x), Math.round(P.y) + 7, 6, 2, 0, 0, TAU); ctx.fill();
-        drawSprite(ctx, spr, P.x, P.y + 7, { flip: P.face < 0 }); hudText(ctx, name, Math.round(P.x), Math.round(P.y) - 20, '#7affc0', 'center', 7); } }); }
+      out.push({ y: P.y, render: (ctx) => { const D4 = heroHasDirs(hero); if (D4) { const dx = P.x - (P._dpx ?? P.x), dy = P.y - (P._dpy ?? P.y); if (Math.hypot(dx, dy) > 0.15) P.dir4 = heroDir4(dx, dy, P.dir4); P._dpx = P.x; P._dpy = P.y; } /* 방향별 스킨: 움직인 방향 */
+        const spr = heroSprite(hero, heroWalkFrame(hero, P.moving, t), P.dir4 || 'down'); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(Math.round(P.x), Math.round(P.y) + 7, 6, 2, 0, 0, TAU); ctx.fill();
+        drawSprite(ctx, spr, P.x, P.y + 7, { flip: P.face < 0 && !D4 }); hudText(ctx, name, Math.round(P.x), Math.round(P.y) - 20, '#7affc0', 'center', 7); } }); }
     return out;
   }
   // ── 랭킹판: 탐험이 끝나면 기록을 보냄 (계정이 있을 때만, 관리자 계정·시련 제외)

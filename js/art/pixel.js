@@ -83,6 +83,9 @@ const HERO_SPRITES = {
   flamewitch: { pal: { w: '#ffffff', g: '#391c28', h: '#623141', r: '#98383b', o: '#bd793f', y: '#fbbb2e', u: '#fccb42', s: '#f9e4cb', t: '#f0d4b5', m: '#c9bcb2', n: '#9d9799' }, frames: [
     ['...kkkkk........', '..khhhhhk.......', 'kkhhhkhhhk......', 'kukkhyhhyhk.....', '..khhhhhhhk.....', '.kryyyyyyyyk....', 'kkuuuuuuuuuuukk.', 'kuhhhhhhhhhhhhuk', '.khhhwrssrwhhhk.', '..khhsssssshhk..', '..khkkmmokkhk...', '..khhyoyyoyhk...', '..khyrrrrryhk...', '.khyrrrrrrryhk..', '.khykgmmhgkyhk..', '.khykrrrrrkyhk..', '.kykyyyyyyykyk..', '...kkssksskk....', '...krrkkrrk.....', '...khh..hhk.....'],
     ['...kkkkk........', '..khhhhhk.......', 'kkhhhkhhhk......', 'kukkhyhhyhk.....', '..khhhhhhhk.....', '.kryyyyyyyyk....', 'kkuuuuuuuuuuukk.', 'kuhhhhhhhhhhhhuk', '.khhhwrssrwhhhk.', '..khhsssssshhk..', '..khkkmmokkhk...', '..khhyoyyoyhk...', '..khyrrrrryhk...', '.khyrrrrrrryhk..', '.khykgmmhgkyhk..', '.khykrrrrrkyhk..', '.kykyyyyyyykyk..', '...kssk..kssk...', '..krrk....krrk..', '..khhk....khhk..']] },
+  // [스킨] 은빛 엘프 마법사 — 사용자가 준 4방향 이미지를 그대로 사용 (skins/silverelf.png: 원본 색 그대로 22x24로 줄임)
+  //  시트: 가로 서 있기·걸음1·걸음2 / 세로 앞·뒤·왼쪽·오른쪽 — 좌우 반전 없이 방향별 그림
+  silverelf: { img: 'skins/silverelf.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'] },
   // 마도사: 끝이 휜 고깔모자(별·금띠), 바닥까지 끌리는 로브, 별 문양 (다리 대신 로브 자락이 흔들림)
   wizard: { pal: { y: '#f0d060' }, rows: [
     '.........kk.....',
@@ -348,7 +351,26 @@ function getSprite(name, color, color2) {
 }
 // 옷색만 바꾼 영웅 (마도사 속성별 옷 등): 나머지 정보는 원래 영웅 그대로 이어받음
 function heroWithLook(hero, look) { return look ? Object.create(hero, { look: { value: Object.assign({}, hero.look, look), enumerable: true } }) : hero; }
-function heroSprite(hero, frame) {
+function heroHasDirs(hero) { const T = HERO_SPRITES[hero.look.sprite]; return !!(T && T.img && heroSheet(T)); } /* 상하좌우 그림이 따로 있는 스킨 */
+const HERO_WALK4 = [1, 0, 2, 0]; // 방향별 스킨 걷기 순서: 걸음1 → 서기 → 걸음2 → 서기
+function heroWalkFrame(hero, moving, t) { return heroHasDirs(hero) ? (moving ? HERO_WALK4[Math.floor(t * 8) % 4] : 0) : (moving ? Math.floor(t * 8) % 2 : 0); }
+function heroDir4(dx, dy, prev) { if (Math.abs(dx) < 1e-3 && Math.abs(dy) < 1e-3) return prev || 'down'; return Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down'); } /* 대각선은 좌우 그림 */
+// 이미지 스킨: 시트 파일을 미리 불러 둠 (다 불러오기 전에는 기본 외형으로 그림)
+const HERO_IMG = {};
+function heroSheet(T) { let I = HERO_IMG[T.img]; if (!I) { I = HERO_IMG[T.img] = new Image(); I.src = T.img; } return I.complete && I.naturalWidth ? I : null; }
+for (const T of Object.values(HERO_SPRITES)) if (T.img && typeof Image !== 'undefined') heroSheet(T);
+function bakeSheetFrame(I, sx, sy, w, h) { /* 시트의 한 칸 → { n, f, wn, wf } (흰 번쩍임은 실루엣으로) */
+  const make = (flip, white) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+    if (flip) { g.translate(w, 0); g.scale(-1, 1); } g.drawImage(I, sx, sy, w, h, 0, 0, w, h);
+    if (white) { g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); } return c; };
+  return { w, h, n: make(false, false), f: make(true, false), wn: make(false, true), wf: make(true, true) };
+}
+function heroSprite(hero, frame, dir) {
+  const TD = HERO_SPRITES[hero.look.sprite];
+  if (TD && TD.img) { const I = heroSheet(TD);
+    if (I) { const row = Math.max(0, TD.dirs.indexOf(dir)), col = frame % 3, key = 'hero|' + hero.id + '|' + hero.look.sprite + '|' + row + '|' + col; let s = spriteCache.get(key); if (s) return s;
+      s = bakeSheetFrame(I, col * TD.fw, row * TD.fh, TD.fw, TD.fh); spriteCache.set(key, s); return s; }
+    hero = Object.create(hero, { look: { value: Object.assign({}, hero.look, { sprite: ((typeof DATA_HEROES !== 'undefined' && DATA_HEROES.find((h) => h.id === hero.id)) || { look: {} }).look.sprite || null }) } }); frame %= 2; } /* 이미지 불러오는 중: 기본 외형 */
   const key = 'hero|' + hero.id + '|' + (hero.look.sprite || '') + '|' + hero.look.body + '|' + hero.look.accent + '|' + frame; /* 스킨(외형)이 다르면 따로 */ // 같은 직업이라도 옷색(갈래)이 다르면 따로
   let s = spriteCache.get(key);
   if (s) return s;
@@ -371,11 +393,11 @@ function weaponSprite(def) {
   s = bakeSprite(rows, pal); s.px = t.p[0] + off; s.py = t.p[1] + off; spriteCache.set(key, s); return s;
 }
 
-function drawHero(ctx, hero, x, y, face, frame, dash) {
+function drawHero(ctx, hero, x, y, face, frame, dash, dir) {
   ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - 5, y + 6, 10, 2);
-  const spr = heroSprite(hero, frame);
-  drawSprite(ctx, spr, x, y + 7, { flip: face < 0 });
-  if (dash) { ctx.globalAlpha = 0.55; drawSprite(ctx, spr, x, y + 7, { flip: face < 0, white: true }); ctx.globalAlpha = 1; }
+  const spr = heroSprite(hero, frame, dir), flip = face < 0 && !heroHasDirs(hero); /* 방향별 스킨은 뒤집지 않음 */
+  drawSprite(ctx, spr, x, y + 7, { flip });
+  if (dash) { ctx.globalAlpha = 0.55; drawSprite(ctx, spr, x, y + 7, { flip, white: true }); ctx.globalAlpha = 1; }
 }
 
 // 무기 그리기: (x,y)=손 위치. 64방향으로 미리 구운 도트 회전 이미지를 사용

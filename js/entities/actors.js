@@ -187,7 +187,13 @@ class Player extends Entity {
     const sk = this.skinShown !== undefined ? this.skinShown /* 멀티 참가자 화면: 방장이 이미 갈래까지 확인해 보낸 값 */ : this.remoteSkin !== undefined ? (this.remoteSkin && skinAllowed(this.remoteSkin, this.hero.id, this.line && this.line.id) ? this.remoteSkin : null) /* 방장 쪽 동료: 갈래 확인 */ : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id, game.playerLineId(this)) : null); /* 내 캐릭터 */
     if (sk && (!this._skinH || this._skinH.src !== this.hero || this._skinH.sk !== sk)) this._skinH = { src: this.hero, sk, h: heroWithLook(this.hero, { sprite: sk }) };
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
-    drawHero(ctx, sk ? this._skinH.h : this.hero, x, y, face, frame, this.state === 'DASH');
+    const HH = sk ? this._skinH.h : this.hero;
+    if (heroHasDirs(HH)) { /* 상하좌우 그림 스킨: 내 캐릭터는 누른 이동 방향, 동료는 움직인 방향 */
+      if (typeof game !== 'undefined' && game.player === this && this.lastMoveDir) this.dir4 = heroDir4(this.lastMoveDir.x, this.lastMoveDir.y, this.dir4);
+      else { const dx = this.x - (this._dpx ?? this.x), dy = this.y - (this._dpy ?? this.y); if (Math.hypot(dx, dy) > 0.15) this.dir4 = heroDir4(dx, dy, this.dir4); }
+      this._dpx = this.x; this._dpy = this.y;
+    }
+    drawHero(ctx, HH, x, y, face, heroHasDirs(HH) ? heroWalkFrame(HH, this.moving && this.state !== 'DASH', this.time) : frame, this.state === 'DASH', this.dir4 || 'down');
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
     if (!behind) drawW();
     if (this.whirl > 0) {

@@ -190,7 +190,7 @@ class HUD {
         const hero = game.data.heroes.get(K.hero), L = jobLines(K.hero).find((l) => l.id === K.line);
         ctx.fillStyle = on ? 'rgba(255,176,216,0.18)' : hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
         ctx.strokeStyle = on ? '#ffb0d8' : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
-        const spr = heroSprite(heroWithLook(hero, { sprite: K.sprite }), Math.floor(game.time * 3) % 2); /* 미리보기 (걷기 2프레임 번갈아) */
+        const SH = heroWithLook(hero, { sprite: K.sprite }), spr = heroHasDirs(SH) ? heroSprite(SH, HERO_WALK4[Math.floor(game.time * 6) % 4], 'down') /* 방향별 스킨: 앞모습으로 걷기 */ : heroSprite(SH, Math.floor(game.time * 3) % 2); /* 미리보기 (걷기 2프레임 번갈아) */
         if (!owned) ctx.globalAlpha = 0.25; drawSprite(ctx, spr, r.x + r.w / 2, r.y + 50, { scale: 2 }); ctx.globalAlpha = 1;
         if (!owned) hudText(ctx, '🔒', r.x + r.w / 2, r.y + 22, '#fff', 'center', 10);
         hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + 54, owned ? '#fff' : '#888', 'center', 8);
