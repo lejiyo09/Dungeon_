@@ -1210,7 +1210,7 @@ class Game {
         this.screenFlash = 0.2; this.flashColor = '180,230,255'; this.addShake(0.2, 4); SFX.play('magic'); break; }
       case 'lightsat': { /* 성광 위성 */
         this.zones = this.zones.filter((z) => !(z instanceof LightSatellites && z.owner === p));
-        this.zones.push(new LightSatellites(p, { n: 3, life: 8, r: 26, every: 0.55, range: 160, dmg: D(16), heal: 1 })); this.effects.ring(p.x, p.y, 30, '#fff4c0'); this.effects.rays(p.x, p.y, '#fff4c0', 14, 60, 0.5); SFX.play('magic'); break; }
+        this.zones.push(new LightSatellites(p, { n: 3, life: 8, r: 26, every: 0.55, range: 160, dmg: D(20), heal: 1 })); this.effects.ring(p.x, p.y, 30, '#fff4c0'); this.effects.rays(p.x, p.y, '#fff4c0', 14, 60, 0.5); SFX.play('magic'); break; }
       case 'huntmark': { /* 사냥꾼의 표적 */
         const cand = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 420), tgt = cand.find((e) => e.def.boss) || cand.sort((a, b) => b.hp - a.hp)[0];
         if (!tgt) { this.effects.text(p.x, p.y - 20, '표적이 없습니다', '#aaa'); p.skillCooldown = 1; break; }
@@ -1244,7 +1244,7 @@ class Game {
           this.effects.ring(c.x, c.y, 90, '#ffffff'); this.screenFlash = 0.3; this.flashColor = '160,110,230'; this.addShake(0.5, 8); this.hitStop(0.08); SFX.play('excal'); })); break; }
       // 사수
       case 'overdrive': p.overdrive = 5; p.odDmg = 0; p.odRate = 0; p.odDouble = false; this.effects.text(p.x, p.y - 18, '과부하!', '#ffd84a'); break;
-      case 'overdrive3': p.overdrive = 6; p.odDmg = 0; p.odRate = 0; p.odDouble = true; this.effects.text(p.x, p.y - 18, '탄환의 폭풍!', '#ffd84a'); this.effects.ring(p.x, p.y, 34, '#ffd84a'); this.effects.ring(p.x, p.y, 20, '#ffffff'); this.addShake(0.15, 3); break;
+      case 'overdrive3': p.overdrive = 6; p.odDmg = 0.15; p.odRate = 0.5; p.odDouble = true; this.effects.text(p.x, p.y - 18, '탄환의 폭풍!', '#ffd84a'); this.effects.ring(p.x, p.y, 34, '#ffd84a'); this.effects.ring(p.x, p.y, 20, '#ffffff'); this.addShake(0.15, 3); break;
       case 'overdrive2': p.overdrive = 7; p.odDmg = 0.4; p.odRate = 0; p.odDouble = false; this.effects.text(p.x, p.y - 18, '탄막 폭주!', '#ffd84a'); this.effects.ring(p.x, p.y, 26, '#ffd84a'); break;
       // 사수 · 저격 갈래
       case 'snipe': case 'snipe2': { const two = p.skillId === 'snipe2';
@@ -1333,7 +1333,7 @@ class Game {
         this.effects.burst(p.x, p.y, '#c8a070', 18); this.effects.ring(p.x, p.y, 34, '#c8a070'); this.effects.text(p.x, p.y - 20, '곰의 힘!', '#e0c090'); this.addShake(0.15, 3); break; }
       // 암살자 · 독 갈래
       case 'venomfan': shoot({ n: 7, fan: 0.9, p: { damage: 32, pierce: 1, color: '#9aff5a', size: 2, speed: 340, arrow: true, status: { type: 'poison', chance: 1, duration: 4, dps: 18 } } }); SFX.play('bow'); break;
-      case 'plaguecloud': this.zones.push(new SkillAura(p, { r: 76, life: 7, tick: 0.3, dmg: 30, color: '#7adf4a', kind: 'flame', vuln: 0.1, status: { type: 'poison', chance: 1, duration: 3, dps: 18 } })); /* 상향: 범위 +25%, 안의 적 받는 피해 +20% */
+      case 'plaguecloud': this.zones.push(new SkillAura(p, { r: 88, life: 7, tick: 0.3, dmg: 30, color: '#7adf4a', kind: 'flame', vuln: 0.2, status: { type: 'poison', chance: 1, duration: 3, dps: 18 } })); /* 상향: 범위 +25%, 안의 적 받는 피해 +20% */
         p.hasteT = 7; this.effects.ring(p.x, p.y, 70, '#7adf4a'); this.effects.text(p.x, p.y - 18, '맹독 안개!', '#9aff5a'); break;
       // 암살자 · 칼날 갈래
       case 'bladestorm': { /* [사용자 결정] 칼날 3진: 칼날을 사방으로 펼쳤다가 다시 나에게 모음 (나갈 때·돌아올 때 각각 피해) */
@@ -1364,9 +1364,9 @@ class Game {
       // 드루이드
       case 'wolves': for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 12, p.y, p, { dmg: 5, life: 12 })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); break;
       case 'wolves2': for (let i = 0; i < 4; i++) this.allies.push(new SpiritWolf(p.x + (i - 1.5) * 12, p.y, p, { dmg: 5, life: 16, slow: true })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); this.effects.ring(p.x, p.y, 30, '#9ad8ff'); break;
-      case 'guardian': this.allies.push(new SpiritWolf(p.x, p.y - 10, p, { big: true, dmg: 16, life: 15 })); /* 곰이 나타날 때 주변 기절 (보스전 화력이 높아 곰 공격력은 20→16) */
+      case 'guardian': this.allies.push(new SpiritWolf(p.x, p.y - 10, p, { big: true, dmg: 28, life: 18 })); /* 상향: 곰 공격력 +40%, 나타날 때 주변 기절 */
         for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 80 + e.radius) e.stunT = Math.max(e.stunT || 0, 1);
-        for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 14, p.y, p, { dmg: 5, life: 15, slow: true })); this.effects.ring(p.x, p.y, 40, '#9ad8ff'); this.addShake(0.2, 3); break;
+        for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 14, p.y, p, { dmg: 5, life: 18, slow: true })); this.effects.ring(p.x, p.y, 40, '#9ad8ff'); this.addShake(0.2, 3); break;
     }
     this.skillFx(p, at, A);
   }
@@ -1719,7 +1719,7 @@ class Game {
     if (enemy.negateT > 0) { if (!(enemy.negMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, enemy.fortress ? '막힘' : '부정', enemy.fortress ? '#e8ecff' : '#d8f0ff'); enemy.negMsgT = this.time + 0.35; } return; } /* 가레스의 부정: 모든 피해 무효 */
     let base = src.damage;
     if (enemy.iceVulnT > 0) base *= 1.5; /* 절대 영도로 얼어 있음 */
-    if (enemy.huntT > 0) base *= 1.4; /* 사냥꾼의 표적 */
+    if (enemy.huntT > 0) base *= 1.8; /* 사냥꾼의 표적 */
     if (enemy.auraVulnT > 0) base *= 1 + enemy.auraVuln; /* 맹독 안개 안 */
     if (enemy.blind > 0 && this.player && this.player.hybrid && this.player.hybrid.el === 'light') base *= 1.25; /* 빛의 마검사: 실명된 적 */
     if (enemy.riposteT > 0) { enemy.riposteHit = true; base *= 0.5; } /* 랜슬롯 반격 자세: 맞으면 피해 절반 + 곧바로 반격 */
