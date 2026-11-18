@@ -173,26 +173,31 @@ class Player extends Entity {
       ctx.fillStyle = `rgba(255,200,60,${0.25 + 0.15 * Math.sin(this.time * 20)})`;
       ctx.beginPath(); ctx.arc(x, y - 1, 12, 0, TAU); ctx.fill();
     }
-    const w = this.weapon, behind = Math.sin(this.aimVis) < -0.4;
-    const drawW = () => {
-      if (!w) return;
-      const ang = this.weaponAngle();
-      const reach = this.swing && this.swing.thrust ? Math.sin(Math.PI * this.swing.t / this.swing.dur) * 10 : 0;
-      // 손 위치: 어깨(몸 중앙 약간 아래)를 중심으로 도는 궤도, 반동 시 뒤로 밀림
-      const R = 4 + reach - this.recoil * 2.5;
-      const hx = x + Math.cos(ang) * R, hy = y + 2 + Math.sin(ang) * R * 0.75;
-      drawWeapon(ctx, w.def, hx, hy, ang);
-    };
-    if (behind) drawW();
     const sk = this.skinShown !== undefined ? this.skinShown /* 멀티 참가자 화면: 방장이 이미 갈래까지 확인해 보낸 값 */ : this.remoteSkin !== undefined ? (this.remoteSkin && skinAllowed(this.remoteSkin, this.hero.id, this.line && this.line.id) ? this.remoteSkin : null) /* 방장 쪽 동료: 갈래 확인 */ : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id, game.playerLineId(this)) : null); /* 내 캐릭터 */
     if (sk && (!this._skinH || this._skinH.src !== this.hero || this._skinH.sk !== sk)) this._skinH = { src: this.hero, sk, h: heroWithLook(this.hero, { sprite: sk }) };
-    if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
     const HH = sk ? this._skinH.h : this.hero;
     if (heroHasDirs(HH)) { /* 상하좌우 그림 스킨: 내 캐릭터는 누른 이동 방향, 동료는 움직인 방향 */
       if (typeof game !== 'undefined' && game.player === this && this.lastMoveDir) this.dir4 = heroDir4(this.lastMoveDir.x, this.lastMoveDir.y, this.dir4);
       else { const dx = this.x - (this._dpx ?? this.x), dy = this.y - (this._dpy ?? this.y); if (Math.hypot(dx, dy) > 0.15) this.dir4 = heroDir4(dx, dy, this.dir4); }
       this._dpx = this.x; this._dpy = this.y;
     }
+    const D4 = heroHasDirs(HH) ? this.dir4 || 'down' : null, sa = Math.sin(this.aimVis), ca = Math.cos(this.aimVis);
+    /* 상하좌우 그림 스킨: 몸 방향에 따라 무기를 드는 손 위치·몸 앞뒤가 달라짐 (조준은 그대로 마우스 쪽)
+       앞모습: 몸 앞(위로 겨눌 때만 뒤) · 뒷모습: 몸 뒤에 가려짐(아래로 겨눌 때만 앞) · 옆모습: 바라보는 쪽 손, 반대쪽으로 겨누면 몸 뒤 */
+    const behind = !D4 ? sa < -0.4 : D4 === 'down' ? sa < -0.75 : D4 === 'up' ? sa < 0.55 : (D4 === 'left' ? ca > 0.35 : ca < -0.35) || sa < -0.6;
+    const hand = !D4 ? { x: 0, y: 2 } : D4 === 'down' ? { x: 0, y: 3 } : D4 === 'up' ? { x: 0, y: 1 } : { x: D4 === 'left' ? -2 : 2, y: 2 };
+    const w = this.weapon;
+    const drawW = () => {
+      if (!w) return;
+      const ang = this.weaponAngle();
+      const reach = this.swing && this.swing.thrust ? Math.sin(Math.PI * this.swing.t / this.swing.dur) * 10 : 0;
+      // 손 위치: 어깨(몸 중앙 약간 아래)를 중심으로 도는 궤도, 반동 시 뒤로 밀림
+      const R = 4 + reach - this.recoil * 2.5;
+      const hx = x + hand.x + Math.cos(ang) * R, hy = y + hand.y + Math.sin(ang) * R * 0.75;
+      drawWeapon(ctx, w.def, hx, hy, ang);
+    };
+    if (behind) drawW();
+    if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
     drawHero(ctx, HH, x, y, face, heroHasDirs(HH) ? heroWalkFrame(HH, this.moving && this.state !== 'DASH', this.time) : frame, this.state === 'DASH', this.dir4 || 'down');
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
     if (!behind) drawW();
