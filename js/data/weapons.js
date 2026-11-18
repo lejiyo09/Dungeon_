@@ -391,7 +391,7 @@ const DATA_WEAPONS = [
     sentry: { kind: 'inferno', max: 5, life: 18, every: 3, charge: 0.5, range: 130, beamTime: 1, tick: 0.15, width: 10, turn: 1.6, flow: 300 }, color: '#8a3a2a', len: 9, bulletColor: '#ffb04a' },
   { id: 'weapon_wavesentry_001', name: '화염 파도탑', rarity: 'legendary', type: 'gun', shape: 'gun',
     damage: 150, fireRate: 10, energyCost: 8, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0,
-    sentry: { kind: 'wave', max: 5, life: 20, every: 2.4, charge: 0.45, range: 150, bands: 3, fan: 0.36, waveSpeed: 150, halfW: 0.2 }, color: '#c86a2a', len: 9, bulletColor: '#ffd04a' },
+    sentry: { kind: 'wave', max: 5, life: 20, every: 2.4, charge: 0.45, range: 150, bands: 1, fan: 0, waveSpeed: 150, halfW: 0.75 }, color: '#c86a2a', len: 9, bulletColor: '#ffd04a' },
   { id: 'weapon_thundersentry_001', name: '뇌격탑', rarity: 'legendary', type: 'gun', shape: 'gun',
     damage: 200, fireRate: 10, energyCost: 8, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0,
     sentry: { kind: 'thunder', max: 5, life: 20, every: 1.6, charge: 0.4, range: 170, width: 6 }, color: '#3a4a8a', len: 9, bulletColor: '#e0f4ff' },

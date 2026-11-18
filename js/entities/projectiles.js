@@ -439,7 +439,7 @@ class TrapSentry {
         world.projectiles.push(new Projectile(Object.assign({ x: this.x, y: this.y - 6, dx: Math.cos(b), dy: Math.sin(b), speed: P.speed, range: P.range + 30, pierce: 0, color: '#9ad8ff', size: 2, owner: this.owner, srcId: 'trap_bolt', erratic: P.erratic || 0 }, this.src(this.dmg, { shockStack: true })))); }
       fx.ring(this.x, this.y - 6, 9, '#e0f4ff'); SFX.play('react', 0.08);
     } else if (this.kind === 'inferno') { this.beamT = P.beamTime; this.beamA = a; this.tickT = 0; this.beamLen = 0; SFX.play('beam', 0.1); /* 웨이크 오브 인페르노: 화염 줄기를 뿜으며 천천히 대상을 따라 돎 */
-    } else if (this.kind === 'wave') { for (let i = 0; i < P.bands; i++) this.waves.push({ a: a + (i - (P.bands - 1) / 2) * P.fan, d: 8, hit: new Set() }); fx.ring(this.x, this.y, 12, '#ffd04a'); SFX.play('explode', 0.08); /* 지면을 따라 퍼지는 화염 띠 */
+    } else if (this.kind === 'wave') { for (let i = 0; i < P.bands; i++) this.waves.push({ a: a + (i - (P.bands - 1) / 2) * P.fan, d: 8, hit: new Set() }); fx.ring(this.x, this.y, 12, '#ffd04a'); SFX.play('explode', 0.08); /* 웨이크 오브 파이어: 가장 가까운 적 쪽으로 부채꼴(약 86°) 화염 파도 한 줄이 퍼져 나가며 닿는 적을 모두 관통 */
     } else if (this.kind === 'thunder' || this.kind === 'death') { /* 라이트닝 센트리·데스 센트리: 대상 쪽으로 일직선 관통 번개 (선 위의 적 모두) */
       if (this.kind === 'death' && this.tryCorpse(world)) return; /* 데스 센트리: 쓸 수 있는 시체가 있으면 번개 대신 시체 폭발 */
       this.bolt(world, a); SFX.play('react', 0.08);
@@ -475,7 +475,9 @@ class TrapSentry {
     for (const w of this.waves) { w.d += P.waveSpeed * dt;
       for (const e of world.enemies) if (e.targetable && !w.hit.has(e)) { const dx = e.x - this.x, dy = e.y - this.y, d = Math.hypot(dx, dy), df = Math.abs(Math.atan2(Math.sin(Math.atan2(dy, dx) - w.a), Math.cos(Math.atan2(dy, dx) - w.a)));
         if (Math.abs(d - w.d) < 9 + e.radius && df < P.halfW) { w.hit.add(e); world.damageEnemy(e, this.src(this.dmg, { status: trapBurn(this.dmg) }), dx / (d || 1), dy / (d || 1), { quiet: true }); } }
-      if (Math.random() < 0.5) world.effects.part(this.x + Math.cos(w.a) * w.d, this.y + Math.sin(w.a) * w.d, 0, -12, { color: 'rgba(50,30,30,0.5)', life: 0.6, size: 2, size2: 4, drag: 1 }); }
+      for (let k = 0; k < 2; k++) { const aa = w.a + (Math.random() * 2 - 1) * P.halfW; /* 파도 위에서 피어오르는 불꽃·연기 */
+        world.effects.part(this.x + Math.cos(aa) * w.d, this.y + Math.sin(aa) * w.d * 0.85, randInt(-6, 6), -22 - Math.random() * 14, { color: pick(['#ffd04a', '#ff8a3a', '#ff5a2a']), life: 0.28, size: 2, size2: 0, drag: 2, add: true }); }
+      if (Math.random() < 0.35) { const aa = w.a + (Math.random() * 2 - 1) * P.halfW; world.effects.part(this.x + Math.cos(aa) * w.d, this.y + Math.sin(aa) * w.d * 0.85, 0, -12, { color: 'rgba(50,30,30,0.5)', life: 0.6, size: 2, size2: 4, drag: 1 }); } }
     this.waves = this.waves.filter((w) => w.d < P.range);
   }
   tryCorpse(world) { /* 망자의 파수기(데스 센트리): 이번 발사를 주변의 쓰이지 않은 시체 폭발로 (시체는 used 표시로 한 번만 — 다른 파수기도 다시 못 씀, 폭발 간격은 corpseEvery) */
@@ -494,11 +496,12 @@ class TrapSentry {
     const fire = this.kind === 'inferno' || this.kind === 'wave', core = this.kind === 'death' ? '#4a6aff' : fire ? (this.kind === 'wave' ? '#ffb04a' : '#ff5a2a') : '#7ac8ff';
     ctx.save(); ctx.globalAlpha = k * dim;
     ctx.fillStyle = 'rgba(20,16,24,0.35)'; ctx.beginPath(); ctx.ellipse(x, y + 4, 8, 3, 0, 0, TAU); ctx.fill(); /* 그림자 */
-    const art = typeof drawTrapArt === 'function' && trapArt(this.kind, false);
-    if (art) { /* 스프라이트 (대기 / 충전·발사 중) — 업화 분사기는 대상 쪽을 바라봄 */
+    const artKind = fire ? 'inferno' : this.kind; /* [사용자 결정] 화염 덫(화염 파도탑·업화 분사기)은 모두 업화 분사기 그림 */
+    const art = typeof drawTrapArt === 'function' && trapArt(artKind, false);
+    if (art) { /* 스프라이트 (대기 / 충전·발사 중) — 화염 덫은 대상 쪽을 바라봄 */
       const firing = this.charging >= 0 || this.beamT > 0 || this.fireFx > 0;
-      drawTrapArt(ctx, this.kind, firing, x, y + 5, this.kind === 'inferno' && Math.cos(this.beamT > 0 ? this.beamA : this.ang) < 0);
-      if (ch > 0 && this.kind !== 'inferno') { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = ch * 0.6 * k * dim; ctx.fillStyle = core; ctx.beginPath(); ctx.arc(x, y - (this.kind === 'thunder' ? 18 : this.kind === 'death' ? 11 : 7), 2 + ch * 2, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k * dim; } /* 충전 빛 */
+      drawTrapArt(ctx, artKind, firing, x, y + 5, fire && Math.cos(this.beamT > 0 ? this.beamA : this.ang) < 0);
+      if (ch > 0 && !fire) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = ch * 0.6 * k * dim; ctx.fillStyle = core; ctx.beginPath(); ctx.arc(x, y - (this.kind === 'thunder' ? 18 : this.kind === 'death' ? 11 : 7), 2 + ch * 2, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k * dim; } /* 충전 빛 */
     } else {
     const big = this.kind === 'inferno' || this.kind === 'thunder' || this.kind === 'wave';
     ctx.fillStyle = this.kind === 'death' ? '#2a2438' : '#5a5e6a'; ctx.fillRect(x - (big ? 6 : 5), y - 4, big ? 12 : 10, 7); ctx.fillStyle = '#8a8e9a'; ctx.fillRect(x - (big ? 6 : 5), y - 4, big ? 12 : 10, 1); /* 받침 */
@@ -513,7 +516,13 @@ class TrapSentry {
     if (this.beamT > 0) { const a = this.beamA, L = this.beamLen || this.P.range, ex = x + Math.cos(a) * L, ey = y - 6 + Math.sin(a) * L; /* 업화: 중심 백황색 · 외곽 주황·적색 */
       ctx.globalAlpha = 0.45 * dim; ctx.strokeStyle = '#ff4a2a'; ctx.lineWidth = this.P.width * 1.6; ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(ex, ey); ctx.stroke();
       ctx.globalAlpha = 0.8 * dim; ctx.strokeStyle = '#ffb04a'; ctx.lineWidth = this.P.width; ctx.stroke(); ctx.strokeStyle = '#fff4c0'; ctx.lineWidth = 3; ctx.stroke(); }
-    for (const w of this.waves) { const f = 1 - w.d / this.P.range; ctx.globalAlpha = (0.4 + 0.5 * f) * dim; ctx.strokeStyle = '#ff8a3a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, y, w.d, w.a - this.P.halfW, w.a + this.P.halfW); ctx.stroke(); ctx.strokeStyle = '#ffe08a'; ctx.lineWidth = 2; ctx.stroke(); }
+    for (const w of this.waves) { const f = 1 - w.d / this.P.range, H = this.P.halfW; /* 화염 파도: 부채꼴 호를 따라 늘어선 불길 */
+      ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.85); ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = (0.35 + 0.45 * f) * dim; ctx.strokeStyle = '#ff5a2a'; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(0, 0, w.d, w.a - H, w.a + H); ctx.stroke();
+      ctx.globalAlpha = (0.5 + 0.5 * f) * dim; ctx.strokeStyle = '#ffb04a'; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
+      const n = Math.max(4, Math.round(w.d * H * 2 / 7)); ctx.globalAlpha = (0.55 + 0.45 * f) * dim;
+      for (let i = 0; i <= n; i++) { const aa = w.a - H + (2 * H) * i / n, px = Math.round(x + Math.cos(aa) * w.d), py = Math.round(y + Math.sin(aa) * w.d * 0.85), fl = 3 + ((i * 7 + Math.floor(this.t * 20)) % 3);
+        ctx.fillStyle = '#ff6a2a'; ctx.fillRect(px - 1, py - fl, 3, fl); ctx.fillStyle = '#ffe08a'; ctx.fillRect(px, py - fl + 1, 1, fl - 1); } }
     for (const z of this.zaps) { ctx.globalAlpha = (z.t / 0.12) * dim; ctx.strokeStyle = this.kind === 'death' ? '#9ab0ff' : '#e0f4ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(z.x0, z.y0); const mx = (z.x0 + z.x1) / 2 + randInt(-5, 5), my = (z.y0 + z.y1) / 2 + randInt(-5, 5); ctx.lineTo(mx, my); ctx.lineTo(z.x1, z.y1); ctx.stroke(); }
     ctx.restore(); ctx.lineWidth = 1; ctx.globalAlpha = 1;
   }
