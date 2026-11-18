@@ -1049,21 +1049,21 @@ class Game {
     const sx = p.x + p.aim.x * 8, sy = p.y + p.aim.y * 8, len = T.range; // 빛기둥 길이 그대로 내려꽂힘 (벽에 막히지 않음)
     let ex = sx + p.aim.x * len, ey = sy + p.aim.y * len; const dmg = T.damage * this.scale.hp, xm = Object.assign({}, p.mods, { critChance: 0 }); // 치명타 없이 항상 같은 피해
     for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, ex, ey, e.x, e.y, e.radius + T.width) >= 0) {
-      this.damageEnemy(e, { damage: dmg, mods: xm, knockback: 10 }, p.aim.x, p.aim.y);
+      this.damageEnemy(e, { damage: dmg, mods: xm, knockback: 10, treasure: true }, p.aim.x, p.aim.y);
       if (e.alive && T.stun) e.stunT = Math.max(e.stunT || 0, e.def.boss ? T.stun * 0.5 : T.stun); } // 빛에 맞은 적 경직 (보스는 절반)
     for (const b of this.enemyBullets) if (segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸
     this.effects.excalibur(sx, sy, ex, ey, T.width, p.x, p.y);
     this.addShake(0.5, 9); this.screenFlash = 0.4; this.flashColor = '255,240,200'; this.hitStop(0.12); SFX.play('excal');
     // 폭발은 마우스로 조준한 지점(검기 위, 사거리 안)에서: 금빛 대폭발 + 충격파 고리 + 빛살 + 빛기둥 (주변 적에게 추가 피해)
     { const mw = this.mouseWorld(), along = clamp((mw.x - sx) * p.aim.x + (mw.y - sy) * p.aim.y, 40, len); ex = sx + p.aim.x * along; ey = sy + p.aim.y * along; }
-    this.explodeAt(ex, ey, T.blast, { color: '#ffe9a0', hurtEnemies: true, src: { damage: dmg * T.blastRatio, mods: xm, knockback: 14 } });
+    this.explodeAt(ex, ey, T.blast, { color: '#ffe9a0', hurtEnemies: true, src: { damage: dmg * T.blastRatio, mods: xm, knockback: 14, treasure: true } });
     this.effects.rays(ex, ey, '#fff4c0', 22, T.blast * 2.2, 0.8); this.effects.ring(ex, ey, T.blast, '#ffffff'); this.effects.ring(ex, ey, T.blast * 1.6, '#ffd84a');
     for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.effects.explosion(ex + Math.cos(a) * T.blast * 0.55, ey + Math.sin(a) * T.blast * 0.4, 14 + (i % 3) * 4, '#ffd84a'); }
     this.effects.skyBeam(ex, ey, '#ffffff', 0, 16); this.effects.goldBurst(ex, ey, 30); SFX.play('explode');
   }
   // 게이볼그가 꿰뚫음 (GaeBolgThrow가 호출): 큰 피해 + 주변으로 가시 폭발 + 출혈
   gaeBolgHit(p, x, y, tgt, T) {
-    const src = (d) => ({ damage: d * this.scale.hp, mods: Object.assign({}, p.mods, { critChance: 0 }), knockback: 6 }), bled = [];
+    const src = (d) => ({ damage: d * this.scale.hp, mods: Object.assign({}, p.mods, { critChance: 0 }), knockback: 6, treasure: true }), bled = [];
     if (tgt && tgt.targetable) { this.damageEnemy(tgt, src(T.damage), 0, 0); bled.push(tgt); }
     for (const e of this.enemies) if (e !== tgt && e.targetable && Math.hypot(e.x - x, e.y - y) < T.thornR + e.radius) { this.damageEnemy(e, src(T.thornDmg), e.x - x, e.y - y); bled.push(e); }
     this.zones.push(new ThornBurst(x, y, T)); this.zones.push(new BleedTicker(bled, T, this.scale.hp));
@@ -1750,6 +1750,7 @@ class Game {
     if (enemy.negateT > 0) { if (!(enemy.negMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, enemy.fortress ? '막힘' : '부정', enemy.fortress ? '#e8ecff' : '#d8f0ff'); enemy.negMsgT = this.time + 0.35; } return; } /* 가레스의 부정: 모든 피해 무효 */
     let base = src.damage;
     if (src.trap) { if (enemy.preyT > 0 && !src.corpse && !src.pct) base *= 1 + BALANCE.TRAP.prey.bonus; if (enemy.def.boss) base *= src.equip ? BALANCE.TRAP.equipBossMult : BALANCE.TRAP.bossMult; } /* 덫 장비·망자의 파수기: 사냥터 각인 +20% · 보스에게는 배율 (보스전 최강 방지) */
+    if (src.treasure) base *= this.treasureBossMult(enemy); /* 공격형 보구: 심층 보스는 절반 */
     if (enemy.iceVulnT > 0) base *= 1.5; /* 절대 영도로 얼어 있음 */
     if (enemy.huntT > 0) base *= 1.8; /* 사냥꾼의 표적 */
     if (enemy.auraVulnT > 0) base *= 1 + enemy.auraVuln; /* 맹독 안개 안 */
@@ -2015,6 +2016,7 @@ class Game {
     if (!deepBoss) return; const d = Math.max(0, Number(M.deep) || 0), nd = Math.min(MERLIN_TRIAL.deep, d + 1); if (nd === d) return;
     M.deep = nd; writeSave(this.save); this.showBanner('멀린의 시련 진행', `심층 보스 처치 (${nd}/${MERLIN_TRIAL.deep})`, '#ffb0d8');
   }
+  treasureBossMult(e) { return e && e.def.boss && this.W && this.W.deep && !this.trialW ? BALANCE.deepBossTreasureMult : 1; } /* [사용자 결정] 심층 보스는 공격형 보구(바빌론·엑스칼리버·롱고미니아드·게이볼그) 피해를 절반만 받음 */
   onEnemyKilled(enemy) {
     if (enemy.rewardGiven) return;
     enemy.rewardGiven = true;

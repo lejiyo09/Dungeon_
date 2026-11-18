@@ -732,7 +732,7 @@ class ChainCircle {
     for (const e of world.enemies) {
       if (!e.targetable || this.got.includes(e) || Math.hypot(e.x - this.x, e.y - this.y) > this.r + e.radius) continue;
       e.chainT = Math.max(e.chainT || 0, Math.max(1.5, this.life - this.t)); e.chainMax = e.chainT; this.got.push(e);
-      world.damageEnemy(e, { damage: this.T.damage * world.scale.hp, mods: this.owner.mods, knockback: 0, mark: { mult: this.T.weak, dur: e.chainT } }, 0, 0); // 묶으며 큰 피해 + 받는 피해 증가
+      world.damageEnemy(e, { damage: this.T.damage * world.scale.hp, mods: this.owner.mods, knockback: 0, treasure: true, mark: { mult: this.T.weak, dur: e.chainT } }, 0, 0); // 묶으며 큰 피해 + 받는 피해 증가
       world.effects.goldBurst(e.x, e.y, 10); world.effects.ring(e.x, e.y, e.radius + 8, '#ffd84a');
       if (this.t > 0.05) for (let k = 0; k < 2; k++) this.addSpear(this.gates[randInt(0, 9)], e.x + randInt(-3, 3), e.y, k * 0.05); // 나중에 묶인 적에게도 창
     }
@@ -1117,7 +1117,7 @@ class RhongoTower {
     this.FLY = 0.22; this.next = 0; this.landed = false; this.ang = Math.atan2(ty - this.sy, tx - this.sx);
     this.end = this.FLY + T.duration;
   }
-  src(world, dmg, kb) { return { damage: dmg * world.scale.hp, mods: Object.assign({}, this.owner.mods, { critChance: 0 }), knockback: kb }; }
+  src(world, dmg, kb) { return { damage: dmg * world.scale.hp, mods: Object.assign({}, this.owner.mods, { critChance: 0 }), knockback: kb, treasure: true }; }
   update(dt, world) {
     const T = this.T, fx = world.effects; this.t += dt;
     if (this.t < this.FLY) { const k = this.t / this.FLY; fx.part(this.sx + (this.x - this.sx) * k, this.sy + (this.y - this.sy) * k, 0, 0, { color: '#bfe6ff', life: 0.25, size: 2, size2: 0, drag: 1, add: true }); return; }
@@ -1268,7 +1268,7 @@ class BleedTicker {
   update(dt, world) {
     this.left -= dt; this.next -= dt; if (this.left <= 0) { this.alive = false; return; }
     for (const e of this.list) if (e.alive && Math.random() < 0.3) world.effects.part(e.x + randInt(-4, 4), e.y - 2, 0, 20, { color: '#c0202a', life: 0.4, size: 1.5, size2: 0, drag: 1 });
-    if (this.next <= 0) { this.next += 0.5; for (const e of this.list) if (e.alive) world.dotDamage(e, this.dmg, '#ff4a5a'); }
+    if (this.next <= 0) { this.next += 0.5; for (const e of this.list) if (e.alive) world.dotDamage(e, this.dmg * world.treasureBossMult(e), '#ff4a5a'); } /* 심층 보스는 보구 피해 절반 */
   }
   render() {}
 }
