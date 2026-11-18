@@ -398,7 +398,28 @@ const STORY_ARCHIVE = [
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
 // [사용자 결정] 문지기 조건을 없애기 전에 이미 문지기를 잡아 둔 사람은 그 1번을 심층 보스 1마리로 쳐 줌 (한 번만 바꿈)
-function merlinGateToDeep(M) { if (!M || M.gateMoved) return; M.gateMoved = true; if ((M.gate || 0) > 0 && (M.quest || 0) <= 1) M.deep = Math.min(MERLIN_TRIAL.deep, (M.deep || 0) + M.gate); M.gate = 0; }
+function merlinGateToDeep(M, save) {
+  if (!M) return false;
+  let changed = false;
+  if (!M.gateMoved) {
+    M.gateMoved = true;
+    const gate = Math.max(0, Number(M.gate) || 0);
+    if (gate > 0 && (Number(M.quest) || 0) <= 1) {
+      const next = Math.min(MERLIN_TRIAL.deep, (Number(M.deep) || 0) + gate);
+      if (next !== (Number(M.deep) || 0)) { M.deep = next; changed = true; }
+    }
+    M.gate = 0;
+    changed = true;
+  }
+
+  // bestDeep는 실제로 도달한 심층 번호다. 다음 심층으로 이동하려면
+  // 직전 심층의 보스를 처치해야 하므로, 이전 저장의 처치분을 복원할 수 있다.
+  const reachedDepth = Math.max(0, Math.floor(Number(save && save.bestDeep) || 0));
+  const provenKills = Math.min(MERLIN_TRIAL.deep, Math.max(0, reachedDepth - 1));
+  const current = Math.max(0, Number(M.deep) || 0);
+  if (provenKills > current) { M.deep = provenKills; changed = true; }
+  return changed;
+}
 const MERLIN_CHATTER = ['「꽃은 금방 시든다. 그래서 아름답지.」', '「탑 위에서 보면, 이 던전도 꽤 볼만하다네.」', '「왕은 잘 지내려나… 아니, 혼잣말일세.」'];
 // 성역에서 고르는 첫 보구 목록: 시련 보상(questOnly)·심층 보스 전리품(heroDrop)은 제외
 function treasurePickList() { return DATA_TREASURES.filter((t) => !t.questOnly && !t.heroDrop); }
