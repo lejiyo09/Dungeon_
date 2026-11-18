@@ -35,16 +35,29 @@ const Net = {
     const url = this.url();
     if (!url) { this.error = '멀티 서버 주소가 설정되지 않았습니다 (Render에 올린 주소에서 열거나 NET_CONFIG.server를 설정)'; this.status = 'off'; return; }
     if (this.status === 'connecting' && !this.rejoin) return;
-    this.status = 'connecting'; this.error = null; this.pendingThen = then;
-    let ws; try { ws = new WebSocket(url); } catch (e) { this.status = 'off'; this.error = '연결할 수 없습니다'; return; }
-    this.ws = ws;
-    ws.onopen = () => { if (this.ws !== ws) { try { ws.close(); } catch (e) { /* 무시 */ } return; } this.status = 'online'; this.pingT = setInterval(() => { if (!document.hidden) this.raw({ t: 'ping', at: performance.now() }); }, 5000); const f = this.pendingThen; this.pendingThen = null; if (f) f(); };
-    ws.onclose = () => { if (this.ws !== ws) return; /* 예전 연결이 늦게 닫힘 → 무시 */ clearInterval(this.pingT); const was = this.status, code = this.code; this.reset();
+    if (!this.rejoin && !this.retryN) { this.retryN = 0; this.retrySince = performance.now(); } /* 처음 시도: 자동 재시도 계산 시작 */
+    this.status = 'connecting'; this.error = this.retryN ? `서버를 깨우는 중… 다시 연결 시도 ${this.retryN}/${this.RETRY_MAX}` : null; this.pendingThen = then;
+    let ws; try { ws = new WebSocket(url); } catch (e) { this.status = 'off'; this.error = '연결할 수 없습니다'; this.retryN = 0; return; }
+    this.ws = ws; clearTimeout(this.connT);
+    this.connT = setTimeout(() => { if (this.ws !== ws || ws.readyState !== 0) return; /* 연결이 멈춰 있음 (서버가 잠에서 깨는 중·느린 망) → 끊고 다시 시도 */
+      ws.onclose = null; try { ws.close(); } catch (e) { /* 무시 */ } this.ws = null; this.status = 'off'; if (!this.rejoin) this.connectFailed(then); /* 다시 들어가기(rejoin)는 tryRejoin이 따로 반복 */ }, this.CONNECT_MS);
+    ws.onopen = () => { if (this.ws !== ws) { try { ws.close(); } catch (e) { /* 무시 */ } return; } clearTimeout(this.connT); this.retryN = 0; this.error = null; this.status = 'online'; this.pingT = setInterval(() => { if (!document.hidden) this.raw({ t: 'ping', at: performance.now() }); }, 5000); const f = this.pendingThen; this.pendingThen = null; if (f) f(); };
+    ws.onclose = () => { if (this.ws !== ws) return; /* 예전 연결이 늦게 닫힘 → 무시 */ clearInterval(this.pingT); clearTimeout(this.connT); const was = this.status, code = this.code; this.reset();
+      if (was === 'connecting' && !this.rejoin) { this.connectFailed(then); return; } /* 처음 연결 실패 → 자동으로 다시 시도 */
       if (this.rejoin) { this.status = 'reconnecting'; setTimeout(() => this.tryRejoin(), 1500); return; } // 다시 연결하는 중에 또 끊김 → 계속 시도
       if (was === 'online' && code && this.wantRejoin && this.wantRejoin()) { this.rejoin = { code, name: this.myName, hero: this.myHero, since: performance.now(), tries: 0 }; this.status = 'reconnecting'; this.emit({ t: 'dropped' }); setTimeout(() => this.tryRejoin(), 800); return; } // 탐험 중 끊김 → 자동으로 다시 연결
       if (was === 'connecting') this.error = '서버에 연결하지 못했습니다 (Render 무료 서버는 처음 깨어나는 데 30초~1분 걸릴 수 있어요)'; else if (was === 'online') this.error = '서버와 연결이 끊어졌습니다'; };
     ws.onerror = () => {};
     ws.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } this.onMessage(m); };
+  },
+  // 처음 연결이 안 될 때: 시도마다 CONNECT_MS초까지 기다리고, 서버를 깨우면서 RETRY_MAX번까지 자동으로 다시 시도 (Render 무료 서버는 깨는 데 30초~1분)
+  CONNECT_MS: 10000, RETRY_MAX: 6,
+  connectFailed(then) {
+    if (this.retryN < this.RETRY_MAX) { this.retryN++; this.status = 'connecting'; this.error = `서버를 깨우는 중… 다시 연결 시도 ${this.retryN}/${this.RETRY_MAX}`;
+      const b = this.httpBase(); if (b) fetch(b + '/health', { cache: 'no-store' }).catch(() => {}); /* 잠든 서버 깨우기 */
+      clearTimeout(this.retryT); this.retryT = setTimeout(() => { this.status = 'off'; this.connect(then); }, 2000); return; }
+    this.retryN = 0; this.status = 'off';
+    this.error = '서버에 연결하지 못했습니다 — 학교·회사 와이파이나 백신 프로그램이 접속을 막고 있을 수 있어요 (다른 망이나 휴대폰 데이터로 시도해 보세요)';
   },
   reset() { this.ws = null; this.status = 'off'; this.id = null; this.code = null; this.players = []; this.peers.clear(); this.ping = null; },
   raw(m) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(m)); },
@@ -61,7 +74,7 @@ const Net = {
   },
   emit(m) { for (const fn of this.handlers) fn(m); },
   leave() { this.rejoin = null; this.raw({ t: 'leave' }); this.code = null; this.players = []; this.peers.clear(); this.disconnect(); }, // 방을 나가면 연결도 끊음 → 서버가 잠들 수 있음
-  disconnect() { const ws = this.ws; if (!ws) return; clearInterval(this.pingT); this.reset(); try { ws.onclose = null; ws.close(); } catch (e) { /* 무시 */ } },
+  disconnect() { clearTimeout(this.retryT); clearTimeout(this.connT); this.retryN = 0; const ws = this.ws; if (!ws) return; clearInterval(this.pingT); this.reset(); try { ws.onclose = null; ws.close(); } catch (e) { /* 무시 */ } },
   profile(name, hero) { if (this.inRoom) this.raw({ t: 'profile', name, hero }); },
   relay(data, to) { if (this.inRoom) this.raw({ t: 'relay', data, to }); },
   on(fn) { this.handlers.push(fn); },
