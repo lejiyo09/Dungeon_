@@ -1703,7 +1703,8 @@ class Game {
           this.props.push(new Chest(c.x, c.y - 24, 'weapon'));
           this.portals.push(new Portal(c.x + (W.deep ? 26 : 0), c.y + 24, () => this.advanceStage(), `${stageLabel(this.worldIdx + 1, 0)} ${next.name}`, next.deep ? [120, 200, 255] : undefined));
           if (W.deep) this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90])); // 심층: 여기서 돌아가거나 더 내려감
-          if (W.deep && W.depth === 10 && this.babylonOpen()) { this.portals.push(new Portal(c.x, c.y + 60, () => this.enterBabylon(), '금빛 포탈 — 바빌로니아', [255, 190, 40])); this.effects.rays(c.x, c.y + 60, '#ffd84a', 14, 50, 1); } /* [사용자 결정] 심층 10-4: 바빌로니아로 가는 금빛 포탈 */
+          if (W.deep && W.depth === 10 && this.babylonOpen()) { this.portals.push(new Portal(c.x, c.y + 60, () => this.enterBabylon(), '금빛 포탈 — 바빌로니아', [255, 190, 40])); this.effects.rays(c.x, c.y + 60, '#ffd84a', 14, 50, 1); this.effects.skyBeam(c.x, c.y + 60, '#fff4c0', 0, 12); this.screenFlash = 0.2; this.flashColor = '255,216,74'; SFX.play('solomon', 0.5);
+            this.playCutscene(BABYLON_APPEAR_LINES, { id: 'babylon_appear', focus: { x: c.x, y: c.y + 50 } }); } /* 금빛의 문이 처음 나타날 때 이야기 (한 번, 이야기 기록에서 다시 보기) */ /* [사용자 결정] 심층 10-4: 바빌로니아로 가는 금빛 포탈 */
         }
       };
       const owned = new Set(this.player.buffs);

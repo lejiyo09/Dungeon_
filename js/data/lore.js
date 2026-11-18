@@ -117,6 +117,13 @@ const BABYLON_RUMOR_LINES = [
   '「어딘지 모를 곳에 소환됐다는 거야. 깊은 곳 어딘가에서 금빛이 새어 나온다나.」',
   '「심층 깊숙이 내려간 녀석들 말로는, 열 번째 필드쯤에서 봤다던데… 믿거나 말거나지.」'
 ];
+const BABYLON_APPEAR_LINES = [ /* 심층 10-4에서 금빛 포탈이 처음 나타날 때 [임시] */
+  '보스가 쓰러지자, 붉은 달빛 사이로 낯선 금빛이 스며들기 시작한다.',
+  '바닥에 새겨진 적 없는 문양이 하나둘 떠오르고 — 허공이 갈라지며 황금의 문이 열린다.',
+  '문 너머에서 오래된 목소리가 울린다. 「…잡종이 여기까지 기어 올라왔나.」',
+  '「이 세상의 모든 보물은 본래 나의 것. 그 보고(寶庫)를 엿볼 자격이 있는지 — 보여 보아라.」',
+  '길드에서 들었던 소문이 떠오른다. 길가메시의 도시, 바빌로니아로 가는 문이 바로 이것이다.'
+];
 const BABYLON_GATE_LINES = [
   '금빛 포탈 너머로 높은 성벽과 끝없는 보물고의 그림자가 아른거린다.',
   '…하지만 문은 아직 굳게 닫혀 있다. 무언가가 길을 막고 있는 듯하다.',
@@ -408,6 +415,7 @@ const STORY_ARCHIVE = [
   { id: 'bedivere_road', name: '충절의 기사', kind: 'cut', lines: () => MERLIN_BEDIVERE_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 19) },
   { id: 'bedivere', name: '꺼져 가는 은빛', kind: 'cut', lines: () => BEDIVERE_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 20) },
   { id: 'arthur_road', name: '왕좌로', kind: 'cut', lines: () => MERLIN_ARTHUR_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 21) },
+  { id: 'babylon', name: '금빛의 문', kind: 'cut', lines: () => BABYLON_APPEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_appear') },
   { id: 'arthur', name: '101번째 원탁의 기사', kind: 'cut', lines: () => ARTHUR_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 22) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)
