@@ -150,8 +150,24 @@ const GILGAMESH_FINAL_LINES = [
 ];
 const BABYLON_FALL_LINES = [
   '발밑의 황금 바닥이 갈라지고, 사슬에 묶인 채 끝없는 어둠 속으로 떨어진다…',
-  '(…여긴 어디지. 바빌로니아의, 지하…?)',
-  '[임시] 바빌로니아 지하는 아직 준비 중입니다. 이야기는 다음에 이어집니다.'
+  '바람을 가르는 소리, 그리고 — 차가운 물이 온몸을 덮친다.'
+];
+// [사용자 결정] 바빌로니아 지하: 눈을 뜬 뒤 주인공의 독백 (괄호 = 속마음) [임시 문구]
+const BABYLON_UNDER_WAKE_LINES = [
+  '…똑, 똑. 차가운 물방울이 뺨 위로 떨어진다.',
+  '(…살아 있어. 그 높이에서 떨어지고도.)',
+  '허리까지 차오른 검은 물을 헤치고 일어선다. 사방은 젖은 진흙벽돌, 벽에는 알 수 없는 쐐기 글자가 빼곡하다.',
+  '손에 익던 무기들은 하나도 남아 있지 않다. 남은 건 처음 던전에 들고 들어왔던, 낡은 무기 하나뿐.',
+  '(몸이 무거워… 그 금빛 사슬이 힘까지 묶어 간 건가. 처음 길드 문을 두드렸을 때로 돌아간 것 같아.)',
+  '(그래도 — 그때도 이걸로 여기까지 왔잖아.)',
+  '멀리서 물 흐르는 소리, 그리고 무언가 진흙을 질질 끄는 소리가 들려온다.',
+  '(여긴 바빌로니아의 지하 수로… 위로 올라갈 길을 찾아야 해. 다시 그 왕좌 앞에 서기 위해서.)'
+];
+const BABYLON_UNDER_CLEAR_LINES = [
+  '라마수의 진흙 몸이 무너져 내리고, 막혀 있던 수문이 무겁게 열린다.',
+  '(…위로 이어지는 계단. 바깥 공기 냄새가 나.)',
+  '(잡종이라고 했지, 길가메시. 좋아 — 다음엔 떨어지지 않아.)',
+  '[임시] 바빌로니아 이야기는 다음에 이어집니다.'
 ];
 const BABYLON_TRIAL = { /* 길가메시의 왕좌 (시련 틀을 빌려 씀) */
   id: 'babylon', title: '바빌로니아 — 영웅왕의 왕좌', color: '#ffd84a', intro: '영웅왕 길가메시가 왕좌에서 내려다보고 있습니다', reward: 0,
@@ -446,6 +462,8 @@ const STORY_ARCHIVE = [
   { id: 'bedivere', name: '꺼져 가는 은빛', kind: 'cut', lines: () => BEDIVERE_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 20) },
   { id: 'arthur_road', name: '왕좌로', kind: 'cut', lines: () => MERLIN_ARTHUR_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 21) },
   { id: 'babylon', name: '금빛의 문', kind: 'cut', lines: () => BABYLON_APPEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_appear') },
+  { id: 'babylon_under', name: '바빌로니아 지하', kind: 'cut', lines: () => BABYLON_FALL_LINES.concat(BABYLON_UNDER_WAKE_LINES), unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under') },
+  { id: 'babylon_under_clear', name: '열린 수문', kind: 'cut', lines: () => BABYLON_UNDER_CLEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under_clear') },
   { id: 'arthur', name: '101번째 원탁의 기사', kind: 'cut', lines: () => ARTHUR_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 22) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)

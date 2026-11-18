@@ -61,7 +61,7 @@ const Auth = {
   // 계정 목록에 보여줄 진행 요약
   summary(p) {
     try { const s = JSON.parse(localStorage.getItem(this.saveKeyOf(p)) || 'null'); if (!s) return null;
-      return { bank: s.bank || 0, best: s.bestStage || 0, run: s.run ? stageLabel(s.run.worldIdx, s.run.levelIdx) : null, clears: s.clears || 0 }; } catch (e) { return null; }
+      return { bank: s.bank || 0, best: s.bestStage || 0, run: s.run ? runLabel(s.run) : null, clears: s.clears || 0 }; } catch (e) { return null; }
   },
   touch() {
     if (!this.current) return;

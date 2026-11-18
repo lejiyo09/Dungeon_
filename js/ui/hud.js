@@ -39,7 +39,7 @@ class HUD {
       if (Net.inRoom) hudText(ctx, `멀티 방 ${Net.code} · ${Net.players.length}/${NET_CONFIG.maxPlayers}명${Net.isHost ? ' · 방장' : ''}`, VIEW_W / 2, 20, '#7affc0', 'center', 8);
     } else {
       const W = game.W;
-      hudText(ctx, `${W.trial ? '' : stageLabel(game.worldIdx, game.levelIdx) + ' '}${W.name}   골드 ${game.gold}   처치 ${game.kills}`, VIEW_W / 2, 6, W.deep ? '#9ad8ff' : '#fff', 'center');
+      hudText(ctx, `${W.trial ? '' : game.stageName() + ' '}${W.name}   골드 ${game.gold}   처치 ${game.kills}`, VIEW_W / 2, 6, W.deep ? '#9ad8ff' : '#fff', 'center');
       this.minimap(ctx, game);
     }
 
@@ -495,10 +495,10 @@ class HUD {
         hudText(ctx, t, r.x + r.w / 2, r.y + 7, i === 3 ? '#ccc' : '#ffffff', 'center', 11); });
       hudText(ctx, '1~3: 진화 단계 골라 도전 (Enter: 3진)   ·   Esc: 나중에', VIEW_W / 2, VIEW_H - 20, '#888', 'center', 8);
     } else if (o.type === 'resume') {
-      const r = game.save.run, hero = r && game.data.heroes.get(r.hero), W = r && worldDef(r.worldIdx);
+      const r = game.save.run, hero = r && game.data.heroes.get(r.hero), W = r && runWorld(r);
       hudText(ctx, '진행 중인 탐험이 있습니다', VIEW_W / 2, 70, '#7ad0ff', 'center', 16);
       if (r && W) {
-        hudText(ctx, `${stageLabel(r.worldIdx, r.levelIdx)} ${W.name}   ·   ${hero ? hero.name : '?'}`, VIEW_W / 2, 100, '#fff', 'center', 11);
+        hudText(ctx, `${runLabel(r)} ${W.name}   ·   ${hero ? hero.name : '?'}`, VIEW_W / 2, 100, '#fff', 'center', 11);
         hudText(ctx, `체력 ${Math.round(r.p.hp)}/${r.p.maxHp}   ·   무기 ${r.p.weapons.map((id) => (game.data.weapons.get(id) || { name: '?' }).name).join(', ')}   ·   골드 ${r.gold}`, VIEW_W / 2, 118, '#ccc', 'center', 9);
         hudText(ctx, '그 스테이지의 시작 지점부터 다시 시작합니다', VIEW_W / 2, 134, '#888', 'center', 8);
       }
@@ -566,7 +566,7 @@ class HUD {
       hudText(ctx, o.victory ? '던전 정복!' : '사망했습니다', VIEW_W / 2, 70, o.victory ? '#ffd84a' : '#ff7070', 'center', 18);
       if (o.after) hudText(ctx, o.after, VIEW_W / 2, 92, '#ffe9a0', 'center', 10);
       else if (game.W.deep) hudText(ctx, `심층 ${game.W.depth}번째 필드까지 내려갔습니다   (최고 기록: 심층 ${game.save.bestDeep || 0})`, VIEW_W / 2, 92, '#9ad8ff', 'center', 10);
-      hudText(ctx, `도달: ${stageLabel(game.worldIdx, game.levelIdx)}   ·   처치 ${game.kills}   ·   스테이지 ${o.stages}개 · 보스 ${o.bosses}마리`, VIEW_W / 2, 110, '#ddd', 'center', 10);
+      hudText(ctx, `도달: ${game.stageName()}   ·   처치 ${game.kills}   ·   스테이지 ${o.stages}개 · 보스 ${o.bosses}마리`, VIEW_W / 2, 110, '#ddd', 'center', 10);
       hudText(ctx, `${CUR.name} +${o.reward}   (보유 ${game.save.bank} → ${game.save.bank + o.reward})`, VIEW_W / 2, 128, CUR.color, 'center', 10);
       hudText(ctx, '던전 골드는 로비로 가져가지 않습니다', VIEW_W / 2, 142, '#888', 'center', 8);
       hudText(ctx, 'Enter: 로비로', VIEW_W / 2, 160, '#fff', 'center', 10);

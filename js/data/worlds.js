@@ -137,6 +137,16 @@ function worldDef(i) {
   const d = i - DEEP_START, base = DEEP_WORLDS[d % DEEP_WORLDS.length];
   return Object.assign({}, base, { depth: d + 1, name: `${base.name}` });
 }
+// [사용자 결정] 바빌로니아 지하: 길가메시에게 떨어진 뒤의 별도 지역 (worldIdx는 몬스터 세기용으로만 씀) [임시 디자인]
+const ZONES = {
+  babylon_under: { id: 'babylon_under', zone: 'babylon_under', name: '바빌로니아 지하 수로', short: '지하', scaleWorld: 3, boss: 'boss_abzu_lamassu', waves: 2,
+    enemies: [['enemy_clayscribe_001', 3], ['enemy_mudbrick_001', 2], ['enemy_chainhound_001', 3], ['enemy_abzuserpent_001', 3]],
+    palette: { style: 'abzu', accent: '#3ac8b8', floor: ['#3a3226', '#3d3428'], corridor: ['#262620', '#282822'], wall: '#4a3a2a', wallTop: '#5a4a36',
+      wallFace: '#7a6046', faceLine: '#6a5240', deco: 'rgba(58,200,184,0.35)' } }
+};
+function zoneLabel(z, l) { const Z = ZONES[z]; return `${Z ? Z.short : '?'} ${l + 1}`; }
+function runLabel(r) { return r.zone && ZONES[r.zone] ? zoneLabel(r.zone, r.levelIdx) : stageLabel(r.worldIdx, r.levelIdx); } // 이어하기 표시용
+function runWorld(r) { return (r.zone && ZONES[r.zone]) || worldDef(r.worldIdx); }
 // 화면 표시용 스테이지 이름: 1-1 ~ 10-4, 심층은 '심층 1-1'
 function stageLabel(w, l) { return w >= DEEP_START ? `심층 ${w - DEEP_START + 1}-${l + 1}` : `${w + 1}-${l + 1}`; }
 const LOBBY_PALETTE = { style: 'wood', floor: ['#3a2e26', '#3d3129'], corridor: ['#3a2e26', '#3d3129'], wall: '#40354f', wallTop: '#4b3f5c',
