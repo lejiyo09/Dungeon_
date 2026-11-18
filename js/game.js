@@ -2011,8 +2011,42 @@ class Game {
     enemy.rewardGiven = true;
     if (!enemy.def.boss && !enemy.def.dummy && !enemy.def.master) { const C = this.corpses || (this.corpses = []); C.push({ x: enemy.x, y: enemy.y, t: this.time, used: false }); if (C.length > 40) C.shift(); } /* 시체 (망자의 파수기용, BALANCE.TRAP.corpseLife초) */
     this.kills++;
-    if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) { this.guildEvent('kills', 1, enemy.def.id); if (enemy.elite) this.guildEvent('elites'); if (enemy.def.boss) this.guildEvent('bosses', 1, enemy.def.id);
-      const M = this.save.merlin; if (M) merlinGateToDeep(M); if (M && M.quest === 1 && enemy.def.boss) { if (enemy.def.id === 'boss_nameless_gatekeeper') M.gate = Math.min(MERLIN_TRIAL.gate, (M.gate || 0) + 1); if (this.W.deep) M.deep = Math.min(MERLIN_TRIAL.deep, (M.deep || 0) + 1); } } // 멀린의 시련 // 길드 퀘스트·토벌·칭호 집계
+    if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) {
+      this.guildEvent('kills', 1, enemy.def.id);
+      if (enemy.elite) this.guildEvent('elites');
+      if (enemy.def.boss) this.guildEvent('bosses', 1, enemy.def.id);
+
+      // 멀린의 1번 시련: 심층 필드의 보스 처치 진행도를 즉시 저장한다.
+      const M = this.save.merlin;
+      if (M) {
+        const oldDeep = Number(M.deep) || 0, oldGate = Number(M.gate) || 0, oldGateMoved = !!M.gateMoved;
+        merlinGateToDeep(M);
+        let changed = (Number(M.deep) || 0) !== oldDeep || (Number(M.gate) || 0) !== oldGate || !!M.gateMoved !== oldGateMoved;
+
+        if (M.quest === 1 && enemy.def.boss) {
+          if (enemy.def.id === 'boss_nameless_gatekeeper') {
+            const gate = Math.max(0, Number(M.gate) || 0);
+            const nextGate = Math.min(MERLIN_TRIAL.gate, gate + 1);
+            if (nextGate !== gate) { M.gate = nextGate; changed = true; }
+          }
+
+          // deep 플래그가 누락된 월드 데이터에서도 심층 번호로 판별한다.
+          const isDeepBoss = !this.trialW && !!(this.W && (this.W.deep || this.worldIdx >= DEEP_START));
+          if (isDeepBoss) {
+            const deep = Math.max(0, Number(M.deep) || 0);
+            const nextDeep = Math.min(MERLIN_TRIAL.deep, deep + 1);
+            if (nextDeep !== deep) { M.deep = nextDeep; changed = true; }
+          }
+        }
+
+        if (changed) {
+          writeSave(this.save);
+          if (M.quest === 1 && enemy.def.boss && !this.trialW && this.W && (this.W.deep || this.worldIdx >= DEEP_START)) {
+            this.showBanner('멀린의 시련 진행', `심층 보스 처치 (${M.deep || 0}/${MERLIN_TRIAL.deep})`, '#ffb0d8');
+          }
+        }
+      }
+    } // 길드 퀘스트·토벌·칭호 집계
     const p = this.player;
     if (p.vampire > 0 && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.vampire);
     if (p.rage > 0 && p.rageVamp && p.state !== 'DEAD') p.hp = Math.min(p.maxHp, p.hp + p.rageVamp);
