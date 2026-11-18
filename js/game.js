@@ -1202,7 +1202,7 @@ class Game {
       case 'flamestorm': this.zones.push(new SkillAura(p, { r: 60, life: 5, tick: 0.25, dmg: 16, color: '#ff7a3a', kind: 'flame', status: { type: 'burn', chance: 0.5, duration: 2, dps: 8 } })); this.effects.ring(p.x, p.y, 54, '#ff7a3a'); break;
       case 'explosion': { const c = at(200); this.zones.push(new ExplosionSigil(p, c.x, c.y, { r: 90, time: 2 })); /* 공중 마법진 + 땅의 불기둥 (발동 때 기둥이 차례로 터짐) */
         this.zones.push(new SkillCast(p, c.x, c.y, { r: 90, time: 2, color: '#ff7a3a' }, () => {
-        this.explodeAt(c.x, c.y, 90, { color: '#ff7a3a', hurtEnemies: true, src: { damage: D(440), mods: p.mods, knockback: 14, status: { type: 'burn', chance: 1, duration: 4, dps: 14 } } });
+        this.explodeAt(c.x, c.y, 90, { color: '#ff7a3a', hurtEnemies: true, src: { damage: D(506), mods: p.mods, knockback: 14, status: { type: 'burn', chance: 1, duration: 4, dps: 14 } } });
         this.screenFlash = 0.4; this.flashColor = '255,170,90'; this.addShake(0.6, 10); this.hitStop(0.1); SFX.play('excal'); })); break; }
       // 얼음
       case 'icelance': shoot({ n: 3, fan: 0.25, p: { damage: 28, pierce: 99, color: '#bfefff', size: 2, speed: 380, arrow: true, status: { type: 'freeze', chance: 0.7, duration: 1.6, slow: 0.4 } } }); break;
@@ -1210,14 +1210,14 @@ class Game {
       case 'absolutezero': { /* 절대 영도: 내 주변을 얼려 멈춤 + 받는 피해 증가 → 3초 뒤 얼음이 깨지며 한 번 더 */
         const R = 120, list = [];
         for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < R + e.radius) { const t = e.def.boss ? 1.5 : 3; e.stunT = Math.max(e.stunT || 0, t); e.slow = Math.max(e.slow || 0, t); e.slowK = 0.2; e.iceVulnT = t;
-          this.damageEnemy(e, { damage: D(90), mods: p.mods, knockback: 0 }, 0, 0); list.push(e); }
-        this.zones.push(new DelayCall(3, (w) => { for (const e of list) if (e.alive) { w.damageEnemy(e, { damage: D(150), mods: p.mods, knockback: 6 }, e.x - p.x, e.y - p.y); w.effects.burst(e.x, e.y, '#bfefff', 10); } SFX.play('react', 0.1); }));
+          this.damageEnemy(e, { damage: D(104), mods: p.mods, knockback: 0 }, 0, 0); list.push(e); }
+        this.zones.push(new DelayCall(3, (w) => { for (const e of list) if (e.alive) { w.damageEnemy(e, { damage: D(173), mods: p.mods, knockback: 6 }, e.x - p.x, e.y - p.y); w.effects.burst(e.x, e.y, '#bfefff', 10); } SFX.play('react', 0.1); }));
         this.effects.ring(p.x, p.y, R, '#ffffff'); this.effects.ring(p.x, p.y, R * 0.7, '#9ad8ff'); this.effects.rays(p.x, p.y, '#bfefff', 18, R, 0.6);
         for (let i = 0; i < 30; i++) { const a = Math.random() * TAU, s = 40 + Math.random() * 120; this.effects.part(p.x, p.y, Math.cos(a) * s, Math.sin(a) * s * 0.7, { color: i % 2 ? '#ffffff' : '#9ad8ff', life: 0.7, size: 2, size2: 0, drag: 3, add: true }); }
         this.screenFlash = 0.2; this.flashColor = '180,230,255'; this.addShake(0.2, 4); SFX.play('magic'); break; }
       case 'lightsat': { /* 성광 위성 */
         this.zones = this.zones.filter((z) => !(z instanceof LightSatellites && z.owner === p));
-        this.zones.push(new LightSatellites(p, { n: 3, life: 8, r: 26, every: 0.55, range: 160, dmg: D(20), heal: 1 })); this.effects.ring(p.x, p.y, 30, '#fff4c0'); this.effects.rays(p.x, p.y, '#fff4c0', 14, 60, 0.5); SFX.play('magic'); break; }
+        this.zones.push(new LightSatellites(p, { n: 3, life: 8, r: 26, every: 0.55, range: 160, dmg: D(23), heal: 1 })); this.effects.ring(p.x, p.y, 30, '#fff4c0'); this.effects.rays(p.x, p.y, '#fff4c0', 14, 60, 0.5); SFX.play('magic'); break; }
       case 'huntmark': { /* 사냥꾼의 표적 */
         const cand = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 420), tgt = cand.find((e) => e.def.boss) || cand.sort((a, b) => b.hp - a.hp)[0];
         if (!tgt) { this.effects.text(p.x, p.y - 20, '표적이 없습니다', '#aaa'); p.skillCooldown = 1; break; }
@@ -1229,12 +1229,12 @@ class Game {
       case 'thorns': nova(95, 20, { color: '#7adf4a', root: 1.8, kb: 0, status: { type: 'poison', chance: 1, duration: 4, dps: 10 } }); break;
       case 'bog': { const c = at(170); this.zones.push(new Puddle(c.x, c.y, { r: 56, life: 6, tick: 0.4, dmg: D(12), status: { type: 'poison', chance: 1, duration: 3, dps: 10 }, color: '#5aa03a' }, p.mods)); break; }
       case 'worldtree': this.zones.push(new SkillCast(p, p.x, p.y, { r: 150, time: 0.8, color: '#7adf4a' }, () => {
-        nova(150, 260, { color: '#7adf4a', root: 4, kb: 0, status: { type: 'poison', chance: 1, duration: 6, dps: 40 } }); p.hp = Math.min(p.maxHp, p.hp + 30); this.effects.heal(p.x, p.y); this.addShake(0.3, 4); })); break;
+        nova(150, 300, { color: '#7adf4a', root: 4, kb: 0, status: { type: 'poison', chance: 1, duration: 6, dps: 46 } }); p.hp = Math.min(p.maxHp, p.hp + 30); this.effects.heal(p.x, p.y); this.addShake(0.3, 4); })); break;
       // 번개
       case 'shockorb': shoot({ p: { damage: 32, bounce: 3, color: '#bfe8ff', size: 4, speed: 260, range: 420, chain: { count: 3, range: 85, falloff: 0.8 }, status: { type: 'shock', chance: 1, duration: 3 } } }); break;
       case 'thunder': { const list = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 180).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)).slice(0, 6);
         for (const e of list) strikeSky(e, 55); SFX.play('react'); break; }
-      case 'thundergod': this.zones.push(new SkillAura(p, { r: 170, life: 6, tick: 0.35, dmg: 26, color: '#bfe8ff', kind: 'thunder', status: { type: 'shock', chance: 1, duration: 3 } })); this.screenFlash = 0.1; this.flashColor = '200,230,255'; break;
+      case 'thundergod': this.zones.push(new SkillAura(p, { r: 170, life: 6, tick: 0.35, dmg: 30, color: '#bfe8ff', kind: 'thunder', status: { type: 'shock', chance: 1, duration: 3 } })); this.screenFlash = 0.1; this.flashColor = '200,230,255'; break;
       // 빛
       case 'lightarrow': shoot({ n: 5, fan: 0.6, p: { damage: 18, pierce: 2, homing: 4, color: '#fff4c0', size: 2, speed: 300, status: { type: 'blind', chance: 0.6, duration: 3 } } }); break;
       case 'radiance': p.hp = Math.min(p.maxHp, p.hp + 25); this.effects.heal(p.x, p.y); nova(110, 60, { color: '#fff4c0', clear: true, status: { type: 'blind', chance: 1, duration: 4 } }); break;
@@ -1245,9 +1245,9 @@ class Game {
       // 어둠
       case 'curseshot': shoot({ p: { damage: 36, explodeRadius: 26, color: '#a070e0', size: 4, speed: 260, mark: { mult: 1.4, dur: 6 }, status: { type: 'curse', chance: 1, duration: 6 } } }); break;
       case 'abyss': { const c = at(170); this.zones.push(new DarkHole(c.x, c.y, p, { r: 62, life: 2.5, pull: 75, dmg: 8, status: { type: 'curse', chance: 1, duration: 5 } })); break; }
-      case 'voidcollapse': { const c = at(180); this.zones.push(new DarkHole(c.x, c.y, p, { r: 90, life: 2, pull: 110, dmg: 6, hole: true, status: { type: 'curse', chance: 1, duration: 6 } }));
+      case 'voidcollapse': { const c = at(180); this.zones.push(new DarkHole(c.x, c.y, p, { r: 90, life: 2, pull: 110, dmg: 7, hole: true, status: { type: 'curse', chance: 1, duration: 6 } }));
         this.zones.push(new SkillCast(p, c.x, c.y, { r: 90, time: 2, color: '#a070e0' }, () => {
-          this.explodeAt(c.x, c.y, 80, { color: '#a070e0', hurtEnemies: true, src: { damage: D(360), mods: p.mods, knockback: 10, status: { type: 'curse', chance: 1, duration: 6 } } });
+          this.explodeAt(c.x, c.y, 80, { color: '#a070e0', hurtEnemies: true, src: { damage: D(414), mods: p.mods, knockback: 10, status: { type: 'curse', chance: 1, duration: 6 } } });
           this.effects.ring(c.x, c.y, 90, '#ffffff'); this.screenFlash = 0.3; this.flashColor = '160,110,230'; this.addShake(0.5, 8); this.hitStop(0.08); SFX.play('excal'); })); break; }
       // 사수
       case 'overdrive': p.overdrive = 5; p.odDmg = 0; p.odRate = 0; p.odDouble = false; this.effects.text(p.x, p.y - 18, '과부하!', '#ffd84a'); break;
