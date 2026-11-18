@@ -785,7 +785,7 @@ const DATA_ENEMIES = [
   // [사용자 결정] 카멜롯 8층 보스: 충절의 기사 베디비어 — 2페이즈 '스위치 온 아가트람'(강화 + 은빛 팔 패턴), 3페이즈부터 보구 '데드 엔드 아가트람'(강력한 일격). 패턴·수치는 Claude가 정한 [제안]
   //  arm: 2페이즈에 공격력 +arm, 은빛 팔이 빛남 / ultFrom 3: 보구는 3페이즈(해방)부터
   { id: 'boss_bedivere', name: '베디비어', title: '충절의 기사', sprite: 'boss_bedivere', color: '#3a4a7a', phaseColors: ['#3a4a7a', '#3a5a9a', '#4a6ab8'],
-    boss: true, aiType: 'boss', health: 9600, damage: 40, moveSpeed: 88, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.41, bulletSpeed: 195,
+    boss: true, aiType: 'boss', health: 11000, damage: 44, moveSpeed: 88, hitboxHalf: 14, knockbackResist: 1, attackCooldown: 0.38, bulletSpeed: 195,
     rewardGold: 0, ultFrom: 3, ultCd: 16, arm: 0.15, patterns: [
       { type: 'charge', dashes: 3, speed: 580, color: '#c8e0ff' },
       { type: 'slam', radius: 62, chain: 2, color: '#c8e0ff' },

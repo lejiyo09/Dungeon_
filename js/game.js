@@ -1142,6 +1142,7 @@ class Game {
     const charged = p.skillId === 'deathsentry'; /* 망자의 파수기: 충전 칸이 있으면 쿨타임 중에도 사용 (칸마다 1개 설치) */
     if (charged ? (p.dsCharges == null ? BALANCE.TRAP.sentryCharges : p.dsCharges) <= 0 : p.skillCooldown > 0) return;
     if (p.denyT > 0) { this.effects.text(p.x, p.y - 20, '부정됨', '#d8f0ff'); return; } /* 가레스의 부정 장판 안: 스킬 금지 */
+    if (/^overdrive/.test(p.skillId || '') && p.odLockT > 0) return; /* 사수 과부하 계열: 효과가 끝나고 잠시 뒤까지 다시 못 씀 (쿨타임 감소가 쌓여도 효과가 끊기지 않고 계속 유지되던 버그) */
     if (charged) { if (p.dsCharges == null) p.dsCharges = BALANCE.TRAP.sentryCharges; p.dsCharges--; } /* 재사용 대기 없음 — 칸은 actors.js에서 sentryRecharge초마다 1칸씩 참 */
     else p.skillCooldown = p.skillCdMax;
     this.guildEvent('skills');
@@ -1260,9 +1261,9 @@ class Game {
           this.explodeAt(c.x, c.y, 80, { color: '#a070e0', hurtEnemies: true, src: { damage: D(414), mods: p.mods, knockback: 10, status: { type: 'curse', chance: 1, duration: 6 } } });
           this.effects.ring(c.x, c.y, 90, '#ffffff'); this.screenFlash = 0.3; this.flashColor = '160,110,230'; this.addShake(0.5, 8); this.hitStop(0.08); SFX.play('excal'); })); break; }
       // 사수
-      case 'overdrive': p.overdrive = 5; p.odDmg = 0; p.odRate = 0; p.odDouble = false; this.effects.text(p.x, p.y - 18, '과부하!', '#ffd84a'); break;
-      case 'overdrive3': p.overdrive = 6; p.odDmg = 0.15; p.odRate = 0.5; p.odDouble = true; this.effects.text(p.x, p.y - 18, '탄환의 폭풍!', '#ffd84a'); this.effects.ring(p.x, p.y, 34, '#ffd84a'); this.effects.ring(p.x, p.y, 20, '#ffffff'); this.addShake(0.15, 3); break;
-      case 'overdrive2': p.overdrive = 7; p.odDmg = 0.4; p.odRate = 0; p.odDouble = false; this.effects.text(p.x, p.y - 18, '탄막 폭주!', '#ffd84a'); this.effects.ring(p.x, p.y, 26, '#ffd84a'); break;
+      case 'overdrive': p.overdrive = 5; p.odLockT = 5 + BALANCE.overdriveGap; p.odDmg = 0; p.odRate = 0; p.odDouble = false; this.effects.text(p.x, p.y - 18, '과부하!', '#ffd84a'); break;
+      case 'overdrive3': p.overdrive = 6; p.odLockT = 6 + BALANCE.overdriveGap; p.odDmg = 0.15; p.odRate = 0.5; p.odDouble = true; this.effects.text(p.x, p.y - 18, '탄환의 폭풍!', '#ffd84a'); this.effects.ring(p.x, p.y, 34, '#ffd84a'); this.effects.ring(p.x, p.y, 20, '#ffffff'); this.addShake(0.15, 3); break;
+      case 'overdrive2': p.overdrive = 7; p.odLockT = 7 + BALANCE.overdriveGap; p.odDmg = 0.4; p.odRate = 0; p.odDouble = false; this.effects.text(p.x, p.y - 18, '탄막 폭주!', '#ffd84a'); this.effects.ring(p.x, p.y, 26, '#ffd84a'); break;
       // 사수 · 저격 갈래
       case 'snipe': case 'snipe2': { const two = p.skillId === 'snipe2';
         shoot({ n: two ? 3 : 1, fan: two ? 0.16 : 0, p: { damage: two ? 60 : 75, pierce: 99, color: '#ffe9a0', size: 2, speed: 720, range: 620, arrow: true, knockback: 6 } });
