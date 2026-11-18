@@ -147,7 +147,7 @@ class Game {
   }
   // 멀린: 보구가 없으면 '…'만, 보구를 얻은 뒤 처음 말을 걸면 정체가 드러나며 시련을 줌 → 시련을 마치면 가든 오브 아발론
   talkMerlin(npc) {
-    const sv = this.save, M = sv.merlin = sv.merlin || { quest: 0, gate: 0, deep: 0 }; merlinGateToDeep(M);
+    const sv = this.save, M = sv.merlin = sv.merlin || { quest: 0, gate: 0, deep: 0 }; if (merlinGateToDeep(M, sv)) writeSave(sv);
     if (!(sv.treasures || []).length) { npc.bubble = { text: '…', t: 2 }; return; }
     if (!M.revealed) { this.playCutscene(MERLIN_REVEAL_LINES, { always: true, force: true, focus: { x: npc.x, y: npc.y }, done: () => { M.revealed = true; M.quest = 1; writeSave(sv); this.showBanner('멀린의 시련', `${MERLIN_TRIAL.gate ? `무명의 문지기 다시 쓰러뜨리기 (${M.gate}/${MERLIN_TRIAL.gate}) · ` : ''}심층 보스 처치 (${M.deep}/${MERLIN_TRIAL.deep})`, '#ffb0d8'); } }); return; }
     if (M.quest === 1) {
@@ -2026,7 +2026,7 @@ class Game {
       const M = this.save.merlin;
       if (M) {
         const oldDeep = Number(M.deep) || 0, oldGate = Number(M.gate) || 0, oldGateMoved = !!M.gateMoved;
-        merlinGateToDeep(M);
+        merlinGateToDeep(M, this.save);
         let changed = (Number(M.deep) || 0) !== oldDeep || (Number(M.gate) || 0) !== oldGate || !!M.gateMoved !== oldGateMoved;
 
         if (M.quest === 1 && enemy.def.boss) {
