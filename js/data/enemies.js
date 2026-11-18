@@ -657,7 +657,7 @@ const DATA_ENEMIES = [
       { type: 'grid', spacing: 3, delay: 0.95, radius: 22, bullets: 4, color: '#ffd8d8' },
       { type: 'cross', waves: 3, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.5, bullets: 0, color: '#e8ecff' },
       { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 150, interval: 0.42, color: '#ffd8d8' }],
-    finalPatterns: [{ type: 'perilous', name: '로드 카멜롯', charge: 0.8, duration: 4.5, rings: 4, count: 44, gap: 6, ringSpeed: 85, ringEvery: 1.05, burstEvery: 0.6, burst: 14, final: 36, color: '#e8ecff' }] },
+    finalPatterns: [{ type: 'perilous', name: '로드 카멜롯', charge: 0.8, duration: 5, radius: 64, noFinale: true, color: '#e8ecff' }] },
   // [사용자 결정] 카멜롯 6층 보스: 치열의 기사 랜슬롯 — 보구 '아론다이트'·패턴·수치는 Claude가 정한 [제안]
   //  반격 자세(riposte): 검을 세우고 멈춘 동안 맞으면 피해 절반 + 플레이어 뒤로 순간이동해 반격 / fierce: 3페이즈 '치열'부터 패턴이 끝날 때마다 바로 검기를 날리고 거의 쉬지 않음
   { id: 'boss_lancelot', name: '랜슬롯', title: '치열의 기사', sprite: 'boss_lancelot', color: '#2a3a6a', phaseColors: ['#2a3a6a', '#2a2a5a', '#3a1a5a'],

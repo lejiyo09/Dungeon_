@@ -187,7 +187,7 @@ const AI_BEHAVIORS = {
     const channeling = e.pd && ((e.pd.tower && e.pd.tower.alive) || e.pd.lock); /* 롱고미니아드(빛의 탑)가 서 있는 동안은 페이즈도 넘기지 않고 다른 행동 없음 — 탑이 무너진 뒤에 넘어감 */
     if (want > phase && e.state !== 'INTRO' && !channeling) {
       if (e.ult) { e.ult = false; e.damage = e.dmg0; }
-      e.riposteT = 0; e.riposteHit = false; e.slashWarn = null; e.dashWarn = null;
+      e.riposteT = 0; e.riposteHit = false; e.slashWarn = null; e.dashWarn = null; if (!channeling) e.fortress = null;
       e.phase = want; e.jumpH = 0; e.laser = null; e.fade = 1; e.finalCd = e.ultUsed ? Math.max(e.finalCd ?? 0, 1.5) : 1.5; /* 이미 궁극기를 썼으면 페이즈가 바뀌어도 쿨타임 유지 */
       if (def.arm && want >= 2 && !e.armOn) { e.armOn = true; e.damage = Math.round(e.damage * (1 + def.arm)); e.dmg0 = e.damage; world.announceBossSkill(e, '스위치 온 — 아가트람'); world.effects.rays(e.x, e.y, '#a0d0ff', 16, 80, 0.7); } /* 베디비어: 은빛 팔이 켜짐 */
       if (def.arm && want === 3) world.announceBossSkill(e, '해방 — 데드 엔드 아가트람');
@@ -419,6 +419,7 @@ function boostUltimate(P) {
 // 궁극기가 끝날 때: 피해 원래대로 + 사방으로 터지는 마무리 탄막
 function endUltimate(e, world) {
   e.ult = false; e.damage = e.dmg0;
+  if (e.pat && e.pat.noFinale) return; /* 방어 보구(로드 카멜롯)는 마무리 폭발 없음 */
   const n = 28, col = (e.pat && e.pat.color) || '#ff5a5a';
   for (let i = 0; i < n; i++) world.enemyShoot(e.x, e.y, i * TAU / n + 0.11, e.def.bulletSpeed * 1.15, e.damage, col, 4);
   world.effects.ring(e.x, e.y, 60, '#ffffff'); world.effects.ring(e.x, e.y, 40, col); if (world.effects.rays) world.effects.rays(e.x, e.y, col, 16, 90, 0.6);
@@ -670,27 +671,26 @@ const BOSS_PATTERNS = {
       return d.shots >= P.waves && d.timer <= 0;
     }
   },
-  // 로드 카멜롯 (갤러해드의 보구): 방패를 세우고 성채가 됨 — 그동안 모든 피해 무효, 방 가장자리에서 틈 있는 고리가 계속 좁혀 오고 보스에게서도 탄이 퍼짐 → 끝날 때 크게 터짐. 쓰는 동안 페이즈 전환 없음
+  // 로드 카멜롯 (갤러해드의 보구, 방어 스킬): 방패를 세워 성벽 돔을 펼침 — 펼칠 때 가까이 있던 플레이어를 피해 없이 밀어내고, 돔이 서 있는 동안 갤러해드는 어떤 피해도 받지 않으며 돔에 닿는 플레이어의 탄은 막혀 사라짐. 쓰는 동안 페이즈 전환 없음
   perilous: {
     update(e, dt, world, ctx, spd) {
-      const P = e.pat, d = e.pd, r = e.room, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;
-      if (d.t < P.charge) { if (Math.random() < 0.7) { const a = Math.random() * TAU; fx.part(e.x + Math.cos(a) * 26, e.y + Math.sin(a) * 26, -Math.cos(a) * 60, -Math.sin(a) * 60, { color: '#ffffff', life: 0.35, size: 2, size2: 0, drag: 0, add: true }); } return false; }
+      const P = e.pat, d = e.pd, fx = world.effects; d.t = (d.t || 0) + dt; d.lock = true;
+      if (d.t < P.charge) { e.fortress = { r: P.radius, k: d.t / P.charge * 0.4 }; if (Math.random() < 0.7) { const a = Math.random() * TAU; fx.part(e.x + Math.cos(a) * P.radius, e.y + Math.sin(a) * P.radius * 0.8, -Math.cos(a) * 60, -Math.sin(a) * 60, { color: '#ffffff', life: 0.35, size: 2, size2: 0, drag: 0, add: true }); } return false; }
       const T = d.t - P.charge;
+      if (!d.on) { d.on = true; fx.rays(e.x, e.y, '#ffffff', 18, P.radius + 30, 0.7); fx.ring(e.x, e.y, P.radius, '#ffffff'); world.addShake(0.25, 4); SFX.play('shield', 0.2);
+        world.eachTarget((q) => { const dx = q.x - e.x, dy = q.y - e.y, dd = Math.hypot(dx, dy) || 1; if (dd < P.radius + q.half) moveAndCollide(q, dx / dd * (P.radius + q.half + 6 - dd), dy / dd * (P.radius + q.half + 6 - dd), world.map); }); } /* 성벽이 솟으며 밀어냄 (피해 없음) */
       if (T < P.duration) {
-        e.negateT = Math.max(e.negateT || 0, 0.15); /* 성채: 피해 무효 (하얀 빛) */
-        if (!d.on) { d.on = true; d.ringT = 0; d.burstT = 0.3; d.rings = 0; fx.rays(e.x, e.y, '#ffffff', 18, 90, 0.7); world.addShake(0.3, 5); SFX.play('excal'); }
-        d.ringT -= dt; if (d.ringT <= 0 && d.rings < P.rings) { d.ringT = P.ringEvery; d.rings++;
-          const c = world.map.tileCenter(r.cx, r.cy), R = Math.min(r.w, r.h) * TILE / 2 - 14, gapAt = randInt(0, P.count - 1);
-          for (let i = 0; i < P.count; i++) { if (((i - gapAt + P.count) % P.count) < P.gap) continue; const a = i * TAU / P.count;
-            const b = new EnemyBullet(c.x + Math.cos(a) * R, c.y + Math.sin(a) * R, -Math.cos(a) * P.ringSpeed, -Math.sin(a) * P.ringSpeed, e.damage, P.color, 4); b.life = R / P.ringSpeed + 0.2; world.enemyBullets.push(b); } }
-        d.burstT -= dt; if (d.burstT <= 0) { d.burstT = P.burstEvery; const a0 = Math.random() * TAU; for (let i = 0; i < P.burst; i++) world.enemyShoot(e.x, e.y, a0 + i * TAU / P.burst, e.def.bulletSpeed * 0.8, e.damage, '#ffd8d8', 3); }
+        e.negateT = Math.max(e.negateT || 0, 0.15); e.fortress = { r: P.radius, k: Math.min(1, 0.4 + T * 3) }; /* 성채: 피해 무효 */
+        for (const q of world.projectiles) if (q.alive && Math.hypot(q.x - e.x, q.y - e.y) < P.radius) { q.alive = false; if (Math.random() < 0.5) fx.spark(q.x, q.y, '#ffffff'); } /* 돔에 닿은 탄은 막힘 */
         return false;
       }
-      if (!d.done) { d.done = true; for (let i = 0; i < P.final; i++) world.enemyShoot(e.x, e.y, i * TAU / P.final, e.def.bulletSpeed, Math.round(e.damage * 1.1), P.color, 4); fx.ring(e.x, e.y, 60, '#ffffff'); world.addShake(0.3, 5); }
-      if (T >= P.duration + 0.5) { d.lock = false; return true; }
+      e.fortress = null;
+      if (!d.done) { d.done = true; fx.ring(e.x, e.y, P.radius, '#e8ecff'); }
+      if (T >= P.duration + 0.4) { d.lock = false; return true; }
       return false;
     }
   },
+
   // 부정의 원 (가레스): 플레이어 자리와 그 주변에 하얀 원(안에서는 공격·스킬 불가)을 깔고, 원 밖으로 피하는 동안 조준 사격
   denyfield: {
     update(e, dt, world, ctx, spd) {

@@ -242,6 +242,11 @@ class Enemy extends Entity {
   }
   renderTelegraph(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y), def = this.def;
+    if (this.fortress) { const F = this.fortress, t = performance.now() / 1000; ctx.save(); /* 갤러해드 로드 카멜롯: 하얀 성벽 돔 */
+      ctx.globalAlpha = 0.14 * F.k + 0.04; ctx.fillStyle = '#e8ecff'; ctx.beginPath(); ctx.ellipse(x, y - 4, F.r, F.r * 0.85, 0, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 0.9 * F.k; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y - 4, F.r, F.r * 0.85, 0, 0, TAU); ctx.stroke();
+      ctx.lineWidth = 1; ctx.strokeStyle = '#d04040'; ctx.globalAlpha = 0.5 * F.k; for (let i = 0; i < 12; i++) { const a = i * TAU / 12 + t * 0.4; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * F.r * 0.9, y - 4 + Math.sin(a) * F.r * 0.765); ctx.lineTo(x + Math.cos(a) * F.r, y - 4 + Math.sin(a) * F.r * 0.85); ctx.stroke(); } /* 성벽 마디 */
+      ctx.restore(); ctx.lineWidth = 1; }
     if (this.dashWarn) { const W = this.dashWarn; ctx.save(); ctx.translate(x, y); ctx.rotate(W.ang); /* 아서 왕 돌진: 돌진할 길 예고 */
       ctx.globalAlpha = 0.15 + 0.3 * W.k; ctx.fillStyle = '#ff4a3a'; ctx.fillRect(0, -W.w, W.len, W.w * 2);
       ctx.globalAlpha = 0.9; ctx.fillStyle = '#ffd0c0'; ctx.fillRect(0, -1, W.len * W.k, 2); ctx.restore(); }
