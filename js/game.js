@@ -2006,6 +2006,12 @@ class Game {
     this.explodeAt(e.x, e.y, e.def.explodeRadius, { color: '#ff6a2a', hurtPlayer: true, damage: e.damage,
       hurtEnemies: true, src: { damage: 20, mods: { attackBonus: 0, critChance: 0, critMultiplier: 1 }, knockback: 6 } });
   }
+  coopGuestMerlinBoss(id) { /* 협동 동료: 방장이 보낸 보스 처치 기록으로 멀린의 1번 시련 집계 (방장·혼자는 onEnemyKilled에서) */
+    const M = this.save.merlin; if (!M || !id) return; merlinGateToDeep(M); if (M.quest !== 1) return;
+    const deepBoss = DEEP_WORLDS.some((w) => w.boss === id) || !!(this.W && (this.W.deep || this.worldIdx >= DEEP_START));
+    if (!deepBoss) return; const d = Math.max(0, Number(M.deep) || 0), nd = Math.min(MERLIN_TRIAL.deep, d + 1); if (nd === d) return;
+    M.deep = nd; writeSave(this.save); this.showBanner('멀린의 시련 진행', `심층 보스 처치 (${nd}/${MERLIN_TRIAL.deep})`, '#ffb0d8');
+  }
   onEnemyKilled(enemy) {
     if (enemy.rewardGiven) return;
     enemy.rewardGiven = true;
