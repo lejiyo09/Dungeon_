@@ -498,7 +498,7 @@ class TrapSentry {
     if (art) { /* 스프라이트 (대기 / 충전·발사 중) — 업화 분사기는 대상 쪽을 바라봄 */
       const firing = this.charging >= 0 || this.beamT > 0 || this.fireFx > 0;
       drawTrapArt(ctx, this.kind, firing, x, y + 5, this.kind === 'inferno' && Math.cos(this.beamT > 0 ? this.beamA : this.ang) < 0);
-      if (ch > 0 && this.kind !== 'inferno') { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = ch * 0.6 * k * dim; ctx.fillStyle = core; ctx.beginPath(); ctx.arc(x, y - (this.kind === 'thunder' ? 26 : this.kind === 'death' ? 16 : 10), 3 + ch * 3, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k * dim; } /* 충전 빛 */
+      if (ch > 0 && this.kind !== 'inferno') { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = ch * 0.6 * k * dim; ctx.fillStyle = core; ctx.beginPath(); ctx.arc(x, y - (this.kind === 'thunder' ? 18 : this.kind === 'death' ? 11 : 7), 2 + ch * 2, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k * dim; } /* 충전 빛 */
     } else {
     const big = this.kind === 'inferno' || this.kind === 'thunder' || this.kind === 'wave';
     ctx.fillStyle = this.kind === 'death' ? '#2a2438' : '#5a5e6a'; ctx.fillRect(x - (big ? 6 : 5), y - 4, big ? 12 : 10, 7); ctx.fillStyle = '#8a8e9a'; ctx.fillRect(x - (big ? 6 : 5), y - 4, big ? 12 : 10, 1); /* 받침 */
