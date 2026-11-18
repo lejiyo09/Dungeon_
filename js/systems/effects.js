@@ -66,6 +66,22 @@ class Effects {
       this.part(x, y, Math.cos(a) * s, Math.sin(a) * s - 60, { color: '#3a2a2a', life: 0.5, size: 2, drag: 1.5, grav: 380 }); }
   }
 
+  corpseBlast(x, y, r) { // 시체 폭발 (망자의 파수기 = 데스 센트리): 촉매 섬광 → 핏빛 충격파 → 살점·뼛조각이 튀고 → 피 안개 → 바닥 핏자국
+    this.push({ kind: 'boom', x, y, r: r * 0.55, color: '#c0203a', t: 0, life: 0.2 });
+    this.push({ kind: 'shock', x, y, r: r * 1.15, color: '#ff5a7a', t: 0, life: 0.3 });
+    this.push({ kind: 'shock', x, y, r: r * 0.7, color: '#b06aff', t: 0, life: 0.24 });
+    this.rays(x, y - 4, '#ff6a8a', 10, r * 0.95, 0.32);
+    this.part(x, y + 2, 0, 0, { color: 'rgba(90,8,24,0.42)', life: 2.6, size: r * 0.32, size2: r * 0.42, drag: 9, shape: 'circle' }); /* 바닥 핏자국 (잠시 남음) */
+    for (let i = 0; i < 16; i++) { const a = Math.random() * TAU, s = 60 + Math.random() * 110; /* 살점: 위로 튀었다가 떨어짐 */
+      this.part(x + randInt(-3, 3), y - 4, Math.cos(a) * s, Math.sin(a) * s * 0.6 - 90 - Math.random() * 60, { color: pick(['#8a1020', '#b0182e', '#5a0a18']), life: 0.55 + Math.random() * 0.35, size: 2 + Math.random() * 2, size2: 1, drag: 1.2, grav: 420 }); }
+    for (let i = 0; i < 7; i++) { const a = Math.random() * TAU, s = 80 + Math.random() * 120; /* 뼛조각 */
+      this.part(x, y - 6, Math.cos(a) * s, Math.sin(a) * s * 0.6 - 110, { color: pick(['#ece4d2', '#cfc4ae']), life: 0.6 + Math.random() * 0.3, size: 1.5, size2: 1, drag: 1, grav: 460 }); }
+    for (let i = 0; i < 10; i++) { const a = Math.random() * TAU, s = 30 + Math.random() * 60; /* 피 안개 */
+      this.part(x + Math.cos(a) * 6, y - 4 + Math.sin(a) * 4, Math.cos(a) * s, Math.sin(a) * s * 0.6 - 12, { color: 'rgba(150,20,45,0.5)', life: 0.7 + Math.random() * 0.4, size: 3, size2: 9, drag: 3, grav: -8, shape: 'circle' }); }
+    for (let i = 0; i < 10; i++) { const a = Math.random() * TAU, s = 50 + Math.random() * 70; /* 보랏빛 촉매 불티 */
+      this.part(x, y - 4, Math.cos(a) * s, Math.sin(a) * s * 0.7, { color: pick(['#d08aff', '#ff7ad0']), life: 0.3 + Math.random() * 0.2, size: 1.5, size2: 0, drag: 5, add: true }); }
+  }
+
   // ── 캐릭터·적
   death(x, y, color, size = 12) { // 적 사망: 픽셀로 부서지며 영혼이 떠오름
     const n = Math.round(size * 1.2);

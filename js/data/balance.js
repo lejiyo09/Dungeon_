@@ -46,8 +46,8 @@ const BALANCE = {
   trialSkillRarity: { common: 0, uncommon: 0.03, rare: 0.06, epic: 0.1, legendary: 0.15 }, // 시련에서 스킬 피해에 더하는 무기 등급 몫 (+ 강화 단계당 perLevel의 1/4)
   // [사용자 결정] 기술자 함정 계열 · 덫 장비 — 수치는 모두 [제안] 초기값 (여기서만 고치면 됨)
   TRAP: {
-    sentryMax: 2,           // 망자의 파수기(스킬) 동시 설치 수 — 덫 장비와 따로 셈 (넘으면 가장 오래된 것이 사라짐) [사용자 결정]
-    sentryCharges: 2,       // 망자의 파수기 충전 칸: 설치할 때마다 1칸 소비, 설치 재사용 대기시간은 없음 [사용자 결정]
+    sentryMax: 3,           // 망자의 파수기(스킬) 동시 설치 수 — 덫 장비와 따로 셈 (넘으면 가장 오래된 것이 사라짐) [사용자 결정]
+    sentryCharges: 3,       // 망자의 파수기 충전 칸: 설치할 때마다 1칸 소비, 설치 재사용 대기시간은 없음 [사용자 결정]
     sentryRecharge: 4,      // 충전 칸 하나가 다시 차는 시간(초) — 스킬 쿨타임 감소(집중 등)도 같은 비율로 적용
     bossMult: 0.7,          // [보스전 최강 방지] 함정 계열·덫 장비 피해가 보스에게 들어갈 때 배율
     scan: 0.25,             // 설치물이 적을 다시 찾는 간격(초) — 매 프레임 탐색하지 않음
@@ -56,7 +56,7 @@ const BALANCE = {
     prey: { dur: 3, bonus: 0.2 },                                                // 사냥터 각인: 덫 장비·망자의 파수기에게 받는 피해 +bonus
     firetoss: { dmg: 60, radius: 40, kb: 14, range: 210, speed: 320 },            // 화염 투척 (기본)
     grid: { r: 46, life: 4, stun: 1, range: 200, dotPct: 0.05, tick: 1 }, // 전류 격자 (1차) = 쇼크 웹: 가시·전류선에 닿아 있는 동안 tick초마다 그 적 최대 체력의 dotPct 지속 피해 (공격력·치명타·각인 영향 없음, 보스에게는 덫 배율), 처음 닿을 때 stun초 기절 [사용자 결정]
-    death: { life: 15, range: 150, every: 0.6, dmg: 26, corpseRange: 120, corpseR: 52, corpseEvery: 1.2, corpseHp: 0.8, corpseHeal: 0.1, lifesteal: 0.05 }, // 망자의 파수기 (2차) — 시체 폭발 피해 = 죽은 적 최대 체력 × corpseHp, 폭발 때 죽은 적 최대 체력 × corpseHeal 회복, 파수기가 준 피해 × lifesteal 회복 [사용자 결정]
+    death: { life: 15, range: 150, every: 0.6, boltPct: 0.025, corpseRange: 120, corpseR: 52, corpseEvery: 1.2, corpseHp: 0.8, corpseHeal: 0.1, lifesteal: 0.05 }, // 망자의 파수기 (2차) — 번개 = 맞은 적 최대 체력 × boltPct, 시체 폭발 피해 = 죽은 적 최대 체력 × corpseHp, 폭발 때 죽은 적 최대 체력 × corpseHeal 회복, 파수기가 준 피해 × lifesteal 회복 [사용자 결정]
     corpseLife: 6           // 시체가 남아 있는 시간(초)
   },
   upgrade: { maxLevel: 10, perLevel: 0.12, base: 30, chance: [1, 0.9, 0.75, 0.6, 0.45, 0.38, 0.32, 0.26, 0.2, 0.15],
