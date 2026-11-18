@@ -76,7 +76,7 @@ const HERO_SPRITES = {
       ['..kbkddkkddkbk..', '...kkddkkddkk...', '...kkkk..kkkk...'],
       ['..kbkddk.kddkbk.', '...kddk...kddk..', '..kkkk....kkkk..']] },
   // [스킨] 붉은 머리 총잡이 — 사용자가 준 도트(14x25)를 영웅 크기(16x20)에 맞춰 옮김: 붉은 머리, 남색 조끼, 하늘색 셔츠, 갈색 벨트·장화 · frames: 서 있기 / 걷기
-  redgunner: { pal: { y: '#ffd84a', r: '#ee5a6c', R: '#d64563', d: '#ab3654', /* 머리색 살짝 연하게 (예전 #e43d53 · #c5284b · #941f41) */ D: '#5d2e3e', s: '#fad9ba', w: '#fcfbfc', t: '#dfa56e', n: '#926041', b: '#8686db', c: '#979af0', v: '#353364' }, frames: [
+  redgunner: { pal: { y: '#ffd84a', r: '#f47a88', R: '#e2627b', d: '#bd4d68', /* 머리색 연하게 (처음 #e43d53 · #c5284b · #941f41 → #ee5a6c · #d64563 · #ab3654 → 지금) */ D: '#5d2e3e', s: '#fad9ba', w: '#fcfbfc', t: '#dfa56e', n: '#926041', b: '#8686db', c: '#979af0', v: '#353364' }, frames: [
     ['.....kkkk.......', '....krrRRkk.....', '...kkkrrrRRdk...', '..kRRdRRRRRddk..', '.kRrrRddddRrrRk.', '..kdRssssssRRdk.', '..kdRkksskkRdk..', '.ktdtwDssDwtdtk.', '.ktRtwdssdwtRtk.', '...kdRssssRdk...', '...vvvbttbvvvk..', '...cvvcbscyvck..', '.kccvvvbbntncck.', '.ksskvvbbvvkssk.', '.ksskvnttvvkssk.', '..kkknnttnnnkk..', '..knnvvkkvvnnk..', '..knkvvkkvvknk..', '...kkDDkkDDDk...', '....kkkkkkkkk...'],
     ['.....kkkk.......', '....krrrrDk.....', '...kkkrrrRRdk...', '..kRRdRRRRRddk..', '.kRrrRddddRrrRk.', '..kdRssssssRRdk.', '..kdRkksskkRdkk.', '.ktdtwDsskwtdtk.', '.ktRtwdssdwtRtk.', '...kRrssssrRk...', '....kvbttbvkk...', '....cvcbscyvck..', '...bbvvbbnttcck.', '.ksskvvbbvvvkssk', '..kkkvvbbvvksssk', '...kknnntnnnnkk.', '..knnvvnnvvkDk..', '.kkkvvkkkkvvkkk.', '.kDDDk...kkDDDk.', '.kkkkk....kkkk..']] },
   // [스킨] 불꽃 마녀 — 사용자가 준 도트(19x29)를 영웅 크기(16x20)에 맞춰 옮김 (게임 영웅처럼 오른쪽을 보도록 좌우 반전): 꺾인 마녀 모자·금띠·✕ 장식, 붉은 눈, 금깃 붉은 원피스, 망토, 벨트 · frames: 서 있기 / 걷기
