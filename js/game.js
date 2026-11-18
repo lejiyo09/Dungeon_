@@ -296,6 +296,7 @@ class Game {
     s.bank = Math.max(s.bank || 0, 999999); s.treasures = DATA_TREASURES.map((t) => t.id); if (!s.treasureEquipped) s.treasureEquipped = 'treasure_excalibur';
     s.sanctumReached = true; s.prologueSeen = true; s.merlin = Object.assign({ gate: 1, deep: 2 }, s.merlin, { revealed: true, quest: Math.max(4, (s.merlin && s.merlin.quest) || 0) });
     s.jobLv = {}; for (const h of DATA_HEROES) s.jobLv[h.id] = BALANCE.jobLevel.max;
+    s.skins = SKINS.map((k) => k.id); s.skinOn = s.skinOn || {}; for (const K of SKINS.slice().reverse()) if (s.skinOn[K.hero] === undefined) s.skinOn[K.hero] = K.id; /* 관리자: 스킨도 모두 보유 — 직업마다 아직 고른 적 없으면 가장 최근 스킨을 켬 (끈 것은 그대로) */
     s.scenesSeen = ['origin_arrival', 'gatekeeper_intro', 'gatekeeper_fall'];
     writeSave(s);
   }
