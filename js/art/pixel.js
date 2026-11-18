@@ -75,6 +75,10 @@ const HERO_SPRITES = {
     legs: [
       ['..kbkddkkddkbk..', '...kkddkkddkk...', '...kkkk..kkkk...'],
       ['..kbkddk.kddkbk.', '...kddk...kddk..', '..kkkk....kkkk..']] },
+  // [스킨] 붉은 머리 총잡이 — 사용자가 준 도트(14x25)를 영웅 크기(16x20)에 맞춰 옮김: 붉은 머리, 남색 조끼, 하늘색 셔츠, 갈색 벨트·장화 · frames: 서 있기 / 걷기
+  redgunner: { pal: { y: '#ffd84a', r: '#e43d53', R: '#c5284b', d: '#941f41', D: '#5d2e3e', s: '#fad9ba', w: '#fcfbfc', t: '#dfa56e', n: '#926041', b: '#8686db', c: '#979af0', v: '#353364' }, frames: [
+    ['.....kkkk.......', '....krrRRkk.....', '...kkkrrrRRdk...', '..kRRdRRRRRddk..', '.kRrrRddddRrrRk.', '..kdRssssssRRdk.', '..kdRkksskkRdk..', '.ktdtwDssDwtdtk.', '.ktRtwdssdwtRtk.', '...kdRssssRdk...', '...vvvbttbvvvk..', '...cvvcbscyvck..', '.kccvvvbbntncck.', '.ksskvvbbvvkssk.', '.ksskvnttvvkssk.', '..kkknnttnnnkk..', '..knnvvkkvvnnk..', '..knkvvkkvvknk..', '...kkDDkkDDDk...', '....kkkkkkkkk...'],
+    ['.....kkkk.......', '....krrrrDk.....', '...kkkrrrRRdk...', '..kRRdRRRRRddk..', '.kRrrRddddRrrRk.', '..kdRssssssRRdk.', '..kdRkksskkRdkk.', '.ktdtwDsskwtdtk.', '.ktRtwdssdwtRtk.', '...kRrssssrRk...', '....kvbttbvkk...', '....cvcbscyvck..', '...bbvvbbnttcck.', '.ksskvvbbvvvkssk', '..kkkvvbbvvksssk', '...kknnntnnnnkk.', '..knnvvnnvvkDk..', '.kkkvvkkkkvvkkk.', '.kDDDk...kkDDDk.', '.kkkkk....kkkk..']] },
   // [스킨] 불꽃 마녀 — 사용자가 준 도트(19x29)를 영웅 크기(16x20)에 맞춰 옮김: 꺾인 마녀 모자·금띠·✕ 장식, 붉은 눈, 금깃 붉은 원피스, 망토, 벨트 · frames: 서 있기 / 걷기
   flamewitch: { pal: { w: '#ffffff', g: '#391c28', h: '#623141', r: '#98383b', o: '#bd793f', y: '#fbbb2e', u: '#fccb42', s: '#f9e4cb', t: '#f0d4b5', m: '#c9bcb2', n: '#9d9799' }, frames: [
     ['........kkkkk...', '.......khhhhhk..', '......khhhkhhhkk', '.....khyhhyhkkuk', '.....khhhhhhhk..', '....kyyyyyyyyrk.', '.kkuuuuuuuuuuukk', 'kuhhhhhhhhhhhhuk', '.khhhwrssrwhhhk.', '..khhsssssshhk..', '...khkkommkkhk..', '...khyoyyoyhhk..', '...khyrrrrryhk..', '..khyrrrrrrryhk.', '..khykghmmgkyhk.', '..khykrrrrrkyhk.', '..kykyyyyyyykyk.', '....kkssksskk...', '.....krrkkrrk...', '.....khh..hhk...'],

@@ -52,11 +52,13 @@ const DATA_HEROES = [
 ];
 // ── 스킨 (외형만 바뀜, 능력은 그대로) [사용자 결정] 선물 코드로 얻음 — 일시정지(Esc) → G 선물 코드
 const SKINS = [
-  { id: 'skin_flamewitch', name: '불꽃 마녀', hero: 'hero_mage', sprite: 'flamewitch', desc: '마도사 외형: 끝이 꺾인 마녀 모자와 붉은 원피스' }
+  { id: 'skin_flamewitch', name: '불꽃 마녀', hero: 'hero_mage', sprite: 'flamewitch', desc: '마도사 외형: 끝이 꺾인 마녀 모자와 붉은 원피스' },
+  { id: 'skin_redgunner', name: '붉은 머리 총잡이', hero: 'hero_gunner', sprite: 'redgunner', desc: '사수 외형: 붉은 머리와 보안관 별을 단 남색 조끼' }
 ];
 // 선물 코드: 글자 그대로 두지 않고 해시로만 보관 (giftHash) — 코드 하나에 보상 하나, 계정마다 한 번
 const GIFT_CODES = [
-  { hash: 'd6b73fd4', skin: 'skin_flamewitch' }
+  { hash: 'd6b73fd4', skin: 'skin_flamewitch' },
+  { hash: 'ca1080ea', skin: 'skin_redgunner' }
 ];
 function giftHash(code) { let h = 0x811c9dc5; for (const ch of 'pd_gift:' + String(code).toUpperCase()) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); }
 function skinSpriteOk(sp) { return SKINS.some((k) => k.sprite === sp) ? sp : null; } /* 멀티로 받은 외형 이름은 아는 스킨만 */
