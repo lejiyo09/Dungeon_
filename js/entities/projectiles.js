@@ -496,12 +496,12 @@ class TrapSentry {
     const fire = this.kind === 'inferno' || this.kind === 'wave', core = this.kind === 'death' ? '#4a6aff' : fire ? (this.kind === 'wave' ? '#ffb04a' : '#ff5a2a') : '#7ac8ff';
     ctx.save(); ctx.globalAlpha = k * dim;
     ctx.fillStyle = 'rgba(20,16,24,0.35)'; ctx.beginPath(); ctx.ellipse(x, y + 4, 8, 3, 0, 0, TAU); ctx.fill(); /* 그림자 */
-    const artKind = fire ? 'inferno' : this.kind; /* [사용자 결정] 화염 덫(화염 파도탑·업화 분사기)은 모두 업화 분사기 그림 */
+    const artKind = fire ? 'inferno' : this.kind === 'thunder' ? 'bolt' : this.kind; /* [사용자 결정] 화염 덫은 모두 업화 분사기 그림, 번개 덫(뇌격탑)은 산탄 전류탑 그림 */
     const art = typeof drawTrapArt === 'function' && trapArt(artKind, false);
     if (art) { /* 스프라이트 (대기 / 충전·발사 중) — 화염 덫은 대상 쪽을 바라봄 */
       const firing = this.charging >= 0 || this.beamT > 0 || this.fireFx > 0;
       drawTrapArt(ctx, artKind, firing, x, y + 5, fire && Math.cos(this.beamT > 0 ? this.beamA : this.ang) < 0);
-      if (ch > 0 && !fire) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = ch * 0.6 * k * dim; ctx.fillStyle = core; ctx.beginPath(); ctx.arc(x, y - (this.kind === 'thunder' ? 18 : this.kind === 'death' ? 11 : 7), 2 + ch * 2, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k * dim; } /* 충전 빛 */
+      if (ch > 0 && !fire) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = ch * 0.6 * k * dim; ctx.fillStyle = core; ctx.beginPath(); ctx.arc(x, y - (this.kind === 'death' ? 11 : 7), 2 + ch * 2, 0, TAU); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k * dim; } /* 충전 빛 */
     } else {
     const big = this.kind === 'inferno' || this.kind === 'thunder' || this.kind === 'wave';
     ctx.fillStyle = this.kind === 'death' ? '#2a2438' : '#5a5e6a'; ctx.fillRect(x - (big ? 6 : 5), y - 4, big ? 12 : 10, 7); ctx.fillStyle = '#8a8e9a'; ctx.fillRect(x - (big ? 6 : 5), y - 4, big ? 12 : 10, 1); /* 받침 */
