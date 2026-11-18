@@ -282,7 +282,8 @@ class HUD {
       hudWrap(ctx, hero.passiveDesc || '별도 패시브 없음', VIEW_W / 2, 40, VIEW_W - 54, '#ddd', 8, 10);
       hudText(ctx, `기본 능력치  체력 ${hero.maxHp} · 보호막 ${hero.maxShield} · 에너지 ${hero.maxEnergy} · 이동 속도 ${hero.moveSpeed}`, VIEW_W / 2, 63, '#aaa', 'center', 7);
 
-      hudText(ctx, '직업 계열 — 번호 또는 클릭으로 선택해 상세 확인', 18, 76, '#ffd84a', 'left', 8);
+      const chosenId = lines.length > 1 ? game.chosenLine(hero.id).id : null;
+      hudText(ctx, lines.length > 1 ? '진화 루트 — 번호 또는 클릭으로 고르면 다음 탐험부터 이 계열로 진화' : '직업 계열', 18, 76, '#ffd84a', 'left', 8);
       lines.forEach((L, i) => {
         const r = HUD.heroBranchRect(i, lines.length);
         const m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
@@ -291,7 +292,8 @@ class HUD {
         ctx.fillRect(r.x, r.y, r.w, r.h);
         ctx.strokeStyle = active ? (L.color || '#ffd84a') : '#51475f';
         ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
-        hudText(ctx, `${i + 1}. ${L.name}`, r.x + 5, r.y + 2, active ? (L.color || '#ffd84a') : '#eee', 'left', 8);
+        hudText(ctx, `${i + 1}. ${L.name}${L.id === chosenId ? '  ★' : ''}`, r.x + 5, r.y + 2, active ? (L.color || '#ffd84a') : '#eee', 'left', 8); /* ★ = 고른 진화 루트 */
+        { const K = SKINS.find((k) => k.hero === hero.id && k.line === L.id && (game.save.skins || []).includes(k.id)); if (K) hudText(ctx, `스킨: ${K.name}`, r.x + r.w - 4, r.y + 2, '#ffb0d8', 'right', 6); } /* 이 계열에서 쓸 수 있는 스킨 */
         hudText(ctx, L.desc, r.x + 5, r.y + 12, '#c8c0d8', 'left', 6);
         hudText(ctx, L.ranks.join(' → '), r.x + 5, r.y + 20, '#888', 'left', 6);
       });
@@ -306,7 +308,8 @@ class HUD {
           hudText(ctx, `${stage} · ${line.ranks[i]} · ${sk.name} (쿨타임 ${sk.cd}초) — ${sk.desc}`, 24, 198 + i * 19, '#ddd', 'left', 6.5);
         });
       }
-      hudText(ctx, '숫자 키 / 클릭: 계열 선택   ·   J: 직업 레벨   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
+      if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 24, '#ffd84a', 'center', 8);
+      hudText(ctx, `숫자 키 / 클릭: ${lines.length > 1 ? '진화 루트 고르기' : '계열 보기'}   ·   J: 직업 레벨   ·   E / Esc: 닫기`, VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
     } else if (o.type === 'joblevel') { // 직업 레벨 창
       const sv = game.save, J = BALANCE.jobLevel, m = game.input.mouse;
       hudText(ctx, `직업 레벨  ·  보유 ${CUR.name} ${sv.bank}`, VIEW_W / 2, 7, '#7ad0ff', 'center', 11);

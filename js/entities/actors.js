@@ -184,7 +184,7 @@ class Player extends Entity {
       drawWeapon(ctx, w.def, hx, hy, ang);
     };
     if (behind) drawW();
-    const sk = this.remoteSkin !== undefined ? this.remoteSkin : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id) : null); /* 스킨: 내 캐릭터는 저장된 설정, 멀티 동료는 받은 값 */
+    const sk = this.skinShown !== undefined ? this.skinShown /* 멀티 참가자 화면: 방장이 이미 갈래까지 확인해 보낸 값 */ : this.remoteSkin !== undefined ? (this.remoteSkin && skinAllowed(this.remoteSkin, this.hero.id, this.line && this.line.id) ? this.remoteSkin : null) /* 방장 쪽 동료: 갈래 확인 */ : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id, game.playerLineId(this)) : null); /* 내 캐릭터 */
     if (sk && (!this._skinH || this._skinH.src !== this.hero || this._skinH.sk !== sk)) this._skinH = { src: this.hero, sk, h: heroWithLook(this.hero, { sprite: sk }) };
     drawHero(ctx, sk ? this._skinH.h : this.hero, x, y, face, frame, this.state === 'DASH');
     if (!behind) drawW();

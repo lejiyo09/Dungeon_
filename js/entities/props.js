@@ -243,7 +243,7 @@ class Pedestal {
   }
   get labelColor() { return '#ffffff'; }
   interact(game) {
-    if (game.save.selected === this.hero.id) game.overlay = { type: 'hero_info', heroId: this.hero.id, branchIndex: 0 };
+    if (game.save.selected === this.hero.id) game.overlay = { type: 'hero_info', heroId: this.hero.id, branchIndex: Math.max(0, jobLines(this.hero.id).indexOf(game.chosenLine(this.hero.id))) }; /* 고른 진화 루트를 먼저 보여 줌 */
     else game.selectHero(this.hero);
   }
   render(ctx, game) {

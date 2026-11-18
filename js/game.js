@@ -308,7 +308,7 @@ class Game {
     if (!Net.inRoom) return;
     const p = this.player; this.netT = (this.netT || 0) - dt;
     if (this.netT <= 0 && p && !document.hidden) { this.netT = 1 / NET_CONFIG.sendHz; // 탭을 내려 두면 보내지 않음
-      const msg = { k: 'pos', x: Math.round(p.x), y: Math.round(p.y), f: p.faceVis < 0 ? -1 : 1, h: p.hero.id, l: p.line && p.line.look ? p.line.look : null, sk: this.skinSprite(p.hero.id), m: this.mode, mv: !!p.moving }, key = JSON.stringify(msg);
+      const msg = { k: 'pos', x: Math.round(p.x), y: Math.round(p.y), f: p.faceVis < 0 ? -1 : 1, h: p.hero.id, l: p.line && p.line.look ? p.line.look : null, sk: this.skinSprite(p.hero.id, this.playerLineId(p)), m: this.mode, mv: !!p.moving }, key = JSON.stringify(msg);
       this.netIdle = key === this.netLast ? (this.netIdle || 0) + 1 / NET_CONFIG.sendHz : 0;
       if (key !== this.netLast || this.netIdle >= NET_CONFIG.idleSend) { Net.relay(msg); this.netLast = key; this.netIdle = 0; } } // 바뀌었을 때만 (가만히 있으면 가끔)
     for (const P of Net.peers.values()) { const k = Math.min(1, dt * 12); P.x += (P.tx - P.x) * k; P.y += (P.ty - P.y) * k; }
@@ -361,8 +361,12 @@ class Game {
     p.treasure = tr || null; if (tr && tr.apply) tr.apply(p);
     if (p === this.player) for (const w of p.weapons) this.discover(w.def.id);
   }
-  skinSprite(heroId) { /* 이 직업에 켜 둔 스킨의 외형 이름 (없으면 null) */
-    const id = this.save.skinOn && this.save.skinOn[heroId], K = id && (this.save.skins || []).includes(id) && SKINS.find((k) => k.id === id && k.hero === heroId); return K ? K.sprite : null; }
+  skinSprite(heroId, lineId) { /* 이 직업에 켜 둔 스킨의 외형 이름 (없으면 null) — lineId를 주면 그 갈래에서 쓸 수 있는 스킨만, 안 주면(undefined) 갈래 검사 없이 */
+    const id = this.save.skinOn && this.save.skinOn[heroId], K = id && (this.save.skins || []).includes(id) && SKINS.find((k) => k.id === id && k.hero === heroId);
+    if (!K) return null; if (lineId !== undefined && K.line && K.line !== lineId) return null; return K.sprite; }
+  chosenLine(heroId) { /* [사용자 결정] 로비에서 고른 진화 루트 (없으면 첫 갈래) */
+    const lines = jobLines(heroId), id = this.save.lineChoice && this.save.lineChoice[heroId]; return lines.find((l) => l.id === id) || lines[0]; }
+  playerLineId(p) { return p.line ? p.line.id : this.mode === 'lobby' ? this.chosenLine(p.hero.id).id : null; } /* 스킨 판정용: 로비에서는 고른 진화 루트 */
   redeemGift(code) { /* 선물 코드 입력 → [문구, 색] */
     code = String(code || '').trim().toUpperCase(); if (!code) return ['코드를 입력해 주세요', '#ff9a9a'];
     const G = GIFT_CODES.find((g) => g.hash === giftHash(code)); if (!G) return ['올바르지 않은 코드입니다', '#ff9a9a'];
@@ -788,7 +792,7 @@ class Game {
       if (input.wasPressed('Escape')) this.overlay = null;
       else if (input.wasPressed('KeyI')) { this.overlay = { type: 'details', tab: 0 }; return; } // 상세 정보
       else if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; } // 선물 코드
-      else if (input.wasPressed('KeyK')) { const h = this.player.hero.id, K = SKINS.find((k) => k.hero === h && (this.save.skins || []).includes(k.id)); /* 스킨 켜기/끄기 */
+      else if (input.wasPressed('KeyK')) { const h = this.player.hero.id, K = SKINS.find((k) => k.hero === h && (this.save.skins || []).includes(k.id)); /* 켜 두면 그 갈래일 때만 보임 */ /* 스킨 켜기/끄기 */
         if (K) { this.save.skinOn = this.save.skinOn || {}; this.save.skinOn[h] = this.save.skinOn[h] === K.id ? null : K.id; writeSave(this.save); this.showBanner(this.save.skinOn[h] ? `스킨: ${K.name}` : '스킨 끔', this.data.heroes.get(h).name, '#ffd84a'); this.overlay = null; } }
       else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
       else if (this.mode === 'lobby' && input.wasPressed('KeyP')) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => {} }; return; }
@@ -981,21 +985,24 @@ class Game {
         this.overlay = { type: 'joblevel', msg: null, returnToHeroInfo: true, branchIndex: o.branchIndex || 0 };
         return;
       }
-      const lines = jobLines(o.heroId || this.save.selected);
-      lines.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) o.branchIndex = i; });
+      const lines = jobLines(o.heroId || this.save.selected); let picked = false;
+      lines.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) { o.branchIndex = i; picked = true; } });
       if (input.wasPressed('Mouse0')) {
         const m = input.mouse;
         lines.forEach((_, i) => {
           const r = HUD.heroBranchRect(i, lines.length);
-          if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) o.branchIndex = i;
+          if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) { o.branchIndex = i; picked = true; }
         });
         this.input.mouse.down = false;
       }
+      if (picked && lines[o.branchIndex] && lines.length > 1) { const hid = o.heroId || this.save.selected, L = lines[o.branchIndex]; /* 고르면 진화 루트로 저장 */
+        this.save.lineChoice = this.save.lineChoice || {}; this.save.lineChoice[hid] = L.id; writeSave(this.save); o.msg = { text: `진화 루트: ${L.name} (${L.ranks.join(' → ')})`, t: 2.5 }; SFX.play('ui'); }
+      if (o.msg) o.msg.t -= STEP;
     } else if (o.type === 'joblevel') { // 직업 레벨 창: 숫자 키 / 클릭으로 레벨업
       if (o.msg) o.msg.t -= STEP;
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) {
         this.overlay = o.returnToHeroInfo
-          ? { type: 'hero_info', heroId: this.save.selected, branchIndex: o.branchIndex || 0 }
+          ? { type: 'hero_info', heroId: this.save.selected, branchIndex: o.branchIndex ?? Math.max(0, jobLines(this.save.selected).indexOf(this.chosenLine(this.save.selected))) }
           : null;
         return;
       }
@@ -1113,9 +1120,11 @@ class Game {
   }
   askVariant(after, final = false) { // 갈래가 여럿인 직업은 판을 시작할 때 고름 (final: 롱고미니아드 시련 — 최종 진화로 보여 줌)
     const lines = jobLines(this.player.hero.id);
+    const chosen = this.chosenLine(this.player.hero.id); this.player.lineChoice = chosen.id; /* 로비에서 고른 진화 루트 (진화 때 갈래를 고르는 직업은 진화의 방에서 이 갈래로) */
     if (lines.length === 1 || branchesAtEvolve(this.player.hero.id)) { this.setJob(this.player, lines[0], 0); if (after) after(); return; } // 갈래가 하나이거나 진화 때 고르는 직업
     if (window.__toolMode) { this.applyVariant(lines[0]); if (after) after(); return; } // 테스트 도구: 첫 갈래
-    this.overlay = { type: 'variant', lines, title: JOB_LINES[this.player.hero.id].title, after, trialRank: final === true ? 2 : typeof final === 'number' ? final : null };
+    this.applyVariant(chosen); const R = final === true ? 2 : typeof final === 'number' ? final : 0; /* [사용자 결정] 판 시작 때 갈래 창 대신 로비에서 고른 진화 루트 */
+    this.showBanner(`${chosen.ranks[R]}`, `스킬: ${chosen.skills[R].name} — 진화 루트는 로비의 캐릭터 정보에서 바꿀 수 있어요`, chosen.color); if (after) after();
   }
   applyVariant(line) {
     const p = this.player;

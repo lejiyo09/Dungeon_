@@ -1046,6 +1046,7 @@ class MasterNPC {
   get labelColor() { return '#ffd84a'; }
   interact(game) {
     const p = game.player; if (this.gone || !p.line || p.rank >= 2) return;
+    if (p.rank === 0 && branchesAtEvolve(p.hero.id) && !this.branch && p.lineChoice) { const L = jobLines(p.hero.id).find((l) => l.id === p.lineChoice); if (L) { this.branch = L; game.overlay = { type: 'evolve', npc: this }; return; } } /* [사용자 결정] 로비에서 고른 진화 루트로 */
     if (p.rank === 0 && branchesAtEvolve(p.hero.id) && !this.branch) { // 첫 진화: 갈래부터 고름 (암살자)
       game.overlay = { type: 'variant', lines: jobLines(p.hero.id), title: JOB_LINES[p.hero.id].title, branch: true, onPick: (L) => { this.branch = L; game.overlay = { type: 'evolve', npc: this }; } };
       return;
