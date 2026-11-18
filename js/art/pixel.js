@@ -75,6 +75,10 @@ const HERO_SPRITES = {
     legs: [
       ['..kbkddkkddkbk..', '...kkddkkddkk...', '...kkkk..kkkk...'],
       ['..kbkddk.kddkbk.', '...kddk...kddk..', '..kkkk....kkkk..']] },
+  // [스킨] 불꽃 마녀 — 사용자가 준 도트(19x29)를 영웅 크기(16x20)에 맞춰 옮김: 꺾인 마녀 모자·금띠·✕ 장식, 붉은 눈, 금깃 붉은 원피스, 망토, 벨트 · frames: 서 있기 / 걷기
+  flamewitch: { pal: { w: '#ffffff', g: '#391c28', h: '#623141', r: '#98383b', o: '#bd793f', y: '#fbbb2e', u: '#fccb42', s: '#f9e4cb', t: '#f0d4b5', m: '#c9bcb2', n: '#9d9799' }, frames: [
+    ['........kkkkk...', '.......khhhhhk..', '......khhhkhhhkk', '.....khyhhyhkkuk', '.....khhhhhhhk..', '....kyyyyyyyyrk.', '.kkuuuuuuuuuuukk', 'kuhhhhhhhhhhhhuk', '.khhhwrssrwhhhk.', '..khhsssssshhk..', '...khkkommkkhk..', '...khyoyyoyhhk..', '...khyrrrrryhk..', '..khyrrrrrrryhk.', '..khykghmmgkyhk.', '..khykrrrrrkyhk.', '..kykyyyyyyykyk.', '....kkssksskk...', '.....krrkkrrk...', '.....khh..hhk...'],
+    ['........kkkkk...', '.......khhhhhk..', '......khhhkhhhkk', '.....khyhhyhkkuk', '.....khhhhhhhk..', '....kyyyyyyyyrk.', '.kkuuuuuuuuuuukk', 'kuhhhhhhhhhhhhuk', '.khhhwrssrwhhhk.', '..khhsssssshhk..', '...khkkommkkhk..', '...khyoyyoyhhk..', '...khyrrrrryhk..', '..khyrrrrrrryhk.', '..khykghmmgkyhk.', '..khykrrrrrkyhk.', '..kykyyyyyyykyk.', '...kssk..kssk...', '..krrk....krrk..', '..khhk....khhk..']] },
   // 마도사: 끝이 휜 고깔모자(별·금띠), 바닥까지 끌리는 로브, 별 문양 (다리 대신 로브 자락이 흔들림)
   wizard: { pal: { y: '#f0d060' }, rows: [
     '.........kk.....',
@@ -341,7 +345,7 @@ function getSprite(name, color, color2) {
 // 옷색만 바꾼 영웅 (마도사 속성별 옷 등): 나머지 정보는 원래 영웅 그대로 이어받음
 function heroWithLook(hero, look) { return look ? Object.create(hero, { look: { value: Object.assign({}, hero.look, look), enumerable: true } }) : hero; }
 function heroSprite(hero, frame) {
-  const key = 'hero|' + hero.id + '|' + hero.look.body + '|' + hero.look.accent + '|' + frame; // 같은 직업이라도 옷색(갈래)이 다르면 따로
+  const key = 'hero|' + hero.id + '|' + (hero.look.sprite || '') + '|' + hero.look.body + '|' + hero.look.accent + '|' + frame; /* 스킨(외형)이 다르면 따로 */ // 같은 직업이라도 옷색(갈래)이 다르면 따로
   let s = spriteCache.get(key);
   if (s) return s;
   const L = hero.look, T = HERO_SPRITES[L.sprite] || HERO_SPRITES.knight;
@@ -349,7 +353,7 @@ function heroSprite(hero, frame) {
     r: L.accent, y: '#e0c060', l: '#3a3048', h: L.accent, g: shade(L.accent, 0.68), e: '#7ad0ff', n: '#6a4628', d: '#3a2a1a' }, T.pal);
   const P2 = HERO_PROCS[L.sprite]; // 도형으로 그린 새 외형이 있으면 그것을 사용
   if (P2) Object.assign(pal, P2.pal);
-  s = P2 ? bakeSprite(procGrid(HERO_W, HERO_H, (P) => P2.proc(P, frame)), pal) : bakeSprite(T.rows.concat(T.legs[frame]), pal);
+  s = T.frames ? bakeSprite(T.frames[frame % T.frames.length], pal) /* 통째로 그린 프레임 (스킨) */ : P2 ? bakeSprite(procGrid(HERO_W, HERO_H, (P) => P2.proc(P, frame)), pal) : bakeSprite(T.rows.concat(T.legs[frame]), pal);
   spriteCache.set(key, s); return s;
 }
 function weaponSprite(def) {

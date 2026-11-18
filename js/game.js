@@ -308,7 +308,7 @@ class Game {
     if (!Net.inRoom) return;
     const p = this.player; this.netT = (this.netT || 0) - dt;
     if (this.netT <= 0 && p && !document.hidden) { this.netT = 1 / NET_CONFIG.sendHz; // 탭을 내려 두면 보내지 않음
-      const msg = { k: 'pos', x: Math.round(p.x), y: Math.round(p.y), f: p.faceVis < 0 ? -1 : 1, h: p.hero.id, l: p.line && p.line.look ? p.line.look : null, m: this.mode, mv: !!p.moving }, key = JSON.stringify(msg);
+      const msg = { k: 'pos', x: Math.round(p.x), y: Math.round(p.y), f: p.faceVis < 0 ? -1 : 1, h: p.hero.id, l: p.line && p.line.look ? p.line.look : null, sk: this.skinSprite(p.hero.id), m: this.mode, mv: !!p.moving }, key = JSON.stringify(msg);
       this.netIdle = key === this.netLast ? (this.netIdle || 0) + 1 / NET_CONFIG.sendHz : 0;
       if (key !== this.netLast || this.netIdle >= NET_CONFIG.idleSend) { Net.relay(msg); this.netLast = key; this.netIdle = 0; } } // 바뀌었을 때만 (가만히 있으면 가끔)
     for (const P of Net.peers.values()) { const k = Math.min(1, dt * 12); P.x += (P.tx - P.x) * k; P.y += (P.ty - P.y) * k; }
@@ -318,7 +318,7 @@ class Game {
     if (!Net.inRoom || this.mode !== 'lobby') return [];
     const out = [];
     for (const P of Net.peers.values()) { if (P.mode !== 'lobby' || performance.now() - P.seen > 8000) continue;
-      const base = this.data.heroes.get(P.hero) || DATA_HEROES[0], hero = P.look ? heroWithLook(base, P.look) : base, name = Net.nameOf(P.id), t = this.time;
+      const base = this.data.heroes.get(P.hero) || DATA_HEROES[0], sk = skinSpriteOk(P.sk), hero = P.look || sk ? heroWithLook(base, Object.assign({}, P.look || {}, sk ? { sprite: sk } : {})) : base, name = Net.nameOf(P.id), t = this.time; /* 동료 스킨 */
       out.push({ y: P.y, render: (ctx) => { const spr = heroSprite(hero, P.moving ? Math.floor(t * 8) % 2 : 0); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(Math.round(P.x), Math.round(P.y) + 7, 6, 2, 0, 0, TAU); ctx.fill();
         drawSprite(ctx, spr, P.x, P.y + 7, { flip: P.face < 0 }); hudText(ctx, name, Math.round(P.x), Math.round(P.y) - 20, '#7affc0', 'center', 7); } }); }
     return out;
@@ -360,6 +360,18 @@ class Game {
     p.hp = p.maxHp; p.energy = p.maxEnergy; p.shield = p.maxShield; p.skillCooldown = 0;
     p.treasure = tr || null; if (tr && tr.apply) tr.apply(p);
     if (p === this.player) for (const w of p.weapons) this.discover(w.def.id);
+  }
+  skinSprite(heroId) { /* 이 직업에 켜 둔 스킨의 외형 이름 (없으면 null) */
+    const id = this.save.skinOn && this.save.skinOn[heroId], K = id && (this.save.skins || []).includes(id) && SKINS.find((k) => k.id === id && k.hero === heroId); return K ? K.sprite : null; }
+  redeemGift(code) { /* 선물 코드 입력 → [문구, 색] */
+    code = String(code || '').trim().toUpperCase(); if (!code) return ['코드를 입력해 주세요', '#ff9a9a'];
+    const G = GIFT_CODES.find((g) => g.hash === giftHash(code)); if (!G) return ['올바르지 않은 코드입니다', '#ff9a9a'];
+    const sv = this.save; sv.giftsUsed = sv.giftsUsed || []; sv.skins = sv.skins || []; sv.skinOn = sv.skinOn || {};
+    if (sv.giftsUsed.includes(G.hash)) return ['이미 받은 선물입니다', '#ffb07a'];
+    sv.giftsUsed.push(G.hash); const K = SKINS.find((k) => k.id === G.skin);
+    if (K && !sv.skins.includes(K.id)) sv.skins.push(K.id); if (K) sv.skinOn[K.hero] = K.id; /* 받자마자 켬 */
+    writeSave(sv); SFX.play('victory'); if (this.profile == null) return [`스킨 '${K.name}' 획득! (게스트는 저장되지 않아요)`, '#ffd84a'];
+    return [`스킨 '${K ? K.name : '?'}' 획득! — ${K ? this.data.heroes.get(K.hero).name : ''} 외형이 바뀝니다 (Esc → K로 켜기/끄기)`, '#ffd84a'];
   }
   myTitleId() { const T = this.save.title && GUILD_TITLES.find((t) => t.id === this.save.title); return T && this.titleUnlocked(T) && !this.admin ? T.id : ''; } /* 랭킹에 보낼 장착 칭호 (얻은 것만) */
   titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
@@ -682,7 +694,7 @@ class Game {
     if (this.locked) { input.endStep(); return; } // 로그인 화면
     if (this.coop && this.coop.guest) { this.coopGuestUpdate(dt, input); return; } // 멀티 참가자: 방장 화면을 받아 그림
     if (this.banner) this.banner.t += dt;
-    if (input.wasPressed('KeyM')) this.toggleMute();
+    if (input.wasPressed('KeyM') && !(this.overlay && this.overlay.type === 'gift')) this.toggleMute(); /* 선물 코드 입력 중에는 M도 글자 */
     this.hurtFlash = Math.max(0, this.hurtFlash - dt);
     this.noEnergyFlash = Math.max(0, this.noEnergyFlash - dt);
 
@@ -775,6 +787,9 @@ class Game {
     if (o.type === 'pause') {
       if (input.wasPressed('Escape')) this.overlay = null;
       else if (input.wasPressed('KeyI')) { this.overlay = { type: 'details', tab: 0 }; return; } // 상세 정보
+      else if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; } // 선물 코드
+      else if (input.wasPressed('KeyK')) { const h = this.player.hero.id, K = SKINS.find((k) => k.hero === h && (this.save.skins || []).includes(k.id)); /* 스킨 켜기/끄기 */
+        if (K) { this.save.skinOn = this.save.skinOn || {}; this.save.skinOn[h] = this.save.skinOn[h] === K.id ? null : K.id; writeSave(this.save); this.showBanner(this.save.skinOn[h] ? `스킨: ${K.name}` : '스킨 끔', this.data.heroes.get(h).name, '#ffd84a'); this.overlay = null; } }
       else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
       else if (this.mode === 'lobby' && input.wasPressed('KeyP')) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => {} }; return; }
       else if (this.mode === 'dungeon' && input.wasPressed('KeyL')) { this.player.state = 'DEAD'; this.endRun(false); }
@@ -873,6 +888,12 @@ class Game {
       if (k < 0) return; const a = acts[k]; this.input.mouse.down = false;
       if ('ok' in a && !a.ok) { o.msg = { text: '지금은 쓸 수 없습니다', color: '#ff9a9a', t: 1.5 }; return; }
       const closes = /스테이지로|필드로|시련|진화/.test(a.name); a.run(); if (closes) this.overlay = null; else o.msg = { text: a.name.replace(/ \[.*\]/, '') + ' — 완료', color: '#ffd84a', t: 1.5 };
+    } else if (o.type === 'gift') { // 선물 코드 입력 (영문·숫자 최대 16자)
+      if (o.msg) o.msg.t -= STEP;
+      for (const k of input.typed) { if (/^Key[A-Z]$/.test(k) && o.code.length < 16) o.code += k[3]; else if (/^Digit[0-9]$/.test(k) && o.code.length < 16) o.code += k[5]; else if (k === 'Backspace') o.code = o.code.slice(0, -1); }
+      if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; return; }
+      if (input.wasPressed('Enter')) { const [text, color] = this.redeemGift(o.code); o.msg = { text, color, t: 4 }; if (color === '#ffd84a') o.code = ''; }
+      return;
     } else if (o.type === 'multi') { // 멀티 방: 만들기 / 코드로 참가 / 나가기
       const name = this.netName(), hero = this.save.selected;
       if (o.mode === 'code') { // 방 코드 입력 (알파벳 4글자)

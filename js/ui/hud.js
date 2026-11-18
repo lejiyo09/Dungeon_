@@ -166,8 +166,17 @@ class HUD {
       hudText(ctx, '상태이상: 화상(불) · 빙결(얼음) · 중독(자연) · 전격(번개) · 실명(빛) · 저주(어둠)', VIEW_W / 2, 148, '#c8c0d8', 'center', 8);
       hudText(ctx, '원소 반응: 화상+빙결=열충격 · 화상+중독=독 연소 · 빙결+전격=감전 · 화상+전격=과부하 · 중독+전격=마비', VIEW_W / 2, 160, '#9ad8ff', 'center', 8);
       hudText(ctx, '실명+저주=일식 · 저주+중독=역병 · 화상+저주=지옥불 · 실명+전격=심판', VIEW_W / 2, 172, '#9ad8ff', 'center', 8);
-      hudText(ctx, 'I  상세 정보 (특수방 확률 · 무기 강화 · 원소 반응 효과)', VIEW_W / 2, 190, '#ffd84a', 'center', 9);
+      hudText(ctx, 'I  상세 정보 (특수방 확률 · 무기 강화 · 원소 반응 효과)   ·   G  선물 코드', VIEW_W / 2, 190, '#ffd84a', 'center', 9);
+      { const h = game.player.hero.id, K = SKINS.find((k) => k.hero === h && (game.save.skins || []).includes(k.id)); if (K) hudText(ctx, `K  스킨 '${K.name}' ${game.skinSprite(h) ? '켜짐 → 끄기' : '꺼짐 → 켜기'}`, VIEW_W / 2, 220, '#ffb0d8', 'center', 9); } /* 스킨이 있는 직업일 때만 */
       hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기   ·   L 포기하고 로비로' : 'Esc 이어하기   ·   P 프롤로그 다시 보기   ·   L 로그아웃', VIEW_W / 2, 206, '#999', 'center', 9);
+    } else if (o.type === 'gift') { /* 선물 코드 입력 */
+      const bw = 260, bh = 110, bx = VIEW_W / 2 - bw / 2, by = VIEW_H / 2 - bh / 2;
+      ctx.fillStyle = 'rgba(20,16,30,0.95)'; ctx.fillRect(bx, by, bw, bh); ctx.strokeStyle = '#ffd84a'; ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
+      hudText(ctx, '🎁 선물 코드', VIEW_W / 2, by + 10, '#ffd84a', 'center', 12);
+      ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fillRect(bx + 24, by + 34, bw - 48, 20);
+      hudText(ctx, (o.code || '') + (Math.floor(game.time * 2) % 2 ? '_' : ' '), VIEW_W / 2, by + 39, '#ffffff', 'center', 11);
+      if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, by + 64, o.msg.color, 'center', 8);
+      hudText(ctx, '영문·숫자 입력 · Enter 받기 · Backspace 지우기 · Esc 돌아가기', VIEW_W / 2, by + bh - 16, '#999', 'center', 7);
     } else if (o.type === 'codex' || o.type === 'armory' || o.type === 'trial_weapons') {
       const sv = game.save, disc = new Set(sv.discovered), armory = o.type === 'armory', tw = o.type === 'trial_weapons';
       const m = game.input.mouse;

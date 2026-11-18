@@ -163,7 +163,7 @@ Object.assign(Game.prototype, {
     if (this.remotes.has(id)) return;
     const hero = this.data.heroes.get(d.hero) || DATA_HEROES[0], me = this.coop.me, c = { x: me.x, y: me.y }; // 방장 곁에서 시작 (늦게 합류해도)
     let px = c.x + (this.remotes.size + 1) * 14, py = c.y + 10; if (overlapsSolid(px, py, 5, this.map)) { px = c.x; py = c.y; }
-    const p = new Player(px, py, hero, this.data.base), J = BALANCE.jobLevel, lv = Math.min(J.max, d.jobLv | 0);
+    const p = new Player(px, py, hero, this.data.base), J = BALANCE.jobLevel, lv = Math.min(J.max, d.jobLv | 0); p.remoteSkin = skinSpriteOk(d.skin); /* 동료 스킨 */
     if (lv) { p.maxHp += J.hp * lv; p.hp = p.maxHp; p.maxEnergy += J.energy * lv; p.energy = p.maxEnergy; p.stats.attackBonus += J.atk * lv; }
     p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
     if (d.loadout && d.loadout !== hero.startWeapon && this.data.weapons.get(d.loadout)) p.weapons.push(new WeaponInstance(this.weaponDef(d.loadout)));
@@ -190,7 +190,7 @@ Object.assign(Game.prototype, {
     if (t === 'dropped') { C.netLostAt = performance.now(); return; }
     if (t === 'rejoined') { C.netLostAt = 0;
       if (C.host) { Net.relay({ k: 'host' }); C.snapN = 0; this.coopSendMap(); this.showBanner('다시 연결되었습니다', null, '#7affc0'); } // 동료들에게 방장이 돌아왔다고 알리고 맵부터 다시
-      else { C.loading = true; C.lastSnap = performance.now(); Net.relay({ k: 'setup', rejoin: true, hero: this.save.selected, treasure: this.save.treasureEquipped, loadout: this.save.loadout, jobLv: this.jobLevel(this.save.selected) }, C.hostId); this.showBanner('다시 연결되었습니다', null, '#7affc0'); }
+      else { C.loading = true; C.lastSnap = performance.now(); Net.relay({ k: 'setup', rejoin: true, hero: this.save.selected, skin: this.skinSprite(this.save.selected), treasure: this.save.treasureEquipped, loadout: this.save.loadout, jobLv: this.jobLevel(this.save.selected) }, C.hostId); this.showBanner('다시 연결되었습니다', null, '#7affc0'); }
       return; }
     if (t === 'lost') {
       if (C.guest) this.coopGuestEnd({ victory: false, disconnected: true });
@@ -291,9 +291,9 @@ Object.assign(Game.prototype, {
     C.snapN = (C.snapN || 0) + 1; const full = C.snapN % 18 === 1; // 1.5초마다 전부 (중간에 놓친 값 보정), 그 사이엔 바뀐 것만
     const pl = (p, id, warp) => ({ id, x: Math.round(p.x), y: Math.round(p.y), h: p.hero.id, lk: p.line && p.line.look ? p.line.look : null, a: r1(p.aimVis), f: p.faceVis, st: p.state === 'DEAD' ? 'X' : p.state === 'DASH' ? 'D' : 'N', mv: p.moving ? 1 : 0,
       hp: Math.ceil(p.hp), mhp: p.maxHp, sh: Math.ceil(p.shield), msh: p.maxShield, en: Math.floor(p.energy), men: p.maxEnergy, w: p.weapons.map((x) => x.def.id), wl: p.weapons.map((x) => x.lv || 0), sl: p.slot,
-      sk: r1(p.skillCooldown), skm: r1(p.skillCdMax), dc: p.dsCharges, sn: p.skillName, tr: p.treasure ? p.treasure.id : null, tc: r1(p.treasureCd), rk: p.rank, ln: p.line ? p.line.id : null, wp: warp, inv: p.hurtInvuln > 0 ? 1 : 0, ag: p.aegisT > 0 ? 1 : 0, sb: p.scabbardT > 0 ? 1 : 0, rv: r1((p.reviveT || 0) / COOP.reviveTime), hy: p.hybrid ? p.hybrid.title : null, fr: p.weapon ? Math.round(this.weaponSystem.getFireRate(p, p.weapon) / (p.weapon.def.fireRate || 1) * 100) / 100 : 1 }); // fr: 공속 배율 (참가자 화면의 탄을 실제 연사 속도로)
+      sk: r1(p.skillCooldown), skm: r1(p.skillCdMax), dc: p.dsCharges, sn: p.skillName, tr: p.treasure ? p.treasure.id : null, tc: r1(p.treasureCd), rk: p.rank, ln: p.line ? p.line.id : null, wp: warp, inv: p.hurtInvuln > 0 ? 1 : 0, ag: p.aegisT > 0 ? 1 : 0, sb: p.scabbardT > 0 ? 1 : 0, rv: r1((p.reviveT || 0) / COOP.reviveTime), sk: p === C.me ? this.skinSprite(p.hero.id) : (p.remoteSkin || null), hy: p.hybrid ? p.hybrid.title : null, fr: p.weapon ? Math.round(this.weaponSystem.getFireRate(p, p.weapon) / (p.weapon.def.fireRate || 1) * 100) / 100 : 1 }); // fr: 공속 배율 (참가자 화면의 탄을 실제 연사 속도로)
     const players = [pl(C.me, Net.id, 0), ...[...this.remotes.values()].map((R) => { const e = pl(R.p, R.id, R.warp); if (R.px || R.py) { e.px = r1(R.px); e.py = r1(R.py); R.px = 0; R.py = 0; } return e; })];
-    C.plast = C.plast || {}; const STATIC = ['h', 'lk', 'mhp', 'msh', 'men', 'w', 'wl', 'sn', 'tr', 'ln', 'hy', 'skm', 'rk']; // 잘 안 바뀌는 값은 바뀔 때만
+    C.plast = C.plast || {}; const STATIC = ['h', 'lk', 'sk', 'mhp', 'msh', 'men', 'w', 'wl', 'sn', 'tr', 'ln', 'hy', 'skm', 'rk']; // 잘 안 바뀌는 값은 바뀔 때만
     for (const e of players) { const L = C.plast[e.id] || (C.plast[e.id] = {}); for (const k of STATIC) { const v = JSON.stringify(e[k] ?? null); if (!full && L[k] === v) delete e[k]; else L[k] = v; } }
     C.sent = C.sent || new Set(); const zs = [], seenZ = new Set();
     C.zlast = C.zlast || new Map(); let nFull = 0; // 장판·소환물: 처음엔 전부, 그다음엔 바뀐 값만 (데이터 절약)
@@ -344,7 +344,7 @@ Object.assign(Game.prototype, {
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) this.player.treasure = tr;
     const cp = deep && this.deepCheckpoint(this.save.selected); // 심층: 내 직업으로 10-4를 깬 캐릭터가 있으면 그대로
     if (cp) { this.player = this.playerFromSnapshot(this.player.hero, cp); this.useCheckpoint(this.player, cp, tr); }
-    Net.relay({ k: 'setup', hero: this.save.selected, treasure: this.save.treasureEquipped, loadout: this.save.loadout, jobLv: this.jobLevel(this.save.selected), cp: cp || null }, hostId);
+    Net.relay({ k: 'setup', hero: this.save.selected, skin: this.skinSprite(this.save.selected), treasure: this.save.treasureEquipped, loadout: this.save.loadout, jobLv: this.jobLevel(this.save.selected), cp: cp || null }, hostId);
     if (cp) return;
     const lines = jobLines(this.player.hero.id); // 갈래 고르기 (방장에게 알림)
     if (lines.length > 1 && !branchesAtEvolve(this.player.hero.id)) this.overlay = { type: 'variant', lines, title: JOB_LINES[this.player.hero.id].title, onPick: (L) => { Net.relay({ k: 'variant', id: L.id }, hostId); this.setJob(this.player, L, 0); } };
@@ -371,7 +371,7 @@ Object.assign(Game.prototype, {
       let o = mine ? null : C.others.get(s.id);
       if (!mine && !o) { const hero = this.data.heroes.get(s.h) || DATA_HEROES[0]; o = { id: s.id, p: new Player(s.x, s.y, hero, this.data.base) }; C.others.set(s.id, o); }
       const p = mine ? this.player : o.p; if (!mine) seen.add(s.id);
-      if (!mine) { coopVel(p, s.x, s.y, nowS); if (Math.hypot(p.x - s.x, p.y - s.y) > 80) { p.x = s.x; p.y = s.y; p.vx = p.vy = 0; } p.aimVis = s.a; p.faceVis = s.f; p.moving = !!s.mv; p.hurtInvuln = s.inv ? 0.1 : 0; const base = this.data.heroes.get(s.h); if (base) p.hero = s.lk ? heroWithLook(base, s.lk) : base; }
+      if (!mine) { coopVel(p, s.x, s.y, nowS); if (Math.hypot(p.x - s.x, p.y - s.y) > 80) { p.x = s.x; p.y = s.y; p.vx = p.vy = 0; } p.aimVis = s.a; p.faceVis = s.f; p.moving = !!s.mv; p.hurtInvuln = s.inv ? 0.1 : 0; const base = this.data.heroes.get(s.h); if (base) p.hero = s.lk ? heroWithLook(base, s.lk) : base; if ('sk' in s) p.remoteSkin = skinSpriteOk(s.sk); }
       else if (s.wp !== C.warp) { p.x = s.x; p.y = s.y; C.warp = s.wp; } // 방장이 옮겼을 때만 내 위치를 맞춤
       else if (s.px || s.py) moveAndCollide(p, s.px || 0, s.py || 0, this.map); // 끌려감·밀림
       p.reviveT = s.rv * COOP.reviveTime; p.hybridTitle = s.hy; p.aegisT = s.ag ? Math.max(p.aegisT || 0, 0.3) : 0; p.scabbardT = s.sb ? Math.max(p.scabbardT || 0, 1.2) : 0; /* 방패·칼집 그림 */ if (mine) C.fr = s.fr || 1;

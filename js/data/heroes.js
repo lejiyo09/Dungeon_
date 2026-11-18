@@ -50,3 +50,13 @@ const DATA_HEROES = [
     passiveName: '자연의 가호', passiveDesc: '보호막 회복 속도 +60%', shieldRegenMul: 1.6,
     look: { sprite: 'druid', body: '#4a7a3a', accent: '#6a4628' } }
 ];
+// ── 스킨 (외형만 바뀜, 능력은 그대로) [사용자 결정] 선물 코드로 얻음 — 일시정지(Esc) → G 선물 코드
+const SKINS = [
+  { id: 'skin_flamewitch', name: '불꽃 마녀', hero: 'hero_mage', sprite: 'flamewitch', desc: '마도사 외형: 끝이 꺾인 마녀 모자와 붉은 원피스' }
+];
+// 선물 코드: 글자 그대로 두지 않고 해시로만 보관 (giftHash) — 코드 하나에 보상 하나, 계정마다 한 번
+const GIFT_CODES = [
+  { hash: 'd6b73fd4', skin: 'skin_flamewitch' }
+];
+function giftHash(code) { let h = 0x811c9dc5; for (const ch of 'pd_gift:' + String(code).toUpperCase()) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); }
+function skinSpriteOk(sp) { return SKINS.some((k) => k.sprite === sp) ? sp : null; } /* 멀티로 받은 외형 이름은 아는 스킨만 */

@@ -90,7 +90,7 @@ const Net = {
     else if (m.t === 'relay') {
       const d = m.data || {};
       if (d.k === 'pos') { // 다른 사람의 위치·외형
-        const P = this.peers.get(m.from) || { id: m.from, x: d.x, y: d.y }; Object.assign(P, { tx: d.x, ty: d.y, face: d.f, hero: d.h, look: d.l, mode: d.m, moving: d.mv, seen: performance.now() });
+        const P = this.peers.get(m.from) || { id: m.from, x: d.x, y: d.y }; Object.assign(P, { tx: d.x, ty: d.y, face: d.f, hero: d.h, look: d.l, sk: d.sk || null, mode: d.m, moving: d.mv, seen: performance.now() });
         if (P.x === undefined || Math.hypot(P.x - d.x, P.y - d.y) > 120) { P.x = d.x; P.y = d.y; } // 멀리 떨어지면 순간이동
         this.peers.set(m.from, P);
       }

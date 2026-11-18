@@ -184,7 +184,9 @@ class Player extends Entity {
       drawWeapon(ctx, w.def, hx, hy, ang);
     };
     if (behind) drawW();
-    drawHero(ctx, this.hero, x, y, face, frame, this.state === 'DASH');
+    const sk = this.remoteSkin !== undefined ? this.remoteSkin : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id) : null); /* 스킨: 내 캐릭터는 저장된 설정, 멀티 동료는 받은 값 */
+    if (sk && (!this._skinH || this._skinH.src !== this.hero || this._skinH.sk !== sk)) this._skinH = { src: this.hero, sk, h: heroWithLook(this.hero, { sprite: sk }) };
+    drawHero(ctx, sk ? this._skinH.h : this.hero, x, y, face, frame, this.state === 'DASH');
     if (!behind) drawW();
     if (this.whirl > 0) {
       ctx.strokeStyle = 'rgba(220,240,255,0.8)'; ctx.lineWidth = 2;
