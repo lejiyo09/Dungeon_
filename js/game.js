@@ -2067,7 +2067,7 @@ class Game {
     if (enemy.def.boss) this.hitStop(0.3); else if (Math.random() < 0.35) this.hitStop(0.025);
     if (enemy.def.aiType === 'exploder') this.enemyExplode(enemy);
     if (enemy.def.traits && !enemy.def.boss) traitOn(enemy, 'death', this); // 심층 잡몹 특성 (단말마·분열)
-    const dropP = Math.min(HERO_TREASURE_DROP.max, HERO_TREASURE_DROP.base + HERO_TREASURE_DROP.perDepth * ((this.W.depth || 1) - 1));
+    const dropP = heroDropChance(this.W.depth);
     if (enemy.def.boss && this.mode === 'dungeon' && this.W.deep && !this.trialW && !enemy.def.master && this.coop && this.coop.host) Net.relay({ k: 'herodrop', p: dropP }); // 멀티: 동료도 각자 확률로
     if (enemy.def.boss && this.mode === 'dungeon' && this.W.deep && !this.trialW && !enemy.def.master && Math.random() < dropP) { // 심층 보스: 낮은 확률로 영웅의 보구
       const left = DATA_TREASURES.filter((t) => t.heroDrop && !this.save.treasures.includes(t.id));

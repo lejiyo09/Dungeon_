@@ -109,7 +109,11 @@ const DEEP_WORLDS = [
   { id: 'deep_frost', name: '서리 궁전', boss: 'boss_winter_empress', waves: 2, deep: true,
     enemies: [['enemy_frostguard_001', 3], ['enemy_blizzardwisp_001', 3], ['enemy_icepriestess_001', 2], ['enemy_iciclespire_001', 2]],
     palette: { style: 'frost', accent: '#bfe8ff', floor: ['#3a4a62', '#3d4d66'], corridor: ['#2a364a', '#2c384c'], wall: '#4a5a7a', wallTop: '#5a6c90',
-      wallFace: '#9ab8d8', faceLine: '#86a4c4', deco: 'rgba(191,232,255,0.35)' } }
+      wallFace: '#9ab8d8', faceLine: '#86a4c4', deco: 'rgba(191,232,255,0.35)' } },
+  { id: 'deep_vault', name: '잠긴 황금 보물고', boss: 'boss_vault_keeper', waves: 2, deep: true,
+    enemies: [['enemy_mimic_001', 3], ['enemy_goldstatue_001', 3], ['enemy_coinwisp_001', 3], ['enemy_vaulteye_001', 2]],
+    palette: { style: 'vault', accent: '#ffd84a', floor: ['#4a2a24', '#4d2c26'], corridor: ['#3a201b', '#3c221d'], wall: '#4a3a2a', wallTop: '#5a4632',
+      wallFace: '#8a6a3a', faceLine: '#7a5a30', deco: 'rgba(255,216,74,0.35)' } }
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {

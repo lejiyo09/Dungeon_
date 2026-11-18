@@ -93,8 +93,9 @@ const DATA_TREASURES = [
     desc: '체력을 모두 회복하고 5초간 어떤 피해도 받지 않음, 그 뒤 10초 동안 받는 피해 -30% — 왕이 101번째 원탁의 기사에게 맡긴 칼집' }
 ];
 // 심층 보스를 쓰러뜨리면 아직 없는 영웅의 보구(heroDrop) 하나를 얻을 확률: 낮게 시작해 깊이 내려갈수록 조금씩 오름 [사용자 결정], 수치는 [제안]
-//  확률 = min(max, base + perDepth × (심층 깊이 - 1)) → 심층 1: 3% · 5: 9% · 10: 16.5% · 13 이후: 20%
-const HERO_TREASURE_DROP = { base: 0.03, perDepth: 0.015, max: 0.2 };
+//  [사용자 결정] 심층 1: 1% → 10까지 깊이마다 +1% (심층 10: 10%) → 그 뒤로 깊이마다 +0.2% (심층 11: 10.2% · 20: 12% · 50: 18%)
+const HERO_TREASURE_DROP = { base: 0.01, perDepth: 0.01, until: 10, after: 0.002, max: 1 };
+function heroDropChance(depth) { const D = HERO_TREASURE_DROP, d = Math.max(1, depth || 1); return Math.min(D.max, d <= D.until ? D.base + D.perDepth * (d - 1) : D.base + D.perDepth * (D.until - 1) + D.after * (d - D.until)); }
 // 탐험가 길드 구석의 마법사 (멀린) — 대사는 모두 [임시] 연출 문구. 정체(아서왕의 궁정 마법사 멀린)와 보구는 [사용자 결정]
 const MERLIN_REVEAL_LINES = [
   '후드 아래에서 하얀 머리카락이 흘러내린다.',
