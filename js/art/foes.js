@@ -387,6 +387,55 @@ Object.assign(PIX, {
     P.rect(4, 13, 8, 3, 'b'); P.tri(4, 13, 8, 1, 12, 13, 'a'); P.line(8, 2, 8, 12, 'c');                      // 받침·결정 기둥
     P.px(7, 6, 'p'); P.px(9, 9, 'p'); P.px(8, 3, 'w');                                                       // 빛나는 광맥
   } },
+  // ── 심층: 연금술 공방 [임시 디자인]
+  flaskslime: { tint: '#5aca4a', w: 16, h: 16, pal: { w: '#d8fff0', g: '#bfe8d8' }, proc: (P) => {
+    P.ell(8, 11, 6, 4, 'a'); P.ell(8, 10, 4, 2, 'c'); P.px(6, 10, 'k'); P.px(10, 10, 'k');                   // 초록 점액
+    P.rect(6, 2, 4, 5, 'g'); P.rect(7, 1, 2, 1, 'b'); P.px(8, 4, 'a'); P.px(7, 5, 'w');                        // 머리에 박힌 플라스크
+  } },
+  alchgolem: { tint: '#6a6a72', w: 16, h: 16, pal: { g: '#7aff6a', r: '#8a5a3a' }, proc: (P) => {
+    P.rect(4, 5, 8, 9, 'a'); P.rect(1, 6, 3, 6, 'b'); P.rect(12, 6, 3, 6, 'b'); P.rect(5, 14, 2, 2, 'b'); P.rect(9, 14, 2, 2, 'b'); // 철판 골렘
+    P.ell(8, 9, 2.5, 2.5, 'g'); P.px(8, 9, 'k'); P.rect(5, 1, 6, 4, 'b'); P.px(6, 3, 'g'); P.px(9, 3, 'g'); P.px(4, 12, 'r');   // 가슴의 약물 핵·눈
+  } },
+  poisonalch: { tint: '#3a5a3a', w: 16, h: 16, pal: { g: '#7aff6a', w: '#e8f0e0', p: '#ff6ad8' }, proc: (P) => {
+    robe(P, 'g'); P.ell(7, 5, 3, 3, 'w'); P.rect(5, 4, 5, 2, 'k'); P.px(6, 5, 'g'); P.px(8, 5, 'g');            // 방독면
+    P.rect(11, 6, 3, 4, 'p'); P.rect(12, 5, 1, 1, 'b');                                                          // 분홍 약병
+  } },
+  stilltower: { tint: '#8a6a3a', w: 16, h: 16, pal: { g: '#7aff6a', w: '#d8fff0' }, proc: (P) => {
+    P.rect(4, 12, 8, 4, 'b'); P.ell(8, 8, 4, 4, 'a'); P.ell(8, 8, 2, 2, 'g'); P.rect(7, 1, 2, 4, 'c'); P.line(9, 2, 13, 5, 'c'); P.px(13, 6, 'g'); P.px(7, 7, 'w'); // 구리 증류기
+  } },
+  // ── 심층: 꿈의 회랑 [임시 디자인]
+  dreamsheep: { tint: '#e8d8ff', w: 16, h: 16, pal: { k2: '#5a4a7a', y: '#fff4c0' }, proc: (P) => {
+    P.ell(9, 9, 6, 4, 'a'); P.ell(6, 7, 2, 2, 'c'); P.ell(11, 7, 2, 2, 'c'); for (const x of [5, 8, 11, 13]) P.rect(x, 12, 1, 3, 'k2'); // 구름 털·다리
+    P.ell(3, 8, 2.5, 2, 'k2'); P.px(2, 7, 'y'); P.px(4, 7, 'y');                                                 // 얼굴·빛나는 눈
+  } },
+  sleepknight: { tint: '#7a6aa8', w: 16, h: 16, pal: { w: '#e8e0ff', y: '#fff4c0' }, proc: (P) => {
+    P.rect(4, 6, 8, 8, 'a'); P.rect(5, 14, 2, 2, 'b'); P.rect(9, 14, 2, 2, 'b'); P.rect(5, 1, 6, 5, 'a'); P.line(6, 3, 9, 3, 'k'); // 감긴 눈의 투구
+    P.tri(9, 0, 12, -1, 11, 2, 'y'); P.line(13, 3, 13, 13, 'w'); P.px(2, 2, 'w'); P.px(3, 1, 'w');                // 잠꼬대 Zz·검
+  } },
+  candyfairy: { tint: '#ffb8e8', w: 16, h: 16, pal: { w: '#ffffff', y: '#fff4c0', b: '#8ad8ff' }, proc: (P) => {
+    P.ell(4, 6, 3, 2, 'b'); P.ell(12, 6, 3, 2, 'b'); P.ell(8, 9, 3, 4, 'a'); P.ell(8, 5, 2.5, 2.5, 'w'); P.px(7, 5, 'k'); P.px(9, 5, 'k'); // 날개·몸·얼굴
+    P.line(12, 9, 14, 13, 'y'); P.ell(14, 13, 1.5, 1.5, 'y');                                                    // 별사탕 지팡이
+  } },
+  moonlamp: { tint: '#9a8ac8', w: 16, h: 16, pal: { y: '#fff4c0', w: '#ffffff' }, proc: (P) => {
+    P.rect(4, 13, 8, 3, 'b'); P.rect(7, 6, 2, 7, 'a'); P.ell(8, 4, 4, 4, 'y'); P.ell(9, 3, 3, 3, 'a'); P.px(6, 4, 'w');           // 초승달 등불
+  } },
+  // ── 심층: 덩굴 삼킨 정글 신전 [임시 디자인]
+  vinesnake: { tint: '#4a9a3a', w: 16, h: 16, pal: { y: '#ffd84a', r: '#e83a3a' }, proc: (P) => {
+    P.line(1, 13, 5, 10, 'a'); P.line(5, 10, 9, 12, 'a'); P.line(9, 12, 12, 8, 'a'); P.line(2, 13, 6, 11, 'b'); P.line(6, 11, 9, 13, 'b'); // 덩굴 몸
+    P.ell(13, 6, 3, 2.5, 'a'); P.px(13, 5, 'y'); P.px(15, 7, 'r'); P.px(4, 9, 'c'); P.px(10, 10, 'c');           // 머리·혀·잎
+  } },
+  stoneguard: { tint: '#8a8a72', w: 16, h: 16, pal: { g: '#6aba4a', y: '#ffd84a' }, proc: (P) => {
+    P.rect(3, 5, 10, 9, 'a'); P.rect(4, 14, 3, 2, 'b'); P.rect(9, 14, 3, 2, 'b'); P.rect(4, 1, 8, 5, 'a'); P.px(6, 3, 'y'); P.px(9, 3, 'y'); // 석상 수호자
+    P.rect(3, 5, 3, 2, 'g'); P.rect(10, 9, 3, 2, 'g'); P.line(14, 2, 14, 13, 'b');                                // 이끼·돌창
+  } },
+  dartshooter: { tint: '#7a5a3a', w: 16, h: 16, pal: { g: '#6aba4a', r: '#e83a3a', s: '#c89a6a' }, proc: (P) => {
+    robe(P, 'g'); P.ell(7, 5, 3, 3, 's'); P.rect(4, 3, 7, 1, 'r'); P.px(6, 5, 'k'); P.px(8, 5, 'k');               // 잎 망토·머리띠
+    P.line(10, 6, 15, 4, 'b');                                                                                     // 대롱
+  } },
+  jungletotem: { tint: '#6a4a2a', w: 16, h: 16, pal: { g: '#6aba4a', r: '#e83a3a', y: '#ffd84a' }, proc: (P) => {
+    P.rect(5, 2, 6, 14, 'a'); P.rect(4, 5, 8, 1, 'b'); P.rect(4, 10, 8, 1, 'b'); P.px(6, 3, 'y'); P.px(9, 3, 'y'); P.rect(6, 7, 4, 1, 'r'); P.px(7, 12, 'y'); P.px(8, 12, 'y'); // 얼굴 새긴 토템
+    P.line(3, 1, 4, 6, 'g'); P.line(12, 1, 11, 6, 'g');                                                            // 잎 장식
+  } },
   // ── 심층: 잊힌 투기장 [임시 디자인]
   gladghost: { tint: '#8a9aa8', w: 16, h: 16, pal: { r: '#c02a24', w: '#e8f0ff', y: '#ffd84a' }, proc: (P) => {
     P.rect(4, 6, 8, 7, 'a'); P.rect(5, 13, 2, 3, 'b'); P.rect(9, 13, 2, 3, 'b'); P.ell(8, 4, 3, 3, 'w'); P.px(7, 4, 'k'); P.px(9, 4, 'k'); // 희미한 검투사

@@ -117,7 +117,19 @@ const DEEP_WORLDS = [
   { id: 'deep_arena', name: '잊힌 투기장', boss: 'boss_arena_champion', waves: 2, deep: true,
     enemies: [['enemy_gladghost_001', 3], ['enemy_bonelion_001', 3], ['enemy_javelineer_001', 3], ['enemy_ballista_001', 2]],
     palette: { style: 'arena', accent: '#ffd84a', floor: ['#8a7048', '#8d734a'], corridor: ['#5a4a32', '#5c4c34'], wall: '#6a5a46', wallTop: '#7a6a54',
-      wallFace: '#a8987c', faceLine: '#968670', deco: 'rgba(255,176,96,0.35)' } }
+      wallFace: '#a8987c', faceLine: '#968670', deco: 'rgba(255,176,96,0.35)' } },
+  { id: 'deep_alchemy', name: '연금술 공방', boss: 'boss_mad_alchemist', waves: 2, deep: true,
+    enemies: [['enemy_flaskslime_001', 3], ['enemy_alchgolem_001', 3], ['enemy_poisonalch_001', 2], ['enemy_stilltower_001', 2]],
+    palette: { style: 'alchemy', accent: '#7aff6a', floor: ['#26282c', '#282a2e'], corridor: ['#1c1d20', '#1d1e22'], wall: '#3a3430', wallTop: '#46403a',
+      wallFace: '#6a5a4a', faceLine: '#5a4c3e', deco: 'rgba(122,255,106,0.35)' } },
+  { id: 'deep_dream', name: '꿈의 회랑', boss: 'boss_dream_tapir', waves: 2, deep: true,
+    enemies: [['enemy_dreamsheep_001', 3], ['enemy_sleepknight_001', 3], ['enemy_candyfairy_001', 2], ['enemy_moonlamp_001', 2]],
+    palette: { style: 'dream', accent: '#d8b8ff', floor: ['#4a3e6a', '#4d416e'], corridor: ['#382e52', '#3a3054'], wall: '#5a4a80', wallTop: '#6a5a94',
+      wallFace: '#9a82c8', faceLine: '#8670b4', deco: 'rgba(216,184,255,0.35)' } },
+  { id: 'deep_jungle', name: '덩굴 삼킨 정글 신전', boss: 'boss_jungle_idol', waves: 2, deep: true,
+    enemies: [['enemy_vinesnake_001', 3], ['enemy_stoneguard_001', 3], ['enemy_dartshooter_001', 3], ['enemy_jungletotem_001', 2]],
+    palette: { style: 'jungle', accent: '#6aba4a', floor: ['#4a4a3a', '#4d4d3c'], corridor: ['#34342a', '#36362c'], wall: '#4a5040', wallTop: '#5a6050',
+      wallFace: '#7a806a', faceLine: '#6a705a', deco: 'rgba(106,186,74,0.35)' } }
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {
