@@ -252,10 +252,24 @@ class Game {
     if (P && P.reward) { this.save.bank += P.reward; writeSave(this.save); } /* 심층 탐험 보상은 떨어지기 전에 바로 정산 */
     this.overlay = { type: 'story', lines: BABYLON_FALL_LINES, i: 0, t: 0, done: () => { this.overlay = null; this.startBabylonUnder(P ? P.reward : 0); } };
   }
+  babylonDeathRestart() { /* [사용자 결정] 바빌로니아에서 죽으면: 되찾은 권리를 모두 잃고, 맨 아래층(또는 지나온 세이브 포인트)부터 다시 */
+    const cp = this.babylonCp, field = cp ? cp.field : 0, rights = cp ? cp.rights : 0;
+    this.submitRunScore(false); // 죽음 기록 (areaId라 도달 기록엔 안 들어감)
+    this.cinematic = null; this.slowMo = null; this.cutin = null; this.overlay = null; this.transition = null;
+    this.mode = 'dungeon'; this.trialW = null; this.trialId = null; this.areaId = ZONES.babylon_under.id;
+    this.zoneField = field; this.levelIdx = 0; this.worldIdx = this.W.scaleWorld; this.gold = 0; this.kills = 0;
+    this.runStart = { stage: this.stageIndex, world: this.worldIdx, zs: 0, zf: field }; this.save.runReviveUsed = false;
+    const p = this.player = this.makePlayer(0, 0); p.weapons.length = 1; p.slot = 0;
+    const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) p.treasure = tr;
+    this.zoneRights = 0; this.applyVariant(this.chosenLine(p.hero.id)); // 1진·기본 무기부터
+    for (let n = 1; n <= rights; n++) this.grantZoneRight(n); // 세이브 포인트까지의 권리만 되돌려 줌
+    this.loadStage();
+    this.showBanner(cp ? '쓰러졌다 — 세이브 포인트에서 다시' : '쓰러졌다 — 밑바닥부터 다시', cp ? `${this.W.name} · 되찾은 권리 ${Math.min(rights, BABYLON_RIGHTS.filter((r) => !r.isNew).length)}개 유지` : '되찾은 권리를 모두 잃었다 — 다시 기어 올라가라', '#ff7a7a');
+  }
   restoreStashRun() { const sv = this.save; if (sv.stashRun) { sv.run = sv.stashRun; delete sv.stashRun; writeSave(sv); } } /* 바빌로니아 전에 진행 중이던 탐험 기록을 되돌림 */
   startBabylonUnder(paid = 0) { /* [사용자 결정] 바빌로니아 지하: 기본 무기 하나 + 1진으로 새로 시작 (사슬에 힘이 묶임) */
     const Z = ZONES.babylon_under;
-    this.mode = 'dungeon'; this.trialW = null; this.trialId = null; this.areaId = Z.id; this.zoneField = 0; this.runDeep = false;
+    this.mode = 'dungeon'; this.trialW = null; this.trialId = null; this.areaId = Z.id; this.zoneField = 0; this.runDeep = false; this.babylonCp = null; /* 새 추락: 체크포인트 초기화 */
     this.cinematic = null; this.slowMo = null; this.cutin = null;
     this.worldIdx = zoneWorld(Z.id, 0).scaleWorld; this.levelIdx = 0; this.gold = 0; this.kills = 0;
     this.runStart = { stage: this.stageIndex, world: this.worldIdx, zs: 0, zf: 0 }; this.save.runReviveUsed = false;
@@ -303,6 +317,7 @@ class Game {
         this.showBanner('왕의 하사품 — 하늘의 황소의 뿔', '로비의 보구 보관대에서 장착할 수 있어요', '#ff8a5a'); } });
       return; }
     this.grantZoneRight(this.zoneField + 1); /* 층 보스를 꺾음: 빼앗긴 권리 하나를 되찾음 */
+    if (W.boss === 'boss_bull_of_heaven' || W.boss === 'boss_clay_enkidu') { this.babylonCp = { field: this.zoneField + 1, rights: this.zoneRights }; this.showBanner('세이브 포인트', `${W.name} 격파 — 여기서부터 다시 시작합니다`, '#9ae8d8'); } /* [사용자 결정] 하늘의 황소·엔키두·(길가메시)는 세이브 포인트 */
     if (W.boss === 'boss_clay_enkidu') { const FW = this.data.weapons.get('weapon_friendchain_001'); /* [사용자 결정] 진흙의 엔키두: 길가메시 사냥 특화 고유 무기를 남김 */
       if (FW) { this.pickups.push(new Pickup('weapon', c.x, c.y - 52, { def: FW, still: true })); this.discover(FW.id); this.effects.skyBeam(c.x, c.y - 52, '#9ae8d8', 0, 10); this.effects.rays(c.x, c.y - 52, '#9ae8d8', 16, 70, 1); }
       this.playCutscene(ENKIDU_GIFT_LINES, { id: 'enkidu_gift', focus: { x: c.x, y: c.y - 40 } }); }
@@ -729,7 +744,7 @@ class Game {
   // ── 이어하기: 스테이지 시작 시점의 런 상태 (맵은 그 스테이지를 새로 생성)
   snapshotRun() {
     const p = this.player;
-    return { v: 1, t: Date.now(), hero: p.hero.id, zone: this.areaId || null, zf: this.zoneField || 0, zr: this.zoneRights || 0, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills, start: this.runStart || null,
+    return { v: 1, t: Date.now(), hero: p.hero.id, zone: this.areaId || null, zf: this.zoneField || 0, zr: this.zoneRights || 0, worldIdx: this.worldIdx, levelIdx: this.levelIdx, bcp: this.babylonCp || null, gold: this.gold, kills: this.kills, start: this.runStart || null,
       p: { maxHp: p.maxHp, hp: p.hp, maxShield: p.maxShield, maxEnergy: p.maxEnergy, energy: p.energy, moveSpeed: p.moveSpeed,
         dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction, feast: p.feast || 0,
         feastPenaltyActive: !!p.feastPenaltyActive, feastPenaltyFactor: p.feastPenaltyFactor || 1, feastPenaltyReleased: !!p.feastPenaltyReleased,
@@ -759,7 +774,7 @@ class Game {
   resumeRun() {
     const r = this.save.run, hero = r && this.data.heroes.get(r.hero);
     if (!r || !hero) { this.save.run = null; writeSave(this.save); this.startRun(); return; }
-    this.mode = 'dungeon'; this.areaId = r.zone && ZONES[r.zone] ? r.zone : null; this.zoneField = this.areaId ? Math.max(0, Math.min(ZONES[this.areaId].fields.length - 1, r.zf | 0)) : 0; this.zoneRights = this.areaId ? (typeof r.zr === 'number' ? r.zr : this.zoneField) : 0; this.worldIdx = r.worldIdx; this.levelIdx = r.levelIdx; this.gold = r.gold; this.kills = r.kills; this.runStart = r.start && typeof r.start.stage === 'number' ? r.start : { stage: 0, world: 0 };
+    this.mode = 'dungeon'; this.areaId = r.zone && ZONES[r.zone] ? r.zone : null; this.zoneField = this.areaId ? Math.max(0, Math.min(ZONES[this.areaId].fields.length - 1, r.zf | 0)) : 0; this.babylonCp = this.areaId && r.bcp ? r.bcp : null; /* 이어하기: 세이브 포인트 유지 */ this.zoneRights = this.areaId ? (typeof r.zr === 'number' ? r.zr : this.zoneField) : 0; this.worldIdx = r.worldIdx; this.levelIdx = r.levelIdx; this.gold = r.gold; this.kills = r.kills; this.runStart = r.start && typeof r.start.stage === 'number' ? r.start : { stage: 0, world: 0 };
     this.player = this.playerFromSnapshot(hero, r.p);
     this.player.treasure = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped) || null; /* 보구는 지금 로비에서 장착한 것 (저장된 판의 보구로 되돌아가던 버그 — 판 중에 얻은 보구로 바꿔도 이어하기에 반영 안 됨) */
     this.loadStage();
@@ -1075,7 +1090,8 @@ class Game {
     } else if (this.coop && this.coop.host && this.allPlayers().some((q) => q.state !== 'DEAD')) { // 멀티: 동료가 살아 있으면 계속 (다음 스테이지에서 부활)
     } else if (p.deathTimer > 1 && !this.overlay) {
       SFX.stopMusic();
-      if (this.mode === 'dungeon' && !this.trialW && !this.save.runReviveUsed) this.overlay = { type: 'revive', msg: null };
+      if (this.areaId) { this.babylonDeathRestart(); }
+      else if (this.mode === 'dungeon' && !this.trialW && !this.save.runReviveUsed) this.overlay = { type: 'revive', msg: null };
       else this.endRun(false);
     }
     this.updateCamera(dt);
