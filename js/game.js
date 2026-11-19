@@ -474,6 +474,9 @@ class Game {
     const c = this.deepCps();
     const archive = sv.deepCheckpointArchive = sv.deepCheckpointArchive || {};
     const archived = Object.keys(c).filter((key) => !previousArchive.has(key) && !!archive[key]).length;
+    const exactCount = Object.keys(c).filter((key) => { const [hid, lid] = key.split('|'), cp = c[key]; return this.data.heroes.get(hid) && jobLines(hid).some((l) => l.id === lid) && cp && Array.isArray(cp.weapons) && Array.isArray(cp.weaponLv) && Array.isArray(cp.buffs); }).length;
+    const had10_4 = !!sv.sanctumReached || (sv.bestStage || 0) >= DEEP_START * STAGES_PER_WORLD || (sv.bestDeep || 0) >= 1;
+    this.deepRecordMissing = had10_4 && exactCount === 0;
     sv.deepRecoverV2 = 1;
     sv.deepRecover = 1; // 예전 버전의 1회 복구 플래그도 유지
     writeSave(sv);
@@ -901,10 +904,12 @@ class Game {
     this.admin = profile && profile.admin ? { god: false, nocd: false } : null; if (this.admin) this.applyAdmin();
     this.locked = false; this.recoverDeepCheckpoints(); this.enterLobby();
     if (this.save.run) this.overlay = { type: 'resume' };
-    if (this.deepRecovered) { this.showBanner('10-4 기록 백업', `기존에 남아 있던 심층 10-4 기록 ${this.deepRecovered}개를 무기·강화·축복 정보와 함께 계정 백업에 보관했습니다`, '#9ad8ff'); this.deepRecovered = 0; }
     this.backfillScore(); // 랭킹판이 생기기 전의 내 최고 기록도 한 번 올림
     if (Net.httpBase()) Net.flushScores().catch(() => {}); // 지난번에 보내지 못한 기록
-    this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', this.admin ? '관리자 계정 — 모든 것이 해금됨 · ` 키: 관리자 메뉴' : profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다', '#ffd84a');
+    const accountSub = this.admin ? '관리자 계정 — 모든 것이 해금됨 · ` 키: 관리자 메뉴' : profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다';
+    const checkpointSub = this.deepRecovered ? `심층 10-4 기록 ${this.deepRecovered}개를 무기·강화·축복 정보와 함께 계정 백업에 보관했습니다` : this.deepRecordMissing ? '10-4 클리어 흔적은 있지만 원본 무기·강화·축복 스냅샷은 남아 있지 않습니다. 없는 장비 기록을 임의로 만들지 않았습니다' : accountSub;
+    this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', checkpointSub, this.deepRecordMissing ? '#ffb06a' : '#ffd84a');
+    this.deepRecovered = 0; this.deepRecordMissing = false;
   }
   logout() {
     writeSave(this.save); Auth.current = null; this.profile = null; Auth.setAuto(null);
