@@ -2292,7 +2292,9 @@ class Game {
       const before = fp.feast || 0, gain = enemy.feastHit && this.time - enemy.feastHit < 0.6 ? F.perSkillKill : F.perKill; fp.feast = before + gain;
       if (gain > 1) this.effects.text(enemy.x, enemy.y - 12, `혼 +${gain}`, '#b8e05a');
       if (fp.feast >= F.healAt && fp.state !== 'DEAD') fp.hp = Math.min(fp.maxHp, fp.hp + F.heal);
-      const ev = F.evolve || []; for (let r = fp.rank; r < ev.length; r++) if (before < ev[r] && fp.feast >= ev[r]) { this.evolve(null, fp.line); break; } /* [사용자 결정] 포식 스택 진화: 750 → 1진, 2000 → 2진 */
+      const ev = F.evolve || []; for (let r = fp.rank; r < ev.length; r++) if (before < ev[r] && fp.feast >= ev[r]) { const r0 = fp.rank; this.evolve(null, fp.line);
+        if (fp.rank > r0) { fp.maxHp = Math.round(fp.maxHp * 1.2); fp.hp = fp.maxHp; fp.maxShield = Math.round(fp.maxShield * 1.2); fp.shield = fp.maxShield; fp.stats.attackBonus += 0.2; } /* [사용자 결정] 소울 이터 2·3진: 체력·보호막·공격력 +20% */
+        break; } /* [사용자 결정] 포식 스택 진화: 750 → 1진(2진째), 2000 → 2진(3진째) */
       if (Math.floor(fp.feast / F.bannerEvery) > Math.floor(before / F.bannerEvery)) this.showBanner(`포식 ${Math.floor(fp.feast / F.bannerEvery) * F.bannerEvery}`, `일반 몬스터 피해 +${Math.round(fp.feast / 10 * F.dmgPer10 * 100)}% · 이동 +${Math.round(Math.min(F.speedCap, fp.feast / 10 * F.speedPer10) * 100)}% · 받는 피해 -${Math.round(Math.min(F.guardCap, fp.feast / 10 * F.guardPer10) * 100)}%${fp.rank < ev.length ? ` · 다음 진화 ${ev[fp.rank]}` : ''}`, '#b8e05a'); } }
     if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) {
       this.guildEvent('kills', 1, enemy.def.id);
