@@ -31,7 +31,7 @@ class WeaponSystem {
     if (player.energy < cost) { this.noEnergy(player); return false; }
     player.energy -= cost; return true;
   }
-  getFireRate(player, w) { return w.def.fireRate * (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 + (player.odRate || 0) : 0) + (player.solomon > 0 ? player.treasure.rate : 0)) * (w.def.spinUp ? 0.25 + 0.75 * Math.min(1, (w.spin || 0) / w.def.spinUp) : 1); }
+  getFireRate(player, w) { return w.def.fireRate * (1 + player.stats.fireRateBonus + (player.overdrive > 0 ? 1 + (player.odRate || 0) : 0) + (player.solomon > 0 ? player.treasure.rate : 0)) * (w.def.spinUp ? 0.25 + 0.75 * Math.min(1, (w.spin || 0) / w.def.spinUp) : 1) * (player.feastPenaltyActive ? (player.feastPenaltyFactor || 0.6) : 1); }
   update(player, dt, input) {
     this.noEnergyMsgT = Math.max(0, this.noEnergyMsgT - dt);
     const w = player.weapon;
