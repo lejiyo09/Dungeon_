@@ -8,7 +8,7 @@ function freeHeroes() { return DATA_HEROES.filter((h) => h.price === 0).map((h) 
 function defaultSave() {
   return { bank: 0, unlocked: freeHeroes(), selected: 'hero_swordsman', armory: [], loadout: null,
     discovered: DATA_HEROES.map((h) => h.startWeapon), clears: 0, bestStage: 0,
-    prologueSeen: false, sanctumReached: false, treasures: [], treasureEquipped: null, run: null, runReviveUsed: false, jobLv: {}, skins: [], skinOn: {}, giftsUsed: [], lineChoice: {} };
+    prologueSeen: false, sanctumReached: false, treasures: [], treasureEquipped: null, run: null, runReviveUsed: false, jobLv: {}, skins: [], skinOn: {}, giftsUsed: [], lineChoice: {}, deepCheckpointArchive: {} };
 }
 // 깨진 저장 정리: 형식이 이상한 칸은 기본값으로 (게임이 멈추거나 이어하기 창에 갇히지 않게)
 function sanitizeSave(s) {
@@ -20,7 +20,8 @@ function sanitizeSave(s) {
   if (s.stats && typeof s.stats !== 'object') s.stats = {};
   for (const k of ['guild', 'merlin', 'babylon']) if (s[k] && (typeof s[k] !== 'object' || Array.isArray(s[k]))) delete s[k]; // 다시 만들어짐
   if (s.supplies && !Array.isArray(s.supplies)) s.supplies = [];
-  if (s.deepCheckpoints && typeof s.deepCheckpoints !== 'object') s.deepCheckpoints = {};
+  if (s.deepCheckpoints && (typeof s.deepCheckpoints !== 'object' || Array.isArray(s.deepCheckpoints))) s.deepCheckpoints = {};
+  if (s.deepCheckpointArchive && (typeof s.deepCheckpointArchive !== 'object' || Array.isArray(s.deepCheckpointArchive))) s.deepCheckpointArchive = {};
   if (s.gambleCards && !(Array.isArray(s.gambleCards) && s.gambleCards.length === 3)) s.gambleCards = null;
   const r = s.run, okRun = r && typeof r === 'object' && DATA_HEROES.some((h) => h.id === r.hero) && Number.isInteger(r.worldIdx) && r.worldIdx >= 0 && Number.isInteger(r.levelIdx) && r.levelIdx >= 0 && r.levelIdx < STAGES_PER_WORLD && r.p && typeof r.p === 'object' && Array.isArray(r.p.weapons);
   if (r && !okRun) s.run = null; // 이어하기 기록이 깨졌으면 버림
