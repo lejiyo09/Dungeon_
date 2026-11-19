@@ -636,9 +636,9 @@ class Game {
   loadStage() {
     const W = this.W;
     if (W.deep && !W.trial) this.save.bestDeep = Math.max(this.save.bestDeep || 0, W.depth); // 가장 깊이 내려간 심층
-    const map = W.trial ? generateDungeon({ roomCount: W.rooms || 2, specials: ['boss'], waves: W.waves || 0, palette: W.palette }) // 시련: 시작 방 + 보스 방 (카멜롯은 전투 방도)
+    const map = W.trial ? generateDungeon({ roomCount: W.rooms || 2, specials: ['boss'], waves: W.waves || 0, palette: W.palette, bossSize: W.bossRoom }) // 시련: 시작 방 + 보스 방 (카멜롯은 전투 방도)
       : this.isBossStage
-      ? generateDungeon({ roomCount: 4, specials: ['boss'], waves: W.waves, palette: W.palette })
+      ? generateDungeon({ roomCount: 4, specials: ['boss'], waves: W.waves, palette: W.palette, bossSize: W.bossRoom })
       : generateDungeon({ roomCount: Math.min(15, 9 + this.worldIdx), specials: (this.areaId ? ['exit', 'treasure'] : ['exit', 'treasure', 'shop']).concat(this.rollSpecialRoom()), waves: W.waves, palette: W.palette }); // 특수방 하나
     this.resetWorldLists(map);
     const s = map.startRoom, sp = map.tileCenter(s.cx, s.cy), p = this.player;
@@ -2046,7 +2046,7 @@ class Game {
   decorateThroneHall(room) { /* [사용자 결정] 길가메시의 방 다시 디자인: 왕좌 + 금 기둥 줄 + 보물 더미 + 공중의 보물고 문 + 화로 (융단·태양 원반은 바닥 그림) */
     const m = this.map, c = m.tileCenter(room.cx, room.cy), top = (room.y0 + 3) * TILE;
     this.props.push(new GoldThrone(c.x, top));
-    for (let ty = room.y0 + 4; ty < room.y0 + room.h - 1; ty += 3) for (const dx of [-4, 4]) { const p = m.tileCenter(room.cx + dx, ty); this.props.push(new GoldPillar(p.x + (dx < 0 ? -8 : 8), p.y)); }
+    const pd = room.w >= 27 ? 5 : 4; for (let ty = room.y0 + 4; ty < room.y0 + room.h - 1; ty += 3) for (const dx of [-pd, pd]) { const p = m.tileCenter(room.cx + dx, ty); this.props.push(new GoldPillar(p.x + (dx < 0 ? -8 : 8), p.y)); }
     this.props.push(new TreasureHeap(c.x - 46, top + 6, false), new TreasureHeap(c.x + 46, top + 6, true));
     for (let i = 0; i < 6; i++) { const tx = room.x0 + 2 + Math.round(i * (room.w - 5) / 5); if (Math.abs(tx - room.cx) < 3) continue; const p = m.tileCenter(tx, room.y0 + 1); this.props.push(new GateRipple(p.x, p.y + 10, i)); }
     for (const [dx, dy] of [[1, room.h - 2], [room.w - 2, room.h - 2], [1, 2], [room.w - 2, 2]]) { const b = m.tileCenter(room.x0 + dx, room.y0 + dy); this.props.push(new Brazier(b.x, b.y)); }

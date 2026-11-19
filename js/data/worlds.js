@@ -164,7 +164,7 @@ const ZONES = {
       { label: '지구라트 1', name: '지구라트 — 첫째 단', boss: 'boss_humbaba', world: 8, pool: 'd', palette: zigPal(['#a0704a', '#a4744c'], '#ffd84a'), ziggurat: true },
       { label: '지구라트 2', name: '지구라트 — 둘째 단', boss: 'boss_mushussu', world: 8, pool: 'd', palette: zigPal(['#9a6a52', '#9e6e54'], '#6a8aff') },
       { label: '지구라트 3', name: '지구라트 — 셋째 단', boss: 'boss_bull_of_heaven', world: 9, pool: 'd', palette: zigPal(['#8a6a5a', '#8e6e5c'], '#ff8a5a') },
-      { label: '지구라트 4', name: '영웅왕의 왕좌', boss: 'boss_gilgamesh_king', world: 9, pool: 'd', final: true, palette: THRONE_PAL }
+      { label: '지구라트 4', name: '영웅왕의 왕좌', boss: 'boss_gilgamesh_king', world: 9, pool: 'd', final: true, palette: THRONE_PAL, bossRoom: [27, 19] }
     ],
     palette: abzuPal(['#3a3226', '#3d3428'], ['#262620', '#282822'], '#4a3a2a', '#5a4a36', '#7a6046', '#6a5240', '#3ac8b8') }
 };
@@ -172,7 +172,7 @@ const ZONE_CACHE = new Map();
 function zoneWorld(z, f) { /* 지하 f번째 필드 (0부터)의 월드 정의 */
   const key = z + '|' + f; let W = ZONE_CACHE.get(key); if (W) return W;
   const Z = ZONES[z], F = Z.fields[Math.max(0, Math.min(Z.fields.length - 1, f))];
-  W = Object.assign({}, Z, { name: F.name, boss: F.boss, enemies: ZONE_POOLS[F.pool], palette: F.palette || Z.palette, scaleWorld: F.world, field: f, finalField: !!F.final, surface: !!F.surface, ziggurat: !!F.ziggurat });
+  W = Object.assign({}, Z, { name: F.name, boss: F.boss, enemies: ZONE_POOLS[F.pool], palette: F.palette || Z.palette, scaleWorld: F.world, field: f, finalField: !!F.final, bossRoom: F.bossRoom, surface: !!F.surface, ziggurat: !!F.ziggurat });
   ZONE_CACHE.set(key, W); return W; }
 function zoneLabel(z, f, l) { const Z = ZONES[z], F = Z && Z.fields[Math.max(0, Math.min(Z.fields.length - 1, f))]; return F ? `${F.label}-${l + 1}` : `? ${f + 1}-${l + 1}`; } /* [사용자 결정] 지하 4 → 지상 → 지구라트 4 */
 function runLabel(r) { return r.zone && ZONES[r.zone] ? zoneLabel(r.zone, r.zf || 0, r.levelIdx) : stageLabel(r.worldIdx, r.levelIdx); } // 이어하기 표시용

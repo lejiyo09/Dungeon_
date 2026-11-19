@@ -397,7 +397,7 @@ function drawEnemy(ctx, e, x, y, flash) {
   const def = e.def, phase = e.phase || 1;
   const color = def.phaseColors ? def.phaseColors[phase - 1] : def.color;
   const color2 = def.aiType === 'caster' ? def.bulletColor : (def.sprite === 'boss_frost' && phase >= 2 ? '#ff5a7a' : undefined);
-  const spr = getSprite(def.sprite, color, color2), sc = def.boss && spr.w < 32 ? 2 : 1;
+  const spr = getSprite(def.sprite, color, color2), sc = def.spriteScale || (def.boss && spr.w < 32 ? 2 : 1); /* spriteScale: 원래 크기로 그리는 보스 (길가메시) */
   let sq = 0, oy = 0;
   if (e.state === 'TELEGRAPH' && ['slime', 'iceslime', 'shroom', 'golem', 'boss_gel', 'boss_frost'].includes(def.sprite)) sq = def.boss ? 4 : 2;
   else if (def.sprite === 'slime' || def.sprite === 'iceslime' || def.sprite === 'boss_gel') sq = Math.round((Math.sin(e.stateTime * (def.boss ? 4 : 9)) + 1) * (def.boss ? 1 : 0.6));

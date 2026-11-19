@@ -184,7 +184,7 @@ function generateDungeon(opts) {
   for (const c of order) if (!c.type) c.type = 'combat';
 
   const map = new DungeonMap(GRID_W * CELL_W, GRID_H * CELL_H, opts.palette);
-  const SIZES = { start: [11, 9], treasure: [11, 9], shop: [13, 9], exit: [11, 9], boss: [23, 17], fountain: [11, 9], altar: [11, 9], gamble: [11, 9], challenge: [17, 13], forge: [11, 9], blood: [11, 9], rack: [13, 9], smithy: [11, 9], evolve: [17, 13] };
+  const SIZES = { start: [11, 9], treasure: [11, 9], shop: [13, 9], exit: [11, 9], boss: opts.bossSize || [23, 17], /* bossSize: 길가메시 왕좌의 방은 조금 넓게 */ fountain: [11, 9], altar: [11, 9], gamble: [11, 9], challenge: [17, 13], forge: [11, 9], blood: [11, 9], rack: [13, 9], smithy: [11, 9], evolve: [17, 13] };
   for (const c of order) {
     const [w, h] = SIZES[c.type] || [15 + 2 * randInt(0, 2), 11 + 2 * randInt(0, 1)];
     const cx = c.gx * CELL_W + (CELL_W >> 1), cy = c.gy * CELL_H + (CELL_H >> 1);

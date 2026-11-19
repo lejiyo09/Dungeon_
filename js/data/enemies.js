@@ -539,7 +539,7 @@ const DATA_ENEMIES = [
       { type: 'laser', beams: 2, spreadAng: Math.PI, sweep: 1.0, duration: 2.0, width: 7, telegraph: 0.9, color: '#ff8a9a' }],
     finalPatterns: [{ type: 'vortex', name: '붉은 달', duration: 3.5, pull: 44, arms: 4, interval: 0.1, spin: -2.0, color: '#ff5a6a' }] },
   // [사용자 결정] 영웅왕 길가메시 (바빌로니아 왕좌) — 쉬운 보스전, 체력 1에서 멈춤(hpFloor) → 이야기로 이어짐. 패턴은 게이트 오브 바빌론의 보물(검·창)을 쏘는 것 [임시]
-  { id: 'boss_gilgamesh', name: '길가메시', title: '영웅왕 — 바빌로니아의 왕', sprite: 'boss_gilgamesh', color: '#c8901a', phaseColors: ['#c8901a', '#d8a020', '#e8b030'],
+  { id: 'boss_gilgamesh', name: '길가메시', title: '영웅왕 — 바빌로니아의 왕', sprite: 'boss_gilgamesh', spriteScale: 1, color: '#c8901a', phaseColors: ['#c8901a', '#d8a020', '#e8b030'],
     boss: true, aiType: 'boss', health: 1100, damage: 16, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.25, bulletSpeed: 150, hpFloor: true, phaseAt: [0.5, -1], /* 2페이즈까지만 (체력 1에서 이야기로 넘어가므로 3페이즈·궁극기 없음) */
     rewardGold: 0, patterns: [
       { type: 'gateVolley', name: '왕의 재보', waves: 2, gates: 6, arc: 2.2, radius: 42, delay: 0.8, interval: 0.12, speed: 230, size: 4, mult: 1, color: '#ffd84a' }, /* 전용 패턴 (약한 판) */
@@ -666,7 +666,7 @@ const DATA_ENEMIES = [
     finalPatterns: [{ type: 'vortex', name: '칠 년의 가뭄', duration: 3.8, pull: 48, arms: 5, interval: 0.1, spin: 2.1, color: '#ff8a5a' }] },
   // [사용자 결정] 바빌로니아 지하 10-4: 영웅왕 길가메시 진심 — 아서 왕급 (같은 스테이지 곡선(10필드)·같은 체력·공격력·공격 간격·체력바 5개·행동 방해 면역)
   //  패턴은 왕의 보물고에서 쏟아지는 검·창·사슬 [임시 디자인 · 이름은 Claude가 정한 [제안]]
-  { id: 'boss_gilgamesh_king', name: '길가메시', title: '영웅왕 — 왕의 보물고 전개', sprite: 'boss_gilgamesh', color: '#c8901a', phaseColors: ['#c8901a', '#d8a020', '#ff4a3a'],
+  { id: 'boss_gilgamesh_king', name: '길가메시', title: '영웅왕 — 왕의 보물고 전개', sprite: 'boss_gilgamesh', spriteScale: 1, color: '#c8901a', phaseColors: ['#c8901a', '#d8a020', '#ff4a3a'],
     boss: true, aiType: 'boss', health: 18400, damage: 50, moveSpeed: 92, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.28, bulletSpeed: 220,
     rewardGold: 0, ultFrom: 2, ultCd: 14, bars: 5, phaseAt: [0.6, 0.2], ccImmune: true, rampage: 1.25, rampageName: '영웅왕 — 진심', ult3Cd: 15,
     // [사용자 결정] 길가메시 전용 패턴: 왕의 재보(일제 개방) · 보물고의 낙하 · 왕의 사슬 · 왕의 보물고 전부 개방(궁극기) · 태초를 가르는 일격(마지막 페이즈)

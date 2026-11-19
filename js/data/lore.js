@@ -208,6 +208,7 @@ const GILGAMESH_UNDER_WIN_LINES = [
 const BABYLON_TRIAL = { /* 길가메시의 왕좌 (시련 틀을 빌려 씀) */
   id: 'babylon', title: '바빌로니아 — 영웅왕의 왕좌', color: '#ffd84a', intro: '영웅왕 길가메시가 왕좌에서 내려다보고 있습니다', reward: 0,
   W: { name: '바빌로니아 — 영웅왕의 왕좌', boss: 'boss_gilgamesh', trial: true, rooms: 2, sanctum: false, deep: false, waves: 0,
+    bossRoom: [27, 19], /* [사용자 결정] 왕좌의 방 조금 넓게 (기본 23×17) */
     palette: { style: 'goldhall', accent: '#ffd84a', floor: ['#d8d0c0', '#dcd4c4'], corridor: ['#8a7a60', '#8c7c62'], wall: '#5a1a18', wallTop: '#7a2420', /* [사용자 결정] 왕좌의 방 다시 디자인: 흰 대리석·붉은 휘장·금 기둥 */
       wallFace: '#a0302a', faceLine: '#8a2824', deco: 'rgba(255,216,74,0.4)' } },
   kit: { hp: 0, rarity: ['legendary', 'epic'], lv: 3, buffs: 0, picks: 0 }
