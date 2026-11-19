@@ -470,16 +470,10 @@ class Game {
   deepKey(heroId, lineId) { return heroId + '|' + (lineId || this.chosenLine(heroId).id); }
   recoverDeepCheckpoints() { /* 기존 기록은 그대로 보존하고, 남아 있는 정확한 스냅샷만 계정 백업으로 복사 */
     const sv = this.save; if (sv.deepRecoverV2) return;
+    const previousArchive = new Set(Object.keys(sv.deepCheckpointArchive || {}));
     const c = this.deepCps();
     const archive = sv.deepCheckpointArchive = sv.deepCheckpointArchive || {};
-    let archived = 0;
-    for (const [key, cp] of Object.entries(c)) {
-      const [hid, lid] = key.split('|');
-      const exact = this.data.heroes.get(hid) && jobLines(hid).some((l) => l.id === lid)
-        && cp && Array.isArray(cp.weapons) && Array.isArray(cp.weaponLv) && Array.isArray(cp.buffs);
-      if (!exact) continue;
-      if (!archive[key]) archived++;
-    }
+    const archived = Object.keys(c).filter((key) => !previousArchive.has(key) && !!archive[key]).length;
     sv.deepRecoverV2 = 1;
     sv.deepRecover = 1; // 예전 버전의 1회 복구 플래그도 유지
     writeSave(sv);
@@ -519,12 +513,12 @@ class Game {
     if (changed) writeSave(sv);
     return c;
   }
-  deepCheckpoint(heroId, lineId) { return this.deepCps()[this.deepKey(heroId, lineId)] || null; } // 직업·계열마다 10-4를 깼을 때의 캐릭터
+  deepCheckpoint(heroId, lineId) { const cp = this.deepCps()[this.deepKey(heroId, lineId)]; return cp && Array.isArray(cp.weapons) && Array.isArray(cp.weaponLv) && Array.isArray(cp.buffs) ? cp : null; } // 무기·강화·축복 배열이 모두 남아 있는 정확한 기록만 사용
   deepEntryHero() { // 선택 직업의 다른 진화 계열 기록을 먼저 찾고, 없으면 가장 최근 기록으로 변경
     const c = this.deepCps(), selected = this.save.selected;
     const chosen = this.deepKey(selected);
-    if (c[chosen]) return null;
-    const own = Object.entries(c).filter(([k, cp]) => k.startsWith(selected + '|') && cp && typeof cp === 'object')
+    if (this.deepCheckpoint(selected)) return null;
+    const own = Object.entries(c).filter(([k, cp]) => k.startsWith(selected + '|') && cp && Array.isArray(cp.weapons) && Array.isArray(cp.weaponLv) && Array.isArray(cp.buffs))
       .sort((a, b) => (b[1].t || 0) - (a[1].t || 0))[0];
     if (own) {
       const lid = own[0].split('|')[1];
@@ -534,7 +528,7 @@ class Game {
     let best = null;
     for (const [k, cp] of Object.entries(c)) {
       const [hid, lid] = k.split('|');
-      if (cp && typeof cp === 'object' && this.data.heroes.get(hid) && jobLines(hid).some((l) => l.id === lid) && (!best || (cp.t || 0) > (c[best].t || 0))) best = k;
+      if (cp && Array.isArray(cp.weapons) && Array.isArray(cp.weaponLv) && Array.isArray(cp.buffs) && this.data.heroes.get(hid) && jobLines(hid).some((l) => l.id === lid) && (!best || (cp.t || 0) > (c[best].t || 0))) best = k;
     }
     if (!best) return null;
     const [hid, lid] = best.split('|');
@@ -1424,7 +1418,10 @@ class Game {
     const chosen = this.chosenLine(this.player.hero.id); this.player.lineChoice = chosen.id;
     const finish = () => {
       if (after) after();
-      if (this.applyFeastStartPenalty(this.player)) this.showBanner('소울 이터', '시작 기본 능력치 -40% · 포식 500 도달 시 해제', '#b8e05a');
+      const appliedPenalty = this.applyFeastStartPenalty(this.player);
+      if (appliedPenalty) this.showBanner('소울 이터', '시작 기본 능력치 -40% · 포식 500 도달 시 해제', '#b8e05a');
+      // 직업 갈래·심층 시작 장비·시작 페널티까지 이어하기 저장에 반영
+      if (this.mode === 'dungeon' && !this.trialW && this.player) { this.save.run = this.snapshotRun(); writeSave(this.save); }
     };
     if (lines.length === 1 || branchesAtEvolve(this.player.hero.id)) { this.setJob(this.player, lines[0], 0); finish(); return; }
     if (window.__toolMode) { this.applyVariant(lines[0]); finish(); return; }
