@@ -138,15 +138,40 @@ function worldDef(i) {
   return Object.assign({}, base, { depth: d + 1, name: `${base.name}` });
 }
 // [사용자 결정] 바빌로니아 지하: 길가메시에게 떨어진 뒤의 별도 지역 (worldIdx는 몬스터 세기용으로만 씀 — 기본 무기·1진으로 7필드급을 상대) [임시 디자인]
-const ZONES = {
-  babylon_under: { id: 'babylon_under', zone: 'babylon_under', name: '바빌로니아 지하 수로', short: '지하', specialPool: ['fountain', 'gamble', 'challenge'], /* [사용자 결정] 상점·전직의 방·무기 나오는 방 없음 */ scaleWorld: 6, boss: 'boss_abzu_lamassu', waves: 3, /* [사용자 결정] 난이도 높게: 7필드 곡선 + 웨이브 3 */
-    enemies: [['enemy_clayscribe_001', 3], ['enemy_mudbrick_001', 2], ['enemy_chainhound_001', 3], ['enemy_abzuserpent_001', 3]],
-    palette: { style: 'abzu', accent: '#3ac8b8', floor: ['#3a3226', '#3d3428'], corridor: ['#262620', '#282822'], wall: '#4a3a2a', wallTop: '#5a4a36',
-      wallFace: '#7a6046', faceLine: '#6a5240', deco: 'rgba(58,200,184,0.35)' } }
+const ZONE_POOLS = { /* 지하 필드 몬스터: 앞(1~3) · 가운데(4~6) · 깊은 곳(7~10) */
+  a: [['enemy_clayscribe_001', 3], ['enemy_mudbrick_001', 2], ['enemy_chainhound_001', 3], ['enemy_abzuserpent_001', 3]],
+  b: [['enemy_clayscribe_001', 2], ['enemy_mudbrick_001', 2], ['enemy_scorpionman_001', 3], ['enemy_mushlet_001', 3], ['enemy_abzuserpent_001', 2]],
+  c: [['enemy_scorpionman_001', 3], ['enemy_mushlet_001', 3], ['enemy_cedarling_001', 2], ['enemy_mudbrick_001', 2], ['enemy_chainhound_001', 2]]
 };
-function zoneLabel(z, l) { const Z = ZONES[z]; return `${Z ? Z.short : '?'} ${l + 1}`; }
-function runLabel(r) { return r.zone && ZONES[r.zone] ? zoneLabel(r.zone, r.levelIdx) : stageLabel(r.worldIdx, r.levelIdx); } // 이어하기 표시용
-function runWorld(r) { return (r.zone && ZONES[r.zone]) || worldDef(r.worldIdx); }
+const abzuPal = (floor, corridor, wall, wallTop, wallFace, faceLine, accent) => ({ style: 'abzu', accent, floor, corridor, wall, wallTop, wallFace, faceLine, deco: 'rgba(58,200,184,0.35)' });
+const ZONES = {
+  // [사용자 결정] 바빌로니아 지하: 길가메시에게 떨어진 뒤의 별도 지역, 1-1 ~ 10-4 (10-4: 영웅왕 길가메시) [임시 디자인]
+  //  worldIdx는 몬스터 세기용으로만 씀 (기본 무기·1진으로 7~10필드급을 상대)
+  babylon_under: { id: 'babylon_under', zone: 'babylon_under', short: '지하', specialPool: ['fountain', 'gamble', 'challenge'], /* [사용자 결정] 상점·전직의 방·무기 나오는 방 없음 */ waves: 3,
+    fields: [
+      { name: '바빌로니아 지하 수로', boss: 'boss_abzu_lamassu', world: 6, pool: 'a' },
+      { name: '무너진 점토판 서고', boss: 'boss_clay_colossus', world: 6, pool: 'a', palette: abzuPal(['#443626', '#47392a'], ['#2a241c', '#2c261e'], '#5a4430', '#6a523a', '#8a6a4a', '#7a5c40', '#c8a040') },
+      { name: '청금석 하수도', boss: 'boss_mushussu', world: 7, pool: 'a', palette: abzuPal(['#2e3446', '#313749'], ['#1e2230', '#202432'], '#34406a', '#3e4c7a', '#5a6aa0', '#4a5a8e', '#6a9aff') },
+      { name: '삼나무 뿌리 굴', boss: 'boss_humbaba', world: 7, pool: 'b', palette: abzuPal(['#34382a', '#373b2c'], ['#22261c', '#24281e'], '#3a4a2a', '#465a34', '#62784a', '#56693f', '#8ad86a') },
+      { name: '말라붙은 저수지', boss: 'boss_bull_of_heaven', world: 7, pool: 'b', palette: abzuPal(['#4e4232', '#514535'], ['#342c22', '#362e24'], '#6a5438', '#7a6244', '#9a7e58', '#8a704c', '#ff8a5a') },
+      { name: '역청 늪 수로', boss: 'boss_clay_colossus', world: 8, pool: 'b', palette: abzuPal(['#262420', '#282622'], ['#181714', '#1a1916'], '#2e2a24', '#3a352e', '#544c40', '#4a4338', '#3ac8b8') },
+      { name: '전갈의 문', boss: 'boss_mushussu', world: 8, pool: 'c', palette: abzuPal(['#4a3424', '#4d3726'], ['#30221a', '#32241c'], '#5a3a26', '#6a4630', '#8a6040', '#7a5436', '#ffd84a') },
+      { name: '잠든 보물고', boss: 'boss_humbaba', world: 8, pool: 'c', palette: abzuPal(['#3e3420', '#413722'], ['#2a2416', '#2c2618'], '#5a4a24', '#6a582c', '#a88a40', '#957a38', '#ffd84a') },
+      { name: '왕의 지하 묘역', boss: 'boss_bull_of_heaven', world: 9, pool: 'c', palette: abzuPal(['#2e2a2e', '#312d31'], ['#1e1b1e', '#201d20'], '#3a3240', '#463c4e', '#625470', '#564a62', '#c8a0ff') },
+      { name: '영웅왕의 지하 신전', boss: 'boss_gilgamesh_king', world: 9, pool: 'c', final: true,
+        palette: { style: 'babylon', accent: '#ffd84a', floor: ['#26346a', '#283770'], corridor: ['#1c2650', '#1d2852'], wall: '#2a3a7a', wallTop: '#34489a', wallFace: '#5a6ac8', faceLine: '#4a5ab8', deco: 'rgba(255,216,74,0.35)' } }
+    ],
+    palette: abzuPal(['#3a3226', '#3d3428'], ['#262620', '#282822'], '#4a3a2a', '#5a4a36', '#7a6046', '#6a5240', '#3ac8b8') }
+};
+const ZONE_CACHE = new Map();
+function zoneWorld(z, f) { /* 지하 f번째 필드 (0부터)의 월드 정의 */
+  const key = z + '|' + f; let W = ZONE_CACHE.get(key); if (W) return W;
+  const Z = ZONES[z], F = Z.fields[Math.max(0, Math.min(Z.fields.length - 1, f))];
+  W = Object.assign({}, Z, { name: F.name, boss: F.boss, enemies: ZONE_POOLS[F.pool], palette: F.palette || Z.palette, scaleWorld: F.world, field: f, finalField: !!F.final });
+  ZONE_CACHE.set(key, W); return W; }
+function zoneLabel(z, f, l) { const Z = ZONES[z]; return `${Z ? Z.short : '?'} ${f + 1}-${l + 1}`; }
+function runLabel(r) { return r.zone && ZONES[r.zone] ? zoneLabel(r.zone, r.zf || 0, r.levelIdx) : stageLabel(r.worldIdx, r.levelIdx); } // 이어하기 표시용
+function runWorld(r) { return r.zone && ZONES[r.zone] ? zoneWorld(r.zone, r.zf || 0) : worldDef(r.worldIdx); }
 // 화면 표시용 스테이지 이름: 1-1 ~ 10-4, 심층은 '심층 1-1'
 function stageLabel(w, l) { return w >= DEEP_START ? `심층 ${w - DEEP_START + 1}-${l + 1}` : `${w + 1}-${l + 1}`; }
 const LOBBY_PALETTE = { style: 'wood', floor: ['#3a2e26', '#3d3129'], corridor: ['#3a2e26', '#3d3129'], wall: '#40354f', wallTop: '#4b3f5c',

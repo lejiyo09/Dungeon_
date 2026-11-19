@@ -172,8 +172,24 @@ const BABYLON_UNDER_WAKE_LINES = [
 ];
 const BABYLON_UNDER_CLEAR_LINES = [
   '라마수의 진흙 몸이 무너져 내리고, 막혀 있던 수문이 무겁게 열린다.',
-  '(…위로 이어지는 계단. 바깥 공기 냄새가 나.)',
-  '(잡종이라고 했지, 길가메시. 좋아 — 다음엔 떨어지지 않아.)',
+  '(…계단이 위가 아니라, 더 깊은 곳으로 이어져 있어.)',
+  '(이 바닥 끝 어딘가에서 — 금빛이 새어 나오고 있다.)',
+  '(잡종이라고 했지, 길가메시. 좋아. 내려가서 직접 만나 주지.)'
+];
+// [사용자 결정] 지하 10-4: 영웅왕 길가메시 (아서 왕급) — 대사는 [임시]
+const GILGAMESH_UNDER_INTRO_LINES = [
+  '(…지하 깊은 곳에, 이런 신전이. 벽도 바닥도 온통 청금석과 황금이야.)',
+  '황금 의자 위에서, 그가 턱을 괸 채 내려다본다.',
+  '길가메시: 「잡종. 그 사슬에 묶인 몸으로 여기까지 기어 내려왔다고?」',
+  '길가메시: 「…좋다. 그 끈질김만은 인정해 주지. 이번엔 장난이 아니다.」',
+  '길가메시: 「왕의 보물고 — 전부 열어 주마. 버텨 보아라.」',
+  '(…온다.)'
+];
+const GILGAMESH_UNDER_WIN_LINES = [
+  '황금빛 갑옷에 금이 가고, 영웅왕이 한쪽 무릎을 꿇는다.',
+  '길가메시: 「…하. 하하하하! 잡종 주제에, 이 왕에게 무릎을 꿇게 하다니!」',
+  '길가메시: 「인정하마. 네 이름은 이 왕의 보물고 한 칸에 새겨 두지.」',
+  '몸을 묶고 있던 금빛 사슬이 하나씩 풀려 나가며, 몸이 가벼워진다.',
   '[임시] 바빌로니아 이야기는 다음에 이어집니다.'
 ];
 const BABYLON_TRIAL = { /* 길가메시의 왕좌 (시련 틀을 빌려 씀) */
@@ -471,6 +487,8 @@ const STORY_ARCHIVE = [
   { id: 'babylon', name: '금빛의 문', kind: 'cut', lines: () => BABYLON_APPEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_appear') },
   { id: 'babylon_under', name: '바빌로니아 지하', kind: 'cut', lines: () => BABYLON_FALL_LINES.concat(BABYLON_UNDER_WAKE_LINES), unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under') },
   { id: 'babylon_under_clear', name: '열린 수문', kind: 'cut', lines: () => BABYLON_UNDER_CLEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under_clear') },
+  { id: 'gilgamesh_under', name: '영웅왕의 지하 신전', kind: 'cut', lines: () => GILGAMESH_UNDER_INTRO_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gilgamesh_under') },
+  { id: 'gilgamesh_under_win', name: '무릎 꿇은 영웅왕', kind: 'cut', lines: () => GILGAMESH_UNDER_WIN_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gilgamesh_under_win') },
   { id: 'arthur', name: '101번째 원탁의 기사', kind: 'cut', lines: () => ARTHUR_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 22) }
 ];
 const MERLIN_TRIAL = { gate: 0, deep: 2 }; // 시련: 심층 보스 2마리 처치 [사용자 결정: 문지기 조건 없앰] (gate: 무명의 문지기 처치 수, 0이면 조건 없음)

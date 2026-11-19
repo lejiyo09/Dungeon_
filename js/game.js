@@ -248,9 +248,9 @@ class Game {
   }
   startBabylonUnder(paid = 0) { /* [사용자 결정] 바빌로니아 지하: 기본 무기 하나 + 1진으로 새로 시작 (사슬에 힘이 묶임) */
     const Z = ZONES.babylon_under;
-    this.mode = 'dungeon'; this.trialW = null; this.trialId = null; this.areaId = Z.id; this.runDeep = false;
-    this.worldIdx = Z.scaleWorld; this.levelIdx = 0; this.gold = 0; this.kills = 0;
-    this.runStart = { stage: this.stageIndex, world: this.worldIdx }; this.save.runReviveUsed = false;
+    this.mode = 'dungeon'; this.trialW = null; this.trialId = null; this.areaId = Z.id; this.zoneField = 0; this.runDeep = false;
+    this.worldIdx = zoneWorld(Z.id, 0).scaleWorld; this.levelIdx = 0; this.gold = 0; this.kills = 0;
+    this.runStart = { stage: this.stageIndex, world: this.worldIdx, zs: 0, zf: 0 }; this.save.runReviveUsed = false;
     const p = this.player = this.makePlayer(0, 0); p.weapons.length = 1; p.slot = 0; /* 무기고 보조 무기도 없이 기본 무기만 */
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) { p.treasure = tr; if (tr.apply) tr.apply(p); } /* 보구는 영구 보유라 그대로 */
     this.loadStage();
@@ -270,11 +270,19 @@ class Game {
     else this.showBanner(`금빛 사슬 조각 (${n}/${S.need})`, '바빌로니아에서만 얻을 수 있는 조각 — 10개를 모으면 무언가가 이어진다', '#ffd84a');
     writeSave(sv);
   }
-  babylonUnderCleared(c) { /* 라마수 처치: 위로 가는 수문이 열림 → 귀환 */
-    const B = this.save.babylon = this.save.babylon || {}; B.underCleared = (B.underCleared || 0) + 1; writeSave(this.save);
+  babylonUnderBoss(c, W) { /* 지하 필드 보스 처치: 다음 필드로 내려가거나 귀환 · 10-4 길가메시를 쓰러뜨리면 끝 */
     this.props.push(new Chest(c.x, c.y - 24, 'boss'));
-    this.portals.push(new Portal(c.x, c.y + 24, () => this.endRun(true), '수문 위 계단 — 귀환', [58, 200, 184]));
-    this.playCutscene(BABYLON_UNDER_CLEAR_LINES, { id: 'babylon_under_clear', always: true, focus: { x: c.x, y: c.y } });
+    if (W.finalField) {
+      const B = this.save.babylon = this.save.babylon || {}; B.gilgameshDown = (B.gilgameshDown || 0) + 1; writeSave(this.save);
+      this.portals.push(new Portal(c.x, c.y + 24, () => this.endRun(true), '신전 위 계단 — 귀환', [255, 216, 74]));
+      this.effects.rays(c.x, c.y, '#ffd84a', 20, 120, 1.2); this.screenFlash = 0.25; this.flashColor = '255,216,74'; SFX.play('gate', 0.6);
+      this.playCutscene(GILGAMESH_UNDER_WIN_LINES, { id: 'gilgamesh_under_win', always: true, focus: { x: c.x, y: c.y } });
+      return; }
+    const nf = this.zoneField + 1, next = zoneWorld(this.areaId, nf);
+    this.portals.push(new Portal(c.x + 26, c.y + 24, () => this.advanceStage(), `${zoneLabel(this.areaId, nf, 0)} ${next.name}`, next.finalField ? [255, 216, 74] : [58, 200, 184]));
+    this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90]));
+    if (this.zoneField === 0) this.playCutscene(BABYLON_UNDER_CLEAR_LINES, { id: 'babylon_under_clear', always: true, focus: { x: c.x, y: c.y } }); /* 라마수: 수문 너머는 더 깊은 곳 */
+    if (next.finalField) this.showBanner('금빛이 새어 나오는 계단', '이 아래에 — 그가 있다', '#ffd84a');
   }
   camelotFloors() { /* 갈 수 있는 카멜롯 층 (멀린의 시련 진행도: N층은 quest >= 3 + 2N) */
     const q = (this.save.merlin && this.save.merlin.quest) || 0, out = [];
@@ -557,7 +565,7 @@ class Game {
   // ── 이어하기: 스테이지 시작 시점의 런 상태 (맵은 그 스테이지를 새로 생성)
   snapshotRun() {
     const p = this.player;
-    return { v: 1, t: Date.now(), hero: p.hero.id, zone: this.areaId || null, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills, start: this.runStart || null,
+    return { v: 1, t: Date.now(), hero: p.hero.id, zone: this.areaId || null, zf: this.zoneField || 0, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills, start: this.runStart || null,
       p: { maxHp: p.maxHp, hp: p.hp, maxShield: p.maxShield, maxEnergy: p.maxEnergy, energy: p.energy, moveSpeed: p.moveSpeed,
         dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction,
         stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
@@ -579,7 +587,7 @@ class Game {
   resumeRun() {
     const r = this.save.run, hero = r && this.data.heroes.get(r.hero);
     if (!r || !hero) { this.save.run = null; writeSave(this.save); this.startRun(); return; }
-    this.mode = 'dungeon'; this.areaId = r.zone && ZONES[r.zone] ? r.zone : null; this.worldIdx = r.worldIdx; this.levelIdx = r.levelIdx; this.gold = r.gold; this.kills = r.kills; this.runStart = r.start && typeof r.start.stage === 'number' ? r.start : { stage: 0, world: 0 };
+    this.mode = 'dungeon'; this.areaId = r.zone && ZONES[r.zone] ? r.zone : null; this.zoneField = this.areaId ? Math.max(0, Math.min(ZONES[this.areaId].fields.length - 1, r.zf | 0)) : 0; this.worldIdx = r.worldIdx; this.levelIdx = r.levelIdx; this.gold = r.gold; this.kills = r.kills; this.runStart = r.start && typeof r.start.stage === 'number' ? r.start : { stage: 0, world: 0 };
     this.player = this.playerFromSnapshot(hero, r.p);
     this.player.treasure = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped) || null; /* 보구는 지금 로비에서 장착한 것 (저장된 판의 보구로 되돌아가던 버그 — 판 중에 얻은 보구로 바꿔도 이어하기에 반영 안 됨) */
     this.loadStage();
@@ -619,8 +627,8 @@ class Game {
     this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90]));
     this.showBanner(SANCTUM_AFTER, '심층으로 내려가거나, 여기서 돌아갈 수 있습니다', '#9ad8ff');
   }
-  get W() { return this.trialW || (this.areaId && ZONES[this.areaId]) || worldDef(this.worldIdx); }
-  stageName() { return this.areaId ? zoneLabel(this.areaId, this.levelIdx) : stageLabel(this.worldIdx, this.levelIdx); } /* 화면 표시용 (바빌로니아 지하는 '지하 1') */
+  get W() { return this.trialW || (this.areaId && zoneWorld(this.areaId, this.zoneField || 0)) || worldDef(this.worldIdx); }
+  stageName() { return this.areaId ? zoneLabel(this.areaId, this.zoneField || 0, this.levelIdx) : stageLabel(this.worldIdx, this.levelIdx); } /* 화면 표시용 (바빌로니아 지하는 '지하 1-1') */
   get stageIndex() { return this.worldIdx * STAGES_PER_WORLD + this.levelIdx; }
   get isBossStage() { return this.levelIdx === STAGES_PER_WORLD - 1; }
   get scale() { const S = BALANCE.stageScale, k = this.mode === 'lobby' ? 0 : this.stageIndex, i = k > S.taperFrom ? S.taperFrom + (k - S.taperFrom) * S.taper : k; return { hp: 1 + BALANCE.stageScale.hp * i, dmg: 1 + BALANCE.stageScale.dmg * i, deep: this.mode !== 'lobby' && !!this.W.deep }; }
@@ -646,6 +654,7 @@ class Game {
     if (W.sanctum) this.decorateSanctum(map);
     this.snapCamera();
     if (W.sanctum && this.levelIdx === 0) this.playCutscene(ORIGIN_ARRIVAL_LINES, { id: 'origin_arrival', focus: null });
+    if (W.finalField && this.isBossStage) this.playCutscene(GILGAMESH_UNDER_INTRO_LINES, { id: 'gilgamesh_under', always: true, focus: null }); /* 지하 10-4: 영웅왕 길가메시 */
     if (W.deep && !W.trial && W.depth === 1 && this.levelIdx === 0) this.playCutscene(DEEP_ARRIVAL_LINES, { id: 'deep_arrival', focus: null }); // 심층에 처음 들어설 때 (한 번만)
     if (this.coop && this.coop.host) this.coopOnStage(); // 멀티: 동료 배치·부활 + 새 맵 보내기
     if (W.trial) { this.showBanner(W.name, this.trialDef.intro, this.trialDef.color); return; }
@@ -654,7 +663,9 @@ class Game {
   advanceStage() {
     this.guildEvent('stages');
     this.levelIdx++;
-    if (this.levelIdx >= STAGES_PER_WORLD) { this.levelIdx = 0; this.worldIdx++; if (this.areaId) { this.endRun(true); return; } } /* 지하는 보스 뒤로 이어지지 않음 */
+    if (this.levelIdx >= STAGES_PER_WORLD) { this.levelIdx = 0;
+      if (this.areaId) { this.zoneField = (this.zoneField || 0) + 1; if (this.zoneField >= ZONES[this.areaId].fields.length) { this.endRun(true); return; } this.worldIdx = this.W.scaleWorld; } /* 지하: 다음 필드 (세기는 필드마다 정해 둔 곡선) */
+      else this.worldIdx++; }
     this.loadStage();
   }
   rollSpecialRoom() { // 일반 스테이지마다 chance 확률로 특수방 하나 (전직의 방은 진화할 단계가 남았을 때 더 자주)
@@ -737,6 +748,8 @@ class Game {
     if (victory) { this.save.clears++; writeSave(this.save); }
   }
   runReward(victory) { // 로비 재화: 이번 탐험에서 실제로 깬 스테이지·필드 보스 수 (로비에서 바로 심층에 들어간 탐험도 일반과 같은 기준)
+    if (this.areaId) { const S = this.runStart || {}, f = this.zoneField || 0, stages = Math.max(0, f * STAGES_PER_WORLD + this.levelIdx - (S.zs || 0) + (victory ? 1 : 0)), bosses = Math.max(0, f - (S.zf || 0) + (victory ? 1 : 0)); /* 지하: 필드 번호로 셈 */
+      return { stages, bosses, reward: stages * CUR.perStage + bosses * CUR.perBoss + (victory ? CUR.victory : 0) }; }
     const S = this.runStart || { stage: 0, world: 0 }, stages = Math.max(0, this.stageIndex - S.stage + (victory ? 1 : 0)), bosses = Math.max(0, this.worldIdx - S.world + (victory ? 1 : 0));
     return { stages, bosses, reward: stages * CUR.perStage + bosses * CUR.perBoss + (victory ? CUR.victory : 0) };
   }
@@ -1782,7 +1795,7 @@ class Game {
           this.playCutscene(GATEKEEPER_FALL_LINES, { id: 'gatekeeper_fall', focus: G ? { x: G.x, y: G.y - 10 } : null });
           this.portals.push(new Portal(gx, gy, () => this.enterSanctum(), '성역 깊은 곳으로', [255, 233, 160]));
         }
-        else if (W.zone === 'babylon_under') this.babylonUnderCleared(c);
+        else if (W.zone === 'babylon_under') this.babylonUnderBoss(c, W);
         else {
           this.props.push(new Chest(c.x, c.y - 24, 'weapon'));
           this.portals.push(new Portal(c.x + (W.deep ? 26 : 0), c.y + 24, () => this.advanceStage(), `${stageLabel(this.worldIdx + 1, 0)} ${next.name}`, next.deep ? [120, 200, 255] : undefined));
