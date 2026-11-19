@@ -467,6 +467,20 @@ class Game {
   }
   // [사용자 결정] 심층 입장 기록: 직업 안에서도 진화 루트(계열)마다 따로 — 키 '직업|계열'
   deepKey(heroId, lineId) { return heroId + '|' + (lineId || this.chosenLine(heroId).id); }
+  recoverDeepCheckpoints() { /* [사용자 결정] 예전(패치 전) 바빌로니아 때문에 사라진 10-4 기록 복구 — 1회만, 10-4를 깬 적이 있는 저장에만 */
+    const sv = this.save; if (sv.deepRecover) return; // 이미 복구함
+    const cleared = !!sv.sanctumReached || (sv.bestStage || 0) >= DEEP_START * STAGES_PER_WORLD || (sv.bestDeep || 0) >= 1; // 10-4(성역)를 깬 증거
+    const c = this.deepCps(), has = Object.keys(c).some((k) => k.includes('|'));
+    if (!cleared || has) { sv.deepRecover = 1; writeSave(sv); return; } // 깰 적 없거나, 기록이 남아 있으면 복구 불필요
+    // 10-4 기록이 하나도 없음 → 투자한 흔적이 있는 직업(선택 직업 + 직업 레벨 올린 직업)에 10-4 기록을 다시 만들어 줌 (기본 심층 장비 = 예전 10-4 클리어 수준)
+    const ids = new Set([sv.selected]); for (const h of DATA_HEROES) if ((sv.jobLv && sv.jobLv[h.id]) > 0 && (sv.unlocked || []).includes(h.id)) ids.add(h.id);
+    let n = 0;
+    for (const hid of ids) { const hero = this.data.heroes.get(hid); if (!hero) continue;
+      const p = this.makePlayer(0, 0), chosen = this.chosenLine(hid); const snap = this.withPlayer(p, () => { this.applyVariant(chosen); this.applyDeepKit(p); return this.snapshotRun().p; }); // 그 직업의 고른 진화 루트 · 최종 진화 · 기본 심층 장비
+      c[this.deepKey(hid, chosen && chosen.id)] = Object.assign(snap, { gold: BALANCE.deepStart.gold, t: Date.now() - (ids.size - n) }); n++; }
+    sv.deepRecover = 1; writeSave(sv);
+    if (n) this.deepRecovered = n; // enterLobby 뒤 배너로 알림
+  }
   deepCps() { /* 예전 기록(직업만 키)은 그 기록의 계열로 옮김 */
     const c = this.save.deepCheckpoints = this.save.deepCheckpoints || {}; let moved = false;
     for (const k of Object.keys(c)) if (!k.includes('|')) { const cp = c[k]; delete c[k]; moved = true; if (cp && typeof cp === 'object' && this.data.heroes.get(k)) { const nk = this.deepKey(k, cp.line || null); if (!c[nk] || (c[nk].t || 0) < (cp.t || 0)) c[nk] = cp; } }
@@ -797,8 +811,9 @@ class Game {
     Auth.current = profile; this.profile = profile;
     this.save = loadSave(); SFX.setMuted(!!this.save.muted);
     this.admin = profile && profile.admin ? { god: false, nocd: false } : null; if (this.admin) this.applyAdmin();
-    this.locked = false; this.enterLobby();
+    this.locked = false; this.recoverDeepCheckpoints(); this.enterLobby();
     if (this.save.run) this.overlay = { type: 'resume' };
+    if (this.deepRecovered) { this.showBanner('10-4 기록 복구', `사라졌던 심층 10-4 기록 ${this.deepRecovered}개를 되살렸습니다 — 심층에 그 직업으로 바로 입장할 수 있어요`, '#9ad8ff'); this.deepRecovered = 0; }
     this.backfillScore(); // 랭킹판이 생기기 전의 내 최고 기록도 한 번 올림
     if (Net.httpBase()) Net.flushScores().catch(() => {}); // 지난번에 보내지 못한 기록
     this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', this.admin ? '관리자 계정 — 모든 것이 해금됨 · ` 키: 관리자 메뉴' : profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다', '#ffd84a');
