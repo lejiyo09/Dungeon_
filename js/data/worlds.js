@@ -137,9 +137,9 @@ function worldDef(i) {
   const d = i - DEEP_START, base = DEEP_WORLDS[d % DEEP_WORLDS.length];
   return Object.assign({}, base, { depth: d + 1, name: `${base.name}` });
 }
-// [사용자 결정] 바빌로니아 지하: 길가메시에게 떨어진 뒤의 별도 지역 (worldIdx는 몬스터 세기용으로만 씀) [임시 디자인]
+// [사용자 결정] 바빌로니아 지하: 길가메시에게 떨어진 뒤의 별도 지역 (worldIdx는 몬스터 세기용으로만 씀 — 기본 무기·1진으로 7필드급을 상대) [임시 디자인]
 const ZONES = {
-  babylon_under: { id: 'babylon_under', zone: 'babylon_under', name: '바빌로니아 지하 수로', short: '지하', scaleWorld: 3, boss: 'boss_abzu_lamassu', waves: 2,
+  babylon_under: { id: 'babylon_under', zone: 'babylon_under', name: '바빌로니아 지하 수로', short: '지하', scaleWorld: 6, boss: 'boss_abzu_lamassu', waves: 3, /* [사용자 결정] 난이도 높게: 7필드 곡선 + 웨이브 3 */
     enemies: [['enemy_clayscribe_001', 3], ['enemy_mudbrick_001', 2], ['enemy_chainhound_001', 3], ['enemy_abzuserpent_001', 3]],
     palette: { style: 'abzu', accent: '#3ac8b8', floor: ['#3a3226', '#3d3428'], corridor: ['#262620', '#282822'], wall: '#4a3a2a', wallTop: '#5a4a36',
       wallFace: '#7a6046', faceLine: '#6a5240', deco: 'rgba(58,200,184,0.35)' } }
