@@ -243,7 +243,7 @@ class Enemy extends Entity {
       const on = { burn: this.burn > 0, freeze: this.slow > 0, poison: this.poison > 0, shock: this.shock > 0, blind: this.blind > 0, curse: this.curse > 0 };
       for (const k of Object.keys(on)) if (on[k] && k !== st.type) { const r = REACTIONS[[k, st.type].sort().join('+')]; if (r) { this.reactCd = 0.8; return r; } }
     }
-    const dps = (st.dps || 0) * (1 + (mods ? mods.attackBonus : 0));
+    const dps = (st.dps || 0) * (1 + (mods ? mods.attackBonus : 0)) * (mods && Number.isFinite(mods.damageMult) ? mods.damageMult : 1);
     if (st.type === 'burn') { this.burnDps = this.burn > 0 ? Math.max(this.burnDps, dps) : dps; this.burn = Math.max(this.burn, st.duration); }
     else if (st.type === 'poison') { this.poisonDps = this.poison > 0 ? Math.max(this.poisonDps, dps) : dps; this.poison = Math.max(this.poison, st.duration); }
     else if (st.type === 'freeze') { this.slow = Math.max(this.slow, st.duration); this.slowK = this.def.boss ? Math.max(0.7, st.slow) : st.slow; }
