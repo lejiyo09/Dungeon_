@@ -221,8 +221,9 @@ class Game {
     let cp = null;
     if (fromLobby) { this.gold = 0; this.kills = 0;
       if (this.save.run && !this.save.stashRun && !this.save.run.zone) { this.save.stashRun = this.save.run; writeSave(this.save); } /* [버그 수정] 진행 중이던 탐험 기록을 따로 보관 (지하가 이어하기 칸을 덮어써서 기록이 사라지던 것) — 바빌로니아가 끝나면 되돌림 */
+      this.deepEntryHero(); // 선택 직업의 다른 계열 기록도 확인하고, 없으면 가장 최근 10-4 기록으로 이동
       this.player = this.makePlayer(0, 0); const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped);
-      cp = this.deepCheckpoint(this.save.selected); /* [버그 수정] 심층과 같은 캐릭터 기록 (10-4를 깬 그대로) — 직업 데이터가 사라지던 것 */
+      cp = this.deepCheckpoint(this.save.selected);
       if (cp) { this.player = this.playerFromSnapshot(this.player.hero, cp); this.useCheckpoint(this.player, cp, tr); } else if (tr) this.player.treasure = tr; }
     const p = this.player; p.fallK = 0; p.hp = p.maxHp; p.shield = p.maxShield; p.energy = p.maxEnergy;
     this.loadStage();
@@ -467,36 +468,116 @@ class Game {
   }
   // [사용자 결정] 심층 입장 기록: 직업 안에서도 진화 루트(계열)마다 따로 — 키 '직업|계열'
   deepKey(heroId, lineId) { return heroId + '|' + (lineId || this.chosenLine(heroId).id); }
-  recoverDeepCheckpoints() { /* [사용자 결정] 예전(패치 전) 바빌로니아 때문에 사라진 10-4 기록 복구 — 1회만, 10-4를 깬 적이 있는 저장에만 */
-    const sv = this.save; if (sv.deepRecover) return; // 이미 복구함
-    const cleared = !!sv.sanctumReached || (sv.bestStage || 0) >= DEEP_START * STAGES_PER_WORLD || (sv.bestDeep || 0) >= 1; // 10-4(성역)를 깬 증거
-    const c = this.deepCps(), has = Object.keys(c).some((k) => k.includes('|'));
-    if (!cleared || has) { sv.deepRecover = 1; writeSave(sv); return; } // 깰 적 없거나, 기록이 남아 있으면 복구 불필요
-    // 10-4 기록이 하나도 없음 → 투자한 흔적이 있는 직업(선택 직업 + 직업 레벨 올린 직업)에 10-4 기록을 다시 만들어 줌 (기본 심층 장비 = 예전 10-4 클리어 수준)
-    const ids = new Set([sv.selected]); for (const h of DATA_HEROES) if ((sv.jobLv && sv.jobLv[h.id]) > 0 && (sv.unlocked || []).includes(h.id)) ids.add(h.id);
-    let n = 0;
-    for (const hid of ids) { const hero = this.data.heroes.get(hid); if (!hero) continue;
-      const p = this.makePlayer(0, 0), chosen = this.chosenLine(hid); const snap = this.withPlayer(p, () => { this.applyVariant(chosen); this.applyDeepKit(p); return this.snapshotRun().p; }); // 그 직업의 고른 진화 루트 · 최종 진화 · 기본 심층 장비
-      c[this.deepKey(hid, chosen && chosen.id)] = Object.assign(snap, { gold: BALANCE.deepStart.gold, t: Date.now() - (ids.size - n) }); n++; }
-    sv.deepRecover = 1; writeSave(sv);
-    if (n) this.deepRecovered = n; // enterLobby 뒤 배너로 알림
+  recoverDeepCheckpoints() { /* 기존 기록은 그대로 보존하고, 남아 있는 정확한 스냅샷만 계정 백업으로 복사 */
+    const sv = this.save; if (sv.deepRecoverV2) return;
+    const c = this.deepCps();
+    const archive = sv.deepCheckpointArchive = sv.deepCheckpointArchive || {};
+    let archived = 0;
+    for (const [key, cp] of Object.entries(c)) {
+      const [hid, lid] = key.split('|');
+      const exact = this.data.heroes.get(hid) && jobLines(hid).some((l) => l.id === lid)
+        && cp && Array.isArray(cp.weapons) && Array.isArray(cp.weaponLv) && Array.isArray(cp.buffs);
+      if (!exact) continue;
+      if (!archive[key]) archived++;
+    }
+    sv.deepRecoverV2 = 1;
+    sv.deepRecover = 1; // 예전 버전의 1회 복구 플래그도 유지
+    writeSave(sv);
+    if (archived) this.deepRecovered = archived; // 남아 있는 원본 기록을 백업했다는 안내
   }
-  deepCps() { /* 예전 기록(직업만 키)은 그 기록의 계열로 옮김 */
-    const c = this.save.deepCheckpoints = this.save.deepCheckpoints || {}; let moved = false;
-    for (const k of Object.keys(c)) if (!k.includes('|')) { const cp = c[k]; delete c[k]; moved = true; if (cp && typeof cp === 'object' && this.data.heroes.get(k)) { const nk = this.deepKey(k, cp.line || null); if (!c[nk] || (c[nk].t || 0) < (cp.t || 0)) c[nk] = cp; } }
-    if (moved) writeSave(this.save); return c; }
+  deepCps() {
+    const sv = this.save;
+    const c = sv.deepCheckpoints = sv.deepCheckpoints || {};
+    const archive = sv.deepCheckpointArchive = sv.deepCheckpointArchive || {};
+    let changed = false;
+    const clone = (v) => JSON.parse(JSON.stringify(v));
+    const normalize = (map) => {
+      for (const oldKey of Object.keys(map)) {
+        let cp = map[oldKey];
+        if (!cp || typeof cp !== 'object' || !Array.isArray(cp.weapons) || !Array.isArray(cp.weaponLv) || !Array.isArray(cp.buffs)) continue;
+        let hid, lid;
+        if (oldKey.includes('|')) [hid, lid] = oldKey.split('|');
+        else { hid = oldKey; lid = cp.line || (this.data.heroes.get(hid) ? this.chosenLine(hid).id : null); }
+        if (!this.data.heroes.get(hid) || !jobLines(hid).some((l) => l.id === lid)) continue;
+        const key = this.deepKey(hid, lid);
+        if (cp.line !== lid) cp = Object.assign({}, cp, { line: lid });
+        if (oldKey !== key) { delete map[oldKey]; changed = true; }
+        if (!map[key] || (map[key].t || 0) < (cp.t || 0)) { map[key] = clone(cp); changed = true; }
+      }
+    };
+    normalize(c);
+    normalize(archive);
+    // 아카이브에서 빠진 체크포인트를 복구하고, active에만 있던 정확한 기록도 아카이브에 보존
+    for (const [key, cp] of Object.entries(archive)) {
+      if (c[key] && (c[key].t || 0) >= (cp.t || 0)) continue;
+      c[key] = clone(cp); changed = true;
+    }
+    for (const [key, cp] of Object.entries(c)) {
+      if (archive[key] && (archive[key].t || 0) >= (cp.t || 0)) continue;
+      archive[key] = clone(cp); changed = true;
+    }
+    if (changed) writeSave(sv);
+    return c;
+  }
   deepCheckpoint(heroId, lineId) { return this.deepCps()[this.deepKey(heroId, lineId)] || null; } // 직업·계열마다 10-4를 깼을 때의 캐릭터
-  deepEntryHero() { // 로비에서 심층 입장: 고른 직업·진화 루트에 10-4 기록이 없으면 가장 최근에 10-4를 깬 직업·계열로 바꿈 → 바꿨으면 그 직업 id
-    const c = this.deepCps(); if (c[this.deepKey(this.save.selected)]) return null;
-    let best = null; for (const [k, cp] of Object.entries(c)) { const [hid, lid] = k.split('|'); if (cp && typeof cp === 'object' && this.data.heroes.get(hid) && jobLines(hid).some((l) => l.id === lid) && (!best || (cp.t || 0) > (c[best].t || 0))) best = k; }
-    if (!best) return null; const [hid, lid] = best.split('|');
-    this.save.selected = hid; this.save.lineChoice = this.save.lineChoice || {}; this.save.lineChoice[hid] = lid; writeSave(this.save); /* 그 기록의 진화 루트로 */
+  deepEntryHero() { // 선택 직업의 다른 진화 계열 기록을 먼저 찾고, 없으면 가장 최근 기록으로 변경
+    const c = this.deepCps(), selected = this.save.selected;
+    const chosen = this.deepKey(selected);
+    if (c[chosen]) return null;
+    const own = Object.entries(c).filter(([k, cp]) => k.startsWith(selected + '|') && cp && typeof cp === 'object')
+      .sort((a, b) => (b[1].t || 0) - (a[1].t || 0))[0];
+    if (own) {
+      const lid = own[0].split('|')[1];
+      this.save.lineChoice = this.save.lineChoice || {}; this.save.lineChoice[selected] = lid; writeSave(this.save);
+      return null;
+    }
+    let best = null;
+    for (const [k, cp] of Object.entries(c)) {
+      const [hid, lid] = k.split('|');
+      if (cp && typeof cp === 'object' && this.data.heroes.get(hid) && jobLines(hid).some((l) => l.id === lid) && (!best || (cp.t || 0) > (c[best].t || 0))) best = k;
+    }
+    if (!best) return null;
+    const [hid, lid] = best.split('|');
+    this.save.selected = hid; this.save.lineChoice = this.save.lineChoice || {}; this.save.lineChoice[hid] = lid; writeSave(this.save);
     return hid;
   }
   useCheckpoint(p, cp, tr) { // 체력·에너지 가득, 보구는 지금 장착한 것
     p.hp = p.maxHp; p.energy = p.maxEnergy; p.shield = p.maxShield; p.skillCooldown = 0;
     p.treasure = tr || null; if (tr && tr.apply) tr.apply(p);
     if (p === this.player) for (const w of p.weapons) this.discover(w.def.id);
+  }
+  applyFeastStartPenalty(p) { // 소울 이터의 시작 능력치 -40% (한 번만 적용)
+    if (!p || p.hero.id !== 'hero_berserker' || !p.line || p.line.id !== 'feast') return false;
+    const F = BALANCE.feast, threshold = F.penaltyRemoveAt || 500;
+    if (p.feastPenaltyReleased || (p.feast || 0) >= threshold) {
+      p.feastPenaltyActive = false; p.feastPenaltyFactor = 1; p.feastPenaltyReleased = true; return false;
+    }
+    if (p.feastPenaltyActive) return false;
+    const factor = 1 - (F.startPenalty == null ? 0.4 : F.startPenalty);
+    if (!(factor > 0 && factor < 1)) return false;
+    p.maxHp = Math.max(1, Math.round(p.maxHp * factor));
+    p.hp = Math.max(0, Math.min(p.maxHp, Math.round(p.hp * factor)));
+    p.maxShield = Math.max(0, Math.round(p.maxShield * factor));
+    p.shield = Math.max(0, Math.min(p.maxShield, Math.round(p.shield * factor)));
+    p.maxEnergy = Math.max(1, Math.round(p.maxEnergy * factor));
+    p.energy = Math.max(0, Math.min(p.maxEnergy, Math.round(p.energy * factor)));
+    p.moveSpeed *= factor;
+    p.feastPenaltyFactor = factor; p.feastPenaltyActive = true;
+    return true;
+  }
+  releaseFeastStartPenalty(p) { // 500 포식 도달 시 시작 때 낮췄던 값만 원래 비율로 되돌림
+    if (!p) return false;
+    if (!p.feastPenaltyActive) { p.feastPenaltyReleased = true; p.feastPenaltyFactor = 1; return false; }
+    const factor = Number(p.feastPenaltyFactor), k = factor > 0 && factor < 1 ? factor : 0.6;
+    p.maxHp = Math.max(1, Math.round(p.maxHp / k));
+    p.hp = Math.max(0, Math.min(p.maxHp, Math.round(p.hp / k)));
+    p.maxShield = Math.max(0, Math.round(p.maxShield / k));
+    p.shield = Math.max(0, Math.min(p.maxShield, Math.round(p.shield / k)));
+    p.maxEnergy = Math.max(1, Math.round(p.maxEnergy / k));
+    p.energy = Math.max(0, Math.min(p.maxEnergy, Math.round(p.energy / k)));
+    p.moveSpeed /= k;
+    p.feastPenaltyActive = false; p.feastPenaltyFactor = 1; p.feastPenaltyReleased = true;
+    return true;
   }
   skinOnMap() { /* 예전 장착 기록(직업 키)을 직업·계열 키로 옮김 */
     const sv = this.save, M = sv.skinOn = sv.skinOn || {};
@@ -608,19 +689,26 @@ class Game {
     return { v: 1, t: Date.now(), hero: p.hero.id, zone: this.areaId || null, zf: this.zoneField || 0, zr: this.zoneRights || 0, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills, start: this.runStart || null,
       p: { maxHp: p.maxHp, hp: p.hp, maxShield: p.maxShield, maxEnergy: p.maxEnergy, energy: p.energy, moveSpeed: p.moveSpeed,
         dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction, feast: p.feast || 0,
+        feastPenaltyActive: !!p.feastPenaltyActive, feastPenaltyFactor: p.feastPenaltyFactor || 1, feastPenaltyReleased: !!p.feastPenaltyReleased,
         stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
         treasure: p.treasure ? p.treasure.id : null, line: p.line ? p.line.id : null, rank: p.rank || 0, hybrid: p.hybrid ? { id: p.hybrid.id, el: p.hybrid.el } : null, fleeceUsed: p.fleeceUsed || 0 } };
   }
   playerFromSnapshot(hero, s, p = new Player(0, 0, hero, this.data.base)) { // 저장된 캐릭터 상태 → 플레이어 (이어하기·심층 기록 공용)
     return this.withPlayer(p, () => {
       for (const k of ['maxHp', 'hp', 'maxShield', 'maxEnergy', 'energy', 'moveSpeed', 'dashCdMax', 'skillCdMax', 'vampire', 'damageReduction', 'fleeceUsed', 'feast']) if (typeof s[k] === 'number') p[k] = s[k];
-      Object.assign(p.stats, s.stats); p.buffs = s.buffs || [];
+      Object.assign(p.stats, s.stats); p.buffs = Array.isArray(s.buffs) ? s.buffs.slice() : [];
       p.weapons = (s.weapons || []).map((id, i) => [id, (s.weaponLv || [])[i] || 0]).filter(([id]) => this.data.weapons.get(id)).map(([id, lv]) => new WeaponInstance(this.data.weapons.get(id), lv));
       if (!p.weapons.length) p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
       p.slot = Math.min(s.slot || 0, p.weapons.length - 1);
       p.treasure = DATA_TREASURES.find((t) => t.id === s.treasure) || null; // 보구 효과는 위 능력치에 이미 반영돼 있음
       const ln = jobLines(hero.id).find((l) => l.id === s.line) || jobLines(hero.id)[0]; if (ln) { this.setJob(p, ln, Math.min(2, s.rank || 0)); p.skillCdMax = p.skillBaseCd * ((s.skillCdMax || p.skillBaseCd) / p.skillBaseCd); } // 계열·진화 단계
       if (s.hybrid && HYBRID_JOBS[s.hybrid.id]) { const H = HYBRID_JOBS[s.hybrid.id], el = jobLines(H.master).find((l) => l.id === s.hybrid.el); if (el) this.setHybrid(p, H, el); } // 혼합 직업 (쿨타임 감소 비율 유지)
+      p.feastPenaltyActive = !!s.feastPenaltyActive;
+      p.feastPenaltyFactor = p.feastPenaltyActive && Number(s.feastPenaltyFactor) > 0 ? Number(s.feastPenaltyFactor) : 1;
+      p.feastPenaltyReleased = !!s.feastPenaltyReleased;
+      // 이전 저장본에는 페널티 플래그가 없으므로, 소울 이터의 포식이 500 미만이면 한 번 적용한다.
+      if (!Object.prototype.hasOwnProperty.call(s, 'feastPenaltyActive')) this.applyFeastStartPenalty(p);
+      else if (p.feastPenaltyActive && (p.feast || 0) >= (BALANCE.feast.penaltyRemoveAt || 500)) this.releaseFeastStartPenalty(p);
       return p;
     });
   }
@@ -639,7 +727,13 @@ class Game {
   // 기원의 성역 깊은 곳: 전설의 존재와 마주함 → 소원이 드러남 → 보구 선택
   enterSanctum() {
     this.save.sanctumReached = true;
-    if (!this.trialW && this.player) { const c = this.deepCps(); c[this.deepKey(this.player.hero.id, this.player.line && this.player.line.id)] = Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() }); } /* 직업·계열마다 따로 */ // 10-4를 깬 캐릭터 저장 → 로비에서 심층 입장 시 그대로
+    if (!this.trialW && this.player) {
+      const c = this.deepCps(), key = this.deepKey(this.player.hero.id, this.player.line && this.player.line.id);
+      const cp = Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() });
+      c[key] = cp;
+      const archive = this.save.deepCheckpointArchive = this.save.deepCheckpointArchive || {};
+      archive[key] = JSON.parse(JSON.stringify(cp)); // 무기 ID·강화 단계·축복 ID까지 계정별로 별도 보관
+    } /* 직업·계열마다 따로 */ // 10-4를 깬 캐릭터와 정확한 장비 구성을 저장
     writeSave(this.save);
     if (this.coop && this.coop.host) for (const R of this.remotes.values()) { // 멀티: 동료도 성역 도달·10-4 캐릭터 저장·보구 선택
       const cp = this.withPlayer(R.p, () => Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() })); Net.relay({ k: 'sanctum', cp }, R.id); }
@@ -813,7 +907,7 @@ class Game {
     this.admin = profile && profile.admin ? { god: false, nocd: false } : null; if (this.admin) this.applyAdmin();
     this.locked = false; this.recoverDeepCheckpoints(); this.enterLobby();
     if (this.save.run) this.overlay = { type: 'resume' };
-    if (this.deepRecovered) { this.showBanner('10-4 기록 복구', `사라졌던 심층 10-4 기록 ${this.deepRecovered}개를 되살렸습니다 — 심층에 그 직업으로 바로 입장할 수 있어요`, '#9ad8ff'); this.deepRecovered = 0; }
+    if (this.deepRecovered) { this.showBanner('10-4 기록 백업', `기존에 남아 있던 심층 10-4 기록 ${this.deepRecovered}개를 무기·강화·축복 정보와 함께 계정 백업에 보관했습니다`, '#9ad8ff'); this.deepRecovered = 0; }
     this.backfillScore(); // 랭킹판이 생기기 전의 내 최고 기록도 한 번 올림
     if (Net.httpBase()) Net.flushScores().catch(() => {}); // 지난번에 보내지 못한 기록
     this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', this.admin ? '관리자 계정 — 모든 것이 해금됨 · ` 키: 관리자 메뉴' : profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다', '#ffd84a');
@@ -1325,13 +1419,17 @@ class Game {
     p.line = line; p.rank = rank; p.skillId = sk.id; p.skillName = sk.name; p.skillDesc = sk.desc;
     p.skillBaseCd = sk.cd; p.skillCdMax = sk.cd * ratio; p.skillCooldown = Math.min(p.skillCooldown, p.skillCdMax);
   }
-  askVariant(after, final = false) { // 갈래가 여럿인 직업은 판을 시작할 때 고름 (final: 롱고미니아드 시련 — 최종 진화로 보여 줌)
+  askVariant(after, final = false) { // 갈래 선택·심층 장비 적용이 끝난 뒤 소울 이터 시작 페널티를 한 번 적용
     const lines = jobLines(this.player.hero.id);
-    const chosen = this.chosenLine(this.player.hero.id); this.player.lineChoice = chosen.id; /* 로비에서 고른 진화 루트 (진화 때 갈래를 고르는 직업은 진화의 방에서 이 갈래로) */
-    if (lines.length === 1 || branchesAtEvolve(this.player.hero.id)) { this.setJob(this.player, lines[0], 0); if (after) after(); return; } // 갈래가 하나이거나 진화 때 고르는 직업
-    if (window.__toolMode) { this.applyVariant(lines[0]); if (after) after(); return; } // 테스트 도구: 첫 갈래
-    this.applyVariant(chosen); const R = final === true ? 2 : typeof final === 'number' ? final : 0; /* [사용자 결정] 판 시작 때 갈래 창 대신 로비에서 고른 진화 루트 */
-    this.showBanner(`${chosen.ranks[R]}`, `스킬: ${chosen.skills[R].name} — 진화 루트는 로비의 캐릭터 정보에서 바꿀 수 있어요`, chosen.color); if (after) after();
+    const chosen = this.chosenLine(this.player.hero.id); this.player.lineChoice = chosen.id;
+    const finish = () => {
+      if (after) after();
+      if (this.applyFeastStartPenalty(this.player)) this.showBanner('소울 이터', '시작 기본 능력치 -40% · 포식 500 도달 시 해제', '#b8e05a');
+    };
+    if (lines.length === 1 || branchesAtEvolve(this.player.hero.id)) { this.setJob(this.player, lines[0], 0); finish(); return; }
+    if (window.__toolMode) { this.applyVariant(lines[0]); finish(); return; }
+    this.applyVariant(chosen); const R = final === true ? 2 : typeof final === 'number' ? final : 0;
+    this.showBanner(`${chosen.ranks[R]}`, `스킬: ${chosen.skills[R].name} — 진화 루트는 로비의 캐릭터 정보에서 바꿀 수 있어요`, chosen.color); finish();
   }
   applyVariant(line) {
     const p = this.player;
@@ -2034,6 +2132,7 @@ class Game {
     if (enemy.kingWeakT > 0) base *= enemy.kingWeakMul || 1.6; /* 벗의 사슬에 약해진 길가메시 */                                 // 약점 표시된 적
     if (enemy.curse > 0) base *= 1.2;                                             // 저주: 받는 피해 +20%
     if (enemy.avalonUntil > this.time) base *= 1 + (enemy.avalonVuln || 0.2);        // 아발론의 꽃밭: 받는 피해 증가
+    if (src.mods && Number.isFinite(src.mods.damageMult)) base *= src.mods.damageMult; // 소울 이터 시작 기본 공격력 약화
     const { amount, crit } = rollDamage(base, src.mods);
     if (!enemy.takeHit(amount)) return;
     if (src.prey) enemy.preyT = BALANCE.TRAP.prey.dur; /* 사냥터 각인 (중첩 없이 시간만 갱신) */
@@ -2305,12 +2404,13 @@ class Game {
     this.kills++;
     { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_berserker' && this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.boss) { /* 소울 이터: 혼 포식 (처치 수와 따로) */
       const before = fp.feast || 0, gain = enemy.feastHit && this.time - enemy.feastHit < 0.6 ? F.perSkillKill : F.perKill; fp.feast = before + gain;
+      const penaltyReleased = before < (F.penaltyRemoveAt || 500) && fp.feast >= (F.penaltyRemoveAt || 500) ? this.releaseFeastStartPenalty(fp) : false;
       if (gain > 1) this.effects.text(enemy.x, enemy.y - 12, `혼 +${gain}`, '#b8e05a');
       if (fp.feast >= F.healAt && fp.state !== 'DEAD') fp.hp = Math.min(fp.maxHp, fp.hp + F.heal);
       const ev = F.evolve || []; for (let r = fp.rank; r < ev.length; r++) if (before < ev[r] && fp.feast >= ev[r]) { const r0 = fp.rank; this.evolve(null, fp.line);
         if (fp.rank > r0) { fp.maxHp = Math.round(fp.maxHp * 1.2); fp.hp = fp.maxHp; fp.maxShield = Math.round(fp.maxShield * 1.2); fp.shield = fp.maxShield; fp.stats.attackBonus += 0.2; } /* [사용자 결정] 소울 이터 2·3진: 체력·보호막·공격력 +20% */
         break; } /* [사용자 결정] 포식 스택 진화: 750 → 1진(2진째), 2000 → 2진(3진째) */
-      if (Math.floor(fp.feast / F.bannerEvery) > Math.floor(before / F.bannerEvery)) this.showBanner(`포식 ${Math.floor(fp.feast / F.bannerEvery) * F.bannerEvery}`, `일반 몬스터 피해 +${Math.round(fp.feast / 10 * F.dmgPer10 * 100)}% · 이동 +${Math.round(Math.min(F.speedCap, fp.feast / 10 * F.speedPer10) * 100)}% · 받는 피해 -${Math.round(Math.min(F.guardCap, fp.feast / 10 * F.guardPer10) * 100)}%${fp.rank < ev.length ? ` · 다음 진화 ${ev[fp.rank]}` : ''}`, '#b8e05a'); } }
+      if (Math.floor(fp.feast / F.bannerEvery) > Math.floor(before / F.bannerEvery)) this.showBanner(`포식 ${Math.floor(fp.feast / F.bannerEvery) * F.bannerEvery}`, `일반 몬스터 피해 +${Math.round(fp.feast / 10 * F.dmgPer10 * 100)}% · 이동 +${Math.round(Math.min(F.speedCap, fp.feast / 10 * F.speedPer10) * 100)}% · 받는 피해 -${Math.round(Math.min(F.guardCap, fp.feast / 10 * F.guardPer10) * 100)}%${penaltyReleased ? ' · 시작 능력치 -40% 해제' : ''}${fp.rank < ev.length ? ` · 다음 진화 ${ev[fp.rank]}` : ''}`, '#b8e05a'); } }
     if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) {
       this.guildEvent('kills', 1, enemy.def.id);
       if (enemy.elite) this.guildEvent('elites');
