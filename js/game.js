@@ -1697,6 +1697,7 @@ class Game {
       boss.setState('INTRO'); boss.jumpH = 160; boss.phase = 1;
       this.cinematic = { t: 0, boss, landed: false, roared: false, grand: !!(this.W.sanctum || this.W.trial) };
       if (this.W.trial && this.W.rooms) for (const q of this.allPlayers()) if (q.state !== 'DEAD') { q.hp = q.maxHp; q.shield = q.maxShield; q.energy = q.maxEnergy; this.effects.heal(q.x, q.y); } /* 카멜롯: 성문 앞에서 체력·에너지 모두 회복 (보스전은 가득 찬 상태로) */
+      if (this.W.zone && !this.W.finalField && BABYLON_BOSS_INTROS[id]) this.cinematic.intro = id; /* 귀환길 네임드 보스: 착지한 뒤 보스를 비추며 이야기 (처음 한 번) */
       if (this.W.sanctum && this.sanctumGate) this.playCutscene(GATEKEEPER_INTRO_LINES, { id: 'gatekeeper_intro', focus: { x: this.sanctumGate.x, y: this.sanctumGate.y - 20 } });
       this.banner = null; this.input.mouse.down = false;
       SFX.play('door');
@@ -2019,6 +2020,7 @@ class Game {
     if (c.grand && c.landed && !c.grandFx) { c.grandFx = true; // 성역: 착지할 때 빛살·빛기둥
       this.effects.rays(b.x, b.y, '#ffe9a0', 22, 160, 1); for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; this.effects.skyBeam(b.x + Math.cos(a) * 70, b.y + Math.sin(a) * 45, '#ffe9a0', 0.1 + i * 0.05, 4); }
       this.screenFlash = 0.35; this.flashColor = '255,233,160'; }
+    if (c.intro && c.t >= 1.0 && !c.introDone) { c.introDone = true; this.playCutscene(BABYLON_BOSS_INTROS[c.intro].lines, { id: 'bab_boss_' + c.intro, focus: { x: b.x, y: b.y - 10 } }); }
     if (c.t >= 1.3 && !c.roared) { c.roared = true; SFX.play('boss'); this.addShake(0.6, 3); this.effects.ring(b.x, b.y, 100, '#ffffff'); if (c.grand) { this.effects.ring(b.x, b.y, 160, '#ffe9a0'); this.effects.rays(b.x, b.y, '#ffffff', 12, 120, 0.7); SFX.play('solomon', 0.5); } }
     if (c.t >= (c.grand ? 3.4 : 2.8)) { b.setState('CHASE'); this.cinematic = null; SFX.startMusic(c.grand ? 'sanctum' : null); }
   }
@@ -2399,7 +2401,7 @@ class Game {
     for (const o of this.props) o.render(ctx, this);
     for (const pk of this.pickups) pk.render(ctx);
     for (const e of this.enemies) e.renderTelegraph(ctx);
-    const actors = [...(this.cutscene ? this.enemies.filter((e) => e.state !== 'INTRO') : this.enemies), ...this.allies, this.player, ...this.peerActors(), ...this.coopActors()].sort((a, b) => a.y - b.y); // 등장 전 보스는 컷신 동안 숨김
+    const actors = [...(this.cutscene ? this.enemies.filter((e) => e.state !== 'INTRO' || (this.cinematic && this.cinematic.landed && this.cinematic.boss === e)) : this.enemies), ...this.allies, this.player, ...this.peerActors(), ...this.coopActors()].sort((a, b) => a.y - b.y); // 등장 전 보스는 컷신 동안 숨김
     for (const a of actors) a.render(ctx);
     for (const pr of this.projectiles) pr.render(ctx);
     for (const z of this.zones) if (z.renderTop) z.renderTop(ctx);

@@ -188,6 +188,18 @@ const BABYLON_ZIGGURAT_LINES = [
   '(한 단 오를 때마다 공기가 무거워져. 왕의 보물고가 가까워진다는 거겠지.)',
   '(네 단. 그 위가 — 왕좌의 방.)'
 ];
+// [사용자 결정] 귀환길 층마다 네임드 보스 등장 이야기 (처음 만날 때 한 번, 이야기 기록에서 다시 보기) [임시]
+const BABYLON_BOSS_INTROS = {
+  boss_abzu_lamassu: { name: '수문의 라마수', lines: ['(…수문 앞에, 날개 달린 황소 석상이 서 있다. 눈이 — 움직였다.)', '물에 잠긴 라마수: 「…왕의 물길을 더럽히는 자, 지나가지 못한다.」'] },
+  boss_clay_colossus: { name: '점토판의 거신', lines: ['(서고의 점토판이 쌓이고 쌓여, 사람의 모양이 되었다.)', '점토판의 거신: 「기록되지 않은 자. 너의 이름은 여기 어디에도 없다.」', '(…그럼 지금부터 새기면 되지.)'] },
+  boss_humbaba: { name: '훔바바', lines: ['(삼나무 뿌리 사이로 일곱 겹의 빛이 번진다.)', '훔바바: 「이 냄새… 우루크의 왕이 남긴 냄새. 그때 쓰러졌던 숲의 원한, 네게 갚아 주마.」'] },
+  boss_neti: { name: '명계의 문지기', lines: ['(왕들의 무덤 맨 위, 일곱 개의 문이 겹겹이 서 있다.)', '네티: 「명계의 일곱 문 중 마지막 문. 이 아래로 떨어진 자는 위로 돌아가지 못한다.」', '(…돌아갈 거야. 저 위로.)'] },
+  boss_bull_of_heaven: { name: '하늘의 황소', lines: ['(햇빛 아래, 모래에 묻힌 거리를 거대한 붉은 황소가 짓밟고 있다.)', '(왕에게 거절당한 여신이 보냈다는 그 황소… 아직도 이 도시를 부수고 있었어.)'] },
+  boss_mushussu: { name: '이슈타르 문의 용', lines: ['(청금석 문에 새겨진 용 하나가, 벽에서 천천히 빠져나온다.)', '무슈후슈: 「…크르르. 왕의 문을 넘으려는 자는, 삼킨다.」'] },
+  boss_scorpion_king: { name: '전갈인간 왕', lines: ['(지구라트 첫째 단. 해 지는 산의 문을 지킨다는 전갈인간들의 왕이 활을 겨눈다.)', '전갈인간 왕: 「그 몸에서 왕의 사슬 냄새가 난다. 왕께서 버린 잡종이 여기까지… 끝내 주마.」'] },
+  boss_pazuzu: { name: '파주주', lines: ['(둘째 단. 모래바람이 사람의 형상을 하고 네 장의 날개를 편다.)', '파주주: 「크크… 바람이 너를 다시 아래로 끌어내릴 것이다. 처음 떨어졌을 때처럼.」'] },
+  boss_clay_enkidu: { name: '진흙의 엔키두', lines: ['(셋째 단. 마지막 계단을 막고 선 것은 — 진흙으로 빚은 사람이었다.)', '(…이 얼굴. 왕이 잃어버렸다는 단 하나의 벗을 본떠 만든 건가.)', '진흙의 엔키두: 「…왕에게… 가지… 마라. 왕은… 아직… 외롭다.」'] }
+};
 // [사용자 결정] 지구라트 4-4 왕좌의 방: 영웅왕 길가메시 (아서 왕급) — 대사는 [임시]
 const GILGAMESH_UNDER_INTRO_LINES = [
   '(…다시, 이 방이다. 붉은 융단, 금빛 기둥, 공중에 일렁이는 보물고의 문들.)',
@@ -501,6 +513,7 @@ const STORY_ARCHIVE = [
   { id: 'babylon', name: '금빛의 문', kind: 'cut', lines: () => BABYLON_APPEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_appear') },
   { id: 'babylon_under', name: '바빌로니아 지하', kind: 'cut', lines: () => BABYLON_FALL_LINES.concat(BABYLON_UNDER_WAKE_LINES), unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under') },
   { id: 'babylon_under_clear', name: '열린 수문', kind: 'cut', lines: () => BABYLON_UNDER_CLEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under_clear') },
+  ...Object.entries(BABYLON_BOSS_INTROS).map(([id, B]) => ({ id: 'bab_boss_' + id, name: '네임드 — ' + B.name, kind: 'cut', lines: () => B.lines, unlocked: (sv) => (sv.scenesSeen || []).includes('bab_boss_' + id) })),
   { id: 'babylon_surface', name: '지상으로', kind: 'cut', lines: () => BABYLON_SURFACE_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_surface') },
   { id: 'babylon_ziggurat', name: '지구라트', kind: 'cut', lines: () => BABYLON_ZIGGURAT_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_ziggurat') },
   { id: 'gilgamesh_under', name: '다시, 왕좌의 방', kind: 'cut', lines: () => GILGAMESH_UNDER_INTRO_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gilgamesh_under') },
