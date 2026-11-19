@@ -90,8 +90,15 @@ const DATA_TREASURES = [
   // [사용자 결정] 아서 왕(로드 로그레스) 처치 보상: 성검의 칼집 (전승: 엑스칼리버의 칼집은 지닌 자를 다치지 않게 지킴) — 수치는 Claude가 정한 [제안]
   { id: 'treasure_scabbard', name: '성검의 칼집', origin: '아서 왕', use: 'scabbard', cooldown: 90, sfx: 'solomon', icon: 'scabbard', questOnly: true,
     invuln: 5, guardDur: 15, guard: 0.3, color: '#ffe9a0',
-    desc: '체력을 모두 회복하고 5초간 어떤 피해도 받지 않음, 그 뒤 10초 동안 받는 피해 -30% — 왕이 101번째 원탁의 기사에게 맡긴 칼집' }
+    desc: '체력을 모두 회복하고 5초간 어떤 피해도 받지 않음, 그 뒤 10초 동안 받는 피해 -30% — 왕이 101번째 원탁의 기사에게 맡긴 칼집' },
+  // [사용자 결정] 엔키두(신들이 진흙으로 빚은 길가메시의 벗)의 하늘의 사슬: 바빌로니아 지하 상자에서 낮은 확률로 나오는 '금빛 사슬 조각' 10개를 모으면 얻음
+  //  능력·수치·드롭 확률은 Claude가 정한 [제안]. 게이트 오브 바빌론(넓은 범위)과 달리 가장 강한 한 명을 길게 묶는 보구
+  { id: 'treasure_heaven_chain', name: '하늘의 사슬', origin: '엔키두', use: 'heaven', cooldown: 62, sfx: 'gate', icon: 'heavenchain', questOnly: true,
+    range: 360, bind: 4, damage: 420, weak: 1.6, spread: 96, subBind: 2.5, subDamage: 150, color: '#9ae8d8',
+    desc: '땅에서 하늘의 사슬이 솟아 가장 강한 적(보스 우선) 하나를 4초간 꽁꽁 묶고 큰 피해, 묶인 동안 받는 피해 +60% — 사슬은 주변 적에게도 뻗어 2.5초간 묶음' }
 ];
+// [사용자 결정] 금빛 사슬 조각: 바빌로니아 지하 상자에서만 낮은 확률로 나옴, 10개 모으면 하늘의 사슬 — 확률은 [제안]
+const CHAIN_SHARD = { need: 10, chest: 0.12, challenge: 0.25, boss: 0.35, treasure: 'treasure_heaven_chain' };
 // 심층 보스를 쓰러뜨리면 아직 없는 영웅의 보구(heroDrop) 하나를 얻을 확률: 낮게 시작해 깊이 내려갈수록 조금씩 오름 [사용자 결정], 수치는 [제안]
 //  [사용자 결정] 심층 1: 1% → 10까지 깊이마다 +1% (심층 10: 10%) → 그 뒤로 깊이마다 +0.2% (심층 11: 10.2% · 20: 12% · 50: 18%)
 const HERO_TREASURE_DROP = { base: 0.01, perDepth: 0.01, until: 10, after: 0.002, max: 1 };

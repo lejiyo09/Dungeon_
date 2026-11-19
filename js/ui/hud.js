@@ -40,6 +40,7 @@ class HUD {
     } else {
       const W = game.W;
       hudText(ctx, `${W.trial ? '' : game.stageName() + ' '}${W.name}   골드 ${game.gold}   처치 ${game.kills}`, VIEW_W / 2, 6, W.deep ? '#9ad8ff' : '#fff', 'center');
+      if (game.areaId && !game.save.treasures.includes(CHAIN_SHARD.treasure)) hudText(ctx, `금빛 사슬 조각 ${game.save.chainShards || 0}/${CHAIN_SHARD.need}`, VIEW_W / 2, 20, '#ffd84a', 'center', 8); /* 바빌로니아 지하 */
       this.minimap(ctx, game);
     }
 

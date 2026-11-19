@@ -9,6 +9,12 @@ const TREASURE_ICONS = {
     for (let i = 0; i < 6; i++) { const x = 9 + i, y = 9 + i; if (i % 2) P.rect(x, y, 2, 1, 'm'); else P.rect(x, y - 1, 1, 2, 'y'); }
     P.px(3, 3, 'w'); P.px(12, 2, 'w');
   } },
+  // 하늘의 사슬: 하늘빛으로 빛나는 굵은 사슬이 원을 그리며 감기고, 끝에 쐐기 모양 추
+  heavenchain: { pal: { t: '#9ae8d8', w: '#e8fff8', m: '#4a8a80', y: '#ffd84a' }, proc: (P) => {
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, x = Math.round(7.5 + Math.cos(a) * 5.5), y = Math.round(7 + Math.sin(a) * 5); if (i % 2) P.rect(x, y, 2, 1, 'm'); else P.rect(x, y, 1, 2, 't'); }
+    P.px(7, 1, 'w'); P.px(2, 6, 'w'); P.px(12, 9, 'w');
+    P.line(11, 11, 14, 14, 't'); P.tri(12, 15, 15, 12, 15, 15, 'y'); P.ell(7.5, 7, 1.5, 1.5, 'w');
+  } },
   // 엑스칼리버 (작은 칸용 16×16)
   excalibur: { pal: { w: '#ffffff', s: '#d8dce8', d: '#9aa4bc', y: '#ffd84a', o: '#b08a30', b: '#26357a', c: '#4a64b8' }, proc: (P) => {
     const M = (x, y, ch) => { P.px(x, y, ch); P.px(15 - y, 15 - x, ch); };          // 날 중심선 x+y=15 기준 대칭

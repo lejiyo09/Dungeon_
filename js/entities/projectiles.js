@@ -756,6 +756,47 @@ class SpiritWolf {
 
 // 게이트 오브 바빌론: 바닥에 회전하는 금빛 문양, 공중에 열린 금빛 문들에서 창이 날아가 꽂히고 사슬이 뻗어 적을 묶음
 //  범위 안의 적은 사용한 순간뿐 아니라 범위가 남아 있는 동안 계속 묶음 (막 나타나는 적·페이즈 전환 중인 보스·나중에 들어온 적 포함)
+// 하늘의 사슬 (엔키두): 대상 둘레의 땅에서 사슬이 솟아 꿰어 묶음 → 주변 적에게도 뻗음
+class HeavenChains {
+  constructor(owner, tgt, T, world) {
+    this.owner = owner; this.tgt = tgt; this.T = T; this.t = 0; this.alive = true; this.life = T.bind + 0.3; this.hit = false; this.subs = [];
+    this.x = tgt.x; this.y = tgt.y;
+    this.posts = Array.from({ length: 6 }, (_, i) => { const a = i / 6 * TAU + 0.2; return { a, ph: Math.random() * TAU }; });
+  }
+  update(dt, world) {
+    this.t += dt; const e = this.tgt;
+    if (e && e.alive) { this.x = e.x; this.y = e.y; }
+    if (!this.hit && this.t >= 0.22) { this.hit = true; const T = this.T;
+      if (e && e.alive) { e.chainT = Math.max(e.chainT || 0, T.bind); e.chainMax = e.chainT;
+        world.damageEnemy(e, { damage: T.damage * world.scale.hp, mods: this.owner.mods, knockback: 0, treasure: true, mark: { mult: T.weak, dur: T.bind } }, 0, 0);
+        world.effects.ring(e.x, e.y, e.radius + 14, T.color); world.effects.ring(e.x, e.y, e.radius + 6, '#e8fff8'); world.addShake(0.25, 4); world.hitStop(0.06); world.screenFlash = 0.1; world.flashColor = '154,232,216'; }
+      for (const o of world.enemies) { if (o === e || !o.targetable || Math.hypot(o.x - this.x, o.y - this.y) > T.spread + o.radius) continue;
+        o.chainT = Math.max(o.chainT || 0, T.subBind); o.chainMax = o.chainT; this.subs.push(o);
+        world.damageEnemy(o, { damage: T.subDamage * world.scale.hp, mods: this.owner.mods, knockback: 0, treasure: true, mark: { mult: T.weak, dur: T.subBind } }, 0, 0); }
+    }
+    if (Math.random() < 0.5) world.effects.part(this.x + randInt(-14, 14), this.y + randInt(-4, 6), 0, -25 - Math.random() * 20, { color: Math.random() < 0.5 ? this.T.color : '#e8fff8', life: 0.5, size: 1.5, size2: 0, drag: 1, add: true });
+    if (this.t >= this.life || (this.hit && !(e && e.alive) && this.t > 0.6)) this.alive = false;
+  }
+  link(ctx, x0, y0, x1, y1, k, bow) { // 굵은 고리 사슬
+    const dx = x1 - x0, dy = y1 - y0, n = Math.max(3, Math.floor(Math.hypot(dx, dy) / 4));
+    for (let i = 0; i < n * k; i++) { const t = i / n, px = Math.round(x0 + dx * t), py = Math.round(y0 + dy * t - Math.sin(t * Math.PI) * bow), glint = Math.abs(((this.t * 1.8) % 1) - t) < 0.08;
+      ctx.fillStyle = '#1e3a36'; if (i % 2) ctx.fillRect(px - 2, py - 1, 5, 3); else ctx.fillRect(px - 1, py - 2, 3, 5);
+      ctx.fillStyle = glint ? '#ffffff' : i % 2 ? '#6ac8b8' : this.T.color; if (i % 2) ctx.fillRect(px - 1, py, 3, 1); else ctx.fillRect(px, py - 1, 1, 3); }
+  }
+  render(ctx) { // 땅의 빛 고리 + 사슬이 솟는 구멍
+    const k = Math.min(1, this.t / 0.15, (this.life - this.t) / 0.3); ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.save(); ctx.translate(this.x, this.y + 4); ctx.scale(1, 0.5); ctx.globalAlpha = 0.25 * k; ctx.fillStyle = this.T.color; ctx.beginPath(); ctx.arc(0, 0, 30, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.9 * k; ctx.strokeStyle = '#e8fff8'; ctx.beginPath(); ctx.arc(0, 0, 30 * Math.min(1, this.t / 0.2), 0, TAU); ctx.stroke(); ctx.restore();
+    for (const P of this.posts) { const px = this.x + Math.cos(P.a) * 28, py = this.y + 4 + Math.sin(P.a) * 14; ctx.globalAlpha = 0.8 * k; ctx.fillStyle = this.T.color; ctx.fillRect(px - 2, py - 1, 4, 2); }
+    ctx.restore();
+  }
+  renderTop(ctx) {
+    const k = Math.min(1, (this.life - this.t) / 0.3), grow = Math.min(1, this.t / 0.22); ctx.save(); ctx.globalAlpha = Math.max(0, k);
+    for (const P of this.posts) { const px = this.x + Math.cos(P.a) * 28, py = this.y + 4 + Math.sin(P.a) * 14; this.link(ctx, px, py, this.x, this.y - 4, grow, 10 + 4 * Math.sin(this.t * 5 + P.ph)); }
+    if (this.hit) for (const o of this.subs) if (o.alive && o.chainT > 0) this.link(ctx, this.x, this.y - 4, o.x, o.y - 4, Math.min(1, (this.t - 0.22) / 0.2), 6);
+    ctx.restore();
+  }
+}
 class ChainCircle {
   constructor(x, y, T, owner, world) {
     this.x = x; this.y = y; this.r = T.radius; this.life = T.duration; this.t = 0; this.alive = true; this.T = T; this.owner = owner; this.got = []; this.spears = [];

@@ -259,6 +259,17 @@ class Game {
       this.playCutscene(BABYLON_UNDER_WAKE_LINES, { id: 'babylon_under', always: true, force: true, focus: null });
     });
   }
+  rollChainShard(c) { /* [사용자 결정] 금빛 사슬 조각: 바빌로니아 지하 상자에서만, 10개면 하늘의 사슬 */
+    const S = CHAIN_SHARD, sv = this.save; if (sv.treasures.includes(S.treasure)) return;
+    if (Math.random() >= (S[c.content] || S.chest)) return;
+    sv.chainShards = Math.min(S.need, (sv.chainShards || 0) + 1); const n = sv.chainShards;
+    this.effects.goldBurst(c.x, c.y - 8, 14); this.effects.ring(c.x, c.y - 6, 18, '#ffd84a'); SFX.play('gate', 0.4);
+    this.effects.text(c.x, c.y - 30, `금빛 사슬 조각 ${n}/${S.need}`, '#ffd84a', true);
+    if (n >= S.need) { const T = DATA_TREASURES.find((t) => t.id === S.treasure); sv.treasures.push(T.id); sv.chainShards = 0; this.treasureToast = { T, start: performance.now() };
+      this.showBanner('하늘의 사슬', '금빛 사슬 조각 10개가 하나로 이어졌다 — 엔키두의 보구 (로비 보구 보관대)', '#9ae8d8'); }
+    else this.showBanner(`금빛 사슬 조각 (${n}/${S.need})`, '바빌로니아에서만 얻을 수 있는 조각 — 10개를 모으면 무언가가 이어진다', '#ffd84a');
+    writeSave(sv);
+  }
   babylonUnderCleared(c) { /* 라마수 처치: 위로 가는 수문이 열림 → 귀환 */
     const B = this.save.babylon = this.save.babylon || {}; B.underCleared = (B.underCleared || 0) + 1; writeSave(this.save);
     this.props.push(new Chest(c.x, c.y - 24, 'boss'));
@@ -1142,6 +1153,11 @@ class Game {
       this.effects.rays(cx, cy, '#ffd84a', 16, T.radius + 20, 0.7);
       this.effects.ring(cx, cy, T.radius, '#ffd84a'); this.effects.ring(cx, cy, T.radius * 0.6, '#fff4c0');
       this.addShake(0.25, 4); this.screenFlash = 0.08; this.flashColor = '255,216,74'; this.hitStop(0.05);
+    } else if (T.use === 'heaven') { /* 하늘의 사슬: 가장 강한 적(보스 우선) 하나를 길게 묶고 주변에도 뻗음 */
+      const cand = this.enemies.filter((e) => e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < T.range);
+      const tgt = cand.find((e) => e.def.boss) || cand.sort((a, b) => b.hp - a.hp)[0] || null;
+      if (tgt) { this.zones.push(new HeavenChains(p, tgt, T, this)); this.effects.rays(tgt.x, tgt.y, T.color, 14, 60, 0.6); }
+      else { this.effects.text(p.x, p.y - 34, '묶을 적이 없음', '#9ae8d8'); p.treasureCd = 3; }
     } else if (T.use === 'beam') { // 엑스칼리버: 검을 들어 빛기둥을 세우고(0.6초) → 조준 방향으로 내려찍음 → 끝에서 폭발
       this.zones.push(new ExcaliburRaise(p, T, () => this.excaliburStrike(p, T)));
       SFX.play('skill');
@@ -1839,6 +1855,7 @@ class Game {
       for (let i = 0; i < coins; i++) this.pickups.push(new Pickup('coin', c.x, c.y));
       for (let i = 0; i < (big ? 8 : 5); i++) this.pickups.push(new Pickup('energy', c.x, c.y, { value: 10 }));
       this.pickups.push(new Pickup('hp', c.x, c.y, { value: big ? 40 : 25 }));
+      this.rollChainShard(c);
       return;
     }
     if (c.content === 'weapon' || c.content === 'challenge') this.pickups.push(new Pickup('weapon', c.x, c.y + 14, { def: this.randomWeaponDef(c.content === 'challenge' ? 2 : 0), still: true }));
