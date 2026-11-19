@@ -253,7 +253,8 @@ class Game {
     this.worldIdx = zoneWorld(Z.id, 0).scaleWorld; this.levelIdx = 0; this.gold = 0; this.kills = 0;
     this.runStart = { stage: this.stageIndex, world: this.worldIdx, zs: 0, zf: 0 }; this.save.runReviveUsed = false;
     const p = this.player = this.makePlayer(0, 0); p.weapons.length = 1; p.slot = 0; /* 무기고 보조 무기도 없이 기본 무기만 */
-    const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) { p.treasure = tr; if (tr.apply) tr.apply(p); } /* 보구는 영구 보유라 그대로 */
+    this.zoneRights = 0; /* [사용자 결정] 길가메시가 권리를 모두 빼앗음: 직업 스킬·무기·단련·거래·진화·축복·보구 — 층 보스를 쓰러뜨릴 때마다 하나씩 되찾음 */
+    const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) p.treasure = tr; /* 보구는 지니고 있지만 '보구의 권리'를 되찾기 전까지 응답하지 않음 (효과도 그때 적용) */
     this.loadStage();
     this.askVariant(() => {
       if (paid) this.showBanner('심층 탐험 보상 정산', `결정석 +${paid} (떨어지기 전에 은행에 들어감)`, '#9ad8ff');
@@ -271,6 +272,17 @@ class Game {
     else this.showBanner(`금빛 사슬 조각 (${n}/${S.need})`, '바빌로니아에서만 얻을 수 있는 조각 — 10개를 모으면 무언가가 이어진다', '#ffd84a');
     writeSave(sv);
   }
+  zoneRight(id) { const i = BABYLON_RIGHTS.findIndex((r) => r.id === id); return !this.areaId || i < 0 || (this.zoneRights || 0) > i; } /* 귀환길에서 그 권리를 되찾았는지 */
+  grantZoneRight(n) { /* n번째 권리(1부터)를 되찾음 */
+    const R = BABYLON_RIGHTS[n - 1], p = this.player; if (!R || (this.zoneRights || 0) >= n) return; this.zoneRights = n;
+    if (R.id === 'rank1' || R.id === 'rank2') { const want = R.id === 'rank1' ? 1 : 2; while (p.rank < want) { const br = p.rank === 0 && branchesAtEvolve(p.hero.id) ? jobLines(p.hero.id).find((l) => l.id === p.lineChoice) : null; const r0 = p.rank; this.evolve(null, br || null); if (p.rank === r0) break; } }
+    else if (R.id === 'bless') { const b = pick(DATA_BUFFS); b.apply(p); p.buffs.push(b.id); }
+    else if (R.id === 'treasure') { if (p.treasure && p.treasure.apply) p.treasure.apply(p); p.treasureCd = 0; }
+    else if (R.id === 'king') { p.maxHp += 40; p.hp += 40; p.maxEnergy += 60; p.energy = p.maxEnergy; for (const w of p.weapons) w.lv = Math.min(BALANCE.upgrade.maxLevel, (w.lv || 0) + 2); }
+    this.effects.ring(p.x, p.y, 34, '#ffd84a'); this.effects.ring(p.x, p.y, 54, '#fff4c0'); this.effects.goldBurst(p.x, p.y - 6, 18); this.effects.rays(p.x, p.y, '#ffd84a', 14, 70, 0.8); SFX.play('solomon', 0.5);
+    this.effects.text(p.x, p.y - 34, `${R.name} 회복`, '#ffd84a', true);
+    this.showBanner(`권리 회복 — ${R.name} (${n}/${BABYLON_RIGHTS.length})`, R.desc, '#ffd84a');
+  }
   babylonUnderBoss(c, W) { /* 귀환길 필드 보스 처치: 위로 올라가거나 귀환 · 지구라트 4-4 길가메시를 쓰러뜨리면 끝 */
     this.props.push(new Chest(c.x, c.y - 24, 'boss'));
     if (W.finalField) {
@@ -279,6 +291,7 @@ class Game {
       this.effects.rays(c.x, c.y, '#ffd84a', 20, 120, 1.2); this.screenFlash = 0.25; this.flashColor = '255,216,74'; SFX.play('gate', 0.6);
       this.playCutscene(GILGAMESH_UNDER_WIN_LINES, { id: 'gilgamesh_under_win', always: true, focus: { x: c.x, y: c.y } });
       return; }
+    this.grantZoneRight(this.zoneField + 1); /* 층 보스를 꺾음: 빼앗긴 권리 하나를 되찾음 */
     const nf = this.zoneField + 1, next = zoneWorld(this.areaId, nf);
     this.portals.push(new Portal(c.x + 26, c.y + 24, () => this.advanceStage(), `${zoneLabel(this.areaId, nf, 0)} ${next.name}`, next.finalField ? [255, 216, 74] : [58, 200, 184]));
     this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90]));
@@ -566,7 +579,7 @@ class Game {
   // ── 이어하기: 스테이지 시작 시점의 런 상태 (맵은 그 스테이지를 새로 생성)
   snapshotRun() {
     const p = this.player;
-    return { v: 1, t: Date.now(), hero: p.hero.id, zone: this.areaId || null, zf: this.zoneField || 0, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills, start: this.runStart || null,
+    return { v: 1, t: Date.now(), hero: p.hero.id, zone: this.areaId || null, zf: this.zoneField || 0, zr: this.zoneRights || 0, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills, start: this.runStart || null,
       p: { maxHp: p.maxHp, hp: p.hp, maxShield: p.maxShield, maxEnergy: p.maxEnergy, energy: p.energy, moveSpeed: p.moveSpeed,
         dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction,
         stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
@@ -588,7 +601,7 @@ class Game {
   resumeRun() {
     const r = this.save.run, hero = r && this.data.heroes.get(r.hero);
     if (!r || !hero) { this.save.run = null; writeSave(this.save); this.startRun(); return; }
-    this.mode = 'dungeon'; this.areaId = r.zone && ZONES[r.zone] ? r.zone : null; this.zoneField = this.areaId ? Math.max(0, Math.min(ZONES[this.areaId].fields.length - 1, r.zf | 0)) : 0; this.worldIdx = r.worldIdx; this.levelIdx = r.levelIdx; this.gold = r.gold; this.kills = r.kills; this.runStart = r.start && typeof r.start.stage === 'number' ? r.start : { stage: 0, world: 0 };
+    this.mode = 'dungeon'; this.areaId = r.zone && ZONES[r.zone] ? r.zone : null; this.zoneField = this.areaId ? Math.max(0, Math.min(ZONES[this.areaId].fields.length - 1, r.zf | 0)) : 0; this.zoneRights = this.areaId ? (typeof r.zr === 'number' ? r.zr : this.zoneField) : 0; this.worldIdx = r.worldIdx; this.levelIdx = r.levelIdx; this.gold = r.gold; this.kills = r.kills; this.runStart = r.start && typeof r.start.stage === 'number' ? r.start : { stage: 0, world: 0 };
     this.player = this.playerFromSnapshot(hero, r.p);
     this.player.treasure = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped) || null; /* 보구는 지금 로비에서 장착한 것 (저장된 판의 보구로 되돌아가던 버그 — 판 중에 얻은 보구로 바꿔도 이어하기에 반영 안 됨) */
     this.loadStage();
@@ -639,7 +652,7 @@ class Game {
     const map = W.trial ? generateDungeon({ roomCount: W.rooms || 2, specials: ['boss'], waves: W.waves || 0, palette: W.palette, bossSize: W.bossRoom }) // 시련: 시작 방 + 보스 방 (카멜롯은 전투 방도)
       : this.isBossStage
       ? generateDungeon({ roomCount: 4, specials: ['boss'], waves: W.waves, palette: W.palette, bossSize: W.bossRoom })
-      : generateDungeon({ roomCount: Math.min(15, 9 + this.worldIdx), specials: (this.areaId ? ['exit', 'treasure'] : ['exit', 'treasure', 'shop']).concat(this.rollSpecialRoom()), waves: W.waves, palette: W.palette }); // 특수방 하나
+      : generateDungeon({ roomCount: Math.min(15, 9 + this.worldIdx), specials: (this.areaId && !this.zoneRight('trade') ? ['exit', 'treasure'] : ['exit', 'treasure', 'shop']).concat(this.rollSpecialRoom()), waves: W.waves, palette: W.palette }); // 특수방 하나
     this.resetWorldLists(map);
     const s = map.startRoom, sp = map.tileCenter(s.cx, s.cy), p = this.player;
     p.x = sp.x; p.y = sp.y; p.state = 'NORMAL'; p.shield = p.maxShield;
@@ -676,7 +689,7 @@ class Game {
     const SR = BALANCE.specialRooms; if (Math.random() >= SR.chance) return [];
     const p = this.player, canEvolve = p && p.line && p.rank < 2;
     const ER = canEvolve ? SR.evolveByRank[p.rank] : null, evolveOk = ER && this.worldIdx >= ER.fromWorld; // 진화 단계별로 나오는 필드·빈도가 다름
-    const pool = this.areaId ? ZONES[this.areaId].specialPool : SR.pool.filter((t) => t !== 'evolve' || evolveOk); /* 지하: 무기·진화가 안 나오는 방만 */
+    const pool = this.areaId ? ZONES[this.areaId].specialPool.concat(this.zoneRight('arms') ? ['rack'] : [], this.zoneRight('forge') ? ['smithy', 'forge'] : [], this.zoneRight('bless') ? ['altar', 'blood'] : []) : SR.pool.filter((t) => t !== 'evolve' || evolveOk); /* 귀환길: 되찾은 권리만큼 특수방이 늘어남 (전직의 방은 없음 — 진화는 권리로) */ /* 지하: 무기·진화가 안 나오는 방만 */
     return [weightedPick(pool, (t) => (t === 'evolve' ? ER.weight : (SR.weight && SR.weight[t]) || 1))];
   }
   // 특수방 소품 배치
@@ -1158,6 +1171,7 @@ class Game {
   useTreasure() {
     const p = this.player, T = p.treasure;
     if (!T || this.mode !== 'dungeon') return;
+    if (!this.zoneRight('treasure')) { this.effects.text(p.x, p.y - 18, '보구의 권리를 빼앗겼다', '#ffd84a'); return; } /* 귀환길: 보구 봉인 */
     if (p.treasureCd > 0) { this.effects.text(p.x, p.y - 18, `${T.name} ${Math.ceil(p.treasureCd)}초`, '#999'); return; }
     p.treasureCd = T.cooldown;
     this.effects.text(p.x, p.y - 24, T.name + '!', T.color, true); SFX.play(T.sfx || 'react', 0.3);
@@ -1317,7 +1331,8 @@ class Game {
     if (p.castLock > 0) return;
     const charged = p.skillId === 'deathsentry'; /* 망자의 파수기: 충전 칸이 있으면 쿨타임 중에도 사용 (칸마다 1개 설치) */
     if (charged ? (p.dsCharges == null ? BALANCE.TRAP.sentryCharges : p.dsCharges) <= 0 : p.skillCooldown > 0) return;
-    if (p.denyT > 0) { this.effects.text(p.x, p.y - 20, '부정됨', '#d8f0ff'); return; } /* 가레스의 부정 장판 안: 스킬 금지 */
+    if (p.denyT > 0) { this.effects.text(p.x, p.y - 20, '부정됨', '#d8f0ff'); return; }
+    if (!this.zoneRight('job')) { this.effects.text(p.x, p.y - 20, '직업의 권리를 빼앗겼다', '#ffd84a'); return; } /* 귀환길: 첫 층 보스까지 스킬 봉인 */ /* 가레스의 부정 장판 안: 스킬 금지 */
     if (/^overdrive/.test(p.skillId || '') && p.odLockT > 0) return; /* 사수 과부하 계열: 효과가 끝나고 잠시 뒤까지 다시 못 씀 (쿨타임 감소가 쌓여도 효과가 끊기지 않고 계속 유지되던 버그) */
     if (charged) { if (p.dsCharges == null) p.dsCharges = BALANCE.TRAP.sentryCharges; p.dsCharges--; } /* 재사용 대기 없음 — 칸은 actors.js에서 sentryRecharge초마다 1칸씩 참 */
     else p.skillCooldown = p.skillCdMax;
@@ -1868,7 +1883,8 @@ class Game {
   }
   openChest(c) {
     this.effects.burst(c.x, c.y - 6, '#ffd84a', 10);
-    if (this.areaId && this.mode === 'dungeon') { /* [사용자 결정] 바빌로니아 지하: 상자에서 무기 대신 체력·에너지·골드만 */
+    if (this.areaId && this.mode === 'dungeon' && this.zoneRight('arms')) this.rollChainShard(c); /* 무기의 권리를 되찾은 뒤: 상자는 원래대로 (조각은 계속) */
+    if (this.areaId && this.mode === 'dungeon' && !this.zoneRight('arms')) { /* [사용자 결정] 바빌로니아 귀환길: '무기의 권리'를 되찾기 전엔 상자에서 무기 대신 체력·에너지·골드만 */
       const big = c.content === 'challenge' || c.content === 'boss', coins = big ? randInt(12, 18) : randInt(6, 10);
       for (let i = 0; i < coins; i++) this.pickups.push(new Pickup('coin', c.x, c.y));
       for (let i = 0; i < (big ? 8 : 5); i++) this.pickups.push(new Pickup('energy', c.x, c.y, { value: 10 }));
