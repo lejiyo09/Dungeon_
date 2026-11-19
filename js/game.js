@@ -468,19 +468,64 @@ class Game {
   }
   // [사용자 결정] 심층 입장 기록: 직업 안에서도 진화 루트(계열)마다 따로 — 키 '직업|계열'
   deepKey(heroId, lineId) { return heroId + '|' + (lineId || this.chosenLine(heroId).id); }
-  recoverDeepCheckpoints() { /* 기존 기록은 그대로 보존하고, 남아 있는 정확한 스냅샷만 계정 백업으로 복사 */
-    const sv = this.save; if (sv.deepRecoverV2) return;
+  recoverDeepCheckpoints() { /* 기존 10-4 기록 보존 + 바빌로니아 패치로 체크포인트가 사라진 계정의 남은 스냅샷 복구 */
+    const sv = this.save; if (sv.deepRecoverV3) return;
     const previousArchive = new Set(Object.keys(sv.deepCheckpointArchive || {}));
     const c = this.deepCps();
     const archive = sv.deepCheckpointArchive = sv.deepCheckpointArchive || {};
+    const clone = (v) => JSON.parse(JSON.stringify(v));
     const archived = Object.keys(c).filter((key) => !previousArchive.has(key) && !!archive[key]).length;
-    const exactCount = Object.keys(c).filter((key) => { const [hid, lid] = key.split('|'), cp = c[key]; return this.data.heroes.get(hid) && jobLines(hid).some((l) => l.id === lid) && cp && Array.isArray(cp.weapons) && Array.isArray(cp.weaponLv) && Array.isArray(cp.buffs); }).length;
+
+    // 바빌로니아 진입 전 10-4 스테이지 스냅샷이 run/stashRun에 남아 있으면
+    // 그 당시 직업·진화·무기 ID·강화·축복·능력치를 그대로 체크포인트로 옮긴다.
+    // 성역 도달 또는 심층 진입 기록이 있는 계정에만 적용해, 단순 10-4 도전 기록은 클리어로 취급하지 않는다.
+    const hasCleared10_4 = !!sv.sanctumReached || (Number(sv.bestDeep) || 0) >= 1;
+    let recoveredFromRun = 0;
+    if (hasCleared10_4) {
+      const candidates = [sv.run, sv.stashRun]
+        .filter((r) => r && typeof r === 'object' && !r.zone
+          && r.worldIdx === DEEP_START - 1 && r.levelIdx === STAGES_PER_WORLD - 1)
+        .sort((a, b) => (Number(b.t) || 0) - (Number(a.t) || 0));
+      for (const r of candidates) {
+        const p = r.p, heroId = r.hero;
+        if (!p || typeof p !== 'object' || !this.data.heroes.get(heroId)) continue;
+        const line = jobLines(heroId).find((l) => l.id === p.line);
+        const exact = line
+          && Array.isArray(p.weapons) && p.weapons.length > 0
+          && Array.isArray(p.weaponLv) && p.weaponLv.length === p.weapons.length
+          && p.weapons.every((id) => !!this.data.weapons.get(id))
+          && p.weaponLv.every((lv) => Number.isFinite(Number(lv)) && Number(lv) >= 0)
+          && Array.isArray(p.buffs) && p.buffs.every((id) => DATA_BUFFS.some((b) => b.id === id))
+          && p.stats && typeof p.stats === 'object'
+          && ['maxHp', 'hp', 'maxShield', 'maxEnergy', 'energy', 'moveSpeed'].every((k) => Number.isFinite(Number(p[k])));
+        if (!exact) continue;
+        const key = this.deepKey(heroId, line.id), existing = c[key];
+        // 이미 10-4에서 저장한 정확한 기록이 있으면 오래된 스테이지 스냅샷으로 덮어쓰지 않는다.
+        if (existing && Array.isArray(existing.weapons) && existing.weapons.length > 0
+          && Array.isArray(existing.weaponLv) && existing.weaponLv.length === existing.weapons.length
+          && Array.isArray(existing.buffs)) continue;
+        const cp = Object.assign(clone(p), { gold: Number(r.gold) || 0, t: Number(r.t) || Date.now() });
+        c[key] = cp;
+        archive[key] = clone(cp);
+        recoveredFromRun++;
+      }
+    }
+
+    const exactCount = Object.keys(c).filter((key) => {
+      const [hid, lid] = key.split('|'), cp = c[key];
+      return this.data.heroes.get(hid) && jobLines(hid).some((l) => l.id === lid)
+        && cp && Array.isArray(cp.weapons) && cp.weapons.length > 0
+        && Array.isArray(cp.weaponLv) && cp.weaponLv.length === cp.weapons.length
+        && Array.isArray(cp.buffs);
+    }).length;
     const had10_4 = !!sv.sanctumReached || (sv.bestStage || 0) >= DEEP_START * STAGES_PER_WORLD || (sv.bestDeep || 0) >= 1;
     this.deepRecordMissing = had10_4 && exactCount === 0;
-    sv.deepRecoverV2 = 1;
-    sv.deepRecover = 1; // 예전 버전의 1회 복구 플래그도 유지
+    sv.deepRecoverV3 = 1;
+    sv.deepRecoverV2 = 1; // 이전 버전의 1회 백업 플래그도 유지
+    sv.deepRecover = 1;
     writeSave(sv);
-    if (archived) this.deepRecovered = archived; // 남아 있는 원본 기록을 백업했다는 안내
+    const recovered = archived + recoveredFromRun;
+    if (recovered) this.deepRecovered = (this.deepRecovered || 0) + recovered;
   }
   deepCps() {
     const sv = this.save;
