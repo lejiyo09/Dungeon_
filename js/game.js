@@ -824,7 +824,8 @@ class Game {
   update(dt) {
     let input = this.input;
     this.time += dt;
-    if (this.locked) { input.endStep(); return; } // 로그인 화면
+    if (this.locked) { input.remap = false; input.endStep(); return; } // 로그인 화면
+    input.remap = !this.overlay && !this.cutscene && !this.transition && (this.mode === 'dungeon' || this.mode === 'lobby'); /* 조작키 변경은 직접 조작할 때만 (메뉴·대사에서는 원래 키) */
     if (this.coop && this.coop.guest) { this.coopGuestUpdate(dt, input); return; } // 멀티 참가자: 방장 화면을 받아 그림
     if (this.banner) this.banner.t += dt;
     if (input.wasPressed('KeyM') && !(this.overlay && this.overlay.type === 'gift')) this.toggleMute(); /* 선물 코드 입력 중에는 M도 글자 */
@@ -924,9 +925,24 @@ class Game {
       else if (input.wasPressed('KeyI')) { this.overlay = { type: 'details', tab: 0 }; return; } // 상세 정보
       else if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; } // 선물 코드
       else if (input.wasPressed('KeyK')) { this.overlay = { type: 'skins', back: 'pause', msg: null }; return; } // 스킨 고르기 창
+      else if (input.wasPressed('KeyO')) { this.overlay = { type: 'keys', wait: null, msg: null }; input.mouse.down = false; return; } // 조작키 설정
       else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
       else if (this.mode === 'lobby' && input.wasPressed('KeyP')) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => {} }; return; }
       else if (this.mode === 'dungeon' && input.wasPressed('KeyL')) { this.player.state = 'DEAD'; this.endRun(false); }
+    } else if (o.type === 'keys') { /* [사용자 결정] 조작키 설정: 칸을 누르고 새 키(마우스 버튼 포함)를 누름 · Backspace 지우기 · Esc 취소 */
+      const m = input.mouse, hit = (r) => m.x >= r.x && m.x < r.x + r.w && m.y >= r.y && m.y < r.y + r.h;
+      if (o.wait) { if (o.wait.armed) { const c = input.raw[0];
+          if (c === 'Escape') { o.wait = null; o.msg = { text: '취소했습니다', color: '#ccc', t: 1.5 }; }
+          else if (c === 'Backspace' || c === 'Delete') { input.setBind(o.wait.id, o.wait.slot, null); o.wait = null; }
+          else if (c) { const A = KEY_ACTIONS.find((a) => a.id === o.wait.id); input.setBind(o.wait.id, o.wait.slot, c); o.msg = { text: `${A.name}: ${keyLabel(c)}`, color: '#ffd84a', t: 1.5 }; o.wait = null; } }
+        else o.wait.armed = true; /* 칸을 누른 클릭이 그대로 새 키가 되지 않게 한 프레임 쉼 */
+        input.mouse.down = false; return; }
+      if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; return; }
+      if (input.wasPressed('Mouse0')) {
+        KEY_ACTIONS.forEach((A, i) => { for (const sl of [0, 1]) if (hit(keysRow(i, sl))) o.wait = { id: A.id, slot: sl, armed: false }; });
+        if (hit(keysBtn(0))) { input.resetBinds(); o.msg = { text: '기본값으로 되돌렸습니다', color: '#9ad8ff', t: 1.5 }; }
+        if (hit(keysBtn(1))) { this.overlay = { type: 'pause' }; return; } }
+      if (o.msg) { o.msg.t -= 1 / 60; if (o.msg.t <= 0) o.msg = null; }
     } else if (o.type === 'codex' || o.type === 'armory' || o.type === 'trial_weapons') {
       const t0 = o.tab;
       ['Digit1', 'Digit2', 'Digit3', 'Digit4'].forEach((k, i) => { if (input.wasPressed(k)) o.tab = i; });

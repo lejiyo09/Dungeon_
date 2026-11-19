@@ -162,9 +162,9 @@ class HUD {
     ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'hero_info' || o.type === 'skins' || o.type === 'travel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' || o.type === 'rank' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
-      hudText(ctx, 'WASD 이동 · 마우스 조준/공격 · Space 대시 · F/우클릭 스킬', VIEW_W / 2, 120, '#ccc', 'center', 9);
+      { const B = game.input.binds, k = (id) => B[id].filter(Boolean).map(keyLabel).join('/') || '없음'; hudText(ctx, `${k('up')}${k('left')}${k('down')}${k('right')} 이동 · 마우스 조준 · ${k('attack')} 공격 · ${k('dash')} 대시 · ${k('skill')} 스킬`, VIEW_W / 2, 120, '#ccc', 'center', 9); } /* 지금 조작키 */
       const hasTr = (game.save.treasures || []).length > 0 || !!game.player.treasure; // 보구를 얻기 전에는 R 안내를 숨김
-      hudText(ctx, `E 상호작용 · Q/휠 무기 교체 · ${hasTr ? 'R 보구 · ' : ''}M 소리 켜기/끄기`, VIEW_W / 2, 134, '#ccc', 'center', 9);
+      { const B = game.input.binds, k = (id) => B[id].filter(Boolean).map(keyLabel).join('/') || '없음'; hudText(ctx, `${k('interact')} 상호작용 · ${k('swap')}/휠 무기 교체 · ${hasTr ? k('treasure') + ' 보구 · ' : ''}M 소리 켜기/끄기   ·   O 조작키 설정`, VIEW_W / 2, 134, '#ccc', 'center', 9); }
       hudText(ctx, '상태이상: 화상(불) · 빙결(얼음) · 중독(자연) · 전격(번개) · 실명(빛) · 저주(어둠)', VIEW_W / 2, 148, '#c8c0d8', 'center', 8);
       hudText(ctx, '원소 반응: 화상+빙결=열충격 · 화상+중독=독 연소 · 빙결+전격=감전 · 화상+전격=과부하 · 중독+전격=마비', VIEW_W / 2, 160, '#9ad8ff', 'center', 8);
       hudText(ctx, '실명+저주=일식 · 저주+중독=역병 · 화상+저주=지옥불 · 실명+전격=심판', VIEW_W / 2, 172, '#9ad8ff', 'center', 8);
@@ -172,6 +172,18 @@ class HUD {
       { const h = game.player.hero.id, K = SKINS.find((k) => k.hero === h && (game.save.skins || []).includes(k.id)); hudText(ctx, `K  스킨 고르기${K && game.skinSprite(h) ? ` (지금: ${K.name})` : ''}`, VIEW_W / 2, 220, '#ffb0d8', 'center', 9); } /* 스킨 창 */
       if (game.mode === 'lobby' && game.save.babylon && game.save.babylon.visited) hudText(ctx, '+  빠른 이동 (카멜롯 · 바빌로니아)', VIEW_W / 2, 234, '#ffbe28', 'center', 9);
       hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기   ·   L 포기하고 로비로' : 'Esc 이어하기   ·   P 프롤로그 다시 보기   ·   L 로그아웃', VIEW_W / 2, 206, '#999', 'center', 9);
+    } else if (o.type === 'keys') { /* 조작키 설정 */
+      hudText(ctx, '조작키 설정', VIEW_W / 2, 20, '#fff', 'center', 14);
+      hudText(ctx, o.wait ? '새 키를 누르세요 — 마우스 버튼도 됩니다   (Backspace 지우기 · Esc 취소)' : '바꿀 칸을 누르세요 (주 키 · 보조 키)   ·   Esc 돌아가기', VIEW_W / 2, 36, o.wait ? '#ffd84a' : '#aaa', 'center', 8);
+      const m = game.input.mouse, hit = (r) => m.x >= r.x && m.x < r.x + r.w && m.y >= r.y && m.y < r.y + r.h, B = game.input.binds;
+      KEY_ACTIONS.forEach((A, i) => { const r = keysRow(i, -1); hudText(ctx, A.name, r.x, r.y + 3, '#e8e0d0', 'left', 9);
+        for (const sl of [0, 1]) { const q = keysRow(i, sl), waiting = o.wait && o.wait.id === A.id && o.wait.slot === sl;
+          ctx.fillStyle = waiting ? 'rgba(255,216,74,0.35)' : hit(q) ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.07)'; ctx.fillRect(q.x, q.y, q.w, q.h);
+          ctx.strokeStyle = waiting ? '#ffd84a' : '#5a5468'; ctx.strokeRect(q.x + 0.5, q.y + 0.5, q.w - 1, q.h - 1);
+          hudText(ctx, waiting ? '…' : keyLabel(B[A.id][sl]), q.x + q.w / 2, q.y + 3, B[A.id][sl] ? '#fff' : '#666', 'center', 9); } });
+      [['기본값으로', 0], ['닫기', 1]].forEach(([t, k]) => { const r = keysBtn(k); ctx.fillStyle = hit(r) ? 'rgba(255,216,74,0.3)' : 'rgba(255,255,255,0.1)'; ctx.fillRect(r.x, r.y, r.w, r.h); hudText(ctx, t, r.x + r.w / 2, r.y + 3, '#fff', 'center', 9); });
+      hudText(ctx, '메뉴·대사 창에서는 언제나 원래 키(좌클릭·Esc·Enter)로 조작합니다', VIEW_W / 2, keysBtn(0).y + 21, '#888', 'center', 8);
+      if (o.msg) hudText(ctx, o.msg.text, VIEW_W / 2, keysBtn(0).y + 33, o.msg.color, 'center', 9);
     } else if (o.type === 'travel') { /* + 빠른 이동 */
       const m = game.input.mouse, cam = o.sub === 'camelot', items = cam ? game.camelotFloors() : ['camelot', 'babylon'];
       hudText(ctx, cam ? '카멜롯 — 층 고르기' : '빠른 이동', VIEW_W / 2, 30, '#ffd84a', 'center', 14);
