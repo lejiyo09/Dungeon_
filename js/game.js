@@ -2015,7 +2015,7 @@ class Game {
     if (src.execute && enemy.hp < enemy.maxHp * 0.35) base *= 1 + src.execute; // 처형: 빈사 적 추가 피해
     if (enemy.markT > 0) base *= enemy.markMult;
     if (src.feast) enemy.feastHit = this.time; /* 포식 스킬에 맞음 (처치하면 중첩 더) */
-    { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_druid' && !src.trap) base *= enemy.def.boss ? F.bossMult : 1 + (fp.feast || 0) / 10 * F.dmgPer10; } /* [사용자 결정] 소울 이터: 일반 몬스터 피해는 상한 없이 (10스택당 +dmgPer10) · 보스에게는 약함 */
+    { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_berserker' && !src.trap) base *= enemy.def.boss ? F.bossMult : 1 + (fp.feast || 0) / 10 * F.dmgPer10; } /* [사용자 결정] 소울 이터: 일반 몬스터 피해는 상한 없이 (10스택당 +dmgPer10) · 보스에게는 약함 */
     if (enemy.kingWeakT > 0) base *= enemy.kingWeakMul || 1.6; /* 벗의 사슬에 약해진 길가메시 */                                 // 약점 표시된 적
     if (enemy.curse > 0) base *= 1.2;                                             // 저주: 받는 피해 +20%
     if (enemy.avalonUntil > this.time) base *= 1 + (enemy.avalonVuln || 0.2);        // 아발론의 꽃밭: 받는 피해 증가
@@ -2288,7 +2288,7 @@ class Game {
     enemy.rewardGiven = true;
     if (!enemy.def.boss && !enemy.def.dummy && !enemy.def.master) { const C = this.corpses || (this.corpses = []); C.push({ x: enemy.x, y: enemy.y, t: this.time, used: false, maxHp: enemy.maxHp }); if (C.length > 40) C.shift(); } /* 시체 (망자의 파수기용, BALANCE.TRAP.corpseLife초) */
     this.kills++;
-    { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_druid' && this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.boss) { /* 소울 이터: 혼 포식 (처치 수와 따로) */
+    { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_berserker' && this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.boss) { /* 소울 이터: 혼 포식 (처치 수와 따로) */
       const before = fp.feast || 0, gain = enemy.feastHit && this.time - enemy.feastHit < 0.6 ? F.perSkillKill : F.perKill; fp.feast = before + gain;
       if (gain > 1) this.effects.text(enemy.x, enemy.y - 12, `혼 +${gain}`, '#b8e05a');
       if (fp.feast >= F.healAt && fp.state !== 'DEAD') fp.hp = Math.min(fp.maxHp, fp.hp + F.heal);
