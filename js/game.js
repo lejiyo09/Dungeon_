@@ -261,7 +261,7 @@ class Game {
   }
   babylonUnderCleared(c) { /* 라마수 처치: 위로 가는 수문이 열림 → 귀환 */
     const B = this.save.babylon = this.save.babylon || {}; B.underCleared = (B.underCleared || 0) + 1; writeSave(this.save);
-    this.props.push(new Chest(c.x, c.y - 24, 'weapon'));
+    this.props.push(new Chest(c.x, c.y - 24, 'boss'));
     this.portals.push(new Portal(c.x, c.y + 24, () => this.endRun(true), '수문 위 계단 — 귀환', [58, 200, 184]));
     this.playCutscene(BABYLON_UNDER_CLEAR_LINES, { id: 'babylon_under_clear', always: true, focus: { x: c.x, y: c.y } });
   }
@@ -619,7 +619,7 @@ class Game {
     const map = W.trial ? generateDungeon({ roomCount: W.rooms || 2, specials: ['boss'], waves: W.waves || 0, palette: W.palette }) // 시련: 시작 방 + 보스 방 (카멜롯은 전투 방도)
       : this.isBossStage
       ? generateDungeon({ roomCount: 4, specials: ['boss'], waves: W.waves, palette: W.palette })
-      : generateDungeon({ roomCount: Math.min(15, 9 + this.worldIdx), specials: ['exit', 'treasure', 'shop'].concat(this.rollSpecialRoom()), waves: W.waves, palette: W.palette }); // 특수방 하나
+      : generateDungeon({ roomCount: Math.min(15, 9 + this.worldIdx), specials: (this.areaId ? ['exit', 'treasure'] : ['exit', 'treasure', 'shop']).concat(this.rollSpecialRoom()), waves: W.waves, palette: W.palette }); // 특수방 하나
     this.resetWorldLists(map);
     const s = map.startRoom, sp = map.tileCenter(s.cx, s.cy), p = this.player;
     p.x = sp.x; p.y = sp.y; p.state = 'NORMAL'; p.shield = p.maxShield;
@@ -650,7 +650,7 @@ class Game {
     const SR = BALANCE.specialRooms; if (Math.random() >= SR.chance) return [];
     const p = this.player, canEvolve = p && p.line && p.rank < 2;
     const ER = canEvolve ? SR.evolveByRank[p.rank] : null, evolveOk = ER && this.worldIdx >= ER.fromWorld; // 진화 단계별로 나오는 필드·빈도가 다름
-    const pool = SR.pool.filter((t) => t !== 'evolve' || evolveOk);
+    const pool = this.areaId ? ZONES[this.areaId].specialPool : SR.pool.filter((t) => t !== 'evolve' || evolveOk); /* 지하: 무기·진화가 안 나오는 방만 */
     return [weightedPick(pool, (t) => (t === 'evolve' ? ER.weight : (SR.weight && SR.weight[t]) || 1))];
   }
   // 특수방 소품 배치
@@ -1834,6 +1834,13 @@ class Game {
   }
   openChest(c) {
     this.effects.burst(c.x, c.y - 6, '#ffd84a', 10);
+    if (this.areaId && this.mode === 'dungeon') { /* [사용자 결정] 바빌로니아 지하: 상자에서 무기 대신 체력·에너지·골드만 */
+      const big = c.content === 'challenge' || c.content === 'boss', coins = big ? randInt(12, 18) : randInt(6, 10);
+      for (let i = 0; i < coins; i++) this.pickups.push(new Pickup('coin', c.x, c.y));
+      for (let i = 0; i < (big ? 8 : 5); i++) this.pickups.push(new Pickup('energy', c.x, c.y, { value: 10 }));
+      this.pickups.push(new Pickup('hp', c.x, c.y, { value: big ? 40 : 25 }));
+      return;
+    }
     if (c.content === 'weapon' || c.content === 'challenge') this.pickups.push(new Pickup('weapon', c.x, c.y + 14, { def: this.randomWeaponDef(c.content === 'challenge' ? 2 : 0), still: true }));
     else {
       for (let i = 0; i < randInt(4, 8); i++) this.pickups.push(new Pickup('coin', c.x, c.y));

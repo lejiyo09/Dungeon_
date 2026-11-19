@@ -112,6 +112,7 @@ class SlotMachine {
     else if ((r -= T.triple) < 0) { msg = '잭팟! 골드 세 배!'; col = '#ffd84a'; this.face = [3, 3, 3]; gold(this.price * 3); game.effects.burst(this.x, this.y, '#ffd84a', 20); }
     else if ((r -= T.hp) < 0) { msg = '체력 물약'; col = '#ff7a7a'; this.face = [1, 1, 1]; game.pickups.push(new Pickup('hp', c.x, c.y, { value: 30 })); }
     else if ((r -= T.energy) < 0) { msg = '에너지'; col = '#7ab0ff'; this.face = [2, 2, 2]; for (let i = 0; i < 6; i++) game.pickups.push(new Pickup('energy', c.x, c.y, { value: 12 })); }
+    else if (game.areaId) { msg = '대박! 골드 다섯 배!'; col = '#ffd84a'; this.face = [4, 4, 4]; gold(this.price * 5); game.effects.burst(this.x, this.y, '#ffd84a', 16); } /* 바빌로니아 지하: 무기 대신 골드 */
     else { msg = '대박! 무기'; col = '#c070ff'; this.face = [4, 4, 4]; game.pickups.push(new Pickup('weapon', c.x, c.y, { def: game.randomWeaponDef(), still: true })); game.effects.burst(this.x, this.y, '#ffd84a', 16); }
     this.result = { msg, col, t: 0.6 };
   }
