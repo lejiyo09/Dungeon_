@@ -64,13 +64,14 @@ const BALANCE = {
     corpseLife: 6           // 시체가 남아 있는 시간(초)
   },
   upgrade: { maxLevel: 10, perLevel: 0.12, base: 30, chance: [1, 0.9, 0.75, 0.6, 0.45, 0.38, 0.32, 0.26, 0.2, 0.15],
-    rarityMult: { common: 1, uncommon: 1.2, rare: 1.5, epic: 1.8, legendary: 2.2 }, forgeRoomDiscount: 0.7, forgeRoomBonus: 0.1 },
+    rarityMult: { common: 1, uncommon: 1.2, rare: 1.5, epic: 1.8, legendary: 2.2, unique: 2.2 }, forgeRoomDiscount: 0.7, forgeRoomBonus: 0.1 },
   // 보스 강화 배율 (전직의 방 상위자는 제외): 체력·공격력·공격 간격
   //  boss = 1~10필드 보스, bossDeep = 심층 보스 (보구를 가진 상태를 기준으로 더 강함)
   boss: { hp: 1.7, dmg: 1.25, cooldown: 0.85 },
   overdriveGap: 3,        // [버그 수정] 사수 과부하 계열 스킬: 효과가 끝난 뒤 최소 이만큼(초, 실제 시간) 지나야 다시 쓸 수 있음 — 쿨타임 감소·솔로몬의 반지로 효과가 끊기지 않던 문제
   mobDeep: { dmg: 1.3 },  // [사용자 결정] 심층 일반 몬스터(보스 아님) 공격력 배율 — 스테이지 곡선 위에 더 곱함
   deepBossTreasureMult: 0.5, // [사용자 결정] 심층 보스가 공격형 보구(게이트 오브 바빌론·엑스칼리버·롱고미니아드·게이볼그, 게이볼그 출혈 포함)에게 받는 피해 배율
+  babylonBoss: { hp: 1.35, dmg: 1.15, cooldown: 0.88 }, // [사용자 결정] 바빌로니아 귀환길 보스(층 보스 9 + 지구라트 4-4 길가메시) 체력 ×1.35 · 공격력 ×1.15 · 공격 간격 ×0.88 [제안 수치]
   bossDeep: { hp: 2.35, dmg: 1.46, cooldown: 0.725 }, // [사용자 결정] 심층 보스 버프 2번 (처음: 체력 2.0 · 공격력 1.38 · 공격 간격 0.76 → 2.3 · 1.45 · 0.73 → 지금)
   // 로비에서 바로 심층으로 들어갈 때 시작 장비 [제안]: 최종 진화 · 전설/영웅 무기(+강화) · 체력 · 축복 (10필드를 깬 상태를 흉내)
   deepStart: { hp: 135, rarity: ['legendary', 'epic'], lv: 2, buffs: 4, gold: 300 },

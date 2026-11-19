@@ -247,6 +247,12 @@ const DATA_WEAPONS = [
   { id: 'weapon_frostscepter_001', name: '서리여왕의 홀', rarity: 'legendary', type: 'gun', shape: 'staff',
     damage: 24, fireRate: 2.1, energyCost: 1.8, range: 400, projectileSpeed: 480, projectileCount: 5, spreadDeg: 0, fanDeg: 30, bounce: 2,
     status: { type: 'freeze', chance: 0.8, duration: 1.6, slow: 0.6 }, pierce: 1, knockback: 3, color: '#7a9ac8', len: 14, bulletColor: '#bfefff', bulletSize: 3 },
+  // [사용자 결정] 진흙의 엔키두를 쓰러뜨리면 얻는 고유 무기 — 어느 등급에도 속하지 않음(unique), 무작위 보상·상점·무기고·제련에 나오지 않음
+  //  길가메시 사냥 특화 [제안 수치]: 길가메시에게 피해 +50% · 맞히면 가끔 사슬로 잠깐 묶음(면역 무시) · 휘두르면 적 탄(보물고의 칼날)을 베어 없앰 · 사슬 파동
+  { id: 'weapon_friendchain_001', name: '벗의 맹약', rarity: 'unique', type: 'melee', shape: 'spear', questOnly: true,
+    damage: 54, fireRate: 1.9, energyCost: 0, range: 58, arcDeg: 150, deflect: true, knockback: 8,
+    wave: { damage: 32, speed: 470, range: 290 }, kingSlayer: { mult: 1.5, bindChance: 0.12, bind: 0.7, cd: 4 }, color: '#9ae8d8', len: 18,
+    desc: '엔키두가 남긴 하늘빛 사슬창. 길가메시에게 피해 +50%, 맞히면 가끔 사슬이 왕을 잠깐 묶는다. 휘두르면 보물고의 칼날을 베어 없앤다.' },
   // ── 개성 무기 5
   { id: 'weapon_harpoon_001', name: '작살총', rarity: 'common', type: 'gun', shape: 'gun',
     damage: 43, fireRate: 1.4, energyCost: 0, range: 260, projectileSpeed: 380, projectileCount: 1, spreadDeg: 0,

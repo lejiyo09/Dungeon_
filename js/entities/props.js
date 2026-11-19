@@ -150,6 +150,7 @@ class Forge {
   interact(game) {
     const p = game.player, w = p.weapon; if (this.used || !w) return;
     if (game.gold < this.price) { game.effects.text(p.x, p.y - 18, '골드가 부족합니다', '#ff7070'); SFX.play('deny'); return; }
+    if (w.def.rarity === 'unique') { game.effects.text(p.x, p.y - 18, '고유 무기는 제련할 수 없습니다', '#9ae8d8'); return; }
     const RANK = ['common', 'uncommon', 'rare', 'epic', 'legendary'], cur = RANK.indexOf(w.def.rarity);
     const up = cur < 4 && Math.random() < BALANCE.specialRooms.forgeUpChance, want = RANK[up ? cur + 1 : cur];
     const pool = DATA_WEAPONS.filter((d) => d.rarity === want && d.id !== w.def.id && !p.weapons.some((o) => o.def.id === d.id));
@@ -359,7 +360,7 @@ const WEAPON_TABS = [
 ];
 function tabRect(i) { const w = 90, gap = 6, total = w * 4 + gap * 3; return { x: (VIEW_W - total) / 2 + i * (w + gap), y: 22, w, h: 14 }; }
 function pageBtn(i) { return { x: 452 + i * 28, y: 22, w: 24, h: 14 }; } // 도감류 페이지 넘김 버튼 (◀ ▶)
-const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'unique'];
 const GRID_PER_PAGE = 40;
 function tabWeapons(tab) { return DATA_WEAPONS.filter(WEAPON_TABS[tab].test).sort((a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity)); }
 function gridPages(tab) { return Math.max(1, Math.ceil(tabWeapons(tab).length / GRID_PER_PAGE)); }

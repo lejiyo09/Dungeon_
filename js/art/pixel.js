@@ -371,6 +371,7 @@ function weaponSprite(def) {
   const t = WPIX[WEAPON_SPRITE[def.id]] || WPIX.pistol;
   const pal = { k: OUTLINE, a: def.color, b: shade(def.color, 0.65), c: shade(def.color, 1.4), o: def.bulletColor || '#ffffff',
     w: '#ffffff', d: '#7a5530', e: '#5a3a1e', y: '#d0a040', s: '#dddddd', m: '#a8b0bc', n: '#5a6070', g: '#2a2a34', r: '#d04040' };
+  if (t.pal) Object.assign(pal, t.pal); /* 무기 전용 색 (벗의 맹약 등) */
   const rows = t.auto ? outlineRows(t.rows) : t.rows, off = t.auto ? 1 : 0; // auto: 외곽선 1px 만큼 손잡이 위치 이동
   s = bakeSprite(rows, pal); s.px = t.p[0] + off; s.py = t.p[1] + off; spriteCache.set(key, s); return s;
 }

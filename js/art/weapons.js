@@ -50,6 +50,7 @@ Object.assign(WPIX, {
   voidstaff: { auto: true, p: [3, 2], rows: ['..........nnn.', '.........noon.', 'aaaaaaaaanowon', '.........noon.', '..........nnn.'] },
   // ── 근접
   rapier: { auto: true, p: [2, 2], rows: ['..yy...............', '.y..y..............', 'gggyyccccccccccccc.', '.y..y..............', '..yy...............'] },
+  friendchain: { auto: true, p: [6, 2], pal: { t: '#9ae8d8', T: '#4a8a80', w: '#e8fff8', d: '#6a4a2a' }, rows: ['................ww..', '..t.T.t.......wwttw.', 'ddddddddddddddTtttwT', '..T.t.T.......wwttw.', '................ww..'] }, // 벗의 맹약: 하늘빛 사슬이 감긴 창
   halberd: { auto: true, p: [6, 2], rows: ['..................a.', '...............aaaa.', 'ddddddddddddddcaaaac', '...............aa...', '................a...'] },
   // ── 활
   longbow: { auto: true, p: [5, 6], rows: ['.a.....', '.sa....', '.s.a...', '.s..a..', '.s...a.', '.s...a.', '.s...a.', '.s...a.', '.s...a.', '.s..a..', '.s.a...', '.sa....', '.a.....'] },
@@ -139,6 +140,7 @@ Object.assign(WPIX, {
 });
 
 Object.assign(WEAPON_SPRITE, {
+  weapon_friendchain_001: 'friendchain',
   weapon_pistol_001: 'pistol2', weapon_revolver_001: 'revolver', weapon_flintlock_001: 'flintlock', weapon_watergun_001: 'watergun',
   weapon_dual_001: 'dual', weapon_laser_001: 'laser2', weapon_smg_001: 'smg2', weapon_rivet_001: 'rivet', weapon_burst_001: 'rifle2',
   weapon_rifle_001: 'sniper2', weapon_plasma_001: 'plasma', weapon_railgun_001: 'railgun', weapon_bounce_001: 'orbgun',

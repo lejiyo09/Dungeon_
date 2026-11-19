@@ -7,8 +7,8 @@ const EPS = 0.001;
 const T_VOID = 0, T_FLOOR = 1, T_WALL = 2, T_DOOR = 3, T_COVER = 4, T_CRATE = 5; // COVER: 엄폐물, CRATE: 부서지는 상자
 const GRID_W = 5, GRID_H = 5, CELL_W = 30, CELL_H = 24;
 const SPAWN_TIME = 0.8;
-const RARITY_COLOR = { common: '#d0d0d0', uncommon: '#6fd36f', rare: '#5aa0ff', epic: '#c070ff', legendary: '#ffa030' };
-const RARITY_NAME = { common: '일반', uncommon: '고급', rare: '희귀', epic: '영웅', legendary: '전설' };
+const RARITY_COLOR = { common: '#d0d0d0', uncommon: '#6fd36f', rare: '#5aa0ff', epic: '#c070ff', legendary: '#ffa030', unique: '#9ae8d8' }; // unique: 어느 등급에도 속하지 않는 고유 무기
+const RARITY_NAME = { common: '일반', uncommon: '고급', rare: '희귀', epic: '영웅', legendary: '전설', unique: '고유' };
 const RARITY_WEIGHT = BALANCE.rarityWeight;
 const RARITY_PRICE = BALANCE.shopPrice;
 const CUR = BALANCE.lobbyCurrency; // 로비 재화 (이름·색은 balance.js 한 곳에서 바꿈)

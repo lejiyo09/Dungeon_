@@ -216,6 +216,13 @@ const BABYLON_BOSS_INTROS = {
   boss_pazuzu: { name: '파주주', lines: ['(둘째 단. 모래바람이 사람의 형상을 하고 네 장의 날개를 편다.)', '파주주: 「크크… 바람이 너를 다시 아래로 끌어내릴 것이다. 처음 떨어졌을 때처럼.」'] },
   boss_clay_enkidu: { name: '진흙의 엔키두', lines: ['(셋째 단. 마지막 계단을 막고 선 것은 — 진흙으로 빚은 사람이었다.)', '(…이 얼굴. 왕이 잃어버렸다는 단 하나의 벗을 본떠 만든 건가.)', '진흙의 엔키두: 「…왕에게… 가지… 마라. 왕은… 아직… 외롭다.」'] }
 };
+// [사용자 결정] 진흙의 엔키두를 쓰러뜨리면: 고유 무기 '벗의 맹약'을 남김 [임시 대사]
+const ENKIDU_GIFT_LINES = [
+  '진흙의 몸이 천천히 무너져 내리고, 그 안에서 하늘빛 사슬이 감긴 창 한 자루가 굴러 나온다.',
+  '진흙의 엔키두: 「…너는… 왕을… 막으러 가는가… 아니면… 구하러 가는가…」',
+  '진흙의 엔키두: 「…어느 쪽이든… 좋다. 이것을… 가져가라. 왕의 보물로는… 이 사슬을… 끊을 수 없다…」',
+  '(…벗의 무기. 이걸로 — 그 왕에게.)'
+];
 // [사용자 결정] 하늘의 사슬(엔키두의 보구)이 길가메시를 묶었을 때 — 처음은 장면, 그 뒤로는 짧은 대사 [임시]
 const GIL_HEAVEN_CHAIN_LINES = [
   '하늘빛 사슬이 땅에서 솟아, 영웅왕의 팔과 다리를 휘감는다.',
@@ -538,6 +545,7 @@ const STORY_ARCHIVE = [
   { id: 'babylon_under', name: '바빌로니아 지하', kind: 'cut', lines: () => BABYLON_FALL_LINES.concat(BABYLON_UNDER_WAKE_LINES), unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under') },
   { id: 'babylon_under_clear', name: '열린 수문', kind: 'cut', lines: () => BABYLON_UNDER_CLEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under_clear') },
   ...Object.entries(BABYLON_BOSS_INTROS).map(([id, B]) => ({ id: 'bab_boss_' + id, name: '네임드 — ' + B.name, kind: 'cut', lines: () => B.lines, unlocked: (sv) => (sv.scenesSeen || []).includes('bab_boss_' + id) })),
+  { id: 'enkidu_gift', name: '벗의 맹약', kind: 'cut', lines: () => ENKIDU_GIFT_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('enkidu_gift') },
   { id: 'gil_heaven_chain', name: '벗의 사슬', kind: 'cut', lines: () => GIL_HEAVEN_CHAIN_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gil_heaven_chain') },
   { id: 'babylon_surface', name: '지상으로', kind: 'cut', lines: () => BABYLON_SURFACE_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_surface') },
   { id: 'babylon_ziggurat', name: '지구라트', kind: 'cut', lines: () => BABYLON_ZIGGURAT_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_ziggurat') },

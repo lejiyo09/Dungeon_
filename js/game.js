@@ -292,6 +292,9 @@ class Game {
       this.playCutscene(GILGAMESH_UNDER_WIN_LINES, { id: 'gilgamesh_under_win', always: true, focus: { x: c.x, y: c.y } });
       return; }
     this.grantZoneRight(this.zoneField + 1); /* 층 보스를 꺾음: 빼앗긴 권리 하나를 되찾음 */
+    if (W.boss === 'boss_clay_enkidu') { const FW = this.data.weapons.get('weapon_friendchain_001'); /* [사용자 결정] 진흙의 엔키두: 길가메시 사냥 특화 고유 무기를 남김 */
+      if (FW) { this.pickups.push(new Pickup('weapon', c.x, c.y - 52, { def: FW, still: true })); this.discover(FW.id); this.effects.skyBeam(c.x, c.y - 52, '#9ae8d8', 0, 10); this.effects.rays(c.x, c.y - 52, '#9ae8d8', 16, 70, 1); }
+      this.playCutscene(ENKIDU_GIFT_LINES, { id: 'enkidu_gift', focus: { x: c.x, y: c.y - 40 } }); }
     const nf = this.zoneField + 1, next = zoneWorld(this.areaId, nf);
     this.portals.push(new Portal(c.x + 26, c.y + 24, () => this.advanceStage(), `${zoneLabel(this.areaId, nf, 0)} ${next.name}`, next.finalField ? [255, 216, 74] : [58, 200, 184]));
     this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90]));
@@ -957,6 +960,7 @@ class Game {
       if (!c) return;
       const sv = this.save, d = c.d, say = (text, color) => { o.msg = { text, color, t: 2 }; };
       if (!sv.discovered.includes(d.id)) say('아직 발견하지 못한 무기입니다. 던전에서 먼저 찾아보세요.', '#ff9a9a');
+      else if (d.rarity === 'unique' || d.questOnly) say('고유 무기는 무기고에 들일 수 없습니다 — 그 판에서만 쓸 수 있어요', '#9ae8d8');
       else if (!sv.armory.includes(d.id)) {
         const price = ARMORY_PRICE[d.rarity];
         if (sv.bank < price) say(`${CUR.name}이 부족합니다 (${price} 필요)`, '#ff9a9a');
@@ -1735,6 +1739,7 @@ class Game {
     const def = this.data.enemies.get(id);
     if (!def) throw new Error('알 수 없는 적 ID: ' + id);
     const e = new Enemy(x, y, def, this.scale, room);
+    if (def.boss && !def.master && this.areaId) { const Z = BALANCE.babylonBoss; e.maxHp = Math.round(e.maxHp * Z.hp); e.hp = e.maxHp; e.damage = Math.round(e.damage * Z.dmg); e.cdMul = (e.cdMul || 1) * Z.cooldown; } /* [사용자 결정] 바빌로니아 귀환길 보스(길가메시 포함) 난이도 상향 */
     if (this.partyCount() > 1 && !def.dummy) { e.maxHp = Math.round(e.maxHp * this.partyScale(def.boss ? 'bossHp' : 'mobHp')); e.hp = e.maxHp; } // 멀티: 인원만큼 체력 증가
     this.enemies.push(e);
     return e;
@@ -1957,6 +1962,9 @@ class Game {
     { const wid = src.weaponId || (src.wdef && src.wdef.id) || (src.srcId && String(src.srcId).startsWith('weapon_') ? src.srcId : null); if (wid) enemy.lastWeapon = wid; } /* 마지막으로 때린 무기 (칭호 '근본' 집계) */
     if (src.trap) { if (enemy.preyT > 0 && !src.corpse && !src.pct) base *= 1 + BALANCE.TRAP.prey.bonus; if (enemy.def.boss) base *= src.equip ? BALANCE.TRAP.equipBossMult : BALANCE.TRAP.bossMult; } /* 덫 장비·망자의 파수기: 사냥터 각인 +20% · 보스에게는 배율 (보스전 최강 방지) */
     if (src.treasure) base *= this.treasureBossMult(enemy); /* 공격형 보구: 심층 보스는 절반 */
+    { const wd = src.wdef || this.data.weapons.get(src.weaponId || src.srcId), K = wd && wd.kingSlayer; /* 벗의 맹약: 길가메시 사냥 특화 */
+      if (K && /^boss_gilgamesh/.test(enemy.def.id)) { base *= K.mult;
+        if (enemy.alive && !(enemy.kingSlayCd > this.time) && Math.random() < K.bindChance) { enemy.kingSlayCd = this.time + K.cd; enemy.chainT = Math.max(enemy.chainT || 0, K.bind); enemy.chainMax = enemy.chainT; enemy.trChain = true; this.effects.ring(enemy.x, enemy.y, enemy.radius + 10, '#9ae8d8'); this.effects.text(enemy.x, enemy.y - 30, '벗의 사슬!', '#9ae8d8'); } } }
     if (enemy.iceVulnT > 0) base *= 1.5; /* 절대 영도로 얼어 있음 */
     if (enemy.huntT > 0) base *= 1.8; /* 사냥꾼의 표적 */
     if (enemy.auraVulnT > 0) base *= 1 + enemy.auraVuln; /* 맹독 안개 안 */
