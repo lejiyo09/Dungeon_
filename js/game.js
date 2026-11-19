@@ -1776,6 +1776,7 @@ class Game {
     const def = this.data.enemies.get(id);
     if (!def) throw new Error('알 수 없는 적 ID: ' + id);
     const e = new Enemy(x, y, def, this.scale, room);
+    if (!def.boss && !def.master && !def.dummy && this.areaId) { const M = BALANCE.babylonMob; e.maxHp = Math.round(e.maxHp * M.hp); e.hp = e.maxHp; e.damage = Math.round(e.damage * M.dmg); } /* 귀환길 잡몹 +10% */
     if (def.boss && !def.master && this.areaId) { const Z = BALANCE.babylonBoss, k = Math.min(1, (this.zoneField || 0) / 9); e.maxHp = Math.round(e.maxHp * (1 + (Z.hp - 1) * k)); e.hp = e.maxHp; e.damage = Math.round(e.damage * (1 + (Z.dmg - 1) * k)); e.cdMul = (e.cdMul || 1) * (1 - (1 - Z.cooldown) * k); } /* 바빌로니아 보스 강화는 위층으로 갈수록 서서히 (지하 4는 없음 · 지구라트 4 길가메시는 전부) */ /* [사용자 결정] 바빌로니아 귀환길 보스(길가메시 포함) 난이도 상향 */
     if (this.partyCount() > 1 && !def.dummy) { e.maxHp = Math.round(e.maxHp * this.partyScale(def.boss ? 'bossHp' : 'mobHp')); e.hp = e.maxHp; } // 멀티: 인원만큼 체력 증가
     this.enemies.push(e);
