@@ -585,6 +585,44 @@ class GoldThrone {
     if (game) { const a = 0.15 + 0.1 * Math.sin(game.time * 2); ctx.fillStyle = `rgba(255,216,74,${a})`; ctx.beginPath(); ctx.ellipse(x, y - 10, 34, 30, 0, 0, TAU); ctx.fill(); } // 은은한 금빛
   }
 }
+// 영웅왕의 왕좌의 방 장식 [임시 디자인]: 금 기둥 · 보물 더미 · 벽에 일렁이는 보물고의 문
+class GoldPillar {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 0; }
+  label() { return null; }
+  render(ctx) {
+    const x = Math.round(this.x), y = Math.round(this.y), R = (c, a, b, w, h) => { ctx.fillStyle = c; ctx.fillRect(x + a, y + b, w, h); };
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(x, y + 2, 10, 3, 0, 0, TAU); ctx.fill();
+    R(OUTLINE, -9, -4, 18, 7); R('#b8801a', -8, -3, 16, 5); R('#ffd84a', -8, -3, 16, 1);                          // 받침
+    R(OUTLINE, -6, -46, 12, 43); R('#e0b030', -5, -45, 10, 41); R('#fff4c0', -4, -45, 2, 41); R('#9a6a14', 3, -45, 1, 41); // 기둥
+    for (const yy of [-38, -24, -10]) { R('#3a5ac8', -5, yy, 10, 2); R('#6a8aff', -5, yy, 10, 1); }                 // 청금석 띠
+    R(OUTLINE, -9, -52, 18, 7); R('#ffd84a', -8, -51, 16, 5); R('#fff4c0', -8, -51, 16, 1); R('#a0201e', -2, -50, 4, 3); // 머리장식·루비
+  }
+}
+class TreasureHeap {
+  constructor(x, y, flip) { this.x = x; this.y = y; this.radius = 0; this.flip = flip ? -1 : 1; }
+  label() { return null; }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), f = this.flip, R = (c, a, b, w, h) => { ctx.fillStyle = c; ctx.fillRect(x + (f > 0 ? a : -a - w), y + b, w, h); };
+    ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.ellipse(x, y - 3, 17, 7, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#c8901a'; ctx.beginPath(); ctx.ellipse(x, y - 3, 16, 6, 0, 0, TAU); ctx.fill(); ctx.fillStyle = '#ffd84a'; ctx.beginPath(); ctx.ellipse(x - f * 2, y - 6, 10, 5, 0, 0, TAU); ctx.fill();
+    R(OUTLINE, 6, -26, 3, 20); R('#d8dce8', 7, -26, 1, 18); R('#ffd84a', 4, -9, 7, 2);                              // 꽂힌 검
+    R(OUTLINE, -12, -20, 2, 16); R('#c8a050', -12, -20, 1, 15); R('#e8f0ff', -13, -24, 4, 4);                       // 창
+    R('#e8304a', -4, -8, 2, 2); R('#3a7aff', 2, -6, 2, 2); R('#7aff9a', -8, -5, 2, 2); R('#fff4c0', 0, -9, 1, 1);    // 보석
+    if (game) { const a = 0.1 + 0.08 * Math.sin(game.time * 3 + x); ctx.fillStyle = `rgba(255,216,74,${a})`; ctx.beginPath(); ctx.ellipse(x, y - 8, 22, 14, 0, 0, TAU); ctx.fill(); }
+  }
+}
+class GateRipple { // 벽 앞 공중의 금빛 문 (보물이 반쯤 나와 있음)
+  constructor(x, y, ph) { this.x = x; this.y = y; this.ph = ph || 0; this.radius = 0; }
+  label() { return null; }
+  render(ctx, game) {
+    const t = game ? game.time : 0, s = 1 + 0.1 * Math.sin(t * 3 + this.ph), x = Math.round(this.x), y = Math.round(this.y) - 30;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.85; ctx.strokeStyle = '#ffe9a0'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(x, y, 9 * s, 5 * s, 0, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.45; ctx.strokeStyle = '#ffd84a'; ctx.beginPath(); ctx.ellipse(x, y, 13 * s, 7 * s, 0, 0, TAU); ctx.stroke(); ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(255,240,180,0.5)'; ctx.beginPath(); ctx.ellipse(x, y, 5 * s, 2.5 * s, 0, 0, TAU); ctx.fill(); ctx.restore();
+    const d = 3 + 2 * Math.sin(t * 2 + this.ph); ctx.fillStyle = OUTLINE; ctx.fillRect(x - 1, y + 1, 3, 5 + d); ctx.fillStyle = '#e8f0ff'; ctx.fillRect(x, y + 1, 1, 4 + d); ctx.fillStyle = '#ffd84a'; ctx.fillRect(x - 1, y, 3, 1); // 반쯤 나온 칼날
+  }
+}
 // 게이트 오브 바빌론의 사슬: 플레이어 둘레의 금빛 파문에서 사슬이 뻗어 나와 묶음 (길가메시 장면 연출)
 class GateChains {
   constructor(target) { this.target = target; this.alive = true; this.x = target.x; this.y = target.y; this.t0 = performance.now(); this.pts = []; for (let i = 0; i < 7; i++) { const a = i / 7 * TAU + 0.3; this.pts.push({ a, d: 46 + (i % 2) * 10 }); } }

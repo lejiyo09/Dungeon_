@@ -172,15 +172,27 @@ const BABYLON_UNDER_WAKE_LINES = [
 ];
 const BABYLON_UNDER_CLEAR_LINES = [
   '라마수의 진흙 몸이 무너져 내리고, 막혀 있던 수문이 무겁게 열린다.',
-  '(…위로 이어지는 계단. 하지만 끝이 보이지 않아. 여긴 지하 열 층, 맨 밑바닥이었던 거야.)',
-  '(저 위 어딘가에서 — 금빛이 새어 나오고 있다.)',
-  '(잡종이라고 했지, 길가메시. 좋아. 한 층씩 올라가서 다시 그 왕좌 앞에 서 주지.)'
+  '(…위로 이어지는 계단. 아득한 위쪽에서 바람이 내려와. 지상까지는 아직 몇 층이나 남았어.)',
+  '(지상으로 올라가서 — 저 높은 지구라트 꼭대기, 그 왕좌까지.)',
+  '(잡종이라고 했지, 길가메시. 좋아. 내 발로 걸어 올라가서 다시 그 앞에 서 주지.)'
 ];
-// [사용자 결정] 지하 1-4 (왕좌 바로 아래): 영웅왕 길가메시 (아서 왕급) — 대사는 [임시]
+// [사용자 결정] 지상으로 나왔을 때 · 지구라트에 들어설 때 독백 [임시]
+const BABYLON_SURFACE_LINES = [
+  '마지막 계단을 밀어 올리자, 눈부신 햇빛이 쏟아진다.',
+  '(…하늘이다. 얼마 만이지.)',
+  '모래에 반쯤 묻힌 벽돌 거리, 무너진 집들. 그 너머로 — 하늘을 찌를 듯한 계단식 탑이 솟아 있다.',
+  '(저 꼭대기. 그 금빛 왕좌는 저기에 있어. 이번엔 정문으로 들어가 주지.)'
+];
+const BABYLON_ZIGGURAT_LINES = [
+  '청금석 문을 지나자, 거대한 지구라트의 첫 계단이 발밑에 펼쳐진다.',
+  '(한 단 오를 때마다 공기가 무거워져. 왕의 보물고가 가까워진다는 거겠지.)',
+  '(네 단. 그 위가 — 왕좌의 방.)'
+];
+// [사용자 결정] 지구라트 4-4 왕좌의 방: 영웅왕 길가메시 (아서 왕급) — 대사는 [임시]
 const GILGAMESH_UNDER_INTRO_LINES = [
-  '(…계단 끝에, 이런 신전이. 벽도 바닥도 온통 청금석과 황금이야. 바로 위가 — 그 왕좌인가.)',
+  '(…다시, 이 방이다. 붉은 융단, 금빛 기둥, 공중에 일렁이는 보물고의 문들.)',
   '황금 의자 위에서, 그가 턱을 괸 채 내려다본다.',
-  '길가메시: 「잡종. 그 사슬에 묶인 몸으로 밑바닥에서 여기까지 기어 올라왔다고?」',
+  '길가메시: 「잡종. 그 사슬에 묶인 몸으로 밑바닥에서 이 왕좌까지 기어 올라왔다고?」',
   '길가메시: 「…좋다. 그 끈질김만은 인정해 주지. 이번엔 장난이 아니다.」',
   '길가메시: 「왕의 보물고 — 전부 열어 주마. 버텨 보아라.」',
   '(…온다.)'
@@ -190,13 +202,14 @@ const GILGAMESH_UNDER_WIN_LINES = [
   '길가메시: 「…하. 하하하하! 잡종 주제에, 이 왕에게 무릎을 꿇게 하다니!」',
   '길가메시: 「인정하마. 네 이름은 이 왕의 보물고 한 칸에 새겨 두지.」',
   '몸을 묶고 있던 금빛 사슬이 하나씩 풀려 나가며, 몸이 가벼워진다.',
+  '(…올라왔어. 밑바닥에서, 이 왕좌까지.)',
   '[임시] 바빌로니아 이야기는 다음에 이어집니다.'
 ];
 const BABYLON_TRIAL = { /* 길가메시의 왕좌 (시련 틀을 빌려 씀) */
   id: 'babylon', title: '바빌로니아 — 영웅왕의 왕좌', color: '#ffd84a', intro: '영웅왕 길가메시가 왕좌에서 내려다보고 있습니다', reward: 0,
   W: { name: '바빌로니아 — 영웅왕의 왕좌', boss: 'boss_gilgamesh', trial: true, rooms: 2, sanctum: false, deep: false, waves: 0,
-    palette: { style: 'babylon', accent: '#ffd84a', floor: ['#26346a', '#283770'], corridor: ['#1c2650', '#1d2852'], wall: '#2a3a7a', wallTop: '#34489a',
-      wallFace: '#3a56b8', faceLine: '#2e48a0', deco: 'rgba(255,216,74,0.4)' } },
+    palette: { style: 'goldhall', accent: '#ffd84a', floor: ['#d8d0c0', '#dcd4c4'], corridor: ['#8a7a60', '#8c7c62'], wall: '#5a1a18', wallTop: '#7a2420', /* [사용자 결정] 왕좌의 방 다시 디자인: 흰 대리석·붉은 휘장·금 기둥 */
+      wallFace: '#a0302a', faceLine: '#8a2824', deco: 'rgba(255,216,74,0.4)' } },
   kit: { hp: 0, rarity: ['legendary', 'epic'], lv: 3, buffs: 0, picks: 0 }
 };
 const MERLIN_SPEAR_LINES = [
@@ -487,7 +500,9 @@ const STORY_ARCHIVE = [
   { id: 'babylon', name: '금빛의 문', kind: 'cut', lines: () => BABYLON_APPEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_appear') },
   { id: 'babylon_under', name: '바빌로니아 지하', kind: 'cut', lines: () => BABYLON_FALL_LINES.concat(BABYLON_UNDER_WAKE_LINES), unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under') },
   { id: 'babylon_under_clear', name: '열린 수문', kind: 'cut', lines: () => BABYLON_UNDER_CLEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under_clear') },
-  { id: 'gilgamesh_under', name: '영웅왕의 지하 신전', kind: 'cut', lines: () => GILGAMESH_UNDER_INTRO_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gilgamesh_under') },
+  { id: 'babylon_surface', name: '지상으로', kind: 'cut', lines: () => BABYLON_SURFACE_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_surface') },
+  { id: 'babylon_ziggurat', name: '지구라트', kind: 'cut', lines: () => BABYLON_ZIGGURAT_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_ziggurat') },
+  { id: 'gilgamesh_under', name: '다시, 왕좌의 방', kind: 'cut', lines: () => GILGAMESH_UNDER_INTRO_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gilgamesh_under') },
   { id: 'gilgamesh_under_win', name: '무릎 꿇은 영웅왕', kind: 'cut', lines: () => GILGAMESH_UNDER_WIN_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gilgamesh_under_win') },
   { id: 'arthur', name: '101번째 원탁의 기사', kind: 'cut', lines: () => ARTHUR_WIN_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 22) }
 ];

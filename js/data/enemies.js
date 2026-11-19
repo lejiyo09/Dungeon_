@@ -616,6 +616,8 @@ const DATA_ENEMIES = [
   { id: 'enemy_cedarling_001', name: '삼나무 정령', sprite: 'cedarling', color: '#4a7a3a', aiType: 'turret',
     health: 150, damage: 18, moveSpeed: 0, hitboxHalf: 7, attackRange: 300, telegraphTime: 0.75,
     attackCooldown: 2.1, recoveryTime: 0.3, bulletSpeed: 210, bulletCount: 10, bulletColor: '#8ad86a', knockbackResist: 1, rewardGold: 5 },
+  { id: 'enemy_goldguard_001', name: '황금 근위병', sprite: 'goldguard', color: '#c8901a', aiType: 'melee_chase',
+    health: 230, damage: 21, moveSpeed: 50, hitboxHalf: 7, attackRange: 30, telegraphTime: 0.45, attackCooldown: 1.2, recoveryTime: 0.4, knockbackResist: 0.95, rewardGold: 6 },
   // ── 바빌로니아 지하 필드 보스 [임시 디자인] (라마수와 번갈아 나옴, 뒤 필드일수록 스테이지 곡선으로 더 셈)
   { id: 'boss_clay_colossus', name: '점토판의 거신', title: '새겨진 율법', sprite: 'boss_claycolossus', color: '#a87a50', phaseColors: ['#a87a50', '#9a6a40', '#8a5a30'],
     boss: true, aiType: 'boss', health: 1500, damage: 20, moveSpeed: 28, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.05, bulletSpeed: 140,
