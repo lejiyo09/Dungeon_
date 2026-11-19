@@ -984,7 +984,7 @@ class SkillAura {
     let hit = 0;
     for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < this.r + e.radius) {
       if (this.vuln) { e.auraVulnT = this.tick + 0.15; e.auraVuln = this.vuln; } /* 맹독 안개: 안의 적 받는 피해 증가 */
-      world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: p.mods, knockback: 1, status: this.status }, 0, 0, { quiet: true }); hit++; }
+      world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: p.mods, knockback: 1, status: this.status, feast: !!this.feast }, 0, 0, { quiet: true }); hit++; }
     if (this.lifesteal && hit) p.hp = Math.min(p.maxHp, p.hp + Math.min(3, hit * this.lifesteal));
     for (let i = 0; i < 3; i++) { const a = Math.random() * TAU, d = this.r * (0.4 + Math.random() * 0.6);
       world.effects.part(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d * 0.7, -Math.sin(a) * 60, Math.cos(a) * 40 - 20, { color: this.color, life: 0.45, size: 2.5, size2: 0, drag: 2, add: true }); }

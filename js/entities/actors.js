@@ -91,7 +91,7 @@ class Player extends Entity {
     if (input.wasPressed('Space') && this.dashCooldown <= 0) {
       this.startDash(); this.updateDash(dt, map); return;
     }
-    const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1) * (this.hasteT > 0 ? 1.2 : 1) * (this.buffT > 0 ? 1 + (this.buffSpeed || 0) : 1) * (this.solomon > 0 ? 1 + this.treasure.speed : 1) * (this.hadesT > 0 ? 1 + this.treasure.speed : 1) * (this.kingChainT > 0 ? 0.4 : 1); /* 길가메시 '왕의 사슬': 몸이 무거워짐 */
+    const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1) * (this.hasteT > 0 ? 1.2 : 1) * (this.buffT > 0 ? 1 + (this.buffSpeed || 0) : 1) * (this.solomon > 0 ? 1 + this.treasure.speed : 1) * (this.hadesT > 0 ? 1 + this.treasure.speed : 1) * (this.kingChainT > 0 ? 0.4 : 1) * (this.feast ? 1 + Math.min(BALANCE.feast.speedCap, this.feast * BALANCE.feast.speedPer) : 1); /* 포식 중첩: 이동 속도 */ /* 길가메시 '왕의 사슬': 몸이 무거워짐 */
     moveAndCollide(this, ix * spd * dt, iy * spd * dt, map);
   }
   startDash() {

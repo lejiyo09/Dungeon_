@@ -587,13 +587,13 @@ class Game {
     const p = this.player;
     return { v: 1, t: Date.now(), hero: p.hero.id, zone: this.areaId || null, zf: this.zoneField || 0, zr: this.zoneRights || 0, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills, start: this.runStart || null,
       p: { maxHp: p.maxHp, hp: p.hp, maxShield: p.maxShield, maxEnergy: p.maxEnergy, energy: p.energy, moveSpeed: p.moveSpeed,
-        dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction,
+        dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction, feast: p.feast || 0,
         stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
         treasure: p.treasure ? p.treasure.id : null, line: p.line ? p.line.id : null, rank: p.rank || 0, hybrid: p.hybrid ? { id: p.hybrid.id, el: p.hybrid.el } : null, fleeceUsed: p.fleeceUsed || 0 } };
   }
   playerFromSnapshot(hero, s, p = new Player(0, 0, hero, this.data.base)) { // 저장된 캐릭터 상태 → 플레이어 (이어하기·심층 기록 공용)
     return this.withPlayer(p, () => {
-      for (const k of ['maxHp', 'hp', 'maxShield', 'maxEnergy', 'energy', 'moveSpeed', 'dashCdMax', 'skillCdMax', 'vampire', 'damageReduction', 'fleeceUsed']) if (typeof s[k] === 'number') p[k] = s[k];
+      for (const k of ['maxHp', 'hp', 'maxShield', 'maxEnergy', 'energy', 'moveSpeed', 'dashCdMax', 'skillCdMax', 'vampire', 'damageReduction', 'fleeceUsed', 'feast']) if (typeof s[k] === 'number') p[k] = s[k];
       Object.assign(p.stats, s.stats); p.buffs = s.buffs || [];
       p.weapons = (s.weapons || []).map((id, i) => [id, (s.weaponLv || [])[i] || 0]).filter(([id]) => this.data.weapons.get(id)).map(([id, lv]) => new WeaponInstance(this.data.weapons.get(id), lv));
       if (!p.weapons.length) p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
@@ -1373,7 +1373,7 @@ class Game {
     const at = (range) => { const dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, range / d); return { x: p.x + dx * k, y: p.y + dy * k }; }; // 조준 지점 (사거리 제한)
     const nova = (r, dmg, o = {}) => { // 자기 주변 범위 피해
       for (const e of this.enemies) { if (!e.targetable || Math.hypot(e.x - p.x, e.y - p.y) > r + e.radius) continue;
-        this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: o.kb ?? 6, status: (o.status && o.status.dps && this.trialW) ? Object.assign({}, o.status, { dps: D(o.status.dps) }) : o.status || null }, (e.x - p.x) / 50, (e.y - p.y) / 50); /* 시련: 범위 스킬의 중독·화상도 스킬 피해만큼 커짐 */
+        this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: o.kb ?? 6, feast: !!o.feast, status: (o.status && o.status.dps && this.trialW) ? Object.assign({}, o.status, { dps: D(o.status.dps) }) : o.status || null }, (e.x - p.x) / 50, (e.y - p.y) / 50); /* 시련: 범위 스킬의 중독·화상도 스킬 피해만큼 커짐 */
         if (o.root) e.chainT = Math.max(e.chainT || 0, o.root); }
       if (o.clear) for (const b of this.enemyBullets) if (!b.blade && Math.hypot(b.x - p.x, b.y - p.y) < r) b.alive = false;
       this.effects.ring(p.x, p.y, r, o.color || '#fff'); this.effects.ring(p.x, p.y, r * 0.6, '#ffffff'); this.effects.burst(p.x, p.y, o.color || '#fff', 16);
@@ -1578,6 +1578,10 @@ class Game {
       case 'thornfield': { const c = at(170); this.zones.push(new Puddle(c.x, c.y, { r: 56, life: 6, tick: 0.35, dmg: D(9), status: { type: 'poison', chance: 1, duration: 3, dps: 10 }, color: '#5a9a3a' }, p.mods)); break; }
       case 'thornburst': for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; this.projectiles.push(new Projectile({ x: p.x, y: p.y, dx: Math.cos(a), dy: Math.sin(a), speed: 320, range: 200, damage: D(44), pierce: 2, knockback: 3, mods: p.mods, color: '#7adf4a', size: 2, arrow: true, status: { type: 'poison', chance: 1, duration: 3, dps: 10 } })); }
         this.effects.ring(p.x, p.y, 30, '#7adf4a'); break;
+      case 'feast1': nova(80, 60, { color: '#b8e05a', kb: 4, feast: true }); this.effects.ring(p.x, p.y, 80, '#b8e05a'); break; /* [임시] 포식 갈래 스킬 */
+      case 'feast2': for (const e of this.enemies) if (e.targetable && !e.def.boss && Math.hypot(e.x - p.x, e.y - p.y) < 160) { const d = Math.hypot(e.x - p.x, e.y - p.y) || 1, k = Math.min(1, 50 / d); e.x += (p.x - e.x) * k * 0.5; e.y += (p.y - e.y) * k * 0.5; }
+        nova(110, 90, { color: '#b8e05a', kb: 0, feast: true }); this.effects.ring(p.x, p.y, 160, '#8ab03a'); break;
+      case 'feast3': nova(140, 120, { color: '#b8e05a', kb: 6, feast: true }); this.zones.push(new SkillAura(p, { r: 120, life: 2, tick: 0.4, dmg: 40, color: '#b8e05a', kind: 'blood', feast: true })); this.addShake(0.3, 5); break;
       case 'ancientroot': nova(140, 170, { color: '#7adf4a', root: 3, kb: 0, status: { type: 'poison', chance: 1, duration: 5, dps: 36 } }); this.addShake(0.3, 5); break;
       case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [8, 0.4, 0.4, 0], bearform2: [10, 0.45, 0.4, 10], primal: [12, 0.75, 0.4, 16] }[p.skillId];
         p.buffT = C[0]; p.buffAtk = C[1]; p.buffGuard = C[2]; p.buffSpeed = 0; p.buffKillHeal = 0;
@@ -2002,6 +2006,8 @@ class Game {
       if (df < (enemy.wallCone || enemy.def.wall.cone)) { base *= enemy.wallMult ?? enemy.def.wall.mult; if (!(enemy.wallMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, '막힘', '#c8c8d8'); enemy.wallMsgT = this.time + 0.5; } } }
     if (src.execute && enemy.hp < enemy.maxHp * 0.35) base *= 1 + src.execute; // 처형: 빈사 적 추가 피해
     if (enemy.markT > 0) base *= enemy.markMult;
+    if (src.feast) enemy.feastHit = this.time; /* 포식 스킬에 맞음 (처치하면 중첩 더) */
+    { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_druid' && !src.trap) base *= enemy.def.boss ? F.bossMult : 1 + Math.min(F.cap, fp.feast || 0) * F.perStack; } /* [사용자 결정] 포식: 일반 몬스터에게 점점 강해지고 보스에게는 약함 */
     if (enemy.kingWeakT > 0) base *= enemy.kingWeakMul || 1.6; /* 벗의 사슬에 약해진 길가메시 */                                 // 약점 표시된 적
     if (enemy.curse > 0) base *= 1.2;                                             // 저주: 받는 피해 +20%
     if (enemy.avalonUntil > this.time) base *= 1 + (enemy.avalonVuln || 0.2);        // 아발론의 꽃밭: 받는 피해 증가
@@ -2274,6 +2280,11 @@ class Game {
     enemy.rewardGiven = true;
     if (!enemy.def.boss && !enemy.def.dummy && !enemy.def.master) { const C = this.corpses || (this.corpses = []); C.push({ x: enemy.x, y: enemy.y, t: this.time, used: false, maxHp: enemy.maxHp }); if (C.length > 40) C.shift(); } /* 시체 (망자의 파수기용, BALANCE.TRAP.corpseLife초) */
     this.kills++;
+    { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_druid' && this.mode === 'dungeon' && !enemy.def.dummy) { /* 포식 중첩 (처치 수와 따로) */
+      const before = fp.feast || 0, gain = enemy.feastHit && this.time - enemy.feastHit < 0.6 ? F.perSkillKill : F.perKill; fp.feast = before + gain;
+      if (gain > 1) this.effects.text(enemy.x, enemy.y - 12, `포식 +${gain}`, '#b8e05a');
+      if (fp.feast >= F.healAt && fp.state !== 'DEAD') fp.hp = Math.min(fp.maxHp, fp.hp + F.heal);
+      if (Math.floor(fp.feast / 50) > Math.floor(before / 50)) this.showBanner(`포식 ${Math.floor(fp.feast / 50) * 50}`, `일반 몬스터에게 피해 +${Math.round(Math.min(F.cap, fp.feast) * F.perStack * 100)}% · 이동 속도 +${Math.round(Math.min(F.speedCap, fp.feast * F.speedPer) * 100)}%${fp.feast >= F.healAt ? ' · 처치마다 체력 회복' : ''}`, '#b8e05a'); } }
     if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) {
       this.guildEvent('kills', 1, enemy.def.id);
       if (enemy.elite) this.guildEvent('elites');
