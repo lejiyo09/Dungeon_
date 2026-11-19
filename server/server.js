@@ -20,7 +20,11 @@ const PORT = process.env.PORT || 8080;
 const MAX_PLAYERS = 4;
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json',
   '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.md': 'text/plain; charset=utf-8' };
-const BLOCK = ['server', 'tools', 'node_modules', '.git', 'versions']; // 밖으로 내보내지 않는 폴더
+const BLOCK = ['server', 'tools', 'node_modules', '.git', 'versions', 'dist']; // 밖으로 내보내지 않는 폴더 (dist는 /js 경유로만 서빙)
+// [사용자 결정] 배포본 난독화: dist/ 가 있으면 js·index.html·sw.js 를 dist(난독화본)에서 서빙 (없으면 원본 — 로컬 개발)
+const DIST = path.join(ROOT, 'dist'), HAS_DIST = fs.existsSync(path.join(DIST, 'js'));
+console.log(HAS_DIST ? '[dist] 난독화본 서빙' : '[dist] 없음 — 원본 서빙');
+function resolveStatic(rel) { if (HAS_DIST && (rel === 'index.html' || rel === 'sw.js' || rel.startsWith('js' + path.sep) || rel === 'js')) return path.join(DIST, rel); return path.join(ROOT, rel); } // 난독화 대상(js·index·sw)은 항상 dist에서만
 // ── 사용량 아끼기 (Render 무료 요금제: 아무도 안 쓰면 잠들게, 오가는 데이터는 작게)
 const LIMIT = {
   lobbyIdleMs: 2 * 60 * 1000,  // 방에 안 들어간 연결은 2분 뒤 끊음 → 아무도 없으면 서버가 잠들 수 있게
@@ -148,9 +152,9 @@ const server = http.createServer((req, res) => {
       const n = restoreScores(ip, b); res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, cors)); res.end(JSON.stringify({ ok: true, added: n })); }); return;
   }
   if (p.endsWith('/')) p += 'index.html';
-  const file = path.normalize(path.join(ROOT, p));
-  const rel = path.relative(ROOT, file);
-  if (rel.startsWith('..') || BLOCK.includes(rel.split(path.sep)[0])) { res.writeHead(404); res.end('not found'); return; }
+  const rel0 = path.normalize(p).replace(/^[\\/]+/, '');
+  if (rel0.startsWith('..') || BLOCK.includes(rel0.split(path.sep)[0])) { res.writeHead(404); res.end('not found'); return; }
+  const file = resolveStatic(rel0); // dist(난독화본)가 있으면 그쪽, 없으면 원본
   fs.stat(file, (err, st) => {
     if (err || !st.isFile()) { res.writeHead(404); res.end('not found'); return; }
     const send200 = (c) => {

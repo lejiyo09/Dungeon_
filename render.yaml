@@ -8,7 +8,7 @@ services:
     region: singapore
     runtime: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm install && npm run build # [사용자 결정] 배포본 난독화 (dist/ 생성)
     startCommand: npm start
     healthCheckPath: /health
     branch: main

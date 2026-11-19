@@ -5,12 +5,14 @@
   "description": "PROJECT: DUNGEON — 게임 파일 + 멀티 서버 (Render 배포용)",
   "main": "server/server.js",
   "scripts": {
-    "start": "node server/server.js"
+    "start": "node server/server.js",
+    "build": "node tools/build.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
+    "terser": "^5.37.0",
     "ws": "8.18.0"
   }
 }
