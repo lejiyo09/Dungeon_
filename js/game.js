@@ -270,7 +270,7 @@ class Game {
     else this.showBanner(`금빛 사슬 조각 (${n}/${S.need})`, '바빌로니아에서만 얻을 수 있는 조각 — 10개를 모으면 무언가가 이어진다', '#ffd84a');
     writeSave(sv);
   }
-  babylonUnderBoss(c, W) { /* 지하 필드 보스 처치: 다음 필드로 내려가거나 귀환 · 10-4 길가메시를 쓰러뜨리면 끝 */
+  babylonUnderBoss(c, W) { /* 지하 필드 보스 처치: 한 층 위로 올라가거나 귀환 · 지하 1-4 길가메시를 쓰러뜨리면 끝 */
     this.props.push(new Chest(c.x, c.y - 24, 'boss'));
     if (W.finalField) {
       const B = this.save.babylon = this.save.babylon || {}; B.gilgameshDown = (B.gilgameshDown || 0) + 1; writeSave(this.save);
@@ -281,8 +281,8 @@ class Game {
     const nf = this.zoneField + 1, next = zoneWorld(this.areaId, nf);
     this.portals.push(new Portal(c.x + 26, c.y + 24, () => this.advanceStage(), `${zoneLabel(this.areaId, nf, 0)} ${next.name}`, next.finalField ? [255, 216, 74] : [58, 200, 184]));
     this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90]));
-    if (this.zoneField === 0) this.playCutscene(BABYLON_UNDER_CLEAR_LINES, { id: 'babylon_under_clear', always: true, focus: { x: c.x, y: c.y } }); /* 라마수: 수문 너머는 더 깊은 곳 */
-    if (next.finalField) this.showBanner('금빛이 새어 나오는 계단', '이 아래에 — 그가 있다', '#ffd84a');
+    if (this.zoneField === 0) this.playCutscene(BABYLON_UNDER_CLEAR_LINES, { id: 'babylon_under_clear', always: true, focus: { x: c.x, y: c.y } }); /* 라마수: 수문 너머로 위층 계단 */
+    if (next.finalField) this.showBanner('금빛이 새어 나오는 계단', '이 위에 — 그가 있다', '#ffd84a');
   }
   camelotFloors() { /* 갈 수 있는 카멜롯 층 (멀린의 시련 진행도: N층은 quest >= 3 + 2N) */
     const q = (this.save.merlin && this.save.merlin.quest) || 0, out = [];
@@ -654,7 +654,7 @@ class Game {
     if (W.sanctum) this.decorateSanctum(map);
     this.snapCamera();
     if (W.sanctum && this.levelIdx === 0) this.playCutscene(ORIGIN_ARRIVAL_LINES, { id: 'origin_arrival', focus: null });
-    if (W.finalField && this.isBossStage) this.playCutscene(GILGAMESH_UNDER_INTRO_LINES, { id: 'gilgamesh_under', always: true, focus: null }); /* 지하 10-4: 영웅왕 길가메시 */
+    if (W.finalField && this.isBossStage) this.playCutscene(GILGAMESH_UNDER_INTRO_LINES, { id: 'gilgamesh_under', always: true, focus: null }); /* 지하 1-4: 영웅왕 길가메시 */
     if (W.deep && !W.trial && W.depth === 1 && this.levelIdx === 0) this.playCutscene(DEEP_ARRIVAL_LINES, { id: 'deep_arrival', focus: null }); // 심층에 처음 들어설 때 (한 번만)
     if (this.coop && this.coop.host) this.coopOnStage(); // 멀티: 동료 배치·부활 + 새 맵 보내기
     if (W.trial) { this.showBanner(W.name, this.trialDef.intro, this.trialDef.color); return; }

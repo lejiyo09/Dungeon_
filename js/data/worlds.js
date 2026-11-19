@@ -138,14 +138,15 @@ function worldDef(i) {
   return Object.assign({}, base, { depth: d + 1, name: `${base.name}` });
 }
 // [사용자 결정] 바빌로니아 지하: 길가메시에게 떨어진 뒤의 별도 지역 (worldIdx는 몬스터 세기용으로만 씀 — 기본 무기·1진으로 7필드급을 상대) [임시 디자인]
-const ZONE_POOLS = { /* 지하 필드 몬스터: 앞(1~3) · 가운데(4~6) · 깊은 곳(7~10) */
+const ZONE_POOLS = { /* 지하 필드 몬스터: 맨 밑(지하 10~8) · 가운데(7~5) · 위쪽(4~1) */
   a: [['enemy_clayscribe_001', 3], ['enemy_mudbrick_001', 2], ['enemy_chainhound_001', 3], ['enemy_abzuserpent_001', 3]],
   b: [['enemy_clayscribe_001', 2], ['enemy_mudbrick_001', 2], ['enemy_scorpionman_001', 3], ['enemy_mushlet_001', 3], ['enemy_abzuserpent_001', 2]],
   c: [['enemy_scorpionman_001', 3], ['enemy_mushlet_001', 3], ['enemy_cedarling_001', 2], ['enemy_mudbrick_001', 2], ['enemy_chainhound_001', 2]]
 };
 const abzuPal = (floor, corridor, wall, wallTop, wallFace, faceLine, accent) => ({ style: 'abzu', accent, floor, corridor, wall, wallTop, wallFace, faceLine, deco: 'rgba(58,200,184,0.35)' });
 const ZONES = {
-  // [사용자 결정] 바빌로니아 지하: 길가메시에게 떨어진 뒤의 별도 지역, 1-1 ~ 10-4 (10-4: 영웅왕 길가메시) [임시 디자인]
+  // [사용자 결정] 바빌로니아 지하: 길가메시에게 떨어진 뒤의 별도 지역. 맨 밑(지하 10)에서 깨어나 위로 올라가는 구성 — 지하 10-1 → 지하 1-4 (1-4: 왕좌 바로 아래의 영웅왕 길가메시) [임시 디자인]
+  //  fields[0]이 맨 밑(지하 10), 마지막이 지하 1
   //  worldIdx는 몬스터 세기용으로만 씀 (기본 무기·1진으로 7~10필드급을 상대)
   babylon_under: { id: 'babylon_under', zone: 'babylon_under', short: '지하', specialPool: ['fountain', 'gamble', 'challenge'], /* [사용자 결정] 상점·전직의 방·무기 나오는 방 없음 */ waves: 3,
     fields: [
@@ -169,7 +170,7 @@ function zoneWorld(z, f) { /* 지하 f번째 필드 (0부터)의 월드 정의 *
   const Z = ZONES[z], F = Z.fields[Math.max(0, Math.min(Z.fields.length - 1, f))];
   W = Object.assign({}, Z, { name: F.name, boss: F.boss, enemies: ZONE_POOLS[F.pool], palette: F.palette || Z.palette, scaleWorld: F.world, field: f, finalField: !!F.final });
   ZONE_CACHE.set(key, W); return W; }
-function zoneLabel(z, f, l) { const Z = ZONES[z]; return `${Z ? Z.short : '?'} ${f + 1}-${l + 1}`; }
+function zoneLabel(z, f, l) { const Z = ZONES[z]; return Z ? `${Z.short} ${Z.fields.length - f}-${l + 1}` : `? ${f + 1}-${l + 1}`; } /* [사용자 결정] 위로 올라감: 지하 10 → 지하 1 */
 function runLabel(r) { return r.zone && ZONES[r.zone] ? zoneLabel(r.zone, r.zf || 0, r.levelIdx) : stageLabel(r.worldIdx, r.levelIdx); } // 이어하기 표시용
 function runWorld(r) { return r.zone && ZONES[r.zone] ? zoneWorld(r.zone, r.zf || 0) : worldDef(r.worldIdx); }
 // 화면 표시용 스테이지 이름: 1-1 ~ 10-4, 심층은 '심층 1-1'
