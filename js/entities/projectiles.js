@@ -820,7 +820,7 @@ class HeavenChains {
   update(dt, world) {
     this.t += dt; const e = this.tgt;
     if (e && e.alive) { this.x = e.x; this.y = e.y; }
-    if (!this.hit && this.t >= 0.22) { this.hit = true; const T = this.T;
+    if (!this.hit && this.t >= 0.22) { this.hit = true; const T = this.T; if (world.treasureClear) world.treasureClear(this.x, this.y, T.spread); /* 보구: 사슬이 솟은 자리의 적 탄을 지움 */
       if (e && e.alive && /^boss_gilgamesh/.test(e.def.id) && T.gil) { /* [사용자 결정] 벗의 사슬: 길가메시에게는 특히 강함 — 면역 무시 전체 시간 + 하던 기술 끊김 + 약화 */
         e.chainT = Math.max(e.chainT || 0, T.bind); e.chainMax = e.chainT; e.trChain = true; e.kingWeakT = T.gil.dur; e.kingWeakMul = T.gil.dmg; e.kingWeakSlow = T.gil.slow; e.finalCd = Math.max(e.finalCd || 0, T.gil.dur);
         if (e.ult && typeof endUltimate === 'function') endUltimate(e, world); e.laser = null; e.pat = null; if (e.state === 'ATTACK' || e.state === 'TELEGRAPH') e.setState('IDLE');
@@ -863,7 +863,7 @@ class ChainCircle {
   constructor(x, y, T, owner, world) {
     this.x = x; this.y = y; this.r = T.radius; this.life = T.duration; this.t = 0; this.alive = true; this.T = T; this.owner = owner; this.got = []; this.spears = [];
     this.gates = Array.from({ length: 10 }, (_, i) => { const a = i / 10 * TAU + 0.3; return { x: x + Math.cos(a) * (this.r + 6), y: y - 48 + Math.sin(a) * (this.r * 0.35), ph: Math.random() * TAU }; });
-    if (world) this.capture(world);
+    if (world) { this.capture(world); if (world.treasureClear) world.treasureClear(x, y, this.r); } /* 보구: 사슬 원 안의 적 탄을 지움 */
     for (let i = 0; i < 16; i++) { // 첫 일제 사격: 묶인 적에게 먼저, 나머지는 범위 안 아무 곳
       const e = this.got[i % Math.max(1, this.got.length)], a = Math.random() * TAU, d = Math.sqrt(Math.random()) * this.r * 0.9;
       const tx = e && i < this.got.length * 2 ? e.x + randInt(-4, 4) : x + Math.cos(a) * d, ty = e && i < this.got.length * 2 ? e.y + randInt(-4, 2) : y + Math.sin(a) * d * 0.6;
@@ -1269,6 +1269,7 @@ class RhongoTower {
     if (!this.landed) { // 착탄
       this.landed = true;
       for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < T.impact + e.radius) world.damageEnemy(e, this.src(world, T.damage, 12), e.x - this.x, e.y - this.y);
+      if (world.treasureClear) world.treasureClear(this.x, this.y, T.radius); /* 보구: 빛의 탑이 선 자리의 적 탄을 지움 */
       fx.skyBeam(this.x, this.y, '#ffffff', 0, 18); fx.rays(this.x, this.y, '#bfe6ff', 20, 120, 0.8); fx.ring(this.x, this.y, T.impact, '#ffffff'); fx.ring(this.x, this.y, T.radius, '#7ac8ff');
       for (let i = 0; i < 30; i++) { const a = Math.random() * TAU, s = 60 + Math.random() * 90; fx.part(this.x, this.y, Math.cos(a) * s, Math.sin(a) * s * 0.6, { color: i % 2 ? '#bfe6ff' : '#ffffff', life: 0.6, size: 2, size2: 0, drag: 3, add: true }); }
       world.addShake(0.4, 7); world.screenFlash = 0.25; world.flashColor = '210,235,255'; world.hitStop(0.08); SFX.play('excal');

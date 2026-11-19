@@ -1243,7 +1243,7 @@ class Game {
     for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, ex, ey, e.x, e.y, e.radius + T.width) >= 0) {
       this.damageEnemy(e, { damage: dmg, mods: xm, knockback: 10, treasure: true }, p.aim.x, p.aim.y);
       if (e.alive && T.stun) e.stunT = Math.max(e.stunT || 0, e.def.boss ? T.stun * 0.5 : T.stun); } // 빛에 맞은 적 경직 (보스는 절반)
-    for (const b of this.enemyBullets) if (!b.blade && segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸 (길가메시의 칼날은 못 지움)
+    for (const b of this.enemyBullets) if (segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸 (보구라서 길가메시의 칼날도 지움)
     this.effects.excalibur(sx, sy, ex, ey, T.width, p.x, p.y);
     this.addShake(0.5, 9); this.screenFlash = 0.4; this.flashColor = '255,240,200'; this.hitStop(0.12); SFX.play('excal');
     // 폭발은 마우스로 조준한 지점(검기 위, 사거리 안)에서: 금빛 대폭발 + 충격파 고리 + 빛살 + 빛기둥 (주변 적에게 추가 피해)
@@ -1254,7 +1254,9 @@ class Game {
     this.effects.skyBeam(ex, ey, '#ffffff', 0, 16); this.effects.goldBurst(ex, ey, 30); SFX.play('explode');
   }
   // 게이볼그가 꿰뚫음 (GaeBolgThrow가 호출): 큰 피해 + 주변으로 가시 폭발 + 출혈
+  treasureClear(x, y, r) { /* [사용자 결정] 보구 공격에 닿은 적 탄은 사라짐 (길가메시 보물고의 칼날 포함) */ for (const b of this.enemyBullets) if (b.alive && Math.hypot(b.x - x, b.y - y) < r) { b.alive = false; this.effects.spark(b.x, b.y, '#fff4c0'); } }
   gaeBolgHit(p, x, y, tgt, T) {
+    this.treasureClear(x, y, T.thornR);
     const src = (d) => ({ damage: d * this.scale.hp, mods: Object.assign({}, p.mods, { critChance: 0 }), knockback: 6, treasure: true }), bled = [];
     if (tgt && tgt.targetable) { this.damageEnemy(tgt, src(T.damage), 0, 0); bled.push(tgt); }
     for (const e of this.enemies) if (e !== tgt && e.targetable && Math.hypot(e.x - x, e.y - y) < T.thornR + e.radius) { this.damageEnemy(e, src(T.thornDmg), e.x - x, e.y - y); bled.push(e); }
