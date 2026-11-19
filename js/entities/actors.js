@@ -377,6 +377,11 @@ class Enemy extends Entity {
       ctx.globalAlpha = 1; return;
     }
     drawEnemy(ctx, this, x, y, this.hurtFlash > 0);
+    if (/^boss_gilgamesh/.test(def.id) && this.state !== 'DEAD') { /* [사용자 결정] 심층의 무언가에 오염된 왕: 몸에서 피어오르는 검은 기운 */
+      const t = performance.now() / 1000; ctx.save(); ctx.globalAlpha = 0.35;
+      for (let i = 0; i < 7; i++) { const ph = (t * 0.6 + i / 7) % 1, a = i * 2.4 + t * 0.7, rx = Math.cos(a) * (def.hitboxHalf + 2), ry = -6 - ph * 26;
+        ctx.fillStyle = i % 2 ? '#1a0a2a' : '#3a1a4a'; ctx.globalAlpha = 0.45 * (1 - ph); ctx.beginPath(); ctx.ellipse(x + rx, y + ry, 3 + ph * 4, 2 + ph * 3, 0, 0, TAU); ctx.fill(); }
+      ctx.restore(); }
     if (this.kingWeakT > 0) { const t = performance.now() / 300; ctx.save(); ctx.globalAlpha = 0.5 + 0.3 * Math.sin(t); ctx.strokeStyle = '#9ae8d8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y + 6, this.def.hitboxHalf + 8, 5, 0, 0, TAU); ctx.stroke(); ctx.lineWidth = 1; ctx.restore(); } /* 벗의 사슬에 약해진 길가메시: 발밑 하늘빛 고리 */
     const h = def.hitboxHalf;
     if (this.slow > 0) { ctx.fillStyle = 'rgba(140,210,255,0.35)'; ctx.fillRect(x - h - 1, y - h - 2, h * 2 + 2, h * 2 + 4); }

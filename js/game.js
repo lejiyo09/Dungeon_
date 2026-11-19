@@ -280,14 +280,15 @@ class Game {
     else if (R.id === 'treasure') { if (p.treasure && p.treasure.apply) p.treasure.apply(p); p.treasureCd = 0; }
     else if (R.id === 'king') { p.maxHp += 40; p.hp += 40; p.maxEnergy += 60; p.energy = p.maxEnergy; for (const w of p.weapons) w.lv = Math.min(BALANCE.upgrade.maxLevel, (w.lv || 0) + 2); }
     this.effects.ring(p.x, p.y, 34, '#ffd84a'); this.effects.ring(p.x, p.y, 54, '#fff4c0'); this.effects.goldBurst(p.x, p.y - 6, 18); this.effects.rays(p.x, p.y, '#ffd84a', 14, 70, 0.8); SFX.play('solomon', 0.5);
-    this.effects.text(p.x, p.y - 34, `${R.name} 회복`, '#ffd84a', true);
-    this.showBanner(`권리 회복 — ${R.name} (${n}/${BABYLON_RIGHTS.length})`, R.desc, '#ffd84a');
+    const gift = R.id === 'king'; /* 왕을 마주할 권리: 빼앗긴 게 아니라 엔키두가 새로 건넨 권리 */
+    this.effects.text(p.x, p.y - 34, gift ? `${R.name} 획득` : `${R.name} 회복`, gift ? '#9ae8d8' : '#ffd84a', true);
+    this.showBanner(gift ? `새로운 권리 — ${R.name} (${n}/${BABYLON_RIGHTS.length})` : `권리 회복 — ${R.name} (${n}/${BABYLON_RIGHTS.length})`, R.desc, gift ? '#9ae8d8' : '#ffd84a');
   }
   babylonUnderBoss(c, W) { /* 귀환길 필드 보스 처치: 위로 올라가거나 귀환 · 지구라트 4-4 길가메시를 쓰러뜨리면 끝 */
     this.props.push(new Chest(c.x, c.y - 24, 'boss'));
     if (W.finalField) {
       const B = this.save.babylon = this.save.babylon || {}; B.gilgameshDown = (B.gilgameshDown || 0) + 1; writeSave(this.save);
-      this.portals.push(new Portal(c.x, c.y + 24, () => this.endRun(true), '왕좌의 방을 나섬 — 귀환', [255, 216, 74]));
+      this.portals.push(new Portal(c.x, c.y + 24, () => this.endRun(true), '원래 세계로 — 귀환', [255, 216, 74]));
       this.effects.rays(c.x, c.y, '#ffd84a', 20, 120, 1.2); this.screenFlash = 0.25; this.flashColor = '255,216,74'; SFX.play('gate', 0.6);
       this.playCutscene(GILGAMESH_UNDER_WIN_LINES, { id: 'gilgamesh_under_win', always: true, focus: { x: c.x, y: c.y } });
       return; }
