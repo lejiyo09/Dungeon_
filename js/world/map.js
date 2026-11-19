@@ -25,8 +25,7 @@ class DungeonMap {
       if (tx >= r.x0 && tx < r.x0 + r.w && ty >= r.y0 && ty < r.y0 + r.h) return r;
     return null;
   }
-  isFullyInside(ent, r) {
-    const m = TILE / 2;
+  isFullyInside(ent, r, m = TILE / 2) {
     return ent.x - ent.half >= r.x0 * TILE + m && ent.x + ent.half <= (r.x0 + r.w) * TILE - m &&
            ent.y - ent.half >= r.y0 * TILE + m && ent.y + ent.half <= (r.y0 + r.h) * TILE - m;
   }

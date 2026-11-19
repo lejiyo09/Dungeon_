@@ -218,13 +218,18 @@ class Game {
     const fromLobby = this.mode !== 'dungeon' || !this.player || this.trialW;
     this.trialId = 'babylon'; this.trialRank = 2; this.mode = 'dungeon'; this.areaId = null;
     this.trialW = Object.assign({}, worldDef(DEEP_START + 9), BABYLON_TRIAL.W); this.worldIdx = DEEP_START + 9; this.levelIdx = STAGES_PER_WORLD - 1;
-    if (fromLobby) { this.gold = 0; this.kills = 0; this.player = this.makePlayer(0, 0); const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (tr) this.player.treasure = tr; }
+    let cp = null;
+    if (fromLobby) { this.gold = 0; this.kills = 0;
+      if (this.save.run && !this.save.stashRun && !this.save.run.zone) { this.save.stashRun = this.save.run; writeSave(this.save); } /* [버그 수정] 진행 중이던 탐험 기록을 따로 보관 (지하가 이어하기 칸을 덮어써서 기록이 사라지던 것) — 바빌로니아가 끝나면 되돌림 */
+      this.player = this.makePlayer(0, 0); const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped);
+      cp = this.deepCheckpoint(this.save.selected); /* [버그 수정] 심층과 같은 캐릭터 기록 (10-4를 깬 그대로) — 직업 데이터가 사라지던 것 */
+      if (cp) { this.player = this.playerFromSnapshot(this.player.hero, cp); this.useCheckpoint(this.player, cp, tr); } else if (tr) this.player.treasure = tr; }
     const p = this.player; p.fallK = 0; p.hp = p.maxHp; p.shield = p.maxShield; p.energy = p.maxEnergy;
     this.loadStage();
     const room = this.map.roomOf('boss'), c = this.map.tileCenter(room.cx, room.cy);
     this.decorateThroneHall(room); p.x = c.x; p.y = c.y + 3 * TILE; /* 왕좌 앞으로 소환 */
     const begin = () => this.playCutscene(GILGAMESH_INTRO_LINES, { always: true, force: true, focus: { x: c.x, y: (room.y0 + 3) * TILE } });
-    if (fromLobby) this.askVariant(() => { this.applyDeepKit(this.player); begin(); }); else begin();
+    if (fromLobby && !cp) this.askVariant(() => { this.applyDeepKit(this.player); begin(); }); else begin(); /* 기록이 없을 때만 기본 심층 장비 */
   }
   gilgameshYield(e) { /* 체력 1: 꽤 하는군 → 게이트 오브 바빌론의 사슬 → 하지만 여기까지다 → 지하로 */
     e.scripted = true; e.laser = null; e.setState('IDLE'); this.enemyBullets.length = 0; this.hazards.length = 0;
@@ -242,10 +247,11 @@ class Game {
     this.babylonFall = null; this.trialW = null; this.trialId = null; if (this.player) { this.player.fallK = 0; this.player.castLock = 0; } this.zones = []; this.enemies = []; this.enemyBullets = [];
     const P = this.babylonPending; this.babylonPending = null;
     const toEnd = () => { if (P) this.overlay = Object.assign({ type: 'result' }, P, { after: '길가메시에게 쓰러졌다… (심층 탐험 보상은 그대로)' }); else this.enterLobby(); };
-    if (died) { toEnd(); return; }
+    if (died) { this.restoreStashRun(); toEnd(); return; }
     if (P && P.reward) { this.save.bank += P.reward; writeSave(this.save); } /* 심층 탐험 보상은 떨어지기 전에 바로 정산 */
     this.overlay = { type: 'story', lines: BABYLON_FALL_LINES, i: 0, t: 0, done: () => { this.overlay = null; this.startBabylonUnder(P ? P.reward : 0); } };
   }
+  restoreStashRun() { const sv = this.save; if (sv.stashRun) { sv.run = sv.stashRun; delete sv.stashRun; writeSave(sv); } } /* 바빌로니아 전에 진행 중이던 탐험 기록을 되돌림 */
   startBabylonUnder(paid = 0) { /* [사용자 결정] 바빌로니아 지하: 기본 무기 하나 + 1진으로 새로 시작 (사슬에 힘이 묶임) */
     const Z = ZONES.babylon_under;
     this.mode = 'dungeon'; this.trialW = null; this.trialId = null; this.areaId = Z.id; this.zoneField = 0; this.runDeep = false;
@@ -764,6 +770,7 @@ class Game {
     if (this.coop && this.coop.host) this.coopHostEnd(victory);
     this.guildEvent('runs');
     SFX.stopMusic(); this.save.run = null; this.save.runReviveUsed = false; writeSave(this.save);
+    if (this.areaId) this.restoreStashRun(); /* 바빌로니아 귀환길이 끝나면 그 전 탐험 기록을 되돌림 */
     SFX.play(victory ? 'victory' : 'hurt');
     // 로비 재화: 클리어한 스테이지 수 · 쓰러뜨린 필드 보스 수 · 승리 보너스 (던전 골드는 런과 함께 사라짐)
     const { stages, bosses, reward } = this.runReward(victory);
@@ -1727,7 +1734,7 @@ class Game {
       if (p.state === 'DEAD') continue;
       const here = map.roomAtPoint(p.x, p.y);
       if (here && !here.visited) here.visited = true;
-      if (!this.activeRoom && here && here.state === 'idle' && map.isFullyInside(p, here)) { this.activateRoom(here, p); break; }
+      if (!this.activeRoom && here && here.state === 'idle' && map.isFullyInside(p, here, 1)) { /* [버그 수정] 벽에 붙어 지나가면 방에 들어간 걸로만 표시되고 전투가 안 걸리던 것 (예전: 테두리에서 반 칸 안쪽까지 들어가야 시작) */ this.activateRoom(here, p); break; }
     }
     const r = this.activeRoom;
     if (r && !this.slowMo && !this.enemies.some((e) => e.alive)) {
@@ -1769,7 +1776,7 @@ class Game {
     const def = this.data.enemies.get(id);
     if (!def) throw new Error('알 수 없는 적 ID: ' + id);
     const e = new Enemy(x, y, def, this.scale, room);
-    if (def.boss && !def.master && this.areaId) { const Z = BALANCE.babylonBoss; e.maxHp = Math.round(e.maxHp * Z.hp); e.hp = e.maxHp; e.damage = Math.round(e.damage * Z.dmg); e.cdMul = (e.cdMul || 1) * Z.cooldown; } /* [사용자 결정] 바빌로니아 귀환길 보스(길가메시 포함) 난이도 상향 */
+    if (def.boss && !def.master && this.areaId) { const Z = BALANCE.babylonBoss, k = Math.min(1, (this.zoneField || 0) / 9); e.maxHp = Math.round(e.maxHp * (1 + (Z.hp - 1) * k)); e.hp = e.maxHp; e.damage = Math.round(e.damage * (1 + (Z.dmg - 1) * k)); e.cdMul = (e.cdMul || 1) * (1 - (1 - Z.cooldown) * k); } /* 바빌로니아 보스 강화는 위층으로 갈수록 서서히 (지하 4는 없음 · 지구라트 4 길가메시는 전부) */ /* [사용자 결정] 바빌로니아 귀환길 보스(길가메시 포함) 난이도 상향 */
     if (this.partyCount() > 1 && !def.dummy) { e.maxHp = Math.round(e.maxHp * this.partyScale(def.boss ? 'bossHp' : 'mobHp')); e.hp = e.maxHp; } // 멀티: 인원만큼 체력 증가
     this.enemies.push(e);
     return e;
