@@ -544,3 +544,24 @@ const DATA_WEAPONS = [
     damage: 83, fireRate: 1.5, energyCost: 0.4, range: 48, arcDeg: 200, lifesteal: 0.25, knockback: 7,
     status: { type: 'freeze', chance: 0.5, duration: 1.5, slow: 0.55 }, wave: { damage: 30, speed: 340, range: 190 }, color: '#9ad8f0', len: 18 }
 ];
+
+// [사용자 결정] 기본 무기(직업·갈래 시작 무기) +10강 각성: 이름에 '· 각성'이 붙고 아래 능력이 더해짐 (수치는 Claude가 정한 [제안])
+const WEAPON_AWAKEN = {
+  weapon_sword_001: { desc: '검기가 날아감', damage: 20, wave: { damage: 24, speed: 380, range: 220 } },
+  weapon_pistol_001: { desc: '두 발씩 · 관통', projectileCount: 2, fanDeg: 8, pierce: 1 },
+  weapon_wand_001: { desc: '빛의 화살 셋 · 강한 유도', projectileCount: 3, fanDeg: 22, homing: 3, status: { type: 'blind', chance: 0.4, duration: 3 } },
+  weapon_rivet_001: { desc: '터지는 리벳 · 관통 2', explodeRadius: 14, pierce: 2 },
+  weapon_dagger_001: { desc: '치명타 · 흡혈 · 넓게 벰', critBonus: 0.6, lifesteal: 0.5, arcDeg: 120 },
+  weapon_ironstaff_001: { desc: '튕기며 터지는 쇠구슬', bounce: 2, homing: 2.5, explodeRadius: 16 },
+  weapon_club_001: { desc: '내리치면 지면 강타', slam: { r: 40, damage: 30 }, knockback: 18 },
+  weapon_sling_001: { desc: '돌 두 개 · 튕김', projectileCount: 2, fanDeg: 10, bounce: 2 },
+  weapon_greatsword_001: { desc: '큰 검기 · 세 번째 일격 3배', wave: { damage: 42, speed: 340, range: 210 }, nth: { every: 3, mult: 3 } },
+  weapon_woodspear_001: { desc: '돌격 찌르기 · 두 번째마다 강타', lunge: 60, nth: { every: 2, mult: 2.2 } },
+  weapon_firestaff_001: { desc: '큰 폭발 · 반드시 화상', explodeRadius: 34, status: { type: 'burn', chance: 1, duration: 3, dps: 16 } },
+  weapon_frost_001: { desc: '서리 화살 셋 · 관통 3', projectileCount: 3, fanDeg: 18, pierce: 3 },
+  weapon_poisonstaff_001: { desc: '독안개 두 줄기 · 짙은 독', projectileCount: 2, fanDeg: 14, trail: { every: 0.1, puddle: { r: 20, life: 2.4, tick: 0.4, dmg: 6, status: { type: 'poison', chance: 0.8, duration: 3, dps: 6 }, color: '#7adf4a' } } },
+  weapon_tesla_001: { desc: '연쇄 번개 5번 · 넓게', chain: { count: 5, range: 100, falloff: 0.85 } },
+  weapon_cursestaff_001: { desc: '저주 탄 둘 · 깊은 약점', projectileCount: 2, fanDeg: 14, mark: { mult: 1.7, dur: 4 } },
+  weapon_flintlock_001: { desc: '관통 3 · 터지는 탄', damage: 34, pierce: 3, explodeRadius: 22 }
+};
+for (const d of DATA_WEAPONS) if (WEAPON_AWAKEN[d.id]) d.awaken = WEAPON_AWAKEN[d.id];

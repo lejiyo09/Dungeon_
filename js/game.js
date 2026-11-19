@@ -1291,7 +1291,9 @@ class Game {
   //  [사용자 결정·@하요 정리] 시련(롱고미니아드·카멜롯)에서는 배율을 100% 받고, 든 무기의 등급·강화만큼 더 셈 — 무기 화력을 키우는 사수 스킬과의 차이를 줄임 (심층·일반 던전은 그대로)
   skillDmg(base) {
     const trial = this.mode === 'dungeon' && this.trialW;
-    let m = base * (1 + (this.scale.hp - 1) * (trial ? 1 : 0.5));
+    const p0 = this.player, SK = BALANCE.skillScale, lk = p0 && p0.line && p0.hero && SK.lines[p0.hero.id + '|' + p0.line.id]; /* [사용자 결정] 함정·드론 기술자: 깊이 내려갈수록 스킬이 덜 자라서 약해지던 것 → 스테이지 성장을 더 많이 받음 */
+    const sh = this.scale.hp; let m = base * (1 + (sh - 1) * (trial ? 1 : SK.base) + (!trial && lk ? Math.max(0, sh - SK.from) * (lk - SK.base) : 0)); /* 갈래 예외는 후반(몬스터 체력 ×from 이상)부터만 더 자람 */
+    if (p0 && p0.hero && SK.hero[p0.hero.id]) m *= SK.hero[p0.hero.id]; /* [사용자 결정] 드루이드 계열 살짝 강화 */
     if (trial) { const w = this.player && this.player.weapon; if (w) m *= 1 + (BALANCE.trialSkillRarity[w.def.rarity] || 0) + (w.lv || 0) * BALANCE.upgrade.perLevel * 0.25; }
     return m;
   }
@@ -1941,6 +1943,7 @@ class Game {
     const fx = at || p;
     if (Math.random() < this.upgradeChance(w, bonus)) {
       w.lv++;
+      if (w.lv >= BALANCE.upgrade.maxLevel && w.base && w.base.awaken) { this.showBanner(`각성! ${w.def.name}`, w.base.awaken.desc, '#ffd84a'); this.effects.rays(p.x, p.y, '#ffd84a', 18, 80, 1); this.screenFlash = 0.2; this.flashColor = '255,216,74'; SFX.play('solomon', 0.5); } /* [사용자 결정] 기본 무기 +10 각성 */
       this.effects.text(p.x, p.y - 24, `강화 성공! ${weaponTitle(w)}`, '#ffd84a', true); this.effects.burst(fx.x, fx.y - 6, '#ffd84a', 16); this.effects.ring(fx.x, fx.y, 18, '#ffd84a');
       SFX.play(w.lv >= 4 ? 'clear' : 'buy'); if (w.lv >= 4) this.addShake(0.12, 2);
     } else {
