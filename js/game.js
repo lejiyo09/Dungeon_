@@ -289,7 +289,8 @@ class Game {
     this.effects.ring(p.x, p.y, 34, '#ffd84a'); this.effects.ring(p.x, p.y, 54, '#fff4c0'); this.effects.goldBurst(p.x, p.y - 6, 18); this.effects.rays(p.x, p.y, '#ffd84a', 14, 70, 0.8); SFX.play('solomon', 0.5);
     const gift = R.id === 'king'; /* 왕을 마주할 권리: 빼앗긴 게 아니라 엔키두가 새로 건넨 권리 */
     this.effects.text(p.x, p.y - 34, gift ? `${R.name} 획득` : `${R.name} 회복`, gift ? '#9ae8d8' : '#ffd84a', true);
-    this.showBanner(gift ? `새로운 권리 — ${R.name} (${n}/${BABYLON_RIGHTS.length})` : `권리 회복 — ${R.name} (${n}/${BABYLON_RIGHTS.length})`, R.desc, gift ? '#9ae8d8' : '#ffd84a');
+    const reclaim = BABYLON_RIGHTS.filter((rr) => !rr.isNew).length;
+    this.showBanner(gift ? `새로운 권리 — ${R.name}` : `권리 회복 — ${R.name} (${Math.min(n, reclaim)}/${reclaim})`, R.desc, gift ? '#9ae8d8' : '#ffd84a');
   }
   babylonUnderBoss(c, W) { /* 귀환길 필드 보스 처치: 위로 올라가거나 귀환 · 지구라트 4-4 길가메시를 쓰러뜨리면 끝 */
     this.props.push(new Chest(c.x, c.y - 24, 'boss'));

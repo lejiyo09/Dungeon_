@@ -103,7 +103,7 @@ DATA_TREASURES.push({ id: 'treasure_bull_horn', name: '하늘의 황소의 뿔',
   dist: 200, speed: 560, damage: 380, stun: 1.2, trail: 24, trailDmg: 130, trailDelay: 0.3, radius: 24, color: '#ff8a5a',
   desc: '조준 방향으로 황소처럼 돌진 — 돌진하는 동안 무적, 지나가는 적을 들이받아 큰 피해와 1.2초 경직, 지나간 자리의 땅이 갈라지며 차례로 폭발 (길에 닿은 적 탄도 부숨)' });
 // [사용자 결정] 금빛 사슬 조각: 바빌로니아 지하 상자에서만 낮은 확률로 나옴, 10개 모으면 하늘의 사슬 — 확률은 [제안]
-const CHAIN_SHARD = { need: 10, chest: 0.12, challenge: 0.25, boss: 0.35, treasure: 'treasure_heaven_chain' };
+const CHAIN_SHARD = { need: 10, chest: 0.05, challenge: 0.1, boss: 0.15, treasure: 'treasure_heaven_chain' }; // [사용자 결정] 상자에서 너무 잘 나와 확률 낮춤 (보물 12→5% · 도전 25→10% · 보스 35→15%)
 // 심층 보스를 쓰러뜨리면 아직 없는 영웅의 보구(heroDrop) 하나를 얻을 확률: 낮게 시작해 깊이 내려갈수록 조금씩 오름 [사용자 결정], 수치는 [제안]
 //  [사용자 결정] 심층 1: 1% → 10까지 깊이마다 +1% (심층 10: 10%) → 그 뒤로 깊이마다 +0.2% (심층 11: 10.2% · 20: 12% · 50: 18%)
 const HERO_TREASURE_DROP = { base: 0.01, perDepth: 0.01, until: 10, after: 0.002, max: 1 };
@@ -173,7 +173,7 @@ const BABYLON_RIGHTS = [
   { id: 'bless', name: '축복의 권리', desc: '축복 제단·피의 제단이 다시 나오고, 축복 하나를 받는다' },
   { id: 'treasure', name: '보구의 권리', desc: '보구(R)가 다시 응답한다' },
   { id: 'rank2', name: '3진의 권리', desc: '3진으로 진화한다' },
-  { id: 'king', name: '왕을 마주할 권리', desc: '원래 없던 권리 — 엔키두가 건넨 것 · 최대 체력 +40 · 최대 에너지 +60 · 모든 무기 +2 강화' } // [사용자 결정] 빼앗긴 게 아니라 엔키두가 새로 주는 권리
+  { id: 'king', name: '왕을 마주할 권리', isNew: true, desc: '원래 없던 권리 — 엔키두가 건넨 것 · 최대 체력 +40 · 최대 에너지 +60 · 모든 무기 +2 강화' } // [사용자 결정] 빼앗긴 게 아니라 엔키두가 새로 주는 권리
 ];
 const BABYLON_FALL_LINES = [
   '발밑의 황금 바닥이 갈라지고, 사슬에 묶인 채 끝없는 어둠 속으로 떨어진다…',
