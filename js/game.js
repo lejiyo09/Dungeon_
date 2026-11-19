@@ -748,9 +748,10 @@ class Game {
       p.feastPenaltyActive = !!s.feastPenaltyActive;
       p.feastPenaltyFactor = p.feastPenaltyActive && Number(s.feastPenaltyFactor) > 0 ? Number(s.feastPenaltyFactor) : 1;
       p.feastPenaltyReleased = !!s.feastPenaltyReleased;
-      // 이전 저장본에는 페널티 플래그가 없으므로, 소울 이터의 포식이 500 미만이면 한 번 적용한다.
-      if (!Object.prototype.hasOwnProperty.call(s, 'feastPenaltyActive')) this.applyFeastStartPenalty(p);
-      else if (p.feastPenaltyActive && (p.feast || 0) >= (BALANCE.feast.penaltyRemoveAt || 500)) this.releaseFeastStartPenalty(p);
+      // 예전 이어하기 저장이 패널티 적용 전에 만들어졌다면 false 플래그여도 시작 약화를 적용한다.
+      // 이미 적용 중이면 applyFeastStartPenalty 내부의 active 검사로 중복 적용하지 않는다.
+      if (p.feastPenaltyActive && (p.feast || 0) >= (BALANCE.feast.penaltyRemoveAt || 500)) this.releaseFeastStartPenalty(p);
+      else if (!p.feastPenaltyActive && !p.feastPenaltyReleased) this.applyFeastStartPenalty(p);
       return p;
     });
   }
