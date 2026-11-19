@@ -518,7 +518,7 @@ class Game {
         && Array.isArray(cp.weaponLv) && cp.weaponLv.length === cp.weapons.length
         && Array.isArray(cp.buffs);
     }).length;
-    const had10_4 = !!sv.sanctumReached || (sv.bestStage || 0) >= DEEP_START * STAGES_PER_WORLD || (sv.bestDeep || 0) >= 1;
+    const had10_4 = !!sv.sanctumReached || (Number(sv.bestDeep) || 0) >= 1; // 10-4 보스 처치 후 성역 도달 또는 심층 진입으로 확인
     this.deepRecordMissing = had10_4 && exactCount === 0;
     sv.deepRecoverV3 = 1;
     sv.deepRecoverV2 = 1; // 이전 버전의 1회 백업 플래그도 유지
