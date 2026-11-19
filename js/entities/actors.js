@@ -39,6 +39,7 @@ class Player extends Entity {
     this.swing = null; this.aimVis = 0; this.faceVis = 1; this.recoil = 0;
     this.stats = { attackBonus: 0, fireRateBonus: 0, critChance: base.critChance + (hero.critBonus || 0), critMultiplier: base.critMultiplier };
     this.weapons = []; this.slot = 0; this.buffs = [];
+    this.feastPenaltyActive = false; this.feastPenalty = null; this.feastPenaltyReleased = false;
   }
   get weapon() { return this.weapons[this.slot] || null; }
   get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0 || this.aegisT > 0 || this.scabbardT > 0 || this.hornT > 0; }
