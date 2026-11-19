@@ -456,15 +456,40 @@ Object.assign(PIX, {
     P.rect(12, 23, 3, 5, 'b'); P.rect(17, 23, 3, 5, 'b'); P.line(11, 28, 15, 28, 'y'); P.line(17, 28, 21, 28, 'y');                       // 다리·독수리 발톱
     P.line(16, 23, 16, 30, 'b'); P.line(16, 30, 20, 31, 'b'); P.px(21, 30, 'r');                                                          // 전갈 꼬리
   } },
-  // 진흙의 엔키두: 왕이 진흙으로 빚은 벗의 모습 — 길게 헝클어진 초록빛 머리, 갈라진 진흙 몸, 몸에 감긴 하늘빛 사슬 [원작 디자인]
-  boss_clayenkidu: { tint: '#a87a50', w: 32, h: 32, pal: { h: '#5a8a6a', H: '#7ab88a', t: '#9ae8d8', T: '#4a8a80', d: '#5a3a24', w: '#e8fff8' }, proc: (P) => {
-    P.ell(16, 7, 6, 5, 'h'); P.rect(9, 7, 3, 15, 'h'); P.rect(20, 7, 3, 15, 'h'); P.line(9, 9, 7, 23, 'H'); P.line(22, 9, 24, 23, 'H'); P.px(11, 2, 'H'); P.px(21, 3, 'H');                     // 길게 늘어진 머리
-    P.rect(11, 12, 10, 12, 'a'); P.rect(12, 24, 3, 7, 'b'); P.rect(17, 24, 3, 7, 'b'); P.line(13, 14, 15, 18, 'd'); P.line(18, 15, 19, 21, 'd'); // 진흙 몸·다리·갈라짐
-    P.ell(16, 8, 3.5, 4, 'a'); P.px(15, 8, 't'); P.px(17, 8, 't'); P.px(16, 10, 'b');                                                    // 얼굴·하늘빛 눈
-    P.rect(7, 13, 4, 8, 'a'); P.rect(21, 13, 4, 8, 'a'); P.rect(7, 20, 4, 2, 'b'); P.rect(21, 20, 4, 2, 'b');                             // 팔
-    for (let i = 0; i < 10; i++) { const x = 7 + i * 2, y = 14 + Math.round(Math.sin(i * 0.7) * 2) + i; P.px(x, y, i % 2 ? 't' : 'T'); }    // 몸에 감긴 하늘빛 사슬
-    P.line(25, 18, 30, 26, 't'); P.px(30, 27, 'w'); P.line(6, 18, 2, 25, 't'); P.px(2, 26, 'w');                                          // 늘어진 사슬 끝
-  } },
+  // 진흙의 엔키두 — [사용자 결정] 다시 그림 (24×31, 한 칸씩 찍은 도트): 바람에 날려 길게 흘러내리는 초록 머리, 하늘빛 눈, 진흙 얼굴의 금,
+  //  흰 천 두른 날렵한 몸, 가슴에 대각선으로 두른 하늘빛 사슬, 팔·허리·발목의 사슬, 오른손에서 늘어진 사슬 끝, 진흙 틈에서 새는 하늘빛 [원작 디자인]
+  boss_clayenkidu: { tint: '#a87a50', pal: { h: '#5a8a6a', H: '#8ac89a', n: '#3a5a4a', W: '#ece4d0', V: '#c8bca0', t: '#9ae8d8', T: '#4a8a80', s: '#c89a6a', S: '#a87a50', d: '#6a4a30', w: '#e8fff8' }, rows: [
+    '........knhHHhnk........',
+    '.......knhHhhHhnk.......',
+    '......knhhHhhHhhnk......',
+    '.....knHnhhsshhnhk......',
+    '.....knhnhssssHnhk......',
+    '....knhhnhtsstHnhk......',
+    '....knHhnhsSSshnhk......',
+    '....knhhhnsdssnhhk......',
+    '...knhhhhhSssSkhhk......',
+    '..knHhhhhhsSSskhnk......',
+    '..knhhSsTWWWWWWWsSk.....',
+    '..knhsSWWtWWWWVWWSsk....',
+    '..knHsSWWWTWWVWWWSsk....',
+    '.knhtTsWWWWtVWWWWsTtk...',
+    '.knhsShWVWWWTWWVWkSsk...',
+    '.knHsShTtTtTTtTtTkSsk...',
+    'knhhtThWWVWWWWTWWkTtk...',
+    'knhhsShWWWVWWVWtWkSsk...',
+    'knHhSShWVWWWWWWVWkTSk...',
+    '.knhhhhWWWVWWVWWWkktk...',
+    'knhhhhkksSskksSskkTk....',
+    'knHhhhkkstskksSsk.ktk...',
+    'knhhhhkktTtkktTtkkTk....',
+    'knhhhhkksSskksSsk.ktk...',
+    '.kkkkk.ksSskkstskkTk....',
+    '.......ksSskksSsk.kwk...',
+    '......kSSSSkkSSSSk.k....',
+    '.......kkkk..kkkk.......',
+    '........................',
+    '........................',
+    '........................'] },
   // 정글의 옛 신상: 이끼 덮인 거대한 돌 우상, 금빛 눈, 덩굴 팔 [임시 디자인]
   boss_jungleidol: { tint: '#7a7a62', w: 32, h: 32, pal: { y: '#ffd84a', g: '#6aba4a', v: '#3a7a2a', r: '#e83a3a' }, proc: (P) => {
     P.rect(8, 6, 16, 22, 'a'); P.rect(6, 28, 20, 3, 'b'); P.rect(8, 6, 16, 2, 'b');                                  // 돌 몸·받침

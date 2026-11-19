@@ -1243,7 +1243,7 @@ class Game {
     for (const e of this.enemies) if (e.targetable && segmentCircleHit(sx, sy, ex, ey, e.x, e.y, e.radius + T.width) >= 0) {
       this.damageEnemy(e, { damage: dmg, mods: xm, knockback: 10, treasure: true }, p.aim.x, p.aim.y);
       if (e.alive && T.stun) e.stunT = Math.max(e.stunT || 0, e.def.boss ? T.stun * 0.5 : T.stun); } // 빛에 맞은 적 경직 (보스는 절반)
-    for (const b of this.enemyBullets) if (segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸
+    for (const b of this.enemyBullets) if (!b.blade && segmentCircleHit(sx, sy, ex, ey, b.x, b.y, T.width + 2) >= 0) b.alive = false; // 검기에 닿은 적 탄 소멸 (길가메시의 칼날은 못 지움)
     this.effects.excalibur(sx, sy, ex, ey, T.width, p.x, p.y);
     this.addShake(0.5, 9); this.screenFlash = 0.4; this.flashColor = '255,240,200'; this.hitStop(0.12); SFX.play('excal');
     // 폭발은 마우스로 조준한 지점(검기 위, 사거리 안)에서: 금빛 대폭발 + 충격파 고리 + 빛살 + 빛기둥 (주변 적에게 추가 피해)
@@ -1349,7 +1349,7 @@ class Game {
       for (const e of this.enemies) { if (!e.targetable || Math.hypot(e.x - p.x, e.y - p.y) > r + e.radius) continue;
         this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: o.kb ?? 6, status: (o.status && o.status.dps && this.trialW) ? Object.assign({}, o.status, { dps: D(o.status.dps) }) : o.status || null }, (e.x - p.x) / 50, (e.y - p.y) / 50); /* 시련: 범위 스킬의 중독·화상도 스킬 피해만큼 커짐 */
         if (o.root) e.chainT = Math.max(e.chainT || 0, o.root); }
-      if (o.clear) for (const b of this.enemyBullets) if (Math.hypot(b.x - p.x, b.y - p.y) < r) b.alive = false;
+      if (o.clear) for (const b of this.enemyBullets) if (!b.blade && Math.hypot(b.x - p.x, b.y - p.y) < r) b.alive = false;
       this.effects.ring(p.x, p.y, r, o.color || '#fff'); this.effects.ring(p.x, p.y, r * 0.6, '#ffffff'); this.effects.burst(p.x, p.y, o.color || '#fff', 16);
     };
     const shoot = (o) => { // 스킬 투사체
@@ -1664,7 +1664,7 @@ class Game {
           const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
           if (d - e.radius <= 36) this.damageEnemy(e, { damage: this.skillDmg(22), mods: p.mods, knockback: 4, status: p.whirlStatus || null }, dx / (d || 1), dy / (d || 1));
         }
-        for (const b of this.enemyBullets) if (Math.hypot(b.x - p.x, b.y - p.y) < 40) { b.alive = false; this.effects.spark(b.x, b.y, '#fff'); }
+        for (const b of this.enemyBullets) if (!b.blade && Math.hypot(b.x - p.x, b.y - p.y) < 40) { b.alive = false; this.effects.spark(b.x, b.y, '#fff'); }
       }
     }
   }

@@ -231,6 +231,7 @@ class WeaponSystem {
     if (def.deflect) {
       for (const b of world.enemyBullets) {
         const dx = b.x - player.x, dy = b.y - player.y, d = Math.hypot(dx, dy);
+        if (b.blade && !def.kingSlayer) continue; /* [사용자 결정] 길가메시 보물고의 칼날은 '벗의 맹약'으로만 벨 수 있음 */
         if (d <= def.range + 6 && angleDiff(Math.atan2(dy, dx), ang) <= arc / 2 + 0.2) {
           b.alive = false; world.effects.spark(b.x, b.y, '#ffffff');
           if (def.reflect) { // 반사 방패: 적 탄을 조준 방향으로 되돌려 보냄 (2.5배)

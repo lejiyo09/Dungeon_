@@ -708,7 +708,7 @@ const DATA_ENEMIES = [
       { type: 'wall', waves: 4, gap: 3, speed: 125, interval: 0.7, color: '#ffd84a' },
       { type: 'laser', beams: 4, spreadAng: Math.PI / 2, sweep: 1.5, duration: 2.0, width: 7, telegraph: 0.8, color: '#ff8a3a' }],
     finalPatterns: [{ type: 'vortex', name: '모래바람의 왕', duration: 4.0, pull: 56, arms: 5, interval: 0.08, spin: 2.4, color: '#d8b878' }] },
-  { id: 'boss_clay_enkidu', name: '진흙의 엔키두', title: '왕이 빚은 벗의 그림자', sprite: 'boss_clayenkidu', color: '#a87a50', phaseColors: ['#a87a50', '#9a6a40', '#6a8a6a'],
+  { id: 'boss_clay_enkidu', name: '진흙의 엔키두', title: '왕이 빚은 벗의 그림자', sprite: 'boss_clayenkidu', spriteScale: 1, color: '#a87a50', phaseColors: ['#a87a50', '#9a6a40', '#6a8a6a'],
     boss: true, aiType: 'boss', health: 2600, damage: 26, moveSpeed: 66, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.78, bulletSpeed: 175, /* [사용자 결정] 난이도 상향 (예전: 1900 · 23 · 0.9) */
     rewardGold: 220, patterns: [
       { type: 'clayChains', name: '흙의 사슬', casts: 3, gates: 4, radius: 90, delay: 0.75, interval: 0.55, r: 28, bind: 1.0, color: '#9ae8d8' },

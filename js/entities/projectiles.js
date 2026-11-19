@@ -224,7 +224,7 @@ class EnemyBullet {
     if (this.life <= 0) { this.alive = false; return; }
     if (world.map.isSolidAt(this.x, this.y)) { world.hitTile(this.x, this.y); this.alive = false; world.effects.impact(this.x, this.y, this.color); return; }
     for (const p of world.allPlayers()) { // 멀티: 모든 플레이어와 부딪힘 — 참가자는 위치가 조금 늦게 오므로 맞는 범위를 25% 작게 (내 화면에서 피했는데 맞는 일 줄임)
-      if (p.aegisT > 0 && p.state !== 'DEAD' && world.reflectBullet && Math.hypot(p.x - this.x, p.y - this.y) < p.half + this.r + ((p.treasure && p.treasure.reach) || 10)) { world.reflectBullet(this, p); return; } /* 아킬레우스의 방패: 되돌려 보냄 */
+      /* 아킬레우스의 방패는 길가메시의 칼날도 막아 되돌림 [사용자 결정] */ if (p.aegisT > 0 && p.state !== 'DEAD' && world.reflectBullet && Math.hypot(p.x - this.x, p.y - this.y) < p.half + this.r + ((p.treasure && p.treasure.reach) || 10)) { world.reflectBullet(this, p); return; } /* 아킬레우스의 방패: 되돌려 보냄 */
       const h = world.coop && world.coop.host && p !== world.coop.me ? p.half * 0.75 : p.half;
       if (p.state !== 'DEAD' && Math.abs(p.x - this.x) < h + this.r - 1 && Math.abs(p.y - this.y) < h + this.r - 1) {
         if (world.withPlayer(p, () => world.damagePlayer(this.damage))) { this.alive = false; world.effects.spark(this.x, this.y, '#fff'); break; }
@@ -719,7 +719,7 @@ class Sanctuary {
       this.heal += this.rate * dt; if (this.boost) p.sancBoost = 0.2; // 대성역: 안에 있으면 공격력 +35%
       if (this.heal >= 1) { const n = Math.floor(this.heal); this.heal -= n; p.hp = Math.min(p.maxHp, p.hp + n); if (Math.random() < 0.5) world.effects.heal(p.x, p.y); }
     }
-    for (const b of world.enemyBullets) if (b.alive && Math.hypot(b.x - this.x, b.y - this.y) < this.r) { b.alive = false; world.effects.spark(b.x, b.y, '#ffe9a0'); }
+    for (const b of world.enemyBullets) if (b.alive && !b.blade && Math.hypot(b.x - this.x, b.y - this.y) < this.r) { b.alive = false; world.effects.spark(b.x, b.y, '#ffe9a0'); }
     if (this.dmg && (this.tick -= dt) <= 0) { // 원 안의 적에게 신성 피해 (0.5초마다)
       this.tick = 0.5;
       for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < this.r + e.radius) world.damageEnemy(e, { damage: world.skillDmg(this.dmg * 0.5), mods: p.mods, knockback: 0 }, 0, 0);
