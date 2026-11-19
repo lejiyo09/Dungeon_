@@ -952,7 +952,7 @@ class Game {
     this.backfillScore(); // 랭킹판이 생기기 전의 내 최고 기록도 한 번 올림
     if (Net.httpBase()) Net.flushScores().catch(() => {}); // 지난번에 보내지 못한 기록
     const accountSub = this.admin ? '관리자 계정 — 모든 것이 해금됨 · ` 키: 관리자 메뉴' : profile ? '진행도가 이 계정에 저장됩니다' : '게스트 진행도는 저장되지 않습니다';
-    const checkpointSub = this.deepRecovered ? `심층 10-4 기록 ${this.deepRecovered}개를 무기·강화·축복 정보와 함께 계정 백업에 보관했습니다` : this.deepRecordMissing ? '10-4 클리어 흔적은 있지만 원본 무기·강화·축복 스냅샷은 남아 있지 않습니다. 없는 장비 기록을 임의로 만들지 않았습니다' : accountSub;
+    const checkpointSub = this.deepRecovered ? `심층 10-4 캐릭터 기록 ${this.deepRecovered}개를 복구했습니다 — 당시 무기·강화·축복 정보도 함께 저장했습니다` : this.deepRecordMissing ? '10-4 클리어 흔적은 있지만 원본 무기·강화·축복 스냅샷은 남아 있지 않습니다. 없는 장비 기록을 임의로 만들지 않았습니다' : accountSub;
     this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', checkpointSub, this.deepRecordMissing ? '#ffb06a' : '#ffd84a');
     this.deepRecovered = 0; this.deepRecordMissing = false;
   }
