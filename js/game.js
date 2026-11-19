@@ -699,7 +699,7 @@ class Game {
   }
   rollSpecialRoom() { // 일반 스테이지마다 chance 확률로 특수방 하나 (전직의 방은 진화할 단계가 남았을 때 더 자주)
     const SR = BALANCE.specialRooms; if (Math.random() >= SR.chance) return [];
-    const p = this.player, canEvolve = p && p.line && p.rank < 2;
+    const p = this.player, canEvolve = p && p.line && p.rank < 2 && !p.line.noEvolveRoom; /* 소울 이터는 전직의 방이 아니라 포식 스택으로 진화 */
     const ER = canEvolve ? SR.evolveByRank[p.rank] : null, evolveOk = ER && this.worldIdx >= ER.fromWorld; // 진화 단계별로 나오는 필드·빈도가 다름
     const pool = this.areaId ? ZONES[this.areaId].specialPool.concat(this.zoneRight('arms') ? ['rack'] : [], this.zoneRight('forge') ? ['smithy', 'forge'] : [], this.zoneRight('bless') ? ['altar', 'blood'] : []) : SR.pool.filter((t) => t !== 'evolve' || evolveOk); /* 귀환길: 되찾은 권리만큼 특수방이 늘어남 (전직의 방은 없음 — 진화는 권리로) */ /* 지하: 무기·진화가 안 나오는 방만 */
     return [weightedPick(pool, (t) => (t === 'evolve' ? ER.weight : (SR.weight && SR.weight[t]) || 1))];
@@ -1585,10 +1585,10 @@ class Game {
       case 'thornfield': { const c = at(170); this.zones.push(new Puddle(c.x, c.y, { r: 56, life: 6, tick: 0.35, dmg: D(9), status: { type: 'poison', chance: 1, duration: 3, dps: 10 }, color: '#5a9a3a' }, p.mods)); break; }
       case 'thornburst': for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; this.projectiles.push(new Projectile({ x: p.x, y: p.y, dx: Math.cos(a), dy: Math.sin(a), speed: 320, range: 200, damage: D(44), pierce: 2, knockback: 3, mods: p.mods, color: '#7adf4a', size: 2, arrow: true, status: { type: 'poison', chance: 1, duration: 3, dps: 10 } })); }
         this.effects.ring(p.x, p.y, 30, '#7adf4a'); break;
-      case 'feast1': nova(80, 60, { color: '#b8e05a', kb: 4, feast: true }); this.effects.ring(p.x, p.y, 80, '#b8e05a'); break; /* [임시] 포식 갈래 스킬 */
-      case 'feast2': for (const e of this.enemies) if (e.targetable && !e.def.boss && Math.hypot(e.x - p.x, e.y - p.y) < 160) { const d = Math.hypot(e.x - p.x, e.y - p.y) || 1, k = Math.min(1, 50 / d); e.x += (p.x - e.x) * k * 0.5; e.y += (p.y - e.y) * k * 0.5; }
-        nova(110, 90, { color: '#b8e05a', kb: 0, feast: true }); this.effects.ring(p.x, p.y, 160, '#8ab03a'); break;
-      case 'feast3': nova(140, 120, { color: '#b8e05a', kb: 6, feast: true }); this.zones.push(new SkillAura(p, { r: 120, life: 2, tick: 0.4, dmg: 40, color: '#b8e05a', kind: 'blood', feast: true })); this.addShake(0.3, 5); break;
+      case 'feast1': { const a0 = A; for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 96 && Math.abs(((Math.atan2(e.y - p.y, e.x - p.x) - a0 + Math.PI * 3) % (2 * Math.PI)) - Math.PI) < 1.1) this.damageEnemy(e, { damage: D(70), mods: p.mods, knockback: 6, feast: true }, Math.cos(a0), Math.sin(a0)); this.effects.slash(p.x + Math.cos(a0) * 40, p.y + Math.sin(a0) * 40, a0, 90, 1.1, '#b8e05a'); this.effects.ring(p.x, p.y, 70, '#b8e05a'); break; } /* 혼을 거두는 낫: 앞쪽 부채꼴 */
+      case 'feast2': for (const e of this.enemies) if (e.targetable && !e.def.boss && Math.hypot(e.x - p.x, e.y - p.y) < 150) { const d = Math.hypot(e.x - p.x, e.y - p.y) || 1, k = Math.min(1, 60 / d); e.x += (p.x - e.x) * k * 0.6; e.y += (p.y - e.y) * k * 0.6; }
+        nova(120, 95, { color: '#b8e05a', kb: 0, feast: true }); this.effects.ring(p.x, p.y, 120, '#8ab03a'); this.effects.ring(p.x, p.y, 60, '#b8e05a'); break; /* 영혼 포식: 끌어당겨 벰 */
+      case 'feast3': nova(150, 110, { color: '#b8e05a', kb: 6, feast: true }); this.zones.push(new SkillAura(p, { r: 150, life: 2.5, tick: 0.35, dmg: 42, color: '#b8e05a', kind: 'blood', feast: true })); this.addShake(0.3, 5); break;
       case 'ancientroot': nova(140, 170, { color: '#7adf4a', root: 3, kb: 0, status: { type: 'poison', chance: 1, duration: 5, dps: 36 } }); this.addShake(0.3, 5); break;
       case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [8, 0.4, 0.4, 0], bearform2: [10, 0.45, 0.4, 10], primal: [12, 0.75, 0.4, 16] }[p.skillId];
         p.buffT = C[0]; p.buffAtk = C[1]; p.buffGuard = C[2]; p.buffSpeed = 0; p.buffKillHeal = 0;
@@ -2015,7 +2015,7 @@ class Game {
     if (src.execute && enemy.hp < enemy.maxHp * 0.35) base *= 1 + src.execute; // 처형: 빈사 적 추가 피해
     if (enemy.markT > 0) base *= enemy.markMult;
     if (src.feast) enemy.feastHit = this.time; /* 포식 스킬에 맞음 (처치하면 중첩 더) */
-    { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_druid' && !src.trap) base *= enemy.def.boss ? F.bossMult : 1 + Math.min(F.cap, fp.feast || 0) * F.perStack; } /* [사용자 결정] 포식: 일반 몬스터에게 점점 강해지고 보스에게는 약함 */
+    { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_druid' && !src.trap) base *= enemy.def.boss ? F.bossMult : 1 + (fp.feast || 0) / 10 * F.dmgPer10; } /* [사용자 결정] 소울 이터: 일반 몬스터 피해는 상한 없이 (10스택당 +dmgPer10) · 보스에게는 약함 */
     if (enemy.kingWeakT > 0) base *= enemy.kingWeakMul || 1.6; /* 벗의 사슬에 약해진 길가메시 */                                 // 약점 표시된 적
     if (enemy.curse > 0) base *= 1.2;                                             // 저주: 받는 피해 +20%
     if (enemy.avalonUntil > this.time) base *= 1 + (enemy.avalonVuln || 0.2);        // 아발론의 꽃밭: 받는 피해 증가
@@ -2288,11 +2288,12 @@ class Game {
     enemy.rewardGiven = true;
     if (!enemy.def.boss && !enemy.def.dummy && !enemy.def.master) { const C = this.corpses || (this.corpses = []); C.push({ x: enemy.x, y: enemy.y, t: this.time, used: false, maxHp: enemy.maxHp }); if (C.length > 40) C.shift(); } /* 시체 (망자의 파수기용, BALANCE.TRAP.corpseLife초) */
     this.kills++;
-    { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_druid' && this.mode === 'dungeon' && !enemy.def.dummy) { /* 포식 중첩 (처치 수와 따로) */
+    { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_druid' && this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.boss) { /* 소울 이터: 혼 포식 (처치 수와 따로) */
       const before = fp.feast || 0, gain = enemy.feastHit && this.time - enemy.feastHit < 0.6 ? F.perSkillKill : F.perKill; fp.feast = before + gain;
-      if (gain > 1) this.effects.text(enemy.x, enemy.y - 12, `포식 +${gain}`, '#b8e05a');
+      if (gain > 1) this.effects.text(enemy.x, enemy.y - 12, `혼 +${gain}`, '#b8e05a');
       if (fp.feast >= F.healAt && fp.state !== 'DEAD') fp.hp = Math.min(fp.maxHp, fp.hp + F.heal);
-      if (Math.floor(fp.feast / 50) > Math.floor(before / 50)) this.showBanner(`포식 ${Math.floor(fp.feast / 50) * 50}`, `일반 몬스터에게 피해 +${Math.round(Math.min(F.cap, fp.feast) * F.perStack * 100)}% · 이동 속도 +${Math.round(Math.min(F.speedCap, fp.feast * F.speedPer) * 100)}%${fp.feast >= F.healAt ? ' · 처치마다 체력 회복' : ''}`, '#b8e05a'); } }
+      const ev = F.evolve || []; for (let r = fp.rank; r < ev.length; r++) if (before < ev[r] && fp.feast >= ev[r]) { this.evolve(null, fp.line); break; } /* [사용자 결정] 포식 스택 진화: 750 → 1진, 2000 → 2진 */
+      if (Math.floor(fp.feast / F.bannerEvery) > Math.floor(before / F.bannerEvery)) this.showBanner(`포식 ${Math.floor(fp.feast / F.bannerEvery) * F.bannerEvery}`, `일반 몬스터 피해 +${Math.round(fp.feast / 10 * F.dmgPer10 * 100)}% · 이동 +${Math.round(Math.min(F.speedCap, fp.feast / 10 * F.speedPer10) * 100)}% · 받는 피해 -${Math.round(Math.min(F.guardCap, fp.feast / 10 * F.guardPer10) * 100)}%${fp.rank < ev.length ? ` · 다음 진화 ${ev[fp.rank]}` : ''}`, '#b8e05a'); } }
     if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) {
       this.guildEvent('kills', 1, enemy.def.id);
       if (enemy.elite) this.guildEvent('elites');
@@ -2394,6 +2395,7 @@ class Game {
   damagePlayer(amount) {
     const p = this.player, hp0 = p.hp;
     if (this.admin && this.admin.god) return false; // 관리자 무적
+    if (p.feast && p.line && p.line.id === 'feast') { const F = BALANCE.feast; amount = Math.round(amount * (1 - Math.min(F.guardCap, p.feast / 10 * F.guardPer10))); } /* 소울 이터 포식: 받는 피해 감소 (상한) */
     if (p.takeDamage(amount)) {
       if (p.endured) { p.endured = false; this.effects.text(p.x, p.y - 26, '황금 양털이 버텨 냈다!', '#ffd870', true); this.effects.ring(p.x, p.y, 30, '#ffd870'); this.effects.heal(p.x, p.y); this.screenFlash = 0.15; this.flashColor = '255,216,112'; SFX.play('solomon', 0.2); return true; }
       this.addShake(0.15, 3);

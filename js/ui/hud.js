@@ -40,7 +40,7 @@ class HUD {
     } else {
       const W = game.W;
       hudText(ctx, `${W.trial ? '' : game.stageName() + ' '}${W.name}   골드 ${game.gold}   처치 ${game.kills}`, VIEW_W / 2, 6, W.deep ? '#9ad8ff' : '#fff', 'center');
-      { const fp = game.player; if (fp && fp.line && fp.line.id === 'feast' && game.mode === 'dungeon') hudText(ctx, `포식 ${fp.feast || 0}  (일반 몬스터 피해 +${Math.round(Math.min(BALANCE.feast.cap, fp.feast || 0) * BALANCE.feast.perStack * 100)}%)`, 8, 66, '#b8e05a', 'left', 8); } /* 포식 중첩 */
+      { const fp = game.player, Ff = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && game.mode === 'dungeon') hudText(ctx, `포식 ${fp.feast || 0}  (일반 몬스터 피해 +${Math.round((fp.feast || 0) / 10 * Ff.dmgPer10 * 100)}%)`, 8, 66, '#b8e05a', 'left', 8); } /* 포식 중첩 */
       if (game.areaId) hudText(ctx, `되찾은 권리 ${game.zoneRights || 0}/${BABYLON_RIGHTS.length}`, 8, 56, '#fff4c0', 'left', 8); /* 귀환길: 길가메시에게 빼앗긴 권리 */
       if (game.areaId && !game.save.treasures.includes(CHAIN_SHARD.treasure)) hudText(ctx, `금빛 사슬 조각 ${game.save.chainShards || 0}/${CHAIN_SHARD.need}`, 8, 46, '#ffd84a', 'left', 8); /* 보스 이름과 겹치지 않게 왼쪽 체력바 아래 */ /* 바빌로니아 지하 */
       this.minimap(ctx, game);
