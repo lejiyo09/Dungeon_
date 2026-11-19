@@ -821,7 +821,15 @@ class HeavenChains {
     this.t += dt; const e = this.tgt;
     if (e && e.alive) { this.x = e.x; this.y = e.y; }
     if (!this.hit && this.t >= 0.22) { this.hit = true; const T = this.T;
-      if (e && e.alive) { const d = treasureBind(e, T.bind);
+      if (e && e.alive && /^boss_gilgamesh/.test(e.def.id) && T.gil) { /* [사용자 결정] 벗의 사슬: 길가메시에게는 특히 강함 — 면역 무시 전체 시간 + 하던 기술 끊김 + 약화 */
+        e.chainT = Math.max(e.chainT || 0, T.bind); e.chainMax = e.chainT; e.trChain = true; e.kingWeakT = T.gil.dur; e.kingWeakMul = T.gil.dmg; e.kingWeakSlow = T.gil.slow; e.finalCd = Math.max(e.finalCd || 0, T.gil.dur);
+        if (e.ult && typeof endUltimate === 'function') endUltimate(e, world); e.laser = null; e.pat = null; if (e.state === 'ATTACK' || e.state === 'TELEGRAPH') e.setState('IDLE');
+        for (const z of world.zones) if (z instanceof BossGate || z instanceof KingChainCast) z.alive = false; /* 열려 있던 보물고의 문도 닫힘 */
+        world.effects.rays(e.x, e.y, '#9ae8d8', 20, 110, 1); world.screenFlash = 0.25; world.flashColor = '154,232,216'; world.addShake(0.4, 6);
+        if (!(world.save.scenesSeen || []).includes('gil_heaven_chain') && world.playCutscene) world.playCutscene(GIL_HEAVEN_CHAIN_LINES, { id: 'gil_heaven_chain', focus: { x: e.x, y: e.y - 10 } }); /* 처음 묶었을 때 장면 */
+        else world.effects.text(e.x, e.y - 44, GIL_HEAVEN_CHAIN_BARKS[randInt(0, GIL_HEAVEN_CHAIN_BARKS.length - 1)], '#ffd84a', true);
+        world.showBanner('벗의 사슬 — 영웅왕 약화', `${T.bind}초 묶임 · ${T.gil.dur}초 동안 받는 피해 ${T.gil.dmg}배 · 행동 ${Math.round((1 - T.gil.slow) * 100)}% 느려짐 · 궁극기 봉인`, '#9ae8d8'); }
+      if (e && e.alive) { const d = /^boss_gilgamesh/.test(e.def.id) && T.gil ? T.bind : treasureBind(e, T.bind);
         world.damageEnemy(e, { damage: T.damage * world.scale.hp, mods: this.owner.mods, knockback: 0, treasure: true, mark: { mult: T.weak, dur: d } }, 0, 0);
         world.effects.ring(e.x, e.y, e.radius + 14, T.color); world.effects.ring(e.x, e.y, e.radius + 6, '#e8fff8'); world.addShake(0.25, 4); world.hitStop(0.06); world.screenFlash = 0.1; world.flashColor = '154,232,216'; }
       for (const o of world.enemies) { if (o === e || !o.targetable || Math.hypot(o.x - this.x, o.y - this.y) > T.spread + o.radius) continue;

@@ -94,8 +94,9 @@ const DATA_TREASURES = [
   // [사용자 결정] 엔키두(신들이 진흙으로 빚은 길가메시의 벗)의 하늘의 사슬: 바빌로니아 지하 상자에서 낮은 확률로 나오는 '금빛 사슬 조각' 10개를 모으면 얻음
   //  능력·수치·드롭 확률은 Claude가 정한 [제안]. 게이트 오브 바빌론(넓은 범위)과 달리 가장 강한 한 명을 길게 묶는 보구
   { id: 'treasure_heaven_chain', name: '하늘의 사슬', origin: '엔키두', use: 'heaven', cooldown: 62, sfx: 'gate', icon: 'heavenchain', questOnly: true,
-    range: 360, bind: 8, damage: 420, weak: 1.6, spread: 96, subBind: 4, /* [사용자 결정] 게이트 오브 바빌론(6초)보다 오래 */ subDamage: 150, color: '#9ae8d8',
-    desc: '땅에서 하늘의 사슬이 솟아 가장 강한 적(보스 우선) 하나를 8초간 꽁꽁 묶고 큰 피해, 묶인 동안 받는 피해 +60% — 사슬은 주변 적에게도 뻗어 4초간 묶음 (행동 방해 면역인 적도 보구 사슬에는 절반 시간)' }
+    range: 360, bind: 8, damage: 420, weak: 1.6, spread: 96, subBind: 4, /* [사용자 결정] 게이트 오브 바빌론(6초)보다 오래 */
+    gil: { dur: 15, dmg: 2, slow: 0.55 }, /* [사용자 결정] 길가메시에게 쓰면 크게 약해짐: 면역 무시 8초 묶임 + 하던 기술·궁극기 끊김 + 15초 약화(받는 피해 ×2 · 행동 ×0.55 · 그동안 궁극기 못 씀) [제안 수치] */ subDamage: 150, color: '#9ae8d8',
+    desc: '땅에서 하늘의 사슬이 솟아 가장 강한 적(보스 우선) 하나를 8초간 꽁꽁 묶고 큰 피해, 묶인 동안 받는 피해 +60% — 사슬은 주변 적에게도 뻗어 4초간 묶음 (행동 방해 면역인 적도 보구 사슬에는 절반 시간) — 길가메시에게는 특히 강해서, 면역을 무시하고 끝까지 묶고 하던 기술을 끊으며 15초 동안 받는 피해 2배·행동 45% 느려짐·궁극기 봉인' }
 ];
 // [사용자 결정] 금빛 사슬 조각: 바빌로니아 지하 상자에서만 낮은 확률로 나옴, 10개 모으면 하늘의 사슬 — 확률은 [제안]
 const CHAIN_SHARD = { need: 10, chest: 0.12, challenge: 0.25, boss: 0.35, treasure: 'treasure_heaven_chain' };
@@ -200,6 +201,14 @@ const BABYLON_BOSS_INTROS = {
   boss_pazuzu: { name: '파주주', lines: ['(둘째 단. 모래바람이 사람의 형상을 하고 네 장의 날개를 편다.)', '파주주: 「크크… 바람이 너를 다시 아래로 끌어내릴 것이다. 처음 떨어졌을 때처럼.」'] },
   boss_clay_enkidu: { name: '진흙의 엔키두', lines: ['(셋째 단. 마지막 계단을 막고 선 것은 — 진흙으로 빚은 사람이었다.)', '(…이 얼굴. 왕이 잃어버렸다는 단 하나의 벗을 본떠 만든 건가.)', '진흙의 엔키두: 「…왕에게… 가지… 마라. 왕은… 아직… 외롭다.」'] }
 };
+// [사용자 결정] 하늘의 사슬(엔키두의 보구)이 길가메시를 묶었을 때 — 처음은 장면, 그 뒤로는 짧은 대사 [임시]
+const GIL_HEAVEN_CHAIN_LINES = [
+  '하늘빛 사슬이 땅에서 솟아, 영웅왕의 팔과 다리를 휘감는다.',
+  '길가메시: 「…이 사슬은… 엔키두…? 어째서 — 어째서 네 사슬이, 그 잡종의 손에…!」',
+  '(왕의 목소리가… 처음으로 흔들렸다.)',
+  '길가메시: 「크윽… 이 몸이, 움직이지 않는다… 벗이여, 너까지 이 왕을 막아서는가…」'
+];
+const GIL_HEAVEN_CHAIN_BARKS = ['「또 그 사슬인가… 엔키두…!」', '「크윽… 몸이… 말을 듣지 않는다…!」', '「벗의 사슬을… 잡종 따위가…!」', '「…놓아라, 엔키두. 아니 — …」'];
 // [사용자 결정] 지구라트 4-4 왕좌의 방: 영웅왕 길가메시 (아서 왕급) — 대사는 [임시]
 const GILGAMESH_UNDER_INTRO_LINES = [
   '(…다시, 이 방이다. 붉은 융단, 금빛 기둥, 공중에 일렁이는 보물고의 문들.)',
@@ -514,6 +523,7 @@ const STORY_ARCHIVE = [
   { id: 'babylon_under', name: '바빌로니아 지하', kind: 'cut', lines: () => BABYLON_FALL_LINES.concat(BABYLON_UNDER_WAKE_LINES), unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under') },
   { id: 'babylon_under_clear', name: '열린 수문', kind: 'cut', lines: () => BABYLON_UNDER_CLEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_under_clear') },
   ...Object.entries(BABYLON_BOSS_INTROS).map(([id, B]) => ({ id: 'bab_boss_' + id, name: '네임드 — ' + B.name, kind: 'cut', lines: () => B.lines, unlocked: (sv) => (sv.scenesSeen || []).includes('bab_boss_' + id) })),
+  { id: 'gil_heaven_chain', name: '벗의 사슬', kind: 'cut', lines: () => GIL_HEAVEN_CHAIN_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gil_heaven_chain') },
   { id: 'babylon_surface', name: '지상으로', kind: 'cut', lines: () => BABYLON_SURFACE_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_surface') },
   { id: 'babylon_ziggurat', name: '지구라트', kind: 'cut', lines: () => BABYLON_ZIGGURAT_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('babylon_ziggurat') },
   { id: 'gilgamesh_under', name: '다시, 왕좌의 방', kind: 'cut', lines: () => GILGAMESH_UNDER_INTRO_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gilgamesh_under') },

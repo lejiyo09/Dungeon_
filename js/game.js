@@ -1950,7 +1950,8 @@ class Game {
       const A = src.from || this.player, da = Math.atan2(A.y - enemy.y, A.x - enemy.x) - enemy.shieldAng, df = Math.abs(Math.atan2(Math.sin(da), Math.cos(da)));
       if (df < (enemy.wallCone || enemy.def.wall.cone)) { base *= enemy.wallMult ?? enemy.def.wall.mult; if (!(enemy.wallMsgT > this.time)) { this.effects.text(enemy.x, enemy.y - enemy.radius - 8, '막힘', '#c8c8d8'); enemy.wallMsgT = this.time + 0.5; } } }
     if (src.execute && enemy.hp < enemy.maxHp * 0.35) base *= 1 + src.execute; // 처형: 빈사 적 추가 피해
-    if (enemy.markT > 0) base *= enemy.markMult;                                 // 약점 표시된 적
+    if (enemy.markT > 0) base *= enemy.markMult;
+    if (enemy.kingWeakT > 0) base *= enemy.kingWeakMul || 2; /* 벗의 사슬에 약해진 길가메시 */                                 // 약점 표시된 적
     if (enemy.curse > 0) base *= 1.2;                                             // 저주: 받는 피해 +20%
     if (enemy.avalonUntil > this.time) base *= 1 + (enemy.avalonVuln || 0.2);        // 아발론의 꽃밭: 받는 피해 증가
     const { amount, crit } = rollDamage(base, src.mods);

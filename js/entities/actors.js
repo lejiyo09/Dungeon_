@@ -377,6 +377,7 @@ class Enemy extends Entity {
       ctx.globalAlpha = 1; return;
     }
     drawEnemy(ctx, this, x, y, this.hurtFlash > 0);
+    if (this.kingWeakT > 0) { const t = performance.now() / 300; ctx.save(); ctx.globalAlpha = 0.5 + 0.3 * Math.sin(t); ctx.strokeStyle = '#9ae8d8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y + 6, this.def.hitboxHalf + 8, 5, 0, 0, TAU); ctx.stroke(); ctx.lineWidth = 1; ctx.restore(); } /* 벗의 사슬에 약해진 길가메시: 발밑 하늘빛 고리 */
     const h = def.hitboxHalf;
     if (this.slow > 0) { ctx.fillStyle = 'rgba(140,210,255,0.35)'; ctx.fillRect(x - h - 1, y - h - 2, h * 2 + 2, h * 2 + 4); }
     if (this.burn > 0 && Math.floor(this.stateTime * 10) % 2 === 0) { ctx.fillStyle = '#ff8a3a'; ctx.fillRect(x - 2 + randInt(-3, 3), y - h - 3, 2, 2); }
