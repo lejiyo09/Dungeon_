@@ -1209,7 +1209,7 @@ function updateEnemy(e, dt, world) {
   if (e.iceVulnT > 0) e.iceVulnT -= dt; if (e.huntT > 0) e.huntT -= dt; if (e.auraVulnT > 0) e.auraVulnT -= dt;
   if (e.preyT > 0) e.preyT -= dt; if (e.paraImmT > 0) e.paraImmT -= dt; if (e.shockStackT > 0) { e.shockStackT -= dt; if (e.shockStackT <= 0) e.shockStacks = 0; } /* 함정: 사냥터 각인 · 재마비 방지 · 감전 중첩 */
   if (e.paraT > 0) { e.paraT -= dt; if (Math.random() < 0.3) world.effects.lightning(e.x + randInt(-8, 8), e.y - 14, e.x + randInt(-6, 6), e.y); if (e.paraT <= 0) world.effects.burst(e.x, e.y - 4, '#bfe8ff', 6); } /* 마비 중 아크 → 끝날 때 전기 파편 */
-  if (e.def.ccImmune) { e.stunT = 0; e.chainT = 0; e.slow = 0; e.blind = 0; e.shock = 0; } /* 아서 왕: 모든 행동 방해 면역 (덫·경직·사슬·빙결·둔화·실명·감전) */
+  if (e.def.ccImmune) { e.stunT = 0; if (!(e.trChain && e.chainT > 0)) { e.chainT = 0; e.trChain = false; } /* [사용자 결정] 보구 사슬은 절반 시간만큼 묶임 */ e.slow = 0; e.blind = 0; e.shock = 0; } /* 아서 왕: 모든 행동 방해 면역 (덫·경직·사슬·빙결·둔화·실명·감전) */
   if (e.stunT > 0) { e.stunT -= dt; return; } // 엑스칼리버 빛에 맞아 경직
   if (e.chainT > 0) { e.chainT -= dt; return; } // 황금 사슬에 묶임: 이동·공격 정지 (지속 피해는 계속)
   const sdt = dt * e.speedMul; // 빙결 시 이동/행동 모두 느려짐

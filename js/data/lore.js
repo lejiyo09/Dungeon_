@@ -57,7 +57,7 @@ const GATEKEEPER_FALL_LINES = [
 const DATA_TREASURES = [
   { id: 'treasure_gate_of_babylon', name: '게이트 오브 바빌론', origin: '길가메시', use: 'chains', cooldown: 60, sfx: 'gate', icon: 'gate',
     radius: 92, range: 200, duration: 6, damage: 280, weak: 1.7, color: '#ffd84a',
-    desc: '전방의 아주 넓은 원형 범위에 황금 사슬을 소환해 적을 6초간 묶고 큰 피해, 묶인 적은 받는 피해 +70%' },
+    desc: '전방의 아주 넓은 원형 범위에 황금 사슬을 소환해 적을 6초간 묶고 큰 피해, 묶인 적은 받는 피해 +70% (행동 방해 면역인 적도 절반 시간)' },
   { id: 'treasure_excalibur', name: '엑스칼리버', origin: '아서왕', use: 'beam', cooldown: 70, sfx: 'excal', icon: 'excalibur',
     damage: 950, width: 28, range: 300, blast: 86, blastRatio: 0.3, stun: 1, color: '#ffe9a0', // blast: 끝 폭발 반경, blastRatio: 폭발 추가 피해 비율 · [사용자 결정] 너프하되 보구 중 가장 강한 한 방은 유지 (예전: 피해 1050 · 폭발 35% · 경직 1.5초 · 쿨 65초)
     desc: '검을 들어 빛기둥을 세운 뒤 조준 방향으로 내려꽂아 일직선에 압도적인 피해(벽 관통), 조준한 지점에서 폭발, 맞은 적은 1초 경직 — 보구 중 가장 강한 한 방' },
@@ -94,8 +94,8 @@ const DATA_TREASURES = [
   // [사용자 결정] 엔키두(신들이 진흙으로 빚은 길가메시의 벗)의 하늘의 사슬: 바빌로니아 지하 상자에서 낮은 확률로 나오는 '금빛 사슬 조각' 10개를 모으면 얻음
   //  능력·수치·드롭 확률은 Claude가 정한 [제안]. 게이트 오브 바빌론(넓은 범위)과 달리 가장 강한 한 명을 길게 묶는 보구
   { id: 'treasure_heaven_chain', name: '하늘의 사슬', origin: '엔키두', use: 'heaven', cooldown: 62, sfx: 'gate', icon: 'heavenchain', questOnly: true,
-    range: 360, bind: 4, damage: 420, weak: 1.6, spread: 96, subBind: 2.5, subDamage: 150, color: '#9ae8d8',
-    desc: '땅에서 하늘의 사슬이 솟아 가장 강한 적(보스 우선) 하나를 4초간 꽁꽁 묶고 큰 피해, 묶인 동안 받는 피해 +60% — 사슬은 주변 적에게도 뻗어 2.5초간 묶음' }
+    range: 360, bind: 8, damage: 420, weak: 1.6, spread: 96, subBind: 4, /* [사용자 결정] 게이트 오브 바빌론(6초)보다 오래 */ subDamage: 150, color: '#9ae8d8',
+    desc: '땅에서 하늘의 사슬이 솟아 가장 강한 적(보스 우선) 하나를 8초간 꽁꽁 묶고 큰 피해, 묶인 동안 받는 피해 +60% — 사슬은 주변 적에게도 뻗어 4초간 묶음 (행동 방해 면역인 적도 보구 사슬에는 절반 시간)' }
 ];
 // [사용자 결정] 금빛 사슬 조각: 바빌로니아 지하 상자에서만 낮은 확률로 나옴, 10개 모으면 하늘의 사슬 — 확률은 [제안]
 const CHAIN_SHARD = { need: 10, chest: 0.12, challenge: 0.25, boss: 0.35, treasure: 'treasure_heaven_chain' };

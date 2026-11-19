@@ -756,6 +756,8 @@ class SpiritWolf {
 
 // 게이트 오브 바빌론: 바닥에 회전하는 금빛 문양, 공중에 열린 금빛 문들에서 창이 날아가 꽂히고 사슬이 뻗어 적을 묶음
 //  범위 안의 적은 사용한 순간뿐 아니라 범위가 남아 있는 동안 계속 묶음 (막 나타나는 적·페이즈 전환 중인 보스·나중에 들어온 적 포함)
+// 보구 사슬로 묶기: 행동 방해 면역(아서 왕)도 보구 사슬에는 절반 시간만큼 묶임 [사용자 결정] → 실제로 묶인 시간
+function treasureBind(e, dur) { if (e.def.ccImmune) { dur *= 0.5; e.trChain = true; } e.chainT = Math.max(e.chainT || 0, dur); e.chainMax = e.chainT; return dur; }
 // 하늘의 사슬 (엔키두): 대상 둘레의 땅에서 사슬이 솟아 꿰어 묶음 → 주변 적에게도 뻗음
 class HeavenChains {
   constructor(owner, tgt, T, world) {
@@ -767,15 +769,15 @@ class HeavenChains {
     this.t += dt; const e = this.tgt;
     if (e && e.alive) { this.x = e.x; this.y = e.y; }
     if (!this.hit && this.t >= 0.22) { this.hit = true; const T = this.T;
-      if (e && e.alive) { e.chainT = Math.max(e.chainT || 0, T.bind); e.chainMax = e.chainT;
-        world.damageEnemy(e, { damage: T.damage * world.scale.hp, mods: this.owner.mods, knockback: 0, treasure: true, mark: { mult: T.weak, dur: T.bind } }, 0, 0);
+      if (e && e.alive) { const d = treasureBind(e, T.bind);
+        world.damageEnemy(e, { damage: T.damage * world.scale.hp, mods: this.owner.mods, knockback: 0, treasure: true, mark: { mult: T.weak, dur: d } }, 0, 0);
         world.effects.ring(e.x, e.y, e.radius + 14, T.color); world.effects.ring(e.x, e.y, e.radius + 6, '#e8fff8'); world.addShake(0.25, 4); world.hitStop(0.06); world.screenFlash = 0.1; world.flashColor = '154,232,216'; }
       for (const o of world.enemies) { if (o === e || !o.targetable || Math.hypot(o.x - this.x, o.y - this.y) > T.spread + o.radius) continue;
-        o.chainT = Math.max(o.chainT || 0, T.subBind); o.chainMax = o.chainT; this.subs.push(o);
-        world.damageEnemy(o, { damage: T.subDamage * world.scale.hp, mods: this.owner.mods, knockback: 0, treasure: true, mark: { mult: T.weak, dur: T.subBind } }, 0, 0); }
+        const d = treasureBind(o, T.subBind); this.subs.push(o);
+        world.damageEnemy(o, { damage: T.subDamage * world.scale.hp, mods: this.owner.mods, knockback: 0, treasure: true, mark: { mult: T.weak, dur: d } }, 0, 0); }
     }
     if (Math.random() < 0.5) world.effects.part(this.x + randInt(-14, 14), this.y + randInt(-4, 6), 0, -25 - Math.random() * 20, { color: Math.random() < 0.5 ? this.T.color : '#e8fff8', life: 0.5, size: 1.5, size2: 0, drag: 1, add: true });
-    if (this.t >= this.life || (this.hit && !(e && e.alive) && this.t > 0.6)) this.alive = false;
+    if (this.t >= this.life || (this.hit && this.t > 0.6 && !(e && e.alive && e.chainT > 0))) this.alive = false; /* 대상이 풀리면 사슬도 사라짐 */
   }
   link(ctx, x0, y0, x1, y1, k, bow) { // 굵은 고리 사슬
     const dx = x1 - x0, dy = y1 - y0, n = Math.max(3, Math.floor(Math.hypot(dx, dy) / 4));
@@ -813,7 +815,7 @@ class ChainCircle {
     if (this.t >= this.life - 0.3) return;
     for (const e of world.enemies) {
       if (!e.targetable || this.got.includes(e) || Math.hypot(e.x - this.x, e.y - this.y) > this.r + e.radius) continue;
-      e.chainT = Math.max(e.chainT || 0, Math.max(1.5, this.life - this.t)); e.chainMax = e.chainT; this.got.push(e);
+      treasureBind(e, Math.max(1.5, this.life - this.t)); this.got.push(e);
       world.damageEnemy(e, { damage: this.T.damage * world.scale.hp, mods: this.owner.mods, knockback: 0, treasure: true, mark: { mult: this.T.weak, dur: e.chainT } }, 0, 0); // 묶으며 큰 피해 + 받는 피해 증가
       world.effects.goldBurst(e.x, e.y, 10); world.effects.ring(e.x, e.y, e.radius + 8, '#ffd84a');
       if (this.t > 0.05) for (let k = 0; k < 2; k++) this.addSpear(this.gates[randInt(0, 9)], e.x + randInt(-3, 3), e.y, k * 0.05); // 나중에 묶인 적에게도 창
