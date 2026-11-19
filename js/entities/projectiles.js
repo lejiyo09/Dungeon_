@@ -808,6 +808,32 @@ class KingChainCast {
     ctx.restore();
   }
 }
+// 하늘의 황소의 뿔 (길가메시의 하사품): 플레이어가 조준 방향으로 무적 돌진 → 들이받은 적 피해·경직 → 지나간 자리가 차례로 폭발
+class BullHornCharge {
+  constructor(owner, ang, T) { this.owner = owner; this.ang = ang; this.T = T; this.t = 0; this.alive = true; this.dist = 0; this.hit = new Set(); this.drops = []; this.lastDrop = 0; this.done = false; this.x = owner.x; this.y = owner.y; }
+  update(dt, world) {
+    const T = this.T, p = this.owner; this.t += dt;
+    if (!this.done) { const step = T.speed * dt, x0 = p.x, y0 = p.y; moveAndCollide(p, Math.cos(this.ang) * step, Math.sin(this.ang) * step, world.map);
+      const moved = Math.hypot(p.x - x0, p.y - y0); this.dist += moved; this.x = p.x; this.y = p.y;
+      if (world.treasureClear) world.treasureClear(p.x, p.y, 16);
+      for (const e of world.enemies) if (e.targetable && !this.hit.has(e) && Math.hypot(e.x - p.x, e.y - p.y) < e.radius + 14) { this.hit.add(e);
+        world.damageEnemy(e, { damage: T.damage * world.scale.hp, mods: p.mods, knockback: 12, treasure: true }, Math.cos(this.ang), Math.sin(this.ang));
+        if (!e.def.ccImmune) e.stunT = Math.max(e.stunT || 0, T.stun); world.effects.ring(e.x, e.y, e.radius + 8, T.color); world.addShake(0.15, 4); world.hitStop(0.04); }
+      if (this.dist - this.lastDrop >= T.trail) { this.lastDrop = this.dist; this.drops.push({ x: p.x, y: p.y, at: this.t + T.trailDelay }); }
+      world.effects.part(p.x - Math.cos(this.ang) * 8, p.y + 6, randInt(-30, 30), -30, { color: Math.random() < 0.5 ? T.color : '#ffd84a', life: 0.4, size: 2.5, size2: 0, drag: 2 });
+      if (moved < T.speed * dt * 0.3 || this.dist >= T.dist || !(p.hornT > 0)) { this.done = true; p.hornT = 0; world.effects.ring(p.x, p.y, 34, T.color); world.addShake(0.25, 5); } }
+    for (const d of this.drops) if (!d.boom && this.t >= d.at) { d.boom = true; world.explodeAt(d.x, d.y, T.radius, { color: T.color, hurtEnemies: true, src: { damage: T.trailDmg * world.scale.hp, mods: p.mods, knockback: 4, treasure: true } }); if (world.treasureClear) world.treasureClear(d.x, d.y, T.radius); }
+    if (this.done && this.drops.every((d) => d.boom)) this.alive = false;
+  }
+  render(ctx) { /* 갈라진 땅 */
+    ctx.save(); ctx.strokeStyle = '#5a2a14'; ctx.lineWidth = 2; ctx.globalAlpha = 0.8;
+    for (const d of this.drops) if (!d.boom) { ctx.beginPath(); ctx.moveTo(d.x - 6, d.y + 2); ctx.lineTo(d.x - 1, d.y - 1); ctx.lineTo(d.x + 3, d.y + 3); ctx.lineTo(d.x + 7, d.y); ctx.stroke(); }
+    ctx.restore(); }
+  renderTop(ctx) { /* 돌진하는 몸 앞의 붉은 뿔 그림자 */
+    if (this.done) return; const p = this.owner, c = Math.cos(this.ang), n = Math.sin(this.ang), x = p.x + c * 10, y = p.y - 4 + n * 10;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.fillStyle = this.T.color; ctx.beginPath(); ctx.ellipse(p.x, p.y - 2, 14, 10, this.ang, 0, TAU); ctx.fill(); ctx.restore();
+    ctx.strokeStyle = '#fff4c0'; ctx.lineWidth = 2; for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(x - n * s * 4, y + c * s * 4); ctx.quadraticCurveTo(x + c * 6 - n * s * 9, y + n * 6 + c * s * 9, x + c * 12 - n * s * 5, y + n * 12 + c * s * 5); ctx.stroke(); } ctx.lineWidth = 1; }
+}
 // 보구 사슬로 묶기: 행동 방해 면역(아서 왕)도 보구 사슬에는 절반 시간만큼 묶임 [사용자 결정] → 실제로 묶인 시간
 function treasureBind(e, dur) { if (e.def.ccImmune) { dur *= 0.5; e.trChain = true; } e.chainT = Math.max(e.chainT || 0, dur); e.chainMax = e.chainT; return dur; }
 // 하늘의 사슬 (엔키두): 대상 둘레의 땅에서 사슬이 솟아 꿰어 묶음 → 주변 적에게도 뻗음

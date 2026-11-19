@@ -41,7 +41,7 @@ class Player extends Entity {
     this.weapons = []; this.slot = 0; this.buffs = [];
   }
   get weapon() { return this.weapons[this.slot] || null; }
-  get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0 || this.aegisT > 0 || this.scabbardT > 0; }
+  get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0 || this.aegisT > 0 || this.scabbardT > 0 || this.hornT > 0; }
   get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.35 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hadesT > 0 ? this.treasure.atk : 0) + (this.avalonT > 0 ? this.avalonAtk : 0) + (this.buffT > 0 ? this.buffAtk || 0 : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier }; }
 
   update(dt, input, map, mouseWorld) {
@@ -85,6 +85,7 @@ class Player extends Entity {
     this.moving = ilen > 0;
     if (ilen > 0) { ix /= ilen; iy /= ilen; this.lastMoveDir.x = ix; this.lastMoveDir.y = iy; }
 
+    if (this.hornT > 0) { this.hornT -= dt; this.moving = true; return; } /* 하늘의 황소의 뿔: 돌진 중에는 보구가 몸을 움직임 */
     if (this.castLock > 0) { this.moving = false; return; } // 시전 중: 이동·대시 불가
     if (this.state === 'DASH') { this.updateDash(dt, map); return; }
     if (input.wasPressed('Space') && this.dashCooldown <= 0) {

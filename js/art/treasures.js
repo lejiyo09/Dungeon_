@@ -15,6 +15,11 @@ const TREASURE_ICONS = {
     P.px(7, 1, 'w'); P.px(2, 6, 'w'); P.px(12, 9, 'w');
     P.line(11, 11, 14, 14, 't'); P.tri(12, 15, 15, 12, 15, 15, 'y'); P.ell(7.5, 7, 1.5, 1.5, 'w');
   } },
+  // 하늘의 황소의 뿔: 붉은 띠를 감은 금빛 뿔 한 쌍
+  bullhorn: { pal: { y: '#ffd84a', o: '#c8901a', w: '#fff4c0', r: '#d0302e', R: '#7a1622' }, proc: (P) => {
+    for (const s of [-1, 1]) { const cx = 8 + s * 2; P.line(cx, 13, cx + s * 3, 8, 'o'); P.line(cx + s * 3, 8, cx + s * 5, 3, 'y'); P.line(cx + s * 5, 3, cx + s * 4, 1, 'w'); P.line(cx + s * 1, 13, cx + s * 4, 8, 'y'); }
+    P.rect(5, 12, 7, 3, 'r'); P.rect(5, 14, 7, 1, 'R'); P.px(8, 13, 'y');
+  } },
   // 엑스칼리버 (작은 칸용 16×16)
   excalibur: { pal: { w: '#ffffff', s: '#d8dce8', d: '#9aa4bc', y: '#ffd84a', o: '#b08a30', b: '#26357a', c: '#4a64b8' }, proc: (P) => {
     const M = (x, y, ch) => { P.px(x, y, ch); P.px(15 - y, 15 - x, ch); };          // 날 중심선 x+y=15 기준 대칭

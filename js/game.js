@@ -290,7 +290,9 @@ class Game {
       const B = this.save.babylon = this.save.babylon || {}; B.gilgameshDown = (B.gilgameshDown || 0) + 1; writeSave(this.save);
       this.portals.push(new Portal(c.x, c.y + 24, () => this.endRun(true), '원래 세계로 — 귀환', [255, 216, 74]));
       this.effects.rays(c.x, c.y, '#ffd84a', 20, 120, 1.2); this.screenFlash = 0.25; this.flashColor = '255,216,74'; SFX.play('gate', 0.6);
-      this.playCutscene(GILGAMESH_UNDER_WIN_LINES, { id: 'gilgamesh_under_win', always: true, focus: { x: c.x, y: c.y } });
+      this.playCutscene(GILGAMESH_UNDER_WIN_LINES, { id: 'gilgamesh_under_win', always: true, focus: { x: c.x, y: c.y }, done: () => { /* 왕의 하사품: 하늘의 황소의 뿔 */
+        const T = DATA_TREASURES.find((t) => t.id === 'treasure_bull_horn'); if (T && !this.save.treasures.includes(T.id)) { this.save.treasures.push(T.id); writeSave(this.save); this.treasureToast = { T, start: performance.now() }; }
+        this.showBanner('왕의 하사품 — 하늘의 황소의 뿔', '로비의 보구 보관대에서 장착할 수 있어요', '#ff8a5a'); } });
       return; }
     this.grantZoneRight(this.zoneField + 1); /* 층 보스를 꺾음: 빼앗긴 권리 하나를 되찾음 */
     if (W.boss === 'boss_clay_enkidu') { const FW = this.data.weapons.get('weapon_friendchain_001'); /* [사용자 결정] 진흙의 엔키두: 길가메시 사냥 특화 고유 무기를 남김 */
@@ -1210,6 +1212,9 @@ class Game {
       const tgt = cand.find((e) => e.def.boss) || cand.sort((a, b) => b.hp - a.hp)[0] || null;
       if (tgt) { this.zones.push(new HeavenChains(p, tgt, T, this)); this.effects.rays(tgt.x, tgt.y, T.color, 14, 60, 0.6); }
       else { this.effects.text(p.x, p.y - 34, '묶을 적이 없음', '#9ae8d8'); p.treasureCd = 3; }
+    } else if (T.use === 'horn') { /* 하늘의 황소의 뿔: 조준 방향으로 무적 돌진 */
+      const A = Math.atan2(p.aim.y, p.aim.x); p.hornT = T.dist / T.speed; this.zones.push(new BullHornCharge(p, A, T));
+      this.addShake(0.2, 4); SFX.play('dash', 0.2);
     } else if (T.use === 'beam') { // 엑스칼리버: 검을 들어 빛기둥을 세우고(0.6초) → 조준 방향으로 내려찍음 → 끝에서 폭발
       this.zones.push(new ExcaliburRaise(p, T, () => this.excaliburStrike(p, T)));
       SFX.play('skill');
