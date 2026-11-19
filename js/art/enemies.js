@@ -337,31 +337,47 @@ Object.assign(PIX, {
     P.ell(16, 12, 5, 4, 'a'); P.ell(16, 7, 4, 3, 'b'); P.px(14, 7, 'g'); P.px(18, 7, 'g');                 // 가슴·머리·눈
     P.tri(12, 4, 14, 0, 16, 4, 'y'); P.tri(14, 4, 16, 0, 18, 4, 'y'); P.tri(16, 4, 18, 0, 20, 4, 'y');     // 호박 왕관
   } },
-  // 영웅왕 길가메시 — (예전 32×32 디자인을 40×40으로 다시 그림) 메소포타미아 왕의 모습: 청금석 박힌 금관, 길게 늘어진 검은 머리와 금구슬 땋은 수염, 금빛 흉갑과 견갑, 붉은 망토, 흰 치마와 샌들, 등 뒤의 금빛 파문
-  boss_gilgamesh: { tint: '#c8901a', w: 40, h: 40, pal: { y: '#ffd84a', Y: '#c8901a', G: '#8a5a10', l: '#2a48b8', L: '#6a9aff', s: '#e2b088', S: '#c08a64', h: '#1c1624', H: '#4a3a52', w: '#fff8e8', W: '#d8ccb4', r: '#d0302e', R: '#7a1622', e: '#ff7a2a', c: '#e8f0ff', C: '#a8b4c8' }, proc: (P) => {
-    // [사용자 결정] 더 있어 보이게 다시 디자인 (40×40): 머리 뒤의 금빛 태양 후광, 등 뒤 공중에 열린 보물고의 문 넷과 튀어나온 칼날, 넓게 펼쳐진 붉은 망토(금 테두리),
-    //  겹겹의 금 갑옷과 가시 달린 견갑, 청금석 보석, 뿔 장식 금관, 금구슬 땋은 수염, 손에 든 보검 [원작 디자인]
-    P.ell(20, 10, 11, 10, 'y'); P.ell(20, 10, 9.6, 8.6, '.');                                                                                 // 태양 후광 (속이 빈 금 고리)
-    for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; if (Math.sin(a) < 0.5) P.px(20 + Math.cos(a) * 12.5, 10 + Math.sin(a) * 11.5, i % 2 ? 'Y' : 'y'); } // 후광 빛살
-    for (const [gx, gy, bx, by] of [[3, 15, 0, 11], [37, 15, 39, 11], [4, 5, 1, 1], [36, 5, 39, 1]]) { P.ell(gx, gy, 2.5, 1.6, 'y'); P.px(gx, gy, 'w'); P.line(gx, gy, bx, by, 'c'); P.px(bx, by, 'w'); } // 보물고의 문 + 칼날
-    P.tri(2, 39, 38, 39, 20, 14, 'R'); P.tri(4, 39, 36, 39, 20, 16, 'r'); P.line(2, 39, 20, 14, 'y'); P.line(38, 39, 20, 14, 'y');          // 넓은 붉은 망토 + 금 테두리
-    P.line(9, 39, 17, 22, 'R'); P.line(31, 39, 23, 22, 'R');                                                                                      // 망토 주름
-    P.rect(14, 8, 12, 13, 'h'); P.rect(13, 11, 2, 11, 'h'); P.rect(25, 11, 2, 11, 'h'); P.line(13, 12, 13, 21, 'H'); P.line(26, 12, 26, 21, 'H'); // 길게 늘어진 검은 머리
-    P.rect(14, 27, 12, 5, 'w'); P.line(15, 28, 15, 31, 'W'); P.line(19, 28, 19, 31, 'W'); P.line(23, 28, 23, 31, 'W');                          // 흰 치마
-    for (const x of [14, 17, 20, 23]) { P.rect(x, 26, 3, 4, 'y'); P.line(x, 29, x + 2, 29, 'G'); }                                             // 금 비늘 갑주 자락
-    P.rect(15, 32, 4, 7, 'Y'); P.rect(21, 32, 4, 7, 'Y'); P.line(15, 32, 15, 38, 'y'); P.line(21, 32, 21, 38, 'y'); P.rect(14, 38, 5, 2, 'G'); P.rect(21, 38, 5, 2, 'G'); // 금 정강이받이·발
-    P.rect(14, 17, 12, 9, 'y'); P.rect(14, 17, 12, 1, 'w'); P.line(14, 20, 25, 20, 'Y'); P.line(14, 23, 25, 23, 'Y'); P.line(20, 18, 20, 25, 'G'); // 겹 흉갑
-    P.ell(20, 21, 2, 2, 'l'); P.px(20, 20, 'L'); P.rect(14, 25, 12, 1, 'l'); P.px(17, 25, 'y'); P.px(23, 25, 'y');                            // 청금석 보석·허리띠
-    P.ell(11, 18, 4, 3, 'y'); P.ell(29, 18, 4, 3, 'y'); P.line(8, 17, 13, 16, 'w'); P.line(27, 16, 32, 17, 'w'); P.px(11, 19, 'l'); P.px(29, 19, 'l'); // 견갑
-    P.tri(7, 17, 8, 13, 10, 16, 'y'); P.tri(33, 17, 32, 13, 30, 16, 'y');                                                                       // 견갑 가시
-    P.rect(9, 20, 3, 8, 's'); P.rect(28, 20, 3, 8, 's'); P.rect(9, 24, 3, 4, 'y'); P.rect(28, 24, 3, 4, 'y'); P.line(9, 24, 11, 24, 'w'); P.line(28, 24, 30, 24, 'w'); // 팔·금 건틀릿
-    P.rect(30, 26, 3, 2, 'G'); P.line(31, 28, 31, 38, 'c'); P.line(32, 28, 32, 37, 'C'); P.rect(29, 26, 5, 1, 'y'); P.px(31, 25, 'l');      // 손에 든 보검
-    P.ell(20, 12, 4, 4.5, 's'); P.px(18, 12, 'e'); P.px(22, 12, 'e'); P.line(17, 11, 19, 10, 'h'); P.line(21, 10, 23, 11, 'h'); P.px(20, 13, 'S'); // 얼굴·타오르는 눈·치켜든 눈썹
-    P.tri(17, 15, 23, 15, 20, 23, 'h'); P.line(19, 16, 19, 21, 'H'); P.line(21, 16, 21, 21, 'H'); for (const y of [17, 19, 21]) P.px(20, y, 'y'); // 금구슬 땋은 수염
-    P.rect(15, 6, 10, 2, 'y'); P.line(15, 8, 24, 8, 'Y'); P.tri(15, 6, 16, 2, 17, 6, 'y'); P.tri(19, 6, 20, 0, 21, 6, 'y'); P.tri(23, 6, 24, 2, 25, 6, 'y'); // 금관
-    P.line(14, 6, 12, 2, 'y'); P.line(26, 6, 28, 2, 'y'); P.px(12, 1, 'w'); P.px(28, 1, 'w');                                                 // 뿔 장식
-    P.px(17, 7, 'l'); P.px(20, 7, 'L'); P.px(23, 7, 'l'); P.px(20, 1, 'w'); P.px(15, 12, 'y'); P.px(25, 12, 'y');                              // 보석·귀걸이
-  } },
+  // [사용자 결정] 스킨급으로 다시 그림 (30×38, 한 칸씩 찍은 도트): 뒤로 넘겨 뻗친 금발, 이마의 금 서클릿과 청금석, 호박색 눈매,
+  //  두 겹 견갑·판금 흉갑·허리 갑주(판 사이 이음선), 청금석 띠, 붉은 허리천, 화면 왼쪽으로 휘날리는 붉은 망토, 비스듬히 든 보검, 등 뒤 보물고의 문 [원작 디자인]
+  boss_gilgamesh: { tint: '#c8901a', pal: { u: '#ffe680', U: '#f0b838', n: '#a8701a', E: '#b8401a', D: '#2a2238', w: '#fff4b0', y: '#ffd84a', o: '#e0a828', O: '#a8701a', G: '#6a4410', l: '#3a5ad8', L: '#7aa0ff', B: '#22307a', s: '#f2c8a0', S: '#d49a74', T: '#a86a50', j: '#16101c', r: '#d83a36', R: '#9a2028', q: '#5a1018', e: '#ff9a2a', c: '#eef4ff', C: '#a8b4c8' }, rows: [
+    '...........k.kuk.k............',
+    '..........kuknuUkuk...........',
+    '......k.kknuUuuUuUk.k..k......',
+    '..k..kukuknUuuuuuUukukkuk..k..',
+    '.kckkUkknUuUuuwuuUuUnukkUkkck.',
+    '.kck.knknUnyyOLLOyynUnknk.kck.',
+    '.kck..kUknUussssssuUnkUk..kck.',
+    '.kok...kknUjjssssjjUnkk...kok.',
+    'kowok...knnsjEssEjsnnk...kowok',
+    '.kok.....knsssSSsssnk.....kok.',
+    '..k......knSssTTssSnk......k..',
+    '..........knSssssSnk..........',
+    '...kkkkkkkkkksSSskkkkkkkkkk...',
+    '..kGOyyyywGjGOyyOGjGwyyyyOGk..',
+    '.kGOywwyyyOjOyyyyOjOyyywwyOGk.',
+    '.kGyyyyyyyGOoyLLyoOGyyyyyyyGk.',
+    '.kGOOOOOOOGOoyBByoOGOOOOOOOGk.',
+    '.kOyywyyyOGOyyLLyyOGOyyywyyOk.',
+    '..kGOoooOGROoyyyyoOrGOoooOGk..',
+    '...kOyyOrRGOoywwyoOGrrOyyOk...',
+    '...kGyoGrRjGOyyyyOGjrrGoywk...',
+    '...kOywORrGlllLLlllGrrOwyLykk.',
+    '...kGyyGRrGOyoRRoyOGrrGooooook',
+    '...kSsSrRGOyoGRRGoyOGrrSscCkk.',
+    '..koRrrRGOyOGyRRyGOyOGrkkcCk..',
+    '..koRrrrGOyOGyrryGOyOGrk.kcCk.',
+    '.koRrrrRjGOGGOrrOGGOGjrrkkcCk.',
+    '.koRrrrRrrDDDRrrRDDDrrrrkkcCk.',
+    '.koRrrrqrrGOyoGGoyOGrrrrkkcCk.',
+    'koRrrrqrrrOyworrowyOrrrrkkcCk.',
+    'koRrrrqrrrGyyGrrGyyGrrrrk.kcCk',
+    'koRRqRqRRqOyyoqRoyyORRRRk.kcCk',
+    'koRqRRqRqRGywoRRowyGRRRqk.kcCk',
+    'oRqRRqRqROOyyoRRoyyOORqRRk.kcC',
+    'oRRRRqqRRGOOOORROOOOGqRRRk.kcC',
+    'oRRRRqRRRRqRRRRqRRRRqRRRRk.kcC',
+    'oRRRqRqRRqRqRRqRRRRqRRRRqk..kk',
+    'kkkkkkkkkkkkkkkkkkkkkkkkk.....'] },
   // 광기의 연금술사: 거대한 등짐 솥, 방독면, 양손의 약병, 흘러넘치는 초록 약물 [임시 디자인]
   boss_madalchemist: { tint: '#3a5a3a', w: 32, h: 32, pal: { g: '#7aff6a', p: '#ff6ad8', w: '#e8f0e0', c2: '#5a5a62' }, proc: (P) => {
     P.ell(16, 12, 9, 7, 'c2'); P.ell(16, 8, 7, 2, 'g'); P.px(13, 6, 'w'); P.px(19, 5, 'w');                        // 등짐 솥·끓는 약물
