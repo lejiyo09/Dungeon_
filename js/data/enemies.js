@@ -597,6 +597,7 @@ const DATA_ENEMIES = [
   { id: 'boss_abzu_lamassu', name: '물에 잠긴 라마수', title: '지하 수문의 파수꾼', sprite: 'boss_abzulamassu', color: '#8a6a4a', phaseColors: ['#8a6a4a', '#6a7a6a', '#3a8a8a'],
     boss: true, aiType: 'boss', health: 1400, damage: 20, moveSpeed: 36, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.05, bulletSpeed: 140,
     rewardGold: 140, patterns: [
+      { type: 'floodGate', name: '수문 개방', waves: 3, step: 16, gap: 3, speed: 120, interval: 1.1, color: '#3ac8b8' },
       { type: 'slam', radius: 52, color: '#c8a040' },
       { type: 'wall', waves: 3, gap: 3, speed: 115, interval: 0.8, color: '#3ac8b8' },
       { type: 'aimed', volleys: 4, count: 5, spread: 0.16, color: '#ffd84a' },
@@ -623,6 +624,7 @@ const DATA_ENEMIES = [
   { id: 'boss_clay_colossus', name: '점토판의 거신', title: '새겨진 율법', sprite: 'boss_claycolossus', color: '#a87a50', phaseColors: ['#a87a50', '#9a6a40', '#8a5a30'],
     boss: true, aiType: 'boss', health: 1500, damage: 20, moveSpeed: 28, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.05, bulletSpeed: 140,
     rewardGold: 150, patterns: [
+      { type: 'tabletVerdict', name: '율법의 판결', lines: 4, gap: 26, radius: 15, delay: 0.7, stagger: 0.035, interval: 0.6, bullets: 3, color: '#c8a040' },
       { type: 'slam', radius: 56, color: '#c8a040' },
       { type: 'grid', spacing: 3, delay: 1.1, radius: 22, bullets: 4, color: '#a87a50' },
       { type: 'lances', count: 12, delay: 0.8, speed: 270, color: '#3ac8b8' },
@@ -634,6 +636,7 @@ const DATA_ENEMIES = [
   { id: 'boss_mushussu', name: '무슈후슈', title: '청금석 문의 용', sprite: 'boss_mushussu', color: '#2a48b8', phaseColors: ['#2a48b8', '#3a3ac8', '#4a2ad8'],
     boss: true, aiType: 'boss', health: 1550, damage: 21, moveSpeed: 44, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 150,
     rewardGold: 150, patterns: [
+      { type: 'serpentBreath', name: '청금석 브레스', duration: 1.6, sweep: 1.6, interval: 0.06, spread: 0.1, speed: 190, color: '#6a9aff' },
       { type: 'charge', dashes: 3, speed: 520, color: '#6a9aff' },
       { type: 'aimed', volleys: 4, count: 7, spread: 0.13, color: '#ffd84a' },
       { type: 'spiral', duration: 2.2, arms: 4, interval: 0.09, spin: 2.0, color: '#6a9aff' },
@@ -645,17 +648,20 @@ const DATA_ENEMIES = [
   { id: 'boss_humbaba', name: '훔바바', title: '삼나무 숲의 수호자', sprite: 'boss_humbaba', color: '#5a6a2a', phaseColors: ['#5a6a2a', '#6a7a2a', '#8a7a1a'],
     boss: true, aiType: 'boss', health: 1650, damage: 21, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 145,
     rewardGold: 160, patterns: [
+      { type: 'sevenAuras', name: '광휘', rings: 4, count: 28, gapN: 6, turn: 0.4, speed: 110, interval: 0.5, color: '#8ad86a' },
       { type: 'slam', radius: 54, color: '#8ad86a' },
       { type: 'zones', count: 6, radius: 26, delay: 0.9, bullets: 5, spreadAround: 120, stagger: 0.08, color: '#8ad86a' },
       { type: 'radial', rings: 3, count: 20, color: '#c8a040' },
       { type: 'summon', enemyId: 'enemy_cedarling_001', count: 2 }],
-    phase2Patterns: [{ type: 'meteor', count: 8, delay: 0.85, stagger: 0.22, radius: 30, bullets: 6, color: '#5a6a2a' },
+    phase2Patterns: [
+      { type: 'sevenAuras', name: '일곱 겹의 광휘', rings: 7, count: 32, gapN: 5, turn: 0.45, speed: 120, interval: 0.42, color: '#8ad86a' },{ type: 'meteor', count: 8, delay: 0.85, stagger: 0.22, radius: 30, bullets: 6, color: '#5a6a2a' },
       { type: 'ringOut', rings: 4, count: 24, gap: 5, speed: 120, interval: 0.5, color: '#8ad86a' },
       { type: 'laser', beams: 3, spreadAng: 0.7, sweep: 1.4, duration: 2.2, width: 7, telegraph: 1.0, color: '#ffd84a' }],
     finalPatterns: [{ type: 'ringIn', name: '일곱 겹의 광휘', rings: 4, count: 36, gap: 5, speed: 85, interval: 0.85, color: '#ffd84a' }] },
   { id: 'boss_bull_of_heaven', name: '하늘의 황소', title: '가뭄을 부르는 뿔', sprite: 'boss_bullheaven', color: '#8a3a2a', phaseColors: ['#8a3a2a', '#9a2a2a', '#ba1a1a'],
     boss: true, aiType: 'boss', health: 1700, damage: 22, moveSpeed: 40, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.95, bulletSpeed: 150,
     rewardGold: 170, patterns: [
+      { type: 'stampede', name: '하늘의 황소 돌진', dashes: 3, aim: 0.7, speed: 420, maxDist: 400, trail: 26, radius: 18, hdelay: 0.55, bullets: 4, mult: 1.3, ring: 14, ringSpeed: 140, color: '#ff8a5a' },
       { type: 'charge', dashes: 4, speed: 560, color: '#ff8a5a' },
       { type: 'slam', radius: 58, color: '#ff8a5a' },
       { type: 'wall', waves: 3, gap: 3, speed: 120, interval: 0.75, color: '#ffd84a' },
@@ -669,6 +675,7 @@ const DATA_ENEMIES = [
   { id: 'boss_neti', name: '네티', title: '명계의 일곱 문지기', sprite: 'boss_neti', color: '#3a2a5a', phaseColors: ['#3a2a5a', '#2a2a6a', '#1a2a7a'],
     boss: true, aiType: 'boss', health: 1600, damage: 21, moveSpeed: 34, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 145,
     rewardGold: 160, patterns: [
+      { type: 'sevenGates', name: '일곱 문의 심판', radius: 120, delay: 0.8, interval: 0.38, spread: 0.12, speed: 170, color: '#9a8aff' },
       { type: 'laser', beams: 2, spreadAng: Math.PI, sweep: 1.2, duration: 2.0, width: 7, telegraph: 0.9, color: '#9a8aff' },
       { type: 'grid', name: '닫히는 문', spacing: 3, delay: 1.0, radius: 22, bullets: 4, color: '#6a5aff' },
       { type: 'aimed', volleys: 4, count: 7, spread: 0.14, color: '#c8a0ff' },
@@ -680,6 +687,7 @@ const DATA_ENEMIES = [
   { id: 'boss_scorpion_king', name: '전갈인간 왕', title: '해 지는 산의 파수장', sprite: 'boss_scorpionking', color: '#8a5a2a', phaseColors: ['#8a5a2a', '#9a4a1a', '#ba3a0a'],
     boss: true, aiType: 'boss', health: 1750, damage: 22, moveSpeed: 46, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.95, bulletSpeed: 160,
     rewardGold: 170, patterns: [
+      { type: 'sunsetArrows', name: '해 지는 화살', lines: 3, gap: 22, width: 10, over: 60, radius: 14, delay: 0.7, stagger: 0.05, interval: 0.55, color: '#ffd84a' },
       { type: 'aimed', name: '황금 활', volleys: 5, count: 7, spread: 0.12, color: '#ffd84a' },
       { type: 'charge', dashes: 3, speed: 560, color: '#ff8a3a' },
       { type: 'lances', name: '독침 세례', count: 14, delay: 0.7, speed: 290, color: '#8ad84a' },
@@ -691,6 +699,7 @@ const DATA_ENEMIES = [
   { id: 'boss_pazuzu', name: '파주주', title: '모래바람의 악령왕', sprite: 'boss_pazuzu', color: '#6a5a3a', phaseColors: ['#6a5a3a', '#7a5a2a', '#9a4a1a'], float: true,
     boss: true, aiType: 'boss', health: 1800, damage: 22, moveSpeed: 52, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.95, bulletSpeed: 160,
     rewardGold: 175, patterns: [
+      { type: 'sandstorm', name: '모래 폭풍', duration: 3.6, push: 70, interval: 0.1, per: 4, gapH: 26, gapSpeed: 0.25, speed: 170, color: '#d8b878' },
       { type: 'orbit', count: 18, radius: 52, spinTime: 1.0, spin: 3.2, speed: 160, color: '#d8b878' },
       { type: 'teleport', bullets: 20, color: '#ffd84a' },
       { type: 'rain', name: '모래바람', duration: 2.4, interval: 0.06, speed: 190, slant: 0.7, color: '#d8b878' },
@@ -700,16 +709,20 @@ const DATA_ENEMIES = [
       { type: 'laser', beams: 4, spreadAng: Math.PI / 2, sweep: 1.5, duration: 2.0, width: 7, telegraph: 0.8, color: '#ff8a3a' }],
     finalPatterns: [{ type: 'vortex', name: '모래바람의 왕', duration: 4.0, pull: 56, arms: 5, interval: 0.08, spin: 2.4, color: '#d8b878' }] },
   { id: 'boss_clay_enkidu', name: '진흙의 엔키두', title: '왕이 빚은 벗의 그림자', sprite: 'boss_clayenkidu', color: '#a87a50', phaseColors: ['#a87a50', '#9a6a40', '#6a8a6a'],
-    boss: true, aiType: 'boss', health: 1900, damage: 23, moveSpeed: 58, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.9, bulletSpeed: 165,
-    rewardGold: 190, patterns: [
-      { type: 'charge', dashes: 4, speed: 600, color: '#9ae8d8' },
-      { type: 'slam', radius: 58, color: '#a87a50' },
-      { type: 'zones', name: '땅에서 솟는 사슬', count: 7, radius: 26, delay: 0.85, bullets: 5, spreadAround: 120, stagger: 0.07, color: '#9ae8d8' },
-      { type: 'aimed', volleys: 5, count: 7, spread: 0.12, color: '#9ae8d8' }],
-    phase2Patterns: [{ type: 'cross', waves: 4, len: 8, step: 24, radius: 13, delay: 0.75, interval: 0.5, bullets: 4, color: '#9ae8d8' },
-      { type: 'ringOut', rings: 5, count: 28, gap: 4, speed: 140, interval: 0.42, color: '#a87a50' },
-      { type: 'charge', dashes: 6, speed: 680, color: '#9ae8d8' }],
-    finalPatterns: [{ type: 'vortex', name: '흙으로 돌아가는 벗', duration: 4.0, pull: 52, arms: 4, interval: 0.09, spin: -2.2, color: '#9ae8d8' }] },
+    boss: true, aiType: 'boss', health: 2600, damage: 26, moveSpeed: 66, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.78, bulletSpeed: 175, /* [사용자 결정] 난이도 상향 (예전: 1900 · 23 · 0.9) */
+    rewardGold: 220, patterns: [
+      { type: 'clayChains', name: '흙의 사슬', casts: 3, gates: 4, radius: 90, delay: 0.75, interval: 0.55, r: 28, bind: 1.0, color: '#9ae8d8' },
+      { type: 'stampede', name: '벗의 돌진', dashes: 4, aim: 0.5, speed: 480, maxDist: 420, trail: 24, radius: 16, hdelay: 0.5, bullets: 4, mult: 1.3, ring: 16, ringSpeed: 150, color: '#9ae8d8' },
+      { type: 'earthPillars', name: '대지의 기둥', rings: 4, r0: 40, step: 34, space: 26, skip: 5, radius: 15, delay: 0.7, interval: 0.32, bullets: 3, color: '#9ae8d8' },
+      { type: 'slam', radius: 60, color: '#a87a50' },
+      { type: 'zones', name: '땅에서 솟는 사슬', count: 8, radius: 26, delay: 0.8, bullets: 5, spreadAround: 120, stagger: 0.06, color: '#9ae8d8' },
+      { type: 'aimed', volleys: 6, count: 7, spread: 0.11, color: '#9ae8d8' }],
+    phase2Patterns: [{ type: 'clayChains', name: '흙의 사슬 — 조임', casts: 5, gates: 5, radius: 100, delay: 0.6, interval: 0.45, r: 30, bind: 1.2, color: '#9ae8d8' },
+      { type: 'earthPillars', name: '대지의 기둥 — 무너짐', rings: 6, r0: 36, step: 30, space: 24, skip: 4, radius: 15, delay: 0.6, interval: 0.26, bullets: 4, color: '#9ae8d8' },
+      { type: 'stampede', name: '벗의 돌진 — 폭주', dashes: 6, aim: 0.4, speed: 540, maxDist: 440, trail: 22, radius: 16, hdelay: 0.45, bullets: 5, mult: 1.4, ring: 18, ringSpeed: 160, color: '#9ae8d8' },
+      { type: 'cross', waves: 4, len: 8, step: 24, radius: 13, delay: 0.7, interval: 0.45, bullets: 4, color: '#9ae8d8' },
+      { type: 'ringOut', rings: 5, count: 30, gap: 4, speed: 150, interval: 0.38, color: '#a87a50' }],
+    finalPatterns: [{ type: 'vortex', name: '흙으로 돌아가는 벗', duration: 4.4, pull: 58, arms: 5, interval: 0.08, spin: -2.3, color: '#9ae8d8' }] },
   //  패턴은 왕의 보물고에서 쏟아지는 검·창·사슬 [임시 디자인 · 이름은 Claude가 정한 [제안]]
   { id: 'boss_gilgamesh_king', name: '길가메시', title: '영웅왕 — 왕의 보물고 전개', sprite: 'boss_gilgamesh', spriteScale: 1, color: '#c8901a', phaseColors: ['#c8901a', '#d8a020', '#ff4a3a'],
     boss: true, aiType: 'boss', health: 18400, damage: 50, moveSpeed: 92, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.28, bulletSpeed: 220,
@@ -717,6 +730,7 @@ const DATA_ENEMIES = [
     // [사용자 결정] 길가메시 전용 패턴: 왕의 재보(일제 개방) · 보물고의 낙하 · 왕의 사슬 · 왕의 보물고 전부 개방(궁극기) · 태초를 가르는 일격(마지막 페이즈)
     final3Patterns: [{ type: 'worldCleave', name: '태초를 가르는 일격', charge: 2.4, lockT: 0.5, width: 42, mult: 3.2, show: 0.6, sideAng: 0.55, sideStep: 26, ring: 40, riftN: 10, riftR: 90, color: '#ff4a3a' }],
     patterns: [
+      { type: 'swordLattice', name: '보검의 격자', waves: 3, cell: 56, delay: 0.75, interval: 0.55, chain: 3, speed: 330, mult: 1, color: '#ffd84a' },
       { type: 'gateVolley', name: '왕의 재보', waves: 3, gates: 9, arc: 2.6, radius: 46, delay: 0.55, interval: 0.07, speed: 330, size: 5, mult: 1, color: '#ffd84a' },
       { type: 'gateFall', name: '보물고의 낙하', waves: 4, count: 9, spread: 70, radius: 18, delay: 0.75, interval: 0.5, bullets: 4, mult: 1, color: '#ffd84a' },
       { type: 'kingChain', name: '왕의 사슬', name2: '사슬에 묶인 잡종에게 — 일제 개방', gates: 5, radius: 100, delay: 0.9, r: 30, bind: 1.4, follow: 7, speed: 320, mult: 1.1 },
@@ -724,7 +738,8 @@ const DATA_ENEMIES = [
       { type: 'orbit', count: 26, radius: 56, spinTime: 1.0, spin: 3, speed: 190, color: '#ffe9a0' },
       { type: 'laser', beams: 4, spreadAng: Math.PI / 2, sweep: 1.6, duration: 2.2, width: 9, telegraph: 0.55, color: '#ffd84a' },
       { type: 'charge', dashes: 3, speed: 620, color: '#ffd84a' }],
-    phase2Patterns: [{ type: 'gateVolley', name: '왕의 재보 — 이중 개방', waves: 5, gates: 13, arc: 3.4, radius: 54, delay: 0.45, interval: 0.05, speed: 360, size: 5, mult: 1.1, big: true, color: '#ffd84a' },
+    phase2Patterns: [
+      { type: 'treasureSpiral', name: '보물고의 소용돌이', gates: 6, radius: 54, spin: 2.2, duration: 3.6, interval: 0.16, speed: 220, mult: 1, color: '#ffd84a' },{ type: 'gateVolley', name: '왕의 재보 — 이중 개방', waves: 5, gates: 13, arc: 3.4, radius: 54, delay: 0.45, interval: 0.05, speed: 360, size: 5, mult: 1.1, big: true, color: '#ffd84a' },
       { type: 'gateFall', name: '보물고의 낙하 — 폭우', waves: 6, count: 11, spread: 80, radius: 20, delay: 0.65, interval: 0.4, bullets: 6, mult: 1.1, color: '#ffd84a' },
       { type: 'kingChain', name: '왕의 사슬 — 조임', name2: '사슬에 묶인 잡종에게 — 일제 개방', gates: 7, radius: 110, delay: 0.75, r: 34, bind: 1.6, follow: 11, speed: 350, mult: 1.2 },
       { type: 'meteor', count: 16, delay: 0.5, stagger: 0.12, radius: 30, bullets: 8, color: '#ffd84a' },

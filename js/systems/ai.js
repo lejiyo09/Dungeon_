@@ -429,6 +429,7 @@ function kingWaves(e, world, ang, n, arc, mult) { /* 아서 왕 근접 패턴의
   const full = arc >= TAU - 0.01, sp = (e.def.bulletSpeed || 200) * 1.05, dmg = Math.round(e.damage * mult);
   for (let i = 0; i < n; i++) { const a = full ? ang + i * TAU / n : ang + (n > 1 ? (i / (n - 1) - 0.5) * arc : 0); world.enemyShoot(e.x + Math.cos(a) * 14, e.y + Math.sin(a) * 14, a, sp, dmg, i % 2 ? '#fff4c0' : '#ffe9a0', 4); }
 }
+function roomBox(e) { const R = e.room; return R ? { x0: (R.x0 + 1) * TILE, y0: (R.y0 + 1) * TILE, x1: (R.x0 + R.w - 1) * TILE, y1: (R.y0 + R.h - 1) * TILE } : { x0: e.x - 160, y0: e.y - 110, x1: e.x + 160, y1: e.y + 110 }; } // 보스방 안쪽 (픽셀)
 function bladeShot(world, x, y, a, speed, dmg, color, r) { world.enemyShoot(x, y, a, speed, dmg, color, r); const b = world.enemyBullets[world.enemyBullets.length - 1]; if (b) b.blade = true; } // 길가메시 보물고의 칼날
 const BOSS_PATTERNS = {
   // 왕의 돌진 (아서 왕): 탄 없이 검을 앞세워 일직선으로 꿰뚫고 지나가는 돌진 — 돌진할 길을 붉은 띠로 예고 → 아주 빠르게 돌진(길 위에 있으면 베임) → 여러 번, 마지막엔 멈춘 자리에서 크게 한 바퀴 베기
@@ -475,6 +476,150 @@ const BOSS_PATTERNS = {
   },
   // 원탁의 맹세 (아서 왕 2페이즈~): 플레이어를 둘러싸고 원탁처럼 검 swords자루가 떠오름(한 자리는 비어 있음 = 빠져나갈 틈)
   //  → 시계 방향으로 한 자루씩 중심을 꿰뚫고 날아감 → 마지막에 중심에서 맹세의 일격(예고 원 뒤 원형 탄) — 틈으로 빠져나가야 함
+  // ── [사용자 결정] 바빌로니아 귀환길 보스 고유 패턴 (이름·수치는 Claude가 정한 [제안])
+  // 라마수 — 수문 개방: 방 한쪽 끝에서 물의 벽이 밀려옴 (빈 틈으로 빠져나가야 함), 물결마다 반대쪽
+  floodGate: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, B = roomBox(e); d.t = (d.t || 0) + dt; if (d.w === undefined) { d.w = 0; d.next = 0.6; }
+      if (d.w < P.waves && !d.warned && d.t >= (d.next - 0.5) / spd) { d.warned = true; d.side = d.w % 2; const ex = d.side ? B.x1 : B.x0; for (let y = B.y0; y <= B.y1; y += 24) world.effects.spark(ex, y, P.color); world.effects.ring(ex, (B.y0 + B.y1) / 2, 30, P.color); }
+      if (d.w < P.waves && d.t >= d.next / spd) { d.warned = false; d.next += P.interval;
+        const rows = Math.floor((B.y1 - B.y0) / P.step) + 1, gap = randInt(0, Math.max(0, rows - P.gap)), ex = d.side ? B.x1 : B.x0;
+        for (let i = 0; i < rows; i++) { if (i >= gap && i < gap + P.gap) continue; world.enemyShoot(ex, B.y0 + i * P.step, d.side ? Math.PI : 0, P.speed, e.damage, i % 2 ? P.color : '#bfefff', 5); }
+        world.addShake(0.15, 3); SFX.play('react', 0.04); d.w++; }
+      return d.w >= P.waves && d.t >= (d.next - P.interval + 0.6) / spd;
+    }
+  },
+  // 점토판의 거신 — 율법의 판결: 내가 선 줄을 따라 점토판이 차례로 내리찍힘 (가로·세로 번갈아, 글을 새기듯)
+  tabletVerdict: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, B = roomBox(e), p = world.player; d.t = (d.t || 0) + dt; if (d.k === undefined) { d.k = 0; d.t = 99; }
+      if (d.k < P.lines && d.t >= P.interval / spd) { d.t = 0; const horiz = d.k % 2 === 0;
+        const n = Math.floor(((horiz ? B.x1 - B.x0 : B.y1 - B.y0)) / P.gap) + 1;
+        for (let i = 0; i < n; i++) { const x = horiz ? B.x0 + i * P.gap : p.x, y = horiz ? p.y : B.y0 + i * P.gap;
+          world.hazards.push(new Hazard(x, y, { r: P.radius, delay: (P.delay + i * P.stagger) / spd, damage: e.damage, bullets: P.bullets, color: i % 3 ? P.color : '#3ac8b8' })); }
+        SFX.play('heavy', 0.03); d.k++; }
+      return d.k >= P.lines && d.t >= (P.delay + 1) / spd;
+    }
+  },
+  // 훔바바 — 일곱 겹의 광휘: 빈 틈이 돌아가는 빛의 고리 일곱 겹 (틈을 따라 돌며 피해야 함)
+  sevenAuras: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd; d.t = (d.t || 0) + dt; if (d.k === undefined) { d.k = 0; d.t = 99; d.a0 = Math.atan2(world.player.y - e.y, world.player.x - e.x); d.dir = Math.random() < 0.5 ? 1 : -1; }
+      if (d.k < P.rings && d.t >= P.interval / spd) { d.t = 0; const g0 = d.a0 + d.dir * d.k * P.turn;
+        for (let i = 0; i < P.count; i++) { const a = g0 + i * TAU / P.count; if (i < P.gapN) continue; world.enemyShoot(e.x, e.y, a, P.speed, e.damage, d.k % 2 ? P.color : '#ffd84a', 4); }
+        world.effects.ring(e.x, e.y, 26 + d.k * 4, P.color); SFX.play('react', 0.03); d.k++; }
+      return d.k >= P.rings && d.t >= 0.6 / spd;
+    }
+  },
+  // 네티 — 일곱 문의 심판: 둘레에 명계의 문 일곱이 열리고 하나씩 나를 겨눠 쏨 → 마지막엔 모든 문이 한꺼번에
+  sevenGates: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player, B = roomBox(e); d.t = (d.t || 0) + dt;
+      if (!d.gates) { const cx = (B.x0 + B.x1) / 2, cy = (B.y0 + B.y1) / 2; d.gates = [];
+        for (let i = 0; i < 7; i++) { const a = -Math.PI / 2 + i * TAU / 7, G = new BossGate(cx + Math.cos(a) * P.radius, cy + Math.sin(a) * P.radius * 0.7, 0, (P.delay + 8 * P.interval) / spd + 0.4, true, P.color); world.zones.push(G); d.gates.push(G); }
+        d.i = 0; d.t = 0; SFX.play('gate', 0.15); return false; }
+      for (const G of d.gates) G.ang = Math.atan2(p.y - G.y, p.x - G.x);
+      while (d.i < 8 && d.t >= (P.delay + d.i * P.interval) / spd) {
+        const list = d.i < 7 ? [d.gates[d.i]] : d.gates;
+        for (const G of list) for (let k = -2; k <= 2; k++) world.enemyShoot(G.x, G.y, G.ang + k * P.spread, P.speed, e.damage, k ? P.color : '#ffffff', 4);
+        if (d.i === 7) { world.addShake(0.3, 5); SFX.play('heavy', 0.05); } d.i++; }
+      return d.i >= 8 && d.t >= (P.delay + 8 * P.interval + 0.4) / spd;
+    }
+  },
+  // 돌진 (하늘의 황소 '하늘의 황소 돌진' · 진흙의 엔키두 '벗의 돌진'): 조준선 → 벽에 닿을 때까지 돌진하며 지나간 자리가 터짐 → 부딪히면 원형 충격
+  stampede: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player; d.t = (d.t || 0) + dt; if (d.k === undefined) { d.k = 0; d.st = 'aim'; d.t = 0; }
+      if (d.st === 'aim') { if (d.t < P.aim * 0.7 / spd || d.ang === undefined) d.ang = Math.atan2(p.y - e.y, p.x - e.x);
+        e.laser = { angs: [d.ang], width: 5, color: d.t > P.aim * 0.7 / spd ? '#ff3a3a' : P.color, live: false };
+        if (d.t >= P.aim / spd) { d.st = 'run'; d.t = 0; d.dist = 0; d.lastDrop = 0; d.hit = false; e.laser = null; SFX.play('dash', 0.06); } return false; }
+      if (d.st === 'run') { const step = P.speed * spd * dt, nx = e.x + Math.cos(d.ang) * step, ny = e.y + Math.sin(d.ang) * step;
+        const blocked = world.map.isSolidAt(nx + Math.cos(d.ang) * e.radius, ny + Math.sin(d.ang) * e.radius) || d.dist > P.maxDist;
+        if (!blocked) { e.x = nx; e.y = ny; d.dist += step; if (d.dist - d.lastDrop >= P.trail) { d.lastDrop = d.dist; world.hazards.push(new Hazard(e.x, e.y, { r: P.radius, delay: P.hdelay / spd, damage: e.damage, bullets: P.bullets, color: P.color })); } world.effects.part(e.x, e.y + 8, randInt(-20, 20), -20, { color: P.color, life: 0.4, size: 2, size2: 0, drag: 2 }); }
+        if (!d.hit) world.eachTarget((q) => { if (q.state !== 'DEAD' && Math.hypot(q.x - e.x, q.y - e.y) < e.radius + q.half + 4) { world.damagePlayer(Math.round(e.damage * P.mult)); d.hit = true; } });
+        if (blocked) { for (let i = 0; i < P.ring; i++) world.enemyShoot(e.x, e.y, i * TAU / P.ring, P.ringSpeed, e.damage, i % 2 ? P.color : '#ffffff', 4); world.addShake(0.35, 6); world.effects.ring(e.x, e.y, 40, P.color); SFX.play('heavy', 0.05);
+          d.k++; d.st = d.k >= P.dashes ? 'done' : 'aim'; d.t = 0; } return false; }
+      return d.t >= 0.5 / spd;
+    }
+  },
+  // 무슈후슈 — 청금석 브레스: 머리에서 쏟아지는 탄의 부채가 천천히 휩쓸고 지나감 (반대 방향으로 한 번 더)
+  serpentBreath: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player; d.t = (d.t || 0) + dt; if (d.a === undefined) { d.a = Math.atan2(p.y - e.y, p.x - e.x); d.shot = 0; }
+      const T = P.duration / spd, half = Math.floor(d.t / T), u = (d.t % T) / T; if (half >= 2) return d.t >= 2 * T + 0.4 / spd;
+      const ang = d.a + (half ? 1 : -1) * (u - 0.5) * P.sweep;
+      d.shot -= dt; if (d.shot <= 0) { d.shot = P.interval / spd; for (const k of [-P.spread, 0, P.spread]) world.enemyShoot(e.x, e.y - 10, ang + k, P.speed, e.damage, k ? P.color : '#ffd84a', 4); }
+      return false;
+    }
+  },
+  // 전갈인간 왕 — 해 지는 화살: 하늘로 쏜 화살이 나에게 다가오는 줄을 따라 차례로 꽂힘 (세 줄, 매번 내 자리를 다시 겨눔)
+  sunsetArrows: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player; d.t = (d.t || 0) + dt; if (d.k === undefined) { d.k = 0; d.t = 99; }
+      if (d.k < P.lines && d.t >= P.interval / spd) { d.t = 0; const a = Math.atan2(p.y - e.y, p.x - e.x), L = Math.hypot(p.x - e.x, p.y - e.y) + P.over;
+        for (let s = 30, i = 0; s < L; s += P.gap, i++) for (const side of [-1, 1]) { const off = side * P.width, x = e.x + Math.cos(a) * s - Math.sin(a) * off, y = e.y + Math.sin(a) * s + Math.cos(a) * off;
+          world.hazards.push(new Hazard(x, y, { r: P.radius, delay: (P.delay + i * P.stagger) / spd, damage: e.damage, bullets: 0, color: P.color })); }
+        for (let i = 0; i < 6; i++) world.effects.part(e.x, e.y - 10, (i - 2.5) * 20, -260, { color: P.color, life: 0.5, size: 2, size2: 1, drag: 0 }); /* 하늘로 쏘아 올리는 화살 (연출) */
+        SFX.play('react', 0.04); d.k++; }
+      return d.k >= P.lines && d.t >= (P.delay + 1.2) / spd;
+    }
+  },
+  // 파주주 — 모래 폭풍: 한쪽에서 거센 바람이 불어 몸이 밀리고, 바람을 타고 모래 탄이 쏟아짐 (틈을 찾아야 함)
+  sandstorm: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, B = roomBox(e); d.t = (d.t || 0) + dt; if (d.dir === undefined) { d.dir = Math.random() < 0.5 ? 1 : -1; d.shot = 0.4; world.effects.text(e.x, e.y - 30, d.dir > 0 ? '바람 →' : '← 바람', P.color); }
+      const T = P.duration / spd; if (d.t >= T) return d.t >= T + 0.5 / spd;
+      for (const q of world.allPlayers()) if (q.state !== 'DEAD' && q.state !== 'DASH') { const nx = q.x + d.dir * P.push * dt; if (!world.map.isSolidAt(nx + d.dir * q.half, q.y)) q.x = nx; } /* 바람에 밀림 */
+      d.shot -= dt; if (d.shot <= 0) { d.shot = P.interval / spd; const ex = d.dir > 0 ? B.x0 : B.x1, gapY = B.y0 + ((d.t * P.gapSpeed) % 1) * (B.y1 - B.y0);
+        for (let k = 0; k < P.per; k++) { const y = B.y0 + Math.random() * (B.y1 - B.y0); if (Math.abs(y - gapY) < P.gapH) continue; world.enemyShoot(ex, y, (d.dir > 0 ? 0 : Math.PI) + (Math.random() - 0.5) * 0.15, P.speed * (0.8 + Math.random() * 0.4), e.damage, Math.random() < 0.3 ? '#ffd84a' : P.color, 3); } }
+      if (Math.random() < 0.8) world.effects.part(d.dir > 0 ? B.x0 : B.x1, B.y0 + Math.random() * (B.y1 - B.y0), d.dir * 260, randInt(-10, 10), { color: P.color, life: 1.2, size: 1.5, size2: 0, drag: 0 });
+      return false;
+    }
+  },
+  // 진흙의 엔키두 — 흙의 사슬: 땅에서 솟은 하늘빛 사슬이 내 자리를 세 번 연달아 조임 (걸리면 잠깐 몸이 무거워짐)
+  clayChains: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player; d.t = (d.t || 0) + dt; if (d.k === undefined) { d.k = 0; d.t = 99; }
+      if (d.k < P.casts && d.t >= P.interval / spd) { d.t = 0; const gates = [];
+        for (let i = 0; i < P.gates; i++) { const a = i / P.gates * TAU + Math.random(), gx = p.x + Math.cos(a) * P.radius, gy = p.y + Math.sin(a) * P.radius * 0.7; gates.push({ x: gx, y: gy }); world.effects.ring(gx, gy, 8, P.color); }
+        world.zones.push(new KingChainCast(gates, p.x, p.y, P.delay / spd, P.r, e.damage, P.bind, P.color)); SFX.play('gate', 0.1); d.k++; }
+      return d.k >= P.casts && d.t >= (P.delay + 0.5) / spd;
+    }
+  },
+  // 진흙의 엔키두 — 대지의 기둥: 엔키두를 중심으로 흙기둥이 겹겹이 솟아오름 (안쪽부터 바깥으로, 사이 틈으로 피해야 함)
+  earthPillars: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd; d.t = (d.t || 0) + dt; if (d.k === undefined) { d.k = 0; d.t = 99; d.a0 = Math.random() * TAU; }
+      if (d.k < P.rings && d.t >= P.interval / spd) { d.t = 0; const R = P.r0 + d.k * P.step, n = Math.max(6, Math.round(TAU * R / P.space));
+        for (let i = 0; i < n; i++) { if (i % P.skip === 0) continue; const a = d.a0 + d.k * 0.3 + i * TAU / n; world.hazards.push(new Hazard(e.x + Math.cos(a) * R, e.y + Math.sin(a) * R * 0.75, { r: P.radius, delay: P.delay / spd, damage: e.damage, bullets: P.bullets, color: i % 2 ? P.color : '#a87a50' })); }
+        world.addShake(0.15, 3); d.k++; }
+      return d.k >= P.rings && d.t >= (P.delay + 0.4) / spd;
+    }
+  },
+  // 길가메시 — 보검의 격자: 방 위쪽·왼쪽 벽 앞에 문이 줄지어 열리고 칼날이 곧게 뻗어 격자를 그림 (세 번, 칸이 엇갈림)
+  swordLattice: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, B = roomBox(e); d.t = (d.t || 0) + dt; if (d.k === undefined) { d.k = 0; d.t = 99; }
+      if (d.k < P.waves && !d.gates && d.t >= P.interval / spd) { d.t = 0; d.gates = []; const off = (d.k % 2) * P.cell / 2;
+        for (let x = B.x0 + 8 + off; x < B.x1; x += P.cell) { const G = new BossGate(x, B.y0, Math.PI / 2, P.delay / spd + 0.3, false); world.zones.push(G); d.gates.push(G); }
+        for (let y = B.y0 + 8 + off; y < B.y1; y += P.cell) { const G = new BossGate(B.x0, y, 0, P.delay / spd + 0.3, false); world.zones.push(G); d.gates.push(G); }
+        SFX.play('gate', 0.12); return false; }
+      if (d.gates && d.t >= P.delay / spd) { for (const G of d.gates) for (let j = 0; j < P.chain; j++) bladeShot(world, G.x - Math.cos(G.ang) * j * 14, G.y - Math.sin(G.ang) * j * 14, G.ang, P.speed, Math.round(e.damage * P.mult), j ? P.color : '#ffffff', 4);
+        d.gates = null; d.k++; d.t = 0; SFX.play('heavy', 0.04); }
+      return d.k >= P.waves && d.t >= 0.8 / spd;
+    }
+  },
+  // 길가메시 — 보물고의 소용돌이: 길가메시 둘레를 도는 문들이 쉬지 않고 칼날을 바깥으로 흩뿌림 (회전 방향이 중간에 바뀜)
+  treasureSpiral: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd; d.t = (d.t || 0) + dt;
+      if (!d.gates) { d.gates = []; d.rot = 0; d.shot = 0; for (let i = 0; i < P.gates; i++) { const G = new BossGate(e.x, e.y, 0, P.duration / spd + 0.5, true); world.zones.push(G); d.gates.push(G); } SFX.play('gate', 0.2); }
+      const T = P.duration / spd; d.rot += (d.t < T / 2 ? 1 : -1) * P.spin * dt;
+      d.gates.forEach((G, i) => { const a = d.rot + i * TAU / P.gates; G.x = e.x + Math.cos(a) * P.radius; G.y = e.y - 8 + Math.sin(a) * P.radius * 0.7; G.ang = a; });
+      if (d.t < T) { d.shot -= dt; if (d.shot <= 0) { d.shot = P.interval / spd; for (const G of d.gates) bladeShot(world, G.x, G.y, G.ang, P.speed, Math.round(e.damage * P.mult), P.color, 4); } return false; }
+      return d.t >= T + 0.4 / spd;
+    }
+  },
   // ── [사용자 결정] 영웅왕 길가메시 전용 패턴 (이름·수치는 Claude가 정한 [제안])
   //  bladeShot: 보물고의 문에서 나가는 탄은 검 모양으로 그림
   // 왕의 재보 — 일제 개방: 등 뒤 부채꼴로 보물고의 문들이 열리고, 칼날이 하나씩 내 쪽으로 날아옴 (물결마다 부채꼴이 엇갈림)

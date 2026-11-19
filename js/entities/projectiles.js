@@ -766,14 +766,14 @@ class SpiritWolf {
 //  범위 안의 적은 사용한 순간뿐 아니라 범위가 남아 있는 동안 계속 묶음 (막 나타나는 적·페이즈 전환 중인 보스·나중에 들어온 적 포함)
 // [사용자 결정] 길가메시 전용 패턴 연출: 공중에 열리는 보물고의 문 (금빛 파문 + 겨눈 쪽으로 튀어나오는 칼날)
 class BossGate {
-  constructor(x, y, ang, life, big) { this.x = x; this.y = y; this.ang = ang; this.life = life; this.t = 0; this.alive = true; this.big = big ? 1.5 : 1; }
+  constructor(x, y, ang, life, big, color) { this.x = x; this.y = y; this.ang = ang; this.life = life; this.t = 0; this.alive = true; this.big = big ? 1.5 : 1; this.color = color || null; } /* color: 다른 보스가 빌려 쓸 때 문의 빛깔 */
   update(dt) { this.t += dt; if (this.t >= this.life) this.alive = false; }
   render() {}
   renderTop(ctx) {
     const k = Math.min(1, this.t / 0.18, (this.life - this.t) / 0.2), s = this.big * k * (1 + 0.08 * Math.sin(this.t * 14)), x = this.x, y = this.y, c = Math.cos(this.ang), n = Math.sin(this.ang);
     if (k <= 0) return; ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.9 * k; ctx.strokeStyle = '#ffe9a0'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(x, y, 9 * s, 9 * s, 0, 0, TAU); ctx.stroke();
-    ctx.globalAlpha = 0.5 * k; ctx.strokeStyle = '#ffd84a'; ctx.beginPath(); ctx.ellipse(x, y, 13 * s, 13 * s, 0, 0, TAU); ctx.stroke(); ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.9 * k; ctx.strokeStyle = this.color || '#ffe9a0'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(x, y, 9 * s, 9 * s, 0, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.5 * k; ctx.strokeStyle = this.color || '#ffd84a'; ctx.beginPath(); ctx.ellipse(x, y, 13 * s, 13 * s, 0, 0, TAU); ctx.stroke(); ctx.lineWidth = 1;
     ctx.fillStyle = `rgba(255,236,160,${0.55 * k})`; ctx.beginPath(); ctx.ellipse(x, y, 6 * s, 6 * s, 0, 0, TAU); ctx.fill();
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k; const L = (4 + 10 * Math.min(1, this.t / Math.max(0.2, this.life * 0.7))) * this.big; // 칼날이 점점 튀어나옴
     ctx.strokeStyle = OUTLINE; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x - c * 3, y - n * 3); ctx.lineTo(x + c * L, y + n * L); ctx.stroke();
@@ -784,7 +784,7 @@ class BossGate {
 }
 // 길가메시 '왕의 사슬': 사방의 문에서 사슬이 표시선을 따라 뻗어 와 한 점을 조임 → 맞으면 피해 + 잠시 몸이 무거워짐(kingChainT)
 class KingChainCast {
-  constructor(gates, tx, ty, delay, r, damage, bind) { this.gates = gates; this.tx = tx; this.ty = ty; this.delay = delay; this.r = r; this.damage = damage; this.bind = bind; this.t = 0; this.alive = true; this.hit = false; this.caught = []; }
+  constructor(gates, tx, ty, delay, r, damage, bind, color) { this.color = color || null; this.gates = gates; this.tx = tx; this.ty = ty; this.delay = delay; this.r = r; this.damage = damage; this.bind = bind; this.t = 0; this.alive = true; this.hit = false; this.caught = []; }
   update(dt, world) {
     this.t += dt;
     if (!this.hit && this.t >= this.delay) { this.hit = true;
@@ -804,7 +804,7 @@ class KingChainCast {
       ctx.globalAlpha = 1; const reach = this.hit ? 1 : k * k;
       for (let i = 0; i < n * reach; i++) { const t = i / n, px = Math.round(g.x + dx * t), py = Math.round(g.y + dy * t);
         ctx.fillStyle = '#3a2a10'; if (i % 2) ctx.fillRect(px - 2, py - 1, 5, 3); else ctx.fillRect(px - 1, py - 2, 3, 5);
-        ctx.fillStyle = i % 2 ? '#e8b040' : '#ffd84a'; if (i % 2) ctx.fillRect(px - 1, py, 3, 1); else ctx.fillRect(px, py - 1, 1, 3); } }
+        ctx.fillStyle = this.color ? (i % 2 ? '#4a8a80' : this.color) : (i % 2 ? '#e8b040' : '#ffd84a'); if (i % 2) ctx.fillRect(px - 1, py, 3, 1); else ctx.fillRect(px, py - 1, 1, 3); } }
     ctx.restore();
   }
 }
