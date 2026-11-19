@@ -59,6 +59,7 @@ class Player extends Entity {
     if (this.aegisT > 0) this.aegisT = Math.max(0, this.aegisT - dt);
     if (this.scabbardT > 0) this.scabbardT -= dt; if (this.scabGuardT > 0) this.scabGuardT -= dt; /* 성검의 칼집 */ if (this.fleeceT > 0) this.fleeceT = Math.max(0, this.fleeceT - dt); /* 아킬레우스의 방패 · 황금 양털 */
     this.overdrive = Math.max(0, this.overdrive - dt); if (this.odLockT > 0) { this.odLockT -= dt; if (this.skillCooldown < this.odLockT) this.skillCooldown = this.odLockT; } /* 과부하 계열 재사용 잠금 (스킬 칸에도 남은 시간으로 보이게) */ this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt); this.treasureCd = Math.max(0, this.treasureCd - dt); this.solomon = Math.max(0, this.solomon - dt); this.hadesT = Math.max(0, (this.hadesT || 0) - dt);
+    if (this.kingChainT > 0) this.kingChainT = Math.max(0, this.kingChainT - dt);
     this.castLock = Math.max(0, this.castLock - dt); this.blinkWindowT = Math.max(0, this.blinkWindowT - dt); this.sancBoost = Math.max(0, this.sancBoost - dt); this.hasteT = Math.max(0, (this.hasteT || 0) - dt); this.avalonT = Math.max(0, (this.avalonT || 0) - dt); this.buffT = Math.max(0, (this.buffT || 0) - dt);
     if (this.swing) { this.swing.t += dt; if (this.swing.t >= this.swing.dur) this.swing = null; }
     this.sinceHit += dt;
@@ -89,7 +90,7 @@ class Player extends Entity {
     if (input.wasPressed('Space') && this.dashCooldown <= 0) {
       this.startDash(); this.updateDash(dt, map); return;
     }
-    const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1) * (this.hasteT > 0 ? 1.2 : 1) * (this.buffT > 0 ? 1 + (this.buffSpeed || 0) : 1) * (this.solomon > 0 ? 1 + this.treasure.speed : 1) * (this.hadesT > 0 ? 1 + this.treasure.speed : 1);
+    const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1) * (this.hasteT > 0 ? 1.2 : 1) * (this.buffT > 0 ? 1 + (this.buffSpeed || 0) : 1) * (this.solomon > 0 ? 1 + this.treasure.speed : 1) * (this.hadesT > 0 ? 1 + this.treasure.speed : 1) * (this.kingChainT > 0 ? 0.4 : 1); /* 길가메시 '왕의 사슬': 몸이 무거워짐 */
     moveAndCollide(this, ix * spd * dt, iy * spd * dt, map);
   }
   startDash() {

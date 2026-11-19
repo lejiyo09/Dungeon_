@@ -429,6 +429,7 @@ function kingWaves(e, world, ang, n, arc, mult) { /* 아서 왕 근접 패턴의
   const full = arc >= TAU - 0.01, sp = (e.def.bulletSpeed || 200) * 1.05, dmg = Math.round(e.damage * mult);
   for (let i = 0; i < n; i++) { const a = full ? ang + i * TAU / n : ang + (n > 1 ? (i / (n - 1) - 0.5) * arc : 0); world.enemyShoot(e.x + Math.cos(a) * 14, e.y + Math.sin(a) * 14, a, sp, dmg, i % 2 ? '#fff4c0' : '#ffe9a0', 4); }
 }
+function bladeShot(world, x, y, a, speed, dmg, color, r) { world.enemyShoot(x, y, a, speed, dmg, color, r); const b = world.enemyBullets[world.enemyBullets.length - 1]; if (b) b.blade = true; } // 길가메시 보물고의 칼날
 const BOSS_PATTERNS = {
   // 왕의 돌진 (아서 왕): 탄 없이 검을 앞세워 일직선으로 꿰뚫고 지나가는 돌진 — 돌진할 길을 붉은 띠로 예고 → 아주 빠르게 돌진(길 위에 있으면 베임) → 여러 번, 마지막엔 멈춘 자리에서 크게 한 바퀴 베기
   kingcharge: {
@@ -474,6 +475,82 @@ const BOSS_PATTERNS = {
   },
   // 원탁의 맹세 (아서 왕 2페이즈~): 플레이어를 둘러싸고 원탁처럼 검 swords자루가 떠오름(한 자리는 비어 있음 = 빠져나갈 틈)
   //  → 시계 방향으로 한 자루씩 중심을 꿰뚫고 날아감 → 마지막에 중심에서 맹세의 일격(예고 원 뒤 원형 탄) — 틈으로 빠져나가야 함
+  // ── [사용자 결정] 영웅왕 길가메시 전용 패턴 (이름·수치는 Claude가 정한 [제안])
+  //  bladeShot: 보물고의 문에서 나가는 탄은 검 모양으로 그림
+  // 왕의 재보 — 일제 개방: 등 뒤 부채꼴로 보물고의 문들이 열리고, 칼날이 하나씩 내 쪽으로 날아옴 (물결마다 부채꼴이 엇갈림)
+  gateVolley: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player; d.t = (d.t || 0) + dt;
+      if (d.w === undefined) { d.w = 0; d.t = 0; d.i = 0; }
+      if (!d.gates) { const away = Math.atan2(e.y - p.y, e.x - p.x), off = d.w % 2 ? 0.5 : 0; d.gates = [];
+        for (let i = 0; i < P.gates; i++) { const a = away + (i - (P.gates - 1) / 2 + off * 0.5) * (P.arc / Math.max(1, P.gates - 1)), gx = e.x + Math.cos(a) * P.radius, gy = e.y - 14 + Math.sin(a) * P.radius * 0.7;
+          const G = new BossGate(gx, gy, Math.atan2(p.y - gy, p.x - gx), (P.delay + P.gates * P.interval) / spd + 0.2, P.big); world.zones.push(G); d.gates.push(G); }
+        SFX.play('gate', 0.15); d.t = 0; d.i = 0; return false; }
+      if (d.t < P.delay / spd) { for (const G of d.gates) G.ang = Math.atan2(p.y - G.y, p.x - G.x); return false; }
+      while (d.i < d.gates.length && d.t >= (P.delay + d.i * P.interval) / spd) { const G = d.gates[d.i++], a = Math.atan2(p.y - G.y, p.x - G.x); G.ang = a;
+        bladeShot(world, G.x, G.y, a, P.speed, Math.round(e.damage * P.mult), d.i % 3 ? P.color : '#ffffff', P.size); world.effects.spark(G.x, G.y, '#fff4c0'); if (d.i % 2) SFX.play('react', 0.02); }
+      if (d.i >= d.gates.length) { d.gates = null; d.w++; if (d.w >= P.waves) return true; }
+      return false;
+    }
+  },
+  // 보물고의 낙하: 내 둘레 하늘에 문이 열리고 보검이 꽂혀 내림 (빈 자리 하나씩) — 물결마다 나를 따라옴
+  gateFall: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player; d.t = (d.t || 0) + dt;
+      if (d.w === undefined) { d.w = 0; d.t = 99; }
+      if (d.t >= P.interval / spd && d.w < P.waves) { d.t = 0; d.w++;
+        const gap = randInt(0, P.count - 1);
+        for (let i = 0; i < P.count; i++) { if (i === gap) continue; const a = i / P.count * TAU + d.w * 0.4, r = i % 2 ? P.spread : P.spread * 0.5, x = p.x + Math.cos(a) * r, y = p.y + Math.sin(a) * r * 0.7;
+          world.zones.push(new BossGate(x, y - 44, Math.PI / 2, P.delay / spd, false));
+          world.hazards.push(new Hazard(x, y, { r: P.radius, delay: P.delay / spd, damage: Math.round(e.damage * P.mult), bullets: P.bullets, color: P.color })); }
+        world.zones.push(new BossGate(p.x, p.y - 44, Math.PI / 2, P.delay / spd, true)); world.hazards.push(new Hazard(p.x, p.y, { r: P.radius + 4, delay: P.delay / spd, damage: Math.round(e.damage * P.mult), bullets: P.bullets, color: '#ffffff' })); // 내 자리에도 큰 보검
+        SFX.play('gate', 0.12); }
+      return d.w >= P.waves && d.t >= P.delay / spd;
+    }
+  },
+  // 왕의 사슬: 사방의 문에서 사슬이 뻗어 와 내 자리를 조임 → 걸리면 몸이 무거워진 채 일제 개방 칼날이 쏟아짐
+  kingChain: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player; d.t = (d.t || 0) + dt;
+      if (!d.cast) { const gates = [];
+        for (let i = 0; i < P.gates; i++) { const a = i / P.gates * TAU + Math.random(), gx = p.x + Math.cos(a) * P.radius, gy = p.y + Math.sin(a) * P.radius * 0.7 - 10; gates.push({ x: gx, y: gy }); world.zones.push(new BossGate(gx, gy, Math.atan2(p.y - gy, p.x - gx), P.delay / spd + 0.6, false)); }
+        d.cast = new KingChainCast(gates, p.x, p.y, P.delay / spd, P.r, Math.round(e.damage * P.mult), P.bind); world.zones.push(d.cast); SFX.play('gate', 0.2); d.t = 0; return false; }
+      if (!d.cast.hit) return false;
+      if (!d.follow) { d.follow = true; d.t = 0; d.ok = d.cast.caught.length > 0; if (!d.ok) return true;
+        const tgt = d.cast.caught[0]; world.announceBossSkill && P.name2 && world.announceBossSkill(e, P.name2); d.gates = [];
+        for (let i = 0; i < P.follow; i++) { const a = -Math.PI / 2 + (i - (P.follow - 1) / 2) * 0.35, gx = e.x + Math.cos(a) * 40, gy = e.y - 20 + Math.sin(a) * 26; const G = new BossGate(gx, gy, Math.atan2(tgt.y - gy, tgt.x - gx), 0.9, true); world.zones.push(G); d.gates.push(G); } return false; }
+      if (d.t >= 0.45 / spd && !d.fired) { d.fired = true; for (const G of d.gates) { const a = Math.atan2(p.y - G.y, p.x - G.x); for (const k of [-0.06, 0, 0.06]) bladeShot(world, G.x, G.y, a + k, P.speed, Math.round(e.damage * P.mult), '#ffffff', 5); } SFX.play('heavy', 0.05); world.addShake(0.2, 4); }
+      return d.fired && d.t >= 0.8 / spd;
+    }
+  },
+  // 궁극기 — 왕의 보물고, 전부 개방: 방 둘레 벽 앞에 문이 빼곡히 열리고, 쉬지 않고 칼날이 쏟아짐 (하늘에서는 보검의 비)
+  gateStorm: {
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, p = world.player; d.t = (d.t || 0) + dt;
+      if (!d.gates) { const R = e.room, x0 = R ? (R.x0 + 1.5) * TILE : e.x - 160, x1 = R ? (R.x0 + R.w - 1.5) * TILE : e.x + 160, y0 = R ? (R.y0 + 1.5) * TILE : e.y - 110, y1 = R ? (R.y0 + R.h - 1.5) * TILE : e.y + 110; d.gates = [];
+        for (let i = 0; i < P.gates; i++) { const u = i / P.gates, per = 2 * (x1 - x0) + 2 * (y1 - y0), q = u * per; let x, y;
+          if (q < x1 - x0) { x = x0 + q; y = y0; } else if (q < (x1 - x0) + (y1 - y0)) { x = x1; y = y0 + q - (x1 - x0); } else if (q < 2 * (x1 - x0) + (y1 - y0)) { x = x1 - (q - (x1 - x0) - (y1 - y0)); y = y1; } else { x = x0; y = y1 - (q - 2 * (x1 - x0) - (y1 - y0)); }
+          const G = new BossGate(x, y, 0, P.duration / spd + 0.8, false); world.zones.push(G); d.gates.push(G); }
+        d.next = 0.8; d.rain = 0; world.screenFlash = 0.3; world.flashColor = '255,216,74'; world.addShake(0.4, 5); SFX.play('gate', 0.6); return false; }
+      for (const G of d.gates) G.ang = Math.atan2(p.y - G.y, p.x - G.x);
+      if (d.t >= d.next / spd && d.t < (P.duration + 0.8) / spd) { d.next += P.interval;
+        for (let k = 0; k < P.per; k++) { const G = d.gates[randInt(0, d.gates.length - 1)], a = Math.atan2(p.y - G.y, p.x - G.x) + (Math.random() - 0.5) * P.jitter;
+          bladeShot(world, G.x, G.y, a, P.speed, Math.round(e.damage * P.mult), Math.random() < 0.3 ? '#ffffff' : P.color, 5); world.effects.spark(G.x, G.y, '#fff4c0'); } }
+      d.rain += dt; if (d.rain >= P.rainEvery / spd && d.t < (P.duration + 0.8) / spd) { d.rain = 0; const x = p.x + randInt(-60, 60), y = p.y + randInt(-40, 40); world.zones.push(new BossGate(x, y - 44, Math.PI / 2, 0.7 / spd, false)); world.hazards.push(new Hazard(x, y, { r: 20, delay: 0.7 / spd, damage: Math.round(e.damage * P.mult), bullets: 0, color: P.color })); }
+      return d.t >= (P.duration + 1.4) / spd;
+    }
+  },
+  // 마지막 페이즈 전용 — 태초를 가르는 일격: 붉은 소용돌이를 두른 원통형 검이 회전하며 힘을 모음 → 방 끝까지 가르는 일격 (엑셀수스와 같은 판정) → 공간이 찢어지며 원형 충격
+  worldCleave: {
+    begin(e, world, ctx) { BOSS_PATTERNS.excelsus.begin(e, world, ctx); },
+    update(e, dt, world, ctx, spd) {
+      const P = e.pat, d = e.pd, fx = world.effects;
+      if ((d.t || 0) < P.charge) for (let k = 0; k < 3; k++) { const a = (d.t || 0) * 9 + k * TAU / 3, q = 26 - 16 * ((d.t || 0) / P.charge); fx.part(e.x + Math.cos(a) * q, e.y - 12 + Math.sin(a) * q * 0.6, -Math.sin(a) * 60, Math.cos(a) * 40, { color: k ? '#ff3a2a' : '#1a0a0a', life: 0.35, size: 2.5, size2: 0, drag: 2 }); }
+      const done = BOSS_PATTERNS.excelsus.update(e, dt, world, ctx, spd);
+      if (d.fired && !d.rift) { d.rift = true; for (let i = 0; i < P.riftN; i++) { const a = i / P.riftN * TAU; world.hazards.push(new Hazard(e.x + Math.cos(a) * P.riftR, e.y + Math.sin(a) * P.riftR * 0.7, { r: 20, delay: 0.5, damage: e.damage, bullets: 5, color: '#ff3a2a' })); } }
+      return done;
+    }
+  },
   roundtable: {
     update(e, dt, world, ctx, spd) {
       const P = e.pat, d = e.pd, p = world.player, fx = world.effects; d.t = (d.t || 0) + dt;

@@ -30,7 +30,7 @@ const r1 = (v) => Math.round(v * 10) / 10;
 // 장판·소환물 공유: 클래스 이름으로 다시 만들어 그림만 그림 (처음엔 전부, 그다음엔 움직이는 값만)
 const COOP_CLASSES = {};
 ['RhongoTower', 'BossRhongoTower', 'ChainCircle', 'AvalonGarden', 'SkillAura', 'SkillCast', 'ExcaliburRaise', 'FxEmitter', 'DarkHole', 'ShadowStrike', 'Trap', 'Strike', 'Sanctuary', 'SpiritWolf', 'Turret', 'Drone', 'Puddle',
-  'ThornBurst', 'BleedTicker', 'GaeBolgThrow', 'HeavenChains', 'ExplosionSigil', 'BladeRing', 'LightSatellites', 'FireBomb', 'ShockGrid', 'TrapSentry'].forEach((n) => { try { const c = Function('return typeof ' + n + " !== 'undefined' ? " + n + ' : null')(); if (c) COOP_CLASSES[n] = c; } catch (e) { /* 없는 클래스 */ } });
+  'ThornBurst', 'BleedTicker', 'GaeBolgThrow', 'HeavenChains', 'BossGate', 'KingChainCast', 'ExplosionSigil', 'BladeRing', 'LightSatellites', 'FireBomb', 'ShockGrid', 'TrapSentry'].forEach((n) => { try { const c = Function('return typeof ' + n + " !== 'undefined' ? " + n + ' : null')(); if (c) COOP_CLASSES[n] = c; } catch (e) { /* 없는 클래스 */ } });
 const COOP_REF_RENDER = new Set(['SkillCast', 'ExcaliburRaise', 'ShadowStrike', 'Drone', 'BladeRing', 'LightSatellites']); // 그림에 주인(플레이어) 위치를 쓰는 장판·소환물
 // 이름표가 '보는 사람의 무기·체력'에 따라 바뀌는 물건: 방장 쪽 이름표 대신 값만 보내고, 참가자 화면에서 자기 기준으로 만듦 (강화대에 방장 무기가 뜨던 문제)
 const COOP_OWN_LABEL = { UpgradeAnvil: ['discount', 'bonus', 'room'], Forge: ['price', 'used'], BloodAltar: ['used'] };

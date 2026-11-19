@@ -232,6 +232,14 @@ class EnemyBullet {
   }
   render(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y);
+    if (this.blade) { /* 길가메시 보물고의 칼날: 날아가는 방향을 향한 검 (판정은 원 그대로) */
+      const a = Math.atan2(this.vy, this.vx), L = this.r * 3.2, c = Math.cos(a), n = Math.sin(a);
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35; ctx.strokeStyle = this.color; ctx.lineWidth = this.r * 2 + 4; ctx.beginPath(); ctx.moveTo(x - c * L, y - n * L); ctx.lineTo(x + c * L * 0.6, y + n * L * 0.6); ctx.stroke(); ctx.restore();
+      ctx.strokeStyle = OUTLINE; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x - c * L, y - n * L); ctx.lineTo(x + c * L * 0.7, y + n * L * 0.7); ctx.stroke();
+      ctx.strokeStyle = '#e8f0ff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - c * L * 0.3, y - n * L * 0.3); ctx.lineTo(x + c * L * 0.7, y + n * L * 0.7); ctx.stroke();
+      ctx.strokeStyle = this.color; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - c * L, y - n * L); ctx.lineTo(x - c * L * 0.4, y - n * L * 0.4); ctx.stroke(); // 금빛 자루
+      ctx.beginPath(); ctx.moveTo(x - c * L * 0.35 - n * 4, y - n * L * 0.35 + c * 4); ctx.lineTo(x - c * L * 0.35 + n * 4, y - n * L * 0.35 - c * 4); ctx.stroke(); ctx.lineWidth = 1; // 날밑
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(x + Math.round(c * L * 0.5) - 1, y + Math.round(n * L * 0.5) - 1, 2, 2); return; }
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35; ctx.fillStyle = this.color; // 적 탄 빛 (위험 가시성)
     ctx.beginPath(); ctx.arc(this.x, this.y, this.r + 3, 0, TAU); ctx.fill(); ctx.restore();
     ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.arc(x, y, this.r + 1, 0, TAU); ctx.fill();
@@ -756,6 +764,50 @@ class SpiritWolf {
 
 // 게이트 오브 바빌론: 바닥에 회전하는 금빛 문양, 공중에 열린 금빛 문들에서 창이 날아가 꽂히고 사슬이 뻗어 적을 묶음
 //  범위 안의 적은 사용한 순간뿐 아니라 범위가 남아 있는 동안 계속 묶음 (막 나타나는 적·페이즈 전환 중인 보스·나중에 들어온 적 포함)
+// [사용자 결정] 길가메시 전용 패턴 연출: 공중에 열리는 보물고의 문 (금빛 파문 + 겨눈 쪽으로 튀어나오는 칼날)
+class BossGate {
+  constructor(x, y, ang, life, big) { this.x = x; this.y = y; this.ang = ang; this.life = life; this.t = 0; this.alive = true; this.big = big ? 1.5 : 1; }
+  update(dt) { this.t += dt; if (this.t >= this.life) this.alive = false; }
+  render() {}
+  renderTop(ctx) {
+    const k = Math.min(1, this.t / 0.18, (this.life - this.t) / 0.2), s = this.big * k * (1 + 0.08 * Math.sin(this.t * 14)), x = this.x, y = this.y, c = Math.cos(this.ang), n = Math.sin(this.ang);
+    if (k <= 0) return; ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.9 * k; ctx.strokeStyle = '#ffe9a0'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(x, y, 9 * s, 9 * s, 0, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.5 * k; ctx.strokeStyle = '#ffd84a'; ctx.beginPath(); ctx.ellipse(x, y, 13 * s, 13 * s, 0, 0, TAU); ctx.stroke(); ctx.lineWidth = 1;
+    ctx.fillStyle = `rgba(255,236,160,${0.55 * k})`; ctx.beginPath(); ctx.ellipse(x, y, 6 * s, 6 * s, 0, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k; const L = (4 + 10 * Math.min(1, this.t / Math.max(0.2, this.life * 0.7))) * this.big; // 칼날이 점점 튀어나옴
+    ctx.strokeStyle = OUTLINE; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x - c * 3, y - n * 3); ctx.lineTo(x + c * L, y + n * L); ctx.stroke();
+    ctx.strokeStyle = '#e8f0ff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + c * L, y + n * L); ctx.stroke();
+    ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - n * 4, y + c * 4); ctx.lineTo(x + n * 4, y - c * 4); ctx.stroke(); ctx.lineWidth = 1;
+    ctx.restore();
+  }
+}
+// 길가메시 '왕의 사슬': 사방의 문에서 사슬이 표시선을 따라 뻗어 와 한 점을 조임 → 맞으면 피해 + 잠시 몸이 무거워짐(kingChainT)
+class KingChainCast {
+  constructor(gates, tx, ty, delay, r, damage, bind) { this.gates = gates; this.tx = tx; this.ty = ty; this.delay = delay; this.r = r; this.damage = damage; this.bind = bind; this.t = 0; this.alive = true; this.hit = false; this.caught = []; }
+  update(dt, world) {
+    this.t += dt;
+    if (!this.hit && this.t >= this.delay) { this.hit = true;
+      world.eachTarget((q) => { if (q.state !== 'DEAD' && Math.hypot(q.x - this.tx, q.y - this.ty) < this.r + q.half) { world.damagePlayer(this.damage); q.kingChainT = Math.max(q.kingChainT || 0, this.bind); this.caught.push(q); } });
+      world.effects.ring(this.tx, this.ty, this.r, '#ffd84a'); world.effects.goldBurst(this.tx, this.ty, 12); world.addShake(0.2, 4); SFX.play('gate', 0.3); }
+    if (this.t >= this.delay + (this.caught.length ? this.bind : 0.35)) this.alive = false;
+  }
+  render(ctx) { // 조여 들 자리 표시
+    if (this.hit) return; const k = this.t / this.delay; ctx.save(); ctx.globalAlpha = 0.25 + 0.35 * k; ctx.strokeStyle = '#ffd84a'; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.ellipse(this.tx, this.ty, this.r, this.r * 0.6, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+    ctx.globalAlpha = 0.15 + 0.2 * k; ctx.fillStyle = '#ffd84a'; ctx.beginPath(); ctx.ellipse(this.tx, this.ty, this.r * k, this.r * 0.6 * k, 0, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  renderTop(ctx) {
+    const k = Math.min(1, this.t / this.delay); ctx.save();
+    for (const g of this.gates) { const ex = this.hit && this.caught.length ? this.caught[0].x : this.tx, ey = this.hit && this.caught.length ? this.caught[0].y - 4 : this.ty, dx = ex - g.x, dy = ey - g.y, n = Math.max(4, Math.floor(Math.hypot(dx, dy) / 4));
+      if (!this.hit) { ctx.globalAlpha = 0.35; ctx.strokeStyle = '#ffd84a'; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(g.x, g.y); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]); }
+      ctx.globalAlpha = 1; const reach = this.hit ? 1 : k * k;
+      for (let i = 0; i < n * reach; i++) { const t = i / n, px = Math.round(g.x + dx * t), py = Math.round(g.y + dy * t);
+        ctx.fillStyle = '#3a2a10'; if (i % 2) ctx.fillRect(px - 2, py - 1, 5, 3); else ctx.fillRect(px - 1, py - 2, 3, 5);
+        ctx.fillStyle = i % 2 ? '#e8b040' : '#ffd84a'; if (i % 2) ctx.fillRect(px - 1, py, 3, 1); else ctx.fillRect(px, py - 1, 1, 3); } }
+    ctx.restore();
+  }
+}
 // 보구 사슬로 묶기: 행동 방해 면역(아서 왕)도 보구 사슬에는 절반 시간만큼 묶임 [사용자 결정] → 실제로 묶인 시간
 function treasureBind(e, dur) { if (e.def.ccImmune) { dur *= 0.5; e.trChain = true; } e.chainT = Math.max(e.chainT || 0, dur); e.chainMax = e.chainT; return dur; }
 // 하늘의 사슬 (엔키두): 대상 둘레의 땅에서 사슬이 솟아 꿰어 묶음 → 주변 적에게도 뻗음
