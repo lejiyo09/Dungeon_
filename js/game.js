@@ -1933,7 +1933,7 @@ class Game {
       if (p.state === 'DEAD') continue;
       const here = map.roomAtPoint(p.x, p.y);
       if (here && !here.visited && map.isFullyInside(p, here)) here.visited = true; /* [버그 수정] 방 끝에 몸만 걸쳐도 visited 처리되어 연결된 방을 미리 엿보던 꼼수 → 몸 전체가 방 안에 들어와야 공개 */
-      if (!this.activeRoom && here && here.state === 'idle' && map.isFullyInside(p, here, 1)) { /* [버그 수정] 벽에 붙어 지나가면 방에 들어간 걸로만 표시되고 전투가 안 걸리던 것 (예전: 테두리에서 반 칸 안쪽까지 들어가야 시작) */ this.activateRoom(here, p); break; }
+      if (!this.activeRoom && here && here.state === 'idle') { /* [버그 수정] 방 바닥에 발을 들이는 순간(중심이 방 안) 전투 시작 — 벽에 붙어 전투를 건너뛰던 꼼수 차단 */ this.activateRoom(here, p); break; }
     }
     const r = this.activeRoom;
     if (r && !this.slowMo && !this.enemies.some((e) => e.alive)) {
