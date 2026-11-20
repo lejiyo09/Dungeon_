@@ -13,6 +13,7 @@ class Projectile {
   update(dt, world) {
     if (!this.alive) return;
     this.age = (this.age || 0) + dt;
+    if (this.glow && !this.planted && Math.random() < 0.85) world.effects.part(this.x, this.y, 0, 0, { color: this.glow, life: 0.24, size: (this.size || 2) + 1, size2: 0, drag: 0, add: true }); // 빛나는 궤적
     if (this.mine && this.planted) { // 설치된 지뢰: 적이 가까이 오거나 시간이 다 되면 폭발
       this.mineLeft -= dt;
       if (this.mineLeft <= 0 || world.enemies.some((e) => e.targetable && !e.def.dummy && Math.hypot(e.x - this.x, e.y - this.y) < this.mine.trigger + e.radius)

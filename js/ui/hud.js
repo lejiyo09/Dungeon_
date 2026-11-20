@@ -258,6 +258,7 @@ class HUD {
         ctx.fillStyle = eq ? (tw ? 'rgba(191,230,255,0.25)' : 'rgba(255,216,74,0.22)') : on && (armory || tw) ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.06)';
         ctx.fillRect(c.x, c.y, c.w, c.h);
         if (!disc.has(c.d.id)) { hudText(ctx, '???', c.x + 8, c.y + 8, '#555', 'left', 9); continue; }
+        ctx.save(); ctx.beginPath(); ctx.rect(c.x, c.y, c.w - 3, c.h); ctx.clip(); // 칸 밖으로 글자가 삐져나오지 않게
         drawWeaponCentered(ctx, c.d, c.x + 13, c.y + c.h / 2);
         hudText(ctx, c.d.name, c.x + 27, c.y + 2, RARITY_COLOR[c.d.rarity], 'left', 8);
         if (tw) hudText(ctx, pk >= 0 ? `${pk + 1}번 무기` : weaponTraits(c.d, 2), c.x + 27, c.y + 13, pk >= 0 ? '#bfe6ff' : '#c8b890', 'left', 7);
@@ -265,6 +266,7 @@ class HUD {
           const st = eq ? ['장착됨', '#ffd84a'] : owned ? ['보유', '#9fe89f'] : [`해금 ${ARMORY_PRICE[c.d.rarity]} ${CUR.name}`, sv.bank >= ARMORY_PRICE[c.d.rarity] ? '#fff' : '#888'];
           hudText(ctx, st[0], c.x + 27, c.y + 13, st[1], 'left', 7);
         } else hudText(ctx, weaponTraits(c.d, 2), c.x + 27, c.y + 13, '#c8b890', 'left', 7);
+        ctx.restore();
       }
       const hd = hover && disc.has(hover.d.id) ? hover.d : null; // 호버한 무기 (발견한 것만)
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 30, o.msg.color, 'center', 9);
