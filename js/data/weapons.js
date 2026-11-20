@@ -317,6 +317,12 @@ const DATA_WEAPONS = [
     damage: 14, fireRate: 2.4, energyCost: 1.6, range: 420, projectileSpeed: 480, projectileCount: 3, spreadDeg: 0, fanDeg: 20,
     pierce: 1, knockback: 2, status: { type: 'shock', chance: 0.7, duration: 3 }, chain: { count: 3, range: 90, falloff: 0.8 }, color: '#4a5a8a', len: 14, bulletColor: '#bfe8ff', bulletSize: 2,
     desc: '세 갈래 뇌격을 흩뿌린다 — 감전과 연쇄 번개가 무리를 휩쓴다.' },
+  // ── 영웅(epic) 수류탄
+  { id: 'weapon_clustergrenade_001', name: '집속 수류탄', rarity: 'epic', type: 'gun', shape: 'launcher',
+    damage: 40, fireRate: 0.75, energyCost: 4, range: 9999, projectileSpeed: 300, projectileCount: 1, spreadDeg: 2,
+    grenade: { fuse: 1, drag: 2.6 }, bounce: 3, explodeRadius: 46, spinSprite: true, pierce: 0, knockback: 11,
+    split: { count: 5, speed: 210, range: 56, damage: 30, explode: 28 }, color: '#5a5a2a', len: 7, bulletColor: '#ffd24a', bulletSize: 2,
+    desc: '던지면 크게 터지고, 흩어진 자탄 5개가 다시 폭발한다.' },
   // ── 전설
   { id: 'weapon_cometgun_001', name: '혜성 기관총', rarity: 'legendary', type: 'gun', shape: 'gun',
     damage: 18, fireRate: 9, energyCost: 0.35, range: 400, projectileSpeed: 640, projectileCount: 1, spreadDeg: 3, spinUp: 0.15,
