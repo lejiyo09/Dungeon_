@@ -1771,7 +1771,7 @@ class Game {
         /* 주변 적을 중심으로 빨아들임 (보스 제외) */
         for (const e of this.enemies) if (e.targetable && !e.def.boss && Math.hypot(e.x - p.x, e.y - p.y) < R + 50) { const d = Math.hypot(e.x - p.x, e.y - p.y) || 1, k = Math.min(1, 100 / d); e.x += (p.x - e.x) * k * 0.7; e.y += (p.y - e.y) * k * 0.7; }
         this.effects.text(p.x, p.y - 26, '만혼 강림', '#a84674', true); SFX.play('gate', 0.5);
-        this.zones.push(new BloodStorm(p, { r: R, gather: 0.55, life: 3, tick: 0.3, dmg: 46, bigDmg: 220, lifesteal: 0.2, feast: true, kb: 10 }));
+        this.zones.push(new BloodStorm(p, { r: R, gather: 0.55, life: 3, tick: 0.3, dmg: 36, bigDmg: 175, lifesteal: 0.2, feast: true, kb: 10 }));
         break; }
       case 'ancientroot': nova(140, 170, { color: '#7adf4a', root: 3, kb: 0, status: { type: 'poison', chance: 1, duration: 5, dps: 36 } }); this.addShake(0.3, 5); break;
       case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [8, 0.4, 0.4, 0], bearform2: [10, 0.45, 0.4, 10], primal: [12, 0.75, 0.4, 16] }[p.skillId];
