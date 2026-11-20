@@ -2100,12 +2100,12 @@ class Game {
     for (const o of this.props) {
       if (!o.radius || !o.label(this)) continue;
       const d = Math.hypot(o.x - p.x, o.y - p.y);
-      if (d < o.radius && d < bestD) { best = o; bestD = d; }
+      if (d < o.radius && d < bestD && hasLineOfSight(p, o, this.map)) { best = o; bestD = d; } /* [버그 수정] 벽 너머로 상자·제단·상점을 여는 꼼수 차단 */
     }
     for (const pk of this.pickups) {
       if (pk.kind !== 'weapon') continue;
       const d = Math.hypot(pk.x - p.x, pk.y - p.y);
-      if (d < 20 && d < bestD) { best = pk; bestD = d; }
+      if (d < 20 && d < bestD && hasLineOfSight(p, pk, this.map)) { best = pk; bestD = d; } /* 벽 너머 무기 획득 차단 */
     }
     return best;
   }
