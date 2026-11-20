@@ -1932,7 +1932,7 @@ class Game {
     for (const p of this.allPlayers()) { // 멀티: 누구든 먼저 들어가면 그 방 전투 시작 (쓰러진 사람 제외)
       if (p.state === 'DEAD') continue;
       const here = map.roomAtPoint(p.x, p.y);
-      if (here && !here.visited) here.visited = true;
+      if (here && !here.visited && map.isFullyInside(p, here)) here.visited = true; /* [버그 수정] 방 끝에 몸만 걸쳐도 visited 처리되어 연결된 방을 미리 엿보던 꼼수 → 몸 전체가 방 안에 들어와야 공개 */
       if (!this.activeRoom && here && here.state === 'idle' && map.isFullyInside(p, here, 1)) { /* [버그 수정] 벽에 붙어 지나가면 방에 들어간 걸로만 표시되고 전투가 안 걸리던 것 (예전: 테두리에서 반 칸 안쪽까지 들어가야 시작) */ this.activateRoom(here, p); break; }
     }
     const r = this.activeRoom;
@@ -1942,7 +1942,7 @@ class Game {
     }
   }
   activateRoom(r, leader = this.player) {
-    r.state = 'active'; this.activeRoom = r;
+    r.state = 'active'; r.visited = true; this.activeRoom = r; /* 전투가 걸리면(몸이 안으로) 확실히 방문 처리 */
     if (this.coop && this.coop.host) this.coopGather(r, leader); // 멀티: 방 밖에 있는 동료를 모두 이 방으로 모음 (문 밖에 갇히지 않게)
     this.map.setDoors(r, true);
     this.enemyBullets.length = 0;
