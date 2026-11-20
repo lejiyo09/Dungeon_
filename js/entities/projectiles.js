@@ -1017,35 +1017,40 @@ class BloodStorm {
       this.fired = true; this.next = 0; p.castLock = 0;
       for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < this.r + e.radius)
         world.damageEnemy(e, { damage: world.skillDmg(this.bigDmg), mods: p.mods, knockback: this.kb, feast: this.feast }, (e.x - p.x) / 50, (e.y - p.y) / 50);
-      for (let i = 0; i < 42; i++) { const a = Math.random() * TAU, s = 120 + Math.random() * 230, tx = -Math.sin(a), ty = Math.cos(a);
-        E.part(p.x, p.y, Math.cos(a) * s + tx * 130, (Math.sin(a) * s + ty * 95) * 0.7, { color: i % 3 ? '#3e0a14' : '#c81f34', life: 0.5 + Math.random() * 0.4, size: 2 + Math.random() * 2, size2: 0, drag: 2, add: !(i % 3) }); }
-      world.addShake(0.5, 8); world.hitStop(0.07); world.screenFlash = 0.14; world.flashColor = '70,16,30'; SFX.play('gate');
+      for (let i = 0; i < 60; i++) { const a = Math.random() * TAU, s = 130 + Math.random() * 280, tx = -Math.sin(a), ty = Math.cos(a);
+        E.part(p.x, p.y, Math.cos(a) * s + tx * 160, (Math.sin(a) * s + ty * 115) * 0.7, { color: i % 3 ? '#3e0a14' : '#d02338', life: 0.5 + Math.random() * 0.5, size: 2 + Math.random() * 2.5, size2: 0, drag: 2, add: !(i % 3) }); }
+      world.addShake(0.6, 9); world.hitStop(0.08); world.screenFlash = 0.15; world.flashColor = '80,18,34'; SFX.play('gate');
     }
     this.next -= dt;
-    if (this.next <= 0) { this.next = this.tick; let hit = 0; // 회오리 지속 피해 + 흡혈
+    if (this.next <= 0) { this.next = this.tick; let hit = 0; // 회오리 지속 피해 + 흡혈 + 쿵쿵 울리는 진동
       for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < this.r + e.radius) { world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: p.mods, knockback: 1, feast: this.feast }, 0, 0, { quiet: true }); hit++; }
       if (this.lifesteal && hit) p.hp = Math.min(p.maxHp, p.hp + Math.min(4, hit * this.lifesteal));
-      if (hit) SFX.play('react', 0.1);
+      world.addShake(0.14, 2); if (hit) SFX.play('react', 0.1);
     }
     if (this.t >= this.gather + this.life) { this.alive = false; return; }
-    for (let i = 0; i < 4; i++) { const a = this.spin + i * TAU / 4 + Math.random() * 0.5, d = this.r * (0.3 + Math.random() * 0.7), tx = -Math.sin(a), ty = Math.cos(a); // 휘몰아치는 핏빛 바람
-      const red = Math.random() < 0.34; E.part(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d * 0.7, tx * 300 - Math.cos(a) * 30, (ty * 225 - Math.sin(a) * 20) * 0.7, { color: red ? '#c81f34' : '#3e0a14', life: 0.35, size: 2, size2: 0, drag: 1, add: red }); }
+    for (let i = 0; i < 8; i++) { const a = this.spin + i * TAU / 8 + Math.random() * 0.6, d = this.r * (0.2 + Math.random() * 0.8), tx = -Math.sin(a), ty = Math.cos(a); // 휘몰아치는 핏빛 바람 (밀도 ↑·속도 ↑)
+      const red = Math.random() < 0.38, spd = 340 + Math.random() * 140; E.part(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d * 0.7, tx * spd - Math.cos(a) * 40, (ty * spd * 0.75 - Math.sin(a) * 28) * 0.7, { color: red ? '#d02338' : '#3e0a14', life: 0.3 + Math.random() * 0.3, size: 1.5 + Math.random() * 1.6, size2: 0, drag: 1.1, add: red }); }
+    if (Math.random() < 0.6) { const a = Math.random() * TAU, tx = -Math.sin(a), ty = Math.cos(a); // 바깥으로 터져 나가는 돌풍 파편
+      E.part(p.x + Math.cos(a) * this.r * 0.85, p.y + Math.sin(a) * this.r * 0.85 * 0.7, tx * 220 + Math.cos(a) * 150, (ty * 170 + Math.sin(a) * 110) * 0.7, { color: Math.random() < 0.5 ? '#7a1020' : '#b02034', life: 0.5 + Math.random() * 0.3, size: 2.5, size2: 0, drag: 1.4 }); }
   }
   render(ctx) {
     const edge = this.t < this.gather ? this.t / this.gather : Math.min(1, (this.gather + this.life - this.t) / 0.5);
     const k = Math.max(0, Math.min(1, edge)), active = this.t >= this.gather;
     ctx.save(); ctx.translate(this.x, this.y + 4); ctx.scale(1, 0.62);
-    ctx.globalAlpha = (active ? 0.26 : 0.13) * k; ctx.fillStyle = '#220510'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill(); // 어두운 핏빛 바닥
-    ctx.globalAlpha = 0.8 * k; ctx.lineCap = 'round'; // 탁하고 어두운 피 회오리 (여러 겹이 서로 다른 속도로 돈다)
-    for (let i = 0; i < 4; i++) { const rr = this.r * (0.33 + i * 0.18), a0 = this.spin * (1 + i * 0.35) + i * 1.7;
-      ctx.strokeStyle = i % 2 ? '#3e0a14' : '#601020'; ctx.lineWidth = 3.4 - i * 0.4;
-      ctx.beginPath(); ctx.arc(0, 0, rr, a0, a0 + 2.1 + i * 0.3); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0, 0, rr, a0 + Math.PI, a0 + Math.PI + 1.6); ctx.stroke(); }
-    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 * k; // 어둠 사이로 휘도는 붉은 빛
-    for (let i = 0; i < 3; i++) { const rr = this.r * (0.42 + i * 0.22), a0 = -this.spin * (1.4 + i * 0.4) + i * 2.1;
-      ctx.strokeStyle = '#d01f36'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(0, 0, rr, a0, a0 + 1.4 + i * 0.2); ctx.stroke(); }
+    ctx.globalAlpha = (active ? 0.3 : 0.14) * k; ctx.fillStyle = '#220510'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill(); // 어두운 핏빛 바닥
+    ctx.globalAlpha = 0.82 * k; ctx.lineCap = 'round'; // 탁하고 어두운 피 회오리 (여러 겹이 서로 다른 속도로 돈다)
+    for (let i = 0; i < 6; i++) { const rr = this.r * (0.2 + i * 0.14), a0 = this.spin * (1 + i * 0.3) + i * 1.3;
+      ctx.strokeStyle = i % 2 ? '#3e0a14' : '#601020'; ctx.lineWidth = 3.8 - i * 0.35;
+      ctx.beginPath(); ctx.arc(0, 0, rr, a0, a0 + 2.3 + i * 0.25); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, rr, a0 + Math.PI, a0 + Math.PI + 1.9); ctx.stroke(); }
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.55 * k; // 어둠 사이로 휘도는 붉은 빛
+    for (let i = 0; i < 4; i++) { const rr = this.r * (0.32 + i * 0.2), a0 = -this.spin * (1.5 + i * 0.4) + i * 1.9;
+      ctx.strokeStyle = '#d01f36'; ctx.lineWidth = 1.7; ctx.beginPath(); ctx.arc(0, 0, rr, a0, a0 + 1.5 + i * 0.2); ctx.stroke(); }
+    ctx.globalAlpha = 0.4 * k; ctx.strokeStyle = '#c0283c'; ctx.lineWidth = 1; // 바깥으로 길게 쓸리는 돌풍 스트리크
+    for (let i = 0; i < 10; i++) { const a = this.spin * 1.7 + i * TAU / 10, r0 = this.r * 0.45, r1 = this.r; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); ctx.lineTo(Math.cos(a + 0.55) * r1, Math.sin(a + 0.55) * r1); ctx.stroke(); }
     ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 0.7 * k; ctx.strokeStyle = '#420a14'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.55 * k; ctx.fillStyle = '#120307'; ctx.beginPath(); ctx.arc(0, 0, this.r * 0.13, 0, TAU); ctx.fill(); // 중심의 어두운 눈
+    ctx.globalAlpha = 0.75 * k; ctx.strokeStyle = '#420a14'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.stroke();
     ctx.restore(); ctx.lineWidth = 1; ctx.lineCap = 'butt';
   }
 }
