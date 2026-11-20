@@ -3,7 +3,7 @@
 const REACTIONS = {
   'burn+freeze': 'thermal',   // 열충격
   'burn+poison': 'toxic',     // 독 연소
-  'freeze+shock': 'electro',  // 감전
+  'freeze+shock': 'superconduct', // 초전도
   'burn+shock': 'overload',   // 과부하
   'poison+shock': 'paralyze', // 마비
   'blind+curse': 'eclipse',   // 일식

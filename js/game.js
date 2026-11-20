@@ -2399,10 +2399,12 @@ class Game {
       e.poison = 0;
       this.effects.reaction(e.x, e.y, 'toxic', '독 연소', '#c8ff70'); SFX.play('react');
       this.explodeAt(e.x, e.y, 36, { color: '#9aff5a', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 9 * atk, knockback: 3 }) });
-    } else if (type === 'electro') { // 감전: 피해 + 주변 3명에게 번개
-      e.shock = 0; this.effects.reaction(e.x, e.y, 'electro', '감전', '#dff4ff'); SFX.play('react');
-      this.damageEnemy(e, Object.assign({}, quiet, { damage: 16 * atk }), 0, 0, { noChain: true });
-      this.enemies.filter((o) => o !== e && o.targetable && Math.hypot(o.x - e.x, o.y - e.y) < 80).slice(0, 3).forEach((o) => { this.effects.lightning(e.x, e.y, o.x, o.y); this.damageEnemy(o, Object.assign({}, quiet, { damage: 8 * atk }), 0, 0, { noChain: true }); });
+    } else if (type === 'superconduct') { // 초전도: 빙결+감전 → 냉기 충격파 + 주변 적 방어 약화(받는 피해 증가)
+      e.shock = 0; e.slow = 0; this.effects.reaction(e.x, e.y, 'electro', '초전도', '#bfe8ff'); SFX.play('react');
+      this.effects.ring(e.x, e.y, 52, '#dff4ff'); this.effects.ring(e.x, e.y, 32, '#9ac0ff'); this.effects.burst(e.x, e.y, '#dff4ff', 14); this.addShake(0.1, 3);
+      this.explodeAt(e.x, e.y, 54, { color: '#bfe8ff', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 20 * atk, knockback: 7 }) });
+      for (const o of this.enemies) if (o.targetable && Math.hypot(o.x - e.x, o.y - e.y) < 58) o.curse = Math.max(o.curse || 0, 4); // 방어 약화: 받는 피해 +20% (4초)
+      this.effects.lightning(e.x, e.y - 90, e.x, e.y);
     } else if (type === 'overload') { // 과부하: 큰 폭발로 밀쳐냄, 화상·전격 소모
       e.burn = 0; e.shock = 0; this.effects.reaction(e.x, e.y, 'overload', '과부하', '#ffb04a'); SFX.play('react');
       this.explodeAt(e.x, e.y, 42, { color: '#ffb04a', hurtEnemies: true, src: Object.assign({}, quiet, { damage: 9 * atk, knockback: 12 }) }); this.addShake(0.12, 3);

@@ -9,7 +9,7 @@ const path = require('path');
   await pg.goto('file://' + path.resolve(__dirname, '../index.html') + '?guest=1'); await pg.waitForTimeout(300);
   const out = await pg.evaluate(() => {
     const g = window.__game; g.render = () => {};
-    const PAIRS = { thermal: ['burn', 'freeze'], toxic: ['burn', 'poison'], electro: ['freeze', 'shock'], overload: ['burn', 'shock'], paralyze: ['poison', 'shock'], eclipse: ['blind', 'curse'], plague: ['curse', 'poison'], hellfire: ['burn', 'curse'], judgment: ['blind', 'shock'] };
+    const PAIRS = { thermal: ['burn', 'freeze'], toxic: ['burn', 'poison'], superconduct: ['freeze', 'shock'], overload: ['burn', 'shock'], paralyze: ['poison', 'shock'], eclipse: ['blind', 'curse'], plague: ['curse', 'poison'], hellfire: ['burn', 'curse'], judgment: ['blind', 'shock'] };
     const res = {};
     for (const w of [1, 4, 8, 11]) {
       g.startRun(); g.overlay = null; g.worldIdx = w; g.levelIdx = 1; g.loadStage(); g.banner = null;
