@@ -30,11 +30,11 @@ const BALANCE = {
   //  기존 골드 적립 속도와 비슷하게 맞춘 값 (조정 가능)
   // 직업 레벨 (결정석으로 영구 소량 강화, 직업마다 따로): 레벨당 능력치, 레벨업 비용 = base + perLevel × (현재 레벨)
   // [사용자 결정] 직업 레벨: 비용 상향 · 만렙(10) 보너스 = 스킬 데미지 +maxDmg(공통) + 직업별 고유 특수효과(perks)
-  jobLevel: { max: 10, base: 70, perLevel: 45, hp: 3, atk: 0.015, energy: 3, maxDmg: 0.1,
+  jobLevel: { max: 10, base: 85, perLevel: 55, hp: 3, atk: 0.015, energy: 3, maxDmg: 0.1,
     perks: {
       hero_swordsman: { crit: 0.12, name: '검의 달인', desc: '치명타 확률 +12%' },
       hero_gunner: { rate: 0.12, name: '속사', desc: '발사 속도 +12%' },
-      hero_mage: { energyMul: 0.4, name: '마나의 심연', desc: '최대 에너지 +40%' },
+      hero_mage: { skillFx: 'explosion', toggle: true, name: '폭심 확장', desc: '익스플로전이 벽을 부수고 범위 살짝↑' },
       hero_engineer: { shieldMul: 0.5, name: '강화 장갑', desc: '최대 보호막 +50%' },
       hero_assassin: { speed: 0.12, name: '그림자 발놀림', desc: '이동 속도 +12%' },
       hero_priest: { guard: 0.1, name: '성스러운 가호', desc: '받는 피해 -10% (멀티: 아군 전원)' },

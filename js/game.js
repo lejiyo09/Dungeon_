@@ -70,6 +70,7 @@ class Game {
     if (pk.guard) p.jobGuardAura = pk.guard;   // takeDamage에서 팀 가드(멀티는 아군 전원)로 적용
     if (pk.lowHp) { p.jobLowHp = pk.lowHp; p.jobLowHpAt = pk.lowHpAt || 0.5; }   // mods 게터에서 체력 문턱 이하일 때 공격력 가산
     if (pk.regen) p.jobRegen = pk.regen;   // Player.update에서 초당 체력 재생
+    if (pk.skillFx && !(this.save.jobPerkOff && this.save.jobPerkOff[heroId])) p.jobSkillFx = pk.skillFx;   // 스킬 강화 효과(토글 가능)
   }
   jobLevelCost(id) { const J = BALANCE.jobLevel, lv = this.jobLevel(id); return lv >= J.max ? null : J.base + J.perLevel * lv; }
   // 직업 레벨업 → 결과 메시지 [글, 색] (직업 레벨 창에서 사용)
@@ -1373,7 +1374,13 @@ class Game {
       let pickI = -1;
       DATA_HEROES.forEach((h, i) => { if (input.wasPressed('Digit' + (i + 1))) pickI = i; });
       if (input.wasPressed('Mouse0')) { const m = input.mouse; DATA_HEROES.forEach((h, i) => { const r = HUD.jobRowRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) pickI = i; }); }
-      if (pickI >= 0) { const [text, color] = this.levelUpJob(DATA_HEROES[pickI]); o.msg = { text, color, t: 2 }; this.input.mouse.down = false; }
+      if (pickI >= 0) { const h = DATA_HEROES[pickI], J = BALANCE.jobLevel, pk = J.perks && J.perks[h.id];
+        if (this.jobLevel(h.id) >= J.max && pk && pk.toggle) { /* 만렙 + 토글 가능한 스킬 효과: 클릭하면 on/off */
+          const sv = this.save; sv.jobPerkOff = sv.jobPerkOff || {}; sv.jobPerkOff[h.id] = !sv.jobPerkOff[h.id]; writeSave(sv);
+          const off = sv.jobPerkOff[h.id]; if (this.player && this.save.selected === h.id) this.player.jobSkillFx = off ? null : pk.skillFx; /* 즉시 반영 */
+          o.msg = { text: `${pk.name} ${off ? '꺼짐' : '켜짐'}`, color: off ? '#999' : '#ffd84a', t: 2 }; SFX.play('ui');
+        } else { const [text, color] = this.levelUpJob(h); o.msg = { text, color, t: 2 }; }
+        this.input.mouse.down = false; }
     } else if (o.type === 'treasures') { // 로비 보구 보관대: 1개 장착
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
       const own = this.treasurePage(o, DATA_TREASURES.filter((t) => this.save.treasures.includes(t.id)), input); if (!own) return;
@@ -1632,9 +1639,10 @@ class Game {
       // 불
       case 'fireball': shoot({ p: { damage: 40, explodeRadius: 30, color: '#ff8a3a', size: 5, speed: 280, status: { type: 'burn', chance: 1, duration: 3, dps: 10 } } }); SFX.play('fire_x' in SOUNDS ? 'fire_x' : 'flame'); break;
       case 'flamestorm': this.zones.push(new SkillAura(p, { r: 60, life: 5, tick: 0.25, dmg: 16, color: '#ff7a3a', kind: 'flame', status: { type: 'burn', chance: 0.5, duration: 2, dps: 8 } })); this.effects.ring(p.x, p.y, 54, '#ff7a3a'); break;
-      case 'explosion': { const c = at(200); this.zones.push(new ExplosionSigil(p, c.x, c.y, { r: 90, time: 2 })); /* 공중 마법진 + 땅의 불기둥 (발동 때 기둥이 차례로 터짐) */
-        this.zones.push(new SkillCast(p, c.x, c.y, { r: 90, time: 2, color: '#ff7a3a' }, () => {
-        this.explodeAt(c.x, c.y, 90, { color: '#ff7a3a', hurtEnemies: true, src: { damage: D(506), mods: p.mods, knockback: 14, status: { type: 'burn', chance: 1, duration: 4, dps: 14 } } });
+      case 'explosion': { const fx = p.jobSkillFx === 'explosion', R = fx ? 100 : 90, c = at(200); this.zones.push(new ExplosionSigil(p, c.x, c.y, { r: R, time: 2 })); /* 공중 마법진 + 땅의 불기둥 · [직업 숙련] 폭심 확장: 범위↑·벽 부수기 */
+        this.zones.push(new SkillCast(p, c.x, c.y, { r: R, time: 2, color: '#ff7a3a' }, () => {
+        this.explodeAt(c.x, c.y, R, { color: '#ff7a3a', hurtEnemies: true, src: { damage: D(506), mods: p.mods, knockback: 14, status: { type: 'burn', chance: 1, duration: 4, dps: 14 } } });
+        if (fx) this.breakWallsInRadius(c.x, c.y, R); /* 폭심 확장: 벽·엄폐물을 부숨 (활성 전투방 경계는 제외) */
         this.screenFlash = 0.4; this.flashColor = '255,170,90'; this.addShake(0.6, 10); this.hitStop(0.1); SFX.play('excal'); })); break; }
       // 얼음
       case 'icelance': shoot({ n: 3, fan: 0.25, p: { damage: 28, pierce: 99, color: '#bfefff', size: 2, speed: 380, arrow: true, status: { type: 'freeze', chance: 0.7, duration: 1.6, slow: 0.4 } } }); break;
@@ -2393,6 +2401,18 @@ class Game {
     for (let ty = Math.floor((y - r) / TILE); ty <= Math.floor((y + r) / TILE); ty++)
       for (let tx = Math.floor((x - r) / TILE); tx <= Math.floor((x + r) / TILE); tx++)
         if (Math.hypot(tx * TILE + 8 - x, ty * TILE + 8 - y) <= r + 6) this.breakCrate(tx, ty);
+  }
+  // [직업 숙련] 폭심 확장: 반경 안의 벽·엄폐물·상자를 부숨 — 단, 활성 전투방의 경계벽은 보호(전투 탈출 꼼수 방지)
+  breakWallsInRadius(x, y, r) {
+    const map = this.map, ar = this.activeRoom; let any = false;
+    for (let ty = Math.floor((y - r) / TILE); ty <= Math.floor((y + r) / TILE); ty++)
+      for (let tx = Math.floor((x - r) / TILE); tx <= Math.floor((x + r) / TILE); tx++) {
+        if (Math.hypot(tx * TILE + 8 - x, ty * TILE + 8 - y) > r) continue;
+        const t = map.get(tx, ty); if (t !== T_WALL && t !== T_COVER && t !== T_CRATE) continue;
+        if (ar) { const ring = (tx === ar.x0 - 1 || tx === ar.x0 + ar.w || ty === ar.y0 - 1 || ty === ar.y0 + ar.h) && tx >= ar.x0 - 1 && tx <= ar.x0 + ar.w && ty >= ar.y0 - 1 && ty <= ar.y0 + ar.h; if (ring) continue; } // 전투방 경계(테두리) 벽은 못 부숨
+        map.set(tx, ty, T_FLOOR); map.redrawTile(tx, ty); this.effects.burst(tx * TILE + 8, ty * TILE + 8, '#9a7a4a', 5); any = true;
+      }
+    if (any) this.flowTile = -1; // 길찾기 흐름장 갱신
   }
   breakCratesInArc(x, y, ang, arc, range) {
     for (let ty = Math.floor((y - range) / TILE); ty <= Math.floor((y + range) / TILE); ty++)

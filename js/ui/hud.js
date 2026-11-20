@@ -391,9 +391,9 @@ class HUD {
         hudText(ctx, h.name + (sel ? '  (선택 중)' : ''), r.x + 40, r.y + 3, sel ? '#7ad0ff' : '#fff', 'left', 9);
         for (let k = 0; k < J.max; k++) { ctx.fillStyle = k < lv ? '#7ad0ff' : '#2e2a3e'; ctx.fillRect(r.x + 40 + k * 9, r.y + 16, 7, 5); } // 레벨 칸
         hudText(ctx, `Lv.${lv}`, r.x + 40 + J.max * 9 + 4, r.y + 14, '#7ad0ff', 'left', 8);
-        { const pk = J.perks && J.perks[h.id];
-          hudText(ctx, lv ? `체력 +${J.hp * lv} · 공격력 +${Math.round(J.atk * lv * 1000) / 10}% · 에너지 +${J.energy * lv}` : '강화 없음', r.x + 200, r.y + 3, lv >= J.max ? '#ffe0a0' : '#c8c0d8', 'left', 7);
-          if (pk) hudText(ctx, `${lv >= J.max ? '★ ' : 'Lv.10 '}${pk.name}: ${pk.desc}`, r.x + 200, r.y + 15, lv >= J.max ? '#ffd84a' : '#8a8498', 'left', 7); }
+        { const pk = J.perks && J.perks[h.id], atMax = lv >= J.max, off = pk && pk.toggle && game.save.jobPerkOff && game.save.jobPerkOff[h.id];
+          hudText(ctx, lv ? `체력 +${J.hp * lv} · 공격력 +${Math.round(J.atk * lv * 1000) / 10}% · 에너지 +${J.energy * lv}` : '강화 없음', r.x + 200, r.y + 3, atMax ? '#ffe0a0' : '#c8c0d8', 'left', 7);
+          if (pk) hudText(ctx, `${atMax ? '★ ' : 'Lv.10 '}${pk.name}: ${pk.desc}${pk.toggle && atMax ? (off ? '  [꺼짐·클릭 ON]' : '  [켜짐·클릭 OFF]') : ''}`, r.x + 200, r.y + 15, off ? '#8a8498' : atMax ? '#ffd84a' : '#8a8498', 'left', 7); }
         const st = !unlocked ? ['미해금', '#888'] : cost === null ? ['최고 레벨', '#ffd84a'] : [`레벨업 ${cost} ${CUR.name}`, sv.bank >= cost ? '#fff' : '#886'];
         hudText(ctx, st[0], r.x + r.w - 6, r.y + 9, st[1], 'right', 8);
         ctx.globalAlpha = 1;
