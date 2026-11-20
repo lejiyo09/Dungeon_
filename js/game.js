@@ -53,6 +53,7 @@ class Game {
     const p = new Player(x, y, hero, this.data.base);
     const J = BALANCE.jobLevel, lv = this.jobLevel(hero.id); // 직업 레벨 보너스
     if (lv) { p.maxHp += J.hp * lv; p.hp = p.maxHp; p.maxEnergy += J.energy * lv; p.energy = p.maxEnergy; p.stats.attackBonus += J.atk * lv; }
+    p.jobMaster = lv >= J.max; // 직업 숙련(만렙): 스킬 데미지·쿨타임 보너스
     p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
     const lo = this.save.loadout; // 무기고에서 장착한 시작 보조 무기
     if (lo && lo !== hero.startWeapon && this.data.weapons.get(lo) && this.save.armory.includes(lo)) p.weapons.push(new WeaponInstance(this.weaponDef(lo)));
@@ -69,7 +70,9 @@ class Game {
     s.bank -= cost; s.jobLv = s.jobLv || {}; s.jobLv[hero.id] = this.jobLevel(hero.id) + 1; writeSave(s);
     const { x, y } = p; this.player = this.makePlayer(x, y);
     this.effects.ring(x, y, 30, '#7ad0ff'); this.effects.burst(x, y, '#7ad0ff', 18); SFX.play('buy');
-    return [`${hero.name} Lv.${s.jobLv[hero.id]} 달성!`, '#7ad0ff'];
+    const lv = s.jobLv[hero.id], J = BALANCE.jobLevel;
+    if (lv >= J.max) { this.effects.rays(x, y, '#ffd84a', 16, 70, 0.9); return [`${hero.name} Lv.${lv} — 직업 숙련 달성! 스킬 데미지 +${Math.round(J.maxDmg * 100)}% · 쿨타임 -${Math.round(J.maxCdr * 100)}%`, '#ffd84a']; }
+    return [`${hero.name} Lv.${lv} 달성!`, '#7ad0ff'];
   }
   // ── 탐험가 길드 (제안): 일일·주간 퀘스트, 토벌 의뢰, 칭호, 거래상 보급품, 결정석 도박
   guild() {
@@ -1472,6 +1475,7 @@ class Game {
     const p0 = this.player, SK = BALANCE.skillScale, lk = p0 && p0.line && p0.hero && SK.lines[p0.hero.id + '|' + p0.line.id]; /* [사용자 결정] 함정·드론 기술자: 깊이 내려갈수록 스킬이 덜 자라서 약해지던 것 → 스테이지 성장을 더 많이 받음 */
     const sh = this.scale.hp; let m = base * (1 + (sh - 1) * (trial ? 1 : SK.base) + (!trial && lk ? Math.max(0, sh - SK.from) * (lk - SK.base) : 0)); /* 갈래 예외는 후반(몬스터 체력 ×from 이상)부터만 더 자람 */
     if (p0 && p0.hero && SK.hero[p0.hero.id]) m *= SK.hero[p0.hero.id]; /* [사용자 결정] 드루이드 계열 살짝 강화 */
+    if (p0 && p0.jobMaster) m *= 1 + (BALANCE.jobLevel.maxDmg || 0); /* [사용자 결정] 직업 숙련(Lv.10): 스킬 데미지 +10% */
     if (trial) { const w = this.player && this.player.weapon; if (w) m *= 1 + (BALANCE.trialSkillRarity[w.def.rarity] || 0) + (w.lv || 0) * BALANCE.upgrade.perLevel * 0.25; }
     return m;
   }
@@ -1550,7 +1554,7 @@ class Game {
     if (!this.zoneRight('job')) { this.effects.text(p.x, p.y - 20, '직업의 권리를 빼앗겼다', '#ffd84a'); return; } /* 귀환길: 첫 층 보스까지 스킬 봉인 */ /* 가레스의 부정 장판 안: 스킬 금지 */
     if (/^overdrive/.test(p.skillId || '') && p.odLockT > 0) return; /* 사수 과부하 계열: 효과가 끝나고 잠시 뒤까지 다시 못 씀 (쿨타임 감소가 쌓여도 효과가 끊기지 않고 계속 유지되던 버그) */
     if (charged) { if (p.dsCharges == null) p.dsCharges = BALANCE.TRAP.sentryCharges; p.dsCharges--; } /* 재사용 대기 없음 — 칸은 actors.js에서 sentryRecharge초마다 1칸씩 참 */
-    else p.skillCooldown = p.skillCdMax;
+    else p.skillCooldown = p.skillCdMax * (p.jobMaster ? 1 - (BALANCE.jobLevel.maxCdr || 0) : 1); /* 직업 숙련(Lv.10): 스킬 쿨타임 -12% */
     this.guildEvent('skills');
     SFX.play('skill');
     if (p.rank === 2) this.ultimateFx(p); // 최종 진화 스킬은 컷인과 함께
