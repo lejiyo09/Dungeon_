@@ -266,9 +266,15 @@ class HUD {
           hudText(ctx, st[0], c.x + 27, c.y + 13, st[1], 'left', 7);
         } else hudText(ctx, weaponTraits(c.d, 2), c.x + 27, c.y + 13, '#c8b890', 'left', 7);
       }
-      const info = o.msg && o.msg.t > 0 ? o.msg.text : hover && disc.has(hover.d.id) ? `${hover.d.name} — ${RARITY_NAME[hover.d.rarity]} · ${weaponStatLine(hover.d)} · ${weaponTraits(hover.d)}`
-        : tw ? '도감에서 발견한 무기 중에서 고를 수 있습니다' : armory ? '던전에서 발견한 무기를 해금해 시작 보조 무기로 장착할 수 있습니다' : '';
-      hudText(ctx, info, VIEW_W / 2, VIEW_H - 26, o.msg && o.msg.t > 0 ? o.msg.color : '#ccc', 'center', 9);
+      const hd = hover && disc.has(hover.d.id) ? hover.d : null; // 호버한 무기 (발견한 것만)
+      if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 30, o.msg.color, 'center', 9);
+      else if (hd) { // 설명 패널: 이름·등급·스탯·특성 + 메커니즘 설명
+        const bx = 28, bw = VIEW_W - 56, by = 248, bh = 23;
+        ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeStyle = RARITY_COLOR[hd.rarity]; ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
+        hudText(ctx, `${hd.name}  ·  ${RARITY_NAME[hd.rarity]}  ·  ${weaponStatLine(hd)}  ·  ${weaponTraits(hd)}`, VIEW_W / 2, by + 3, RARITY_COLOR[hd.rarity], 'center', 8);
+        hudText(ctx, hd.desc || weaponTraits(hd, 4), VIEW_W / 2, by + 13, '#d8cfae', 'center', 7);
+      } else hudText(ctx, tw ? '도감에서 발견한 무기 중에서 고를 수 있습니다' : armory ? '던전에서 발견한 무기를 해금해 시작 보조 무기로 장착할 수 있습니다' : '무기에 마우스를 올리면 설명이 나옵니다', VIEW_W / 2, VIEW_H - 30, '#ccc', 'center', 9);
       hudText(ctx, `1~4 / 클릭: 탭 전환   ·   ${pages > 1 ? `◀ ▶ · A·D · 휠: 페이지 ${page + 1}/${pages}   ·   ` : ''}${tw ? (o.picked.length ? '클릭: 선택/해제   ·   Enter: 보스전 시작   ·   Esc: 로비로' : '클릭: 무기 선택 (최대 2개)   ·   Esc: 로비로') : 'E / Esc: 닫기'}`, VIEW_W / 2, VIEW_H - 12, pages > 1 ? '#bbb' : '#888', 'center', 8);
     } else if (o.type === 'archive') { // 이야기 기록
       const m = game.input.mouse; hudText(ctx, '이야기 기록 — 지금까지 본 이야기를 다시 봅니다', VIEW_W / 2, 12, '#e0d0b0', 'center', 11);
