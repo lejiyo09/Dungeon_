@@ -998,6 +998,53 @@ class SkillAura {
     ctx.restore(); ctx.lineWidth = 1;
   }
 }
+// 만혼 강림 — 피바람 폭풍: 모아들인 혼이 핏빛 회오리로 휘몰아친다 (마법진이 아니라 피와 바람의 폭풍)
+class BloodStorm {
+  constructor(owner, o) {
+    Object.assign(this, { r: 190, gather: 0.55, life: 3, tick: 0.3, dmg: 46, bigDmg: 220, lifesteal: 0.2, feast: true, kb: 10 }, o);
+    this.owner = owner; this.x = owner.x; this.y = owner.y; this.t = 0; this.next = 0; this.spin = Math.random() * TAU; this.alive = true; this.fired = false;
+    owner.castLock = this.gather + 0.05;
+  }
+  update(dt, world) {
+    const p = this.owner, E = world.effects; this.t += dt; this.x = p.x; this.y = p.y; this.spin += dt * 7;
+    if (p.state === 'DEAD') { this.alive = false; p.castLock = 0; return; }
+    if (this.t < this.gather) { // 피가 안으로 빨려들며 회오리가 뭉친다
+      for (let i = 0; i < 3; i++) { const a = Math.random() * TAU, d = this.r * (0.55 + Math.random() * 0.5), tx = -Math.sin(a), ty = Math.cos(a);
+        E.part(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d * 0.7, -Math.cos(a) * d * 1.7 + tx * 150, (-Math.sin(a) * d * 1.2 + ty * 100) * 0.7, { color: Math.random() < 0.5 ? '#9a1226' : '#5c0c1c', life: 0.4, size: 2.5, size2: 0.5, drag: 1.5 }); }
+      return;
+    }
+    if (!this.fired) { // 폭발: 한 번 크게 후려치고 회오리 돌입 (이후 시전자는 자유 이동 — 폭풍이 따라다님)
+      this.fired = true; this.next = 0; p.castLock = 0;
+      for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < this.r + e.radius)
+        world.damageEnemy(e, { damage: world.skillDmg(this.bigDmg), mods: p.mods, knockback: this.kb, feast: this.feast }, (e.x - p.x) / 50, (e.y - p.y) / 50);
+      for (let i = 0; i < 42; i++) { const a = Math.random() * TAU, s = 120 + Math.random() * 230, tx = -Math.sin(a), ty = Math.cos(a);
+        E.part(p.x, p.y, Math.cos(a) * s + tx * 130, (Math.sin(a) * s + ty * 95) * 0.7, { color: i % 3 ? '#9a1226' : '#5c0c1c', life: 0.5 + Math.random() * 0.4, size: 2 + Math.random() * 2, size2: 0, drag: 2 }); }
+      world.addShake(0.5, 8); world.hitStop(0.07); world.screenFlash = 0.14; world.flashColor = '70,16,30'; SFX.play('gate');
+    }
+    this.next -= dt;
+    if (this.next <= 0) { this.next = this.tick; let hit = 0; // 회오리 지속 피해 + 흡혈
+      for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < this.r + e.radius) { world.damageEnemy(e, { damage: world.skillDmg(this.dmg), mods: p.mods, knockback: 1, feast: this.feast }, 0, 0, { quiet: true }); hit++; }
+      if (this.lifesteal && hit) p.hp = Math.min(p.maxHp, p.hp + Math.min(4, hit * this.lifesteal));
+      if (hit) SFX.play('react', 0.1);
+    }
+    if (this.t >= this.gather + this.life) { this.alive = false; return; }
+    for (let i = 0; i < 4; i++) { const a = this.spin + i * TAU / 4 + Math.random() * 0.5, d = this.r * (0.3 + Math.random() * 0.7), tx = -Math.sin(a), ty = Math.cos(a); // 휘몰아치는 핏빛 바람
+      E.part(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d * 0.7, tx * 200 - Math.cos(a) * 30, (ty * 150 - Math.sin(a) * 20) * 0.7, { color: Math.random() < 0.6 ? '#8a1022' : '#b03040', life: 0.35, size: 2, size2: 0, drag: 1 }); }
+  }
+  render(ctx) {
+    const edge = this.t < this.gather ? this.t / this.gather : Math.min(1, (this.gather + this.life - this.t) / 0.5);
+    const k = Math.max(0, Math.min(1, edge)), active = this.t >= this.gather;
+    ctx.save(); ctx.translate(this.x, this.y + 4); ctx.scale(1, 0.62);
+    ctx.globalAlpha = (active ? 0.22 : 0.12) * k; ctx.fillStyle = '#3a0a16'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill(); // 탁한 핏빛 바닥 (글로우 아님)
+    ctx.globalAlpha = 0.85 * k; ctx.lineCap = 'round'; // 여러 겹의 호가 서로 다른 속도로 돌아 회오리가 됨
+    for (let i = 0; i < 4; i++) { const rr = this.r * (0.35 + i * 0.18), a0 = this.spin * (1 + i * 0.35) + i * 1.7;
+      ctx.strokeStyle = i % 2 ? '#8a1022' : '#b82e3e'; ctx.lineWidth = 3 - i * 0.4;
+      ctx.beginPath(); ctx.arc(0, 0, rr, a0, a0 + 2.1 + i * 0.3); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, rr, a0 + Math.PI, a0 + Math.PI + 1.6); ctx.stroke(); }
+    ctx.globalAlpha = 0.7 * k; ctx.strokeStyle = '#6a0e1e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.stroke();
+    ctx.restore(); ctx.lineWidth = 1; ctx.lineCap = 'butt';
+  }
+}
 // 시전형 스킬: 범위를 표시하고 time초 동안 모은 뒤 발동 (그동안 시전자는 이동·공격 불가)
 class SkillCast {
   constructor(owner, x, y, o, done) { Object.assign(this, { r: 60, time: 2, color: '#ff7a3a' }, o); this.owner = owner; this.x = x; this.y = y; this.done = done; this.t = 0; this.alive = true; owner.castLock = this.time + 0.05; }
