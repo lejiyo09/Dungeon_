@@ -166,7 +166,8 @@ class WeaponSystem {
         pierce: def.pierce, knockback: def.knockback || 0,
         mods: weaponMods(player, w),
         explodeRadius: def.explodeRadius || 0, color: def.bulletColor, size: def.bulletSize || 1,
-        homing: def.homing || 0, bounce: def.bounce || 0, chain: def.chain || null, status: def.status || null, flame: !!def.flame
+        homing: def.homing || 0, bounce: def.bounce || 0, chain: def.chain || null, status: def.status || null, flame: !!def.flame,
+        brand: def.brand || null, shatter: def.shatter || null, pin: def.pin || 0, killExplode: def.killExplode || null, blackhole: def.blackhole || null
       }, override);
       if (player.huntT > 0 && !opt.mine && !opt.boomerang) opt.homing = Math.max(opt.homing || 0, 2.2); /* 사냥꾼의 표적: 탄이 살짝 휘어 들어감 */
       if (odDouble(player) && !opt.mine) { /* 같은 탄을 옆으로 조금 벌려 한 발 더 */

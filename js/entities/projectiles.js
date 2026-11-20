@@ -129,6 +129,7 @@ class Projectile {
   }
   // 소멸 시 파편 분열
   end(world) {
+    if (this.blackhole) { world.zones.push(new Singularity(this.x, this.y, this.blackhole, this.mods, this.owner)); world.effects.ring(this.x, this.y, 14, this.blackhole.color || '#b060ff'); SFX.play('magic', 0.2); } // 특이점: 멈춘 자리에 중력정 생성
     if (this.puddle) { world.zones.push(new Puddle(this.x, this.y, this.puddle, this.mods)); world.effects.burst(this.x, this.y, this.puddle.color, 10); SFX.play('flame', 0.1); }
     if (!this.split) return;
     const S = this.split, a0 = Math.random() * TAU;
@@ -995,6 +996,36 @@ class SkillAura {
     ctx.globalAlpha = 0.14 * k; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill();
     ctx.globalAlpha = 0.8 * k; ctx.strokeStyle = this.color; ctx.lineWidth = 2;
     for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(0, 0, this.r * (0.55 + i * 0.2), rot + i * 2, rot + i * 2 + 1.6); ctx.stroke(); } // 휘도는 불길·피·번개 고리
+    ctx.restore(); ctx.lineWidth = 1;
+  }
+}
+// 특이점 발생기 — 멈춘 자리에 중력정이 생겨 적을 빨아들이다 내파 폭발 (신규 메커니즘: blackhole)
+class Singularity {
+  constructor(x, y, o, mods, owner) {
+    Object.assign(this, { r: 72, life: 1.4, force: 150, dmg: 10, tick: 0.25, explode: 150, color: '#b060ff' }, o);
+    this.x = x; this.y = y; this.mods = mods; this.owner = owner || (typeof game !== 'undefined' ? game.player : null); this.t = 0; this.next = 0; this.alive = true;
+  }
+  update(dt, world) {
+    this.t += dt; this.next -= dt;
+    if (this.t >= this.life) { this.alive = false; // 수축 끝 → 내파 폭발
+      world.explodeAt(this.x, this.y, this.r * 1.1, { color: this.color, hurtEnemies: true, src: { damage: this.explode, mods: this.mods, knockback: 9 } });
+      world.addShake(0.3, 5); world.effects.ring(this.x, this.y, this.r, this.color); return;
+    }
+    for (const e of world.enemies) { if (!e.targetable || e.def.dummy) continue; // 빨아들이기
+      const dx = this.x - e.x, dy = this.y - e.y, d = Math.hypot(dx, dy);
+      if (d < this.r * 1.4 && d > 4) { const k = this.force * dt * (1 - (e.def.knockbackResist || 0)); moveAndCollide(e, dx / d * k, dy / d * k, world.map); } }
+    if (this.next <= 0) { this.next = this.tick; // 지속 피해
+      for (const e of world.enemies) if (e.targetable && Math.hypot(e.x - this.x, e.y - this.y) < this.r) world.damageEnemy(e, { damage: this.dmg, mods: this.mods, knockback: 0 }, 0, 0, { quiet: true }); }
+    for (let i = 0; i < 2; i++) { const a = Math.random() * TAU, d = this.r * (0.8 + Math.random() * 0.6); // 빨려드는 입자
+      world.effects.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.7, -Math.cos(a) * d * 2.4, (-Math.sin(a) * d * 1.7) * 0.7, { color: this.color, life: 0.3, size: 2, size2: 0, drag: 0, add: true }); }
+  }
+  render(ctx) {
+    const k = Math.max(0, Math.min(1, this.t / 0.15, (this.life - this.t) / 0.2)), pr = this.r * (0.28 + 0.08 * Math.sin(this.t * 22));
+    ctx.save(); ctx.translate(this.x, this.y + 2); ctx.scale(1, 0.72); ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.45 * k; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(0, 0, pr, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.85 * k; ctx.strokeStyle = this.color; ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(0, 0, this.r * (0.4 + i * 0.26), this.t * 7 + i * 2, this.t * 7 + i * 2 + 2.3); ctx.stroke(); }
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 0.85 * k; ctx.fillStyle = '#0a0612'; ctx.beginPath(); ctx.arc(0, 0, this.r * 0.2, 0, TAU); ctx.fill();
     ctx.restore(); ctx.lineWidth = 1;
   }
 }

@@ -1771,7 +1771,7 @@ class Game {
         /* 주변 적을 중심으로 빨아들임 (보스 제외) */
         for (const e of this.enemies) if (e.targetable && !e.def.boss && Math.hypot(e.x - p.x, e.y - p.y) < R + 50) { const d = Math.hypot(e.x - p.x, e.y - p.y) || 1, k = Math.min(1, 100 / d); e.x += (p.x - e.x) * k * 0.7; e.y += (p.y - e.y) * k * 0.7; }
         this.effects.text(p.x, p.y - 26, '만혼 강림', '#a84674', true); SFX.play('gate', 0.5);
-        this.zones.push(new BloodStorm(p, { r: R, gather: 0.55, life: 3, tick: 0.3, dmg: 36, bigDmg: 175, lifesteal: 0.2, feast: true, kb: 10 }));
+        this.zones.push(new BloodStorm(p, { r: R, gather: 0.55, life: 3, tick: 0.3, dmg: 42, bigDmg: 200, lifesteal: 0.2, feast: true, kb: 10 }));
         break; }
       case 'ancientroot': nova(140, 170, { color: '#7adf4a', root: 3, kb: 0, status: { type: 'poison', chance: 1, duration: 5, dps: 36 } }); this.addShake(0.3, 5); break;
       case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [8, 0.4, 0.4, 0], bearform2: [10, 0.45, 0.4, 10], primal: [12, 0.75, 0.4, 16] }[p.skillId];
@@ -2204,6 +2204,7 @@ class Game {
     if (enemy.curse > 0) base *= 1.2;                                             // 저주: 받는 피해 +20%
     if (enemy.avalonUntil > this.time) base *= 1 + (enemy.avalonVuln || 0.2);        // 아발론의 꽃밭: 받는 피해 증가
     if (src.mods && Number.isFinite(src.mods.damageMult)) base *= src.mods.damageMult; // 소울 이터 시작 기본 공격력 약화
+    const wasFrozen = enemy.slow > 0; // 이 타격 '이전'의 빙결 상태 (산산조각 판정용)
     const { amount, crit } = rollDamage(base, src.mods);
     if (!enemy.takeHit(amount)) return;
     if (src.prey) enemy.preyT = BALANCE.TRAP.prey.dur; /* 사냥터 각인 (중첩 없이 시간만 갱신) */
@@ -2230,6 +2231,20 @@ class Game {
       let best = null, bd = 70; for (const o of this.enemies) { if (o === enemy || !o.targetable) continue; const d = Math.hypot(o.x - enemy.x, o.y - enemy.y); if (d < bd) { bd = d; best = o; } }
       if (best) { this.effects.lightning(enemy.x, enemy.y, best.x, best.y); this.damageEnemy(best, { damage: amount * 0.35, mods: { attackBonus: 0, critChance: 0, critMultiplier: 1 }, knockback: 0 }, 0, 0, { noChain: true, quiet: true }); }
     }
+    // ── 신규 무기 메커니즘
+    if (src.brand && enemy.alive) { // 낙인: 중첩이 차면 기폭
+      enemy.brandN = (enemy.brandN || 0) + 1;
+      this.effects.text(enemy.x, enemy.y - 24, '낙인 ' + enemy.brandN, '#ff5a8a'); this.effects.ring(enemy.x, enemy.y, enemy.radius + 4, '#ff5a8a');
+      if (enemy.brandN >= src.brand.need) { enemy.brandN = 0;
+        this.explodeAt(enemy.x, enemy.y, src.brand.radius, { color: '#ff3a6a', hurtEnemies: true, src: { damage: src.brand.dmg, mods: src.mods, knockback: 5 } }); }
+    }
+    if (src.shatter && wasFrozen && enemy.alive) { // 산산조각: 이미 얼어 있던 적을 때리면 깨뜨려 냉기 폭발
+      enemy.slow = 0; this.effects.ring(enemy.x, enemy.y, src.shatter.radius, '#bfeaff'); this.effects.burst(enemy.x, enemy.y, '#bfeaff', 14); this.effects.text(enemy.x, enemy.y - 24, '산산조각!', '#bfeaff');
+      this.explodeAt(enemy.x, enemy.y, src.shatter.radius, { color: '#bfeaff', hurtEnemies: true, src: { damage: src.shatter.dmg, mods: src.mods, knockback: 3, status: { type: 'freeze', chance: 1, duration: 1.2, slow: 0.6 } } });
+    }
+    if (src.pin && enemy.alive && !enemy.def.boss) { enemy.chainT = Math.max(enemy.chainT || 0, src.pin); enemy.chainMax = Math.max(enemy.chainMax || 0, src.pin); } // 속박: 적을 제자리에 묶음
+    if (!enemy.alive && src.killExplode) // 처치 기폭: 쓰러뜨린 적이 터짐
+      this.explodeAt(enemy.x, enemy.y, src.killExplode.radius, { color: '#ffae3a', hurtEnemies: true, src: { damage: src.killExplode.dmg, mods: src.mods, knockback: 6 } });
     if (!enemy.alive) this.onEnemyKilled(enemy);
   }
   // 보스 격노 전환 연출: 탄 정리 + 충격파 + 잠깐의 숨 돌릴 틈
