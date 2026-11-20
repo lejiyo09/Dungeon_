@@ -59,9 +59,11 @@ class Game {
     if (lo && lo !== hero.startWeapon && this.data.weapons.get(lo) && this.save.armory.includes(lo)) p.weapons.push(new WeaponInstance(this.weaponDef(lo)));
     return p;
   }
-  jobLevel(id) { return (this.save.jobLv && this.save.jobLv[id]) || 0; }
-  applyJobMaster(p, heroId) { // [사용자 결정] 만렙(Lv.10) 직업별 고유 특수효과
-    const pk = BALANCE.jobLevel.perks && BALANCE.jobLevel.perks[heroId]; if (!p.jobMaster || !pk) return;
+  jobLvKey(id, line) { return id + '|' + (line || this.chosenLine(id).id); } // 루트별 레벨 키
+  jobLevel(id, line) { const jl = this.save.jobLv || {}, k = this.jobLvKey(id, line); return jl[k] != null ? jl[k] : (jl[id] || 0); } // 루트별 레벨 (옛 직업 단위 기록은 폴백)
+  linePerk(id, line) { return (BALANCE.jobLevel.perks || {})[this.jobLvKey(id, line)]; }
+  applyJobMaster(p, heroId, lineId) { // [사용자 결정] 만렙(Lv.10) 루트별 고유 특수효과
+    const pk = this.linePerk(heroId, lineId); if (!p.jobMaster || !pk) return;
     if (pk.crit) p.stats.critChance += pk.crit;
     if (pk.rate) p.stats.fireRateBonus += pk.rate;
     if (pk.energyMul) { p.maxEnergy = Math.round(p.maxEnergy * (1 + pk.energyMul)); p.energy = p.maxEnergy; }
@@ -70,21 +72,22 @@ class Game {
     if (pk.guard) p.jobGuardAura = pk.guard;   // takeDamage에서 팀 가드(멀티는 아군 전원)로 적용
     if (pk.lowHp) { p.jobLowHp = pk.lowHp; p.jobLowHpAt = pk.lowHpAt || 0.5; }   // mods 게터에서 체력 문턱 이하일 때 공격력 가산
     if (pk.regen) p.jobRegen = pk.regen;   // Player.update에서 초당 체력 재생
-    if (pk.skillFx && !(this.save.jobPerkOff && this.save.jobPerkOff[heroId])) p.jobSkillFx = pk.skillFx;   // 스킬 강화 효과(토글 가능)
+    if (pk.skillFx && !(this.save.jobPerkOff && this.save.jobPerkOff[this.jobLvKey(heroId, lineId)])) p.jobSkillFx = pk.skillFx;   // 스킬 강화 효과(토글 가능)
   }
-  jobLevelCost(id) { const J = BALANCE.jobLevel, lv = this.jobLevel(id); return lv >= J.max ? null : J.base + J.perLevel * lv; }
+  jobLevelCost(id, line) { const J = BALANCE.jobLevel, lv = this.jobLevel(id, line); return lv >= J.max ? null : J.base + J.perLevel * lv; }
   // 직업 레벨업 → 결과 메시지 [글, 색] (직업 레벨 창에서 사용)
   levelUpJob(hero) {
     const s = this.save, cost = this.jobLevelCost(hero.id), p = this.player;
     if (!s.unlocked.includes(hero.id)) { SFX.play('deny'); return ['아직 해금하지 않은 직업입니다', '#ff9a9a']; }
     if (cost === null) return ['이미 최고 레벨입니다', '#ffd84a'];
     if (s.bank < cost) { SFX.play('deny'); return [`${CUR.name}이 부족합니다 (${cost} 필요)`, '#ff9a9a']; }
-    s.bank -= cost; s.jobLv = s.jobLv || {}; s.jobLv[hero.id] = this.jobLevel(hero.id) + 1; writeSave(s);
+    const key = this.jobLvKey(hero.id), line = this.chosenLine(hero.id);
+    s.bank -= cost; s.jobLv = s.jobLv || {}; s.jobLv[key] = this.jobLevel(hero.id) + 1; writeSave(s);
     const { x, y } = p; this.player = this.makePlayer(x, y);
     this.effects.ring(x, y, 30, '#7ad0ff'); this.effects.burst(x, y, '#7ad0ff', 18); SFX.play('buy');
-    const lv = s.jobLv[hero.id], J = BALANCE.jobLevel, pk = J.perks && J.perks[hero.id];
-    if (lv >= J.max) { this.effects.rays(x, y, '#ffd84a', 16, 70, 0.9); return [`${hero.name} Lv.${lv} — 직업 숙련! 스킬 데미지 +${Math.round(J.maxDmg * 100)}%${pk ? ` · ${pk.name}(${pk.desc})` : ''}`, '#ffd84a']; }
-    return [`${hero.name} Lv.${lv} 달성!`, '#7ad0ff'];
+    const lv = s.jobLv[key], J = BALANCE.jobLevel, pk = this.linePerk(hero.id), rn = line.ranks ? line.ranks[2] : line.name;
+    if (lv >= J.max) { this.effects.rays(x, y, '#ffd84a', 16, 70, 0.9); return [`${rn} Lv.${lv} — 루트 숙련! 스킬 데미지 +${Math.round(J.maxDmg * 100)}%${pk ? ` · ${pk.name}(${pk.desc})` : ''}`, '#ffd84a']; }
+    return [`${rn} Lv.${lv} 달성!`, '#7ad0ff'];
   }
   // ── 탐험가 길드 (제안): 일일·주간 퀘스트, 토벌 의뢰, 칭호, 거래상 보급품, 결정석 도박
   guild() {
@@ -1374,10 +1377,10 @@ class Game {
       let pickI = -1;
       DATA_HEROES.forEach((h, i) => { if (input.wasPressed('Digit' + (i + 1))) pickI = i; });
       if (input.wasPressed('Mouse0')) { const m = input.mouse; DATA_HEROES.forEach((h, i) => { const r = HUD.jobRowRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) pickI = i; }); }
-      if (pickI >= 0) { const h = DATA_HEROES[pickI], J = BALANCE.jobLevel, pk = J.perks && J.perks[h.id];
-        if (this.jobLevel(h.id) >= J.max && pk && pk.toggle) { /* 만렙 + 토글 가능한 스킬 효과: 클릭하면 on/off */
-          const sv = this.save; sv.jobPerkOff = sv.jobPerkOff || {}; sv.jobPerkOff[h.id] = !sv.jobPerkOff[h.id]; writeSave(sv);
-          const off = sv.jobPerkOff[h.id]; if (this.player && this.save.selected === h.id) this.player.jobSkillFx = off ? null : pk.skillFx; /* 즉시 반영 */
+      if (pickI >= 0) { const h = DATA_HEROES[pickI], J = BALANCE.jobLevel, pk = this.linePerk(h.id), key = this.jobLvKey(h.id);
+        if (this.jobLevel(h.id) >= J.max && pk && pk.toggle) { /* 만렙 + 토글 가능한 스킬 효과: 클릭하면 on/off (루트별) */
+          const sv = this.save; sv.jobPerkOff = sv.jobPerkOff || {}; sv.jobPerkOff[key] = !sv.jobPerkOff[key]; writeSave(sv);
+          const off = sv.jobPerkOff[key]; if (this.player && this.save.selected === h.id) this.player.jobSkillFx = off ? null : pk.skillFx; /* 즉시 반영 */
           o.msg = { text: `${pk.name} ${off ? '꺼짐' : '켜짐'}`, color: off ? '#999' : '#ffd84a', t: 2 }; SFX.play('ui');
         } else { const [text, color] = this.levelUpJob(h); o.msg = { text, color, t: 2 }; }
         this.input.mouse.down = false; }

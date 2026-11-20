@@ -164,7 +164,7 @@ Object.assign(Game.prototype, {
     if (this.remotes.has(id)) return;
     const hero = this.data.heroes.get(d.hero) || DATA_HEROES[0], me = this.coop.me, c = { x: me.x, y: me.y }; // 방장 곁에서 시작 (늦게 합류해도)
     let px = c.x + (this.remotes.size + 1) * 14, py = c.y + 10; if (overlapsSolid(px, py, 5, this.map)) { px = c.x; py = c.y; }
-    const p = new Player(px, py, hero, this.data.base), J = BALANCE.jobLevel, lv = Math.min(J.max, d.jobLv | 0); p.jobMaster = lv >= J.max; this.applyJobMaster(p, hero.id); p.remoteSkin = skinSpriteOk(d.skin); /* 동료 스킨 */ p.lineChoice = jobLines(hero.id).some((l) => l.id === d.line) ? d.line : null; /* 동료가 로비에서 고른 진화 루트 */
+    const p = new Player(px, py, hero, this.data.base), J = BALANCE.jobLevel, lv = Math.min(J.max, d.jobLv | 0); p.jobMaster = lv >= J.max; this.applyJobMaster(p, hero.id, d.line); p.remoteSkin = skinSpriteOk(d.skin); /* 동료 스킨 */ p.lineChoice = jobLines(hero.id).some((l) => l.id === d.line) ? d.line : null; /* 동료가 로비에서 고른 진화 루트 */
     if (lv) { p.maxHp += J.hp * lv; p.hp = p.maxHp; p.maxEnergy += J.energy * lv; p.energy = p.maxEnergy; p.stats.attackBonus += J.atk * lv; }
     p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
     if (d.loadout && d.loadout !== hero.startWeapon && this.data.weapons.get(d.loadout)) p.weapons.push(new WeaponInstance(this.weaponDef(d.loadout)));

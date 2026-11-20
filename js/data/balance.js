@@ -31,15 +31,16 @@ const BALANCE = {
   // 직업 레벨 (결정석으로 영구 소량 강화, 직업마다 따로): 레벨당 능력치, 레벨업 비용 = base + perLevel × (현재 레벨)
   // [사용자 결정] 직업 레벨: 비용 상향 · 만렙(10) 보너스 = 스킬 데미지 +maxDmg(공통) + 직업별 고유 특수효과(perks)
   jobLevel: { max: 10, base: 85, perLevel: 55, hp: 3, atk: 0.015, energy: 3, maxDmg: 0.1,
+    // [사용자 결정] 루트별 레벨업: 레벨·비용·Lv.10 고유효과가 진화 루트마다 따로 (키: heroId|lineId). 효과 없는 루트는 Lv.10에 스킬 데미지 +10%만
     perks: {
-      hero_swordsman: { crit: 0.12, name: '검의 달인', desc: '치명타 확률 +12%' },
-      hero_gunner: { rate: 0.12, name: '속사', desc: '발사 속도 +12%' },
-      hero_mage: { skillFx: 'explosion', toggle: true, name: '폭심 확장', desc: '익스플로전이 벽을 부수고 범위 살짝↑' },
-      hero_engineer: { shieldMul: 0.5, name: '강화 장갑', desc: '최대 보호막 +50%' },
-      hero_assassin: { speed: 0.12, name: '그림자 발놀림', desc: '이동 속도 +12%' },
-      hero_priest: { guard: 0.1, name: '성스러운 가호', desc: '받는 피해 -10% (멀티: 아군 전원)' },
-      hero_berserker: { lowHp: 0.25, lowHpAt: 0.6, name: '광폭', desc: '체력 60% 이하에서 공격력 +25%' },
-      hero_druid: { regen: 0.012, name: '자연의 축복', desc: '초당 체력 +1.2% 재생' }
+      'hero_swordsman|sword': { crit: 0.12, name: '검의 달인', desc: '치명타 확률 +12%' },
+      'hero_gunner|base': { rate: 0.12, name: '속사', desc: '발사 속도 +12%' },
+      'hero_mage|fire': { skillFx: 'explosion', toggle: true, name: '폭심 확장', desc: '익스플로전이 벽을 부수고 범위 살짝↑' },
+      'hero_engineer|base': { shieldMul: 0.5, name: '강화 장갑', desc: '최대 보호막 +50%' },
+      'hero_assassin|shadow': { speed: 0.12, name: '그림자 발놀림', desc: '이동 속도 +12%' },
+      'hero_priest|base': { guard: 0.1, name: '성스러운 가호', desc: '받는 피해 -10% (멀티: 아군 전원)' },
+      'hero_berserker|base': { lowHp: 0.25, lowHpAt: 0.6, name: '광폭', desc: '체력 60% 이하에서 공격력 +25%' },
+      'hero_druid|base': { regen: 0.012, name: '자연의 축복', desc: '초당 체력 +1.2% 재생' }
     } },
   lobbyCurrency: { name: '결정석', color: '#7ad0ff', perStage: 15, perBoss: 40, victory: 80 },
   bossHealRatio: 0.5,         // 월드 보스 처치 시 최대 체력 대비 회복

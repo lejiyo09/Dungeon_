@@ -380,20 +380,20 @@ class HUD {
       const sv = game.save, J = BALANCE.jobLevel, m = game.input.mouse;
       hudText(ctx, `직업 레벨  ·  보유 ${CUR.name} ${sv.bank}`, VIEW_W / 2, 7, '#7ad0ff', 'center', 11);
       hudText(ctx, `레벨마다 영구 강화: 최대 체력 +${J.hp} · 공격력 +${J.atk * 100}% · 최대 에너지 +${J.energy}  (최대 Lv.${J.max}, 직업마다 따로)`, VIEW_W / 2, 20, '#aaa', 'center', 8);
-      hudText(ctx, `★ Lv.${J.max} 직업 숙련: 스킬 데미지 +${Math.round(J.maxDmg * 100)}% (공통) + 직업별 고유 효과`, VIEW_W / 2, 31, '#ffd84a', 'center', 8);
+      hudText(ctx, `★ Lv.${J.max} 루트 숙련: 스킬 데미지 +${Math.round(J.maxDmg * 100)}% (공통) + 루트별 고유 효과   ·   진화 루트는 캐릭터 정보(I)에서 변경`, VIEW_W / 2, 31, '#ffd84a', 'center', 7);
       DATA_HEROES.forEach((h, i) => {
-        const r = HUD.jobRowRect(i), unlocked = sv.unlocked.includes(h.id), lv = game.jobLevel(h.id), cost = game.jobLevelCost(h.id);
+        const r = HUD.jobRowRect(i), unlocked = sv.unlocked.includes(h.id), line = game.chosenLine(h.id), lv = game.jobLevel(h.id), cost = game.jobLevelCost(h.id);
         const on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h, sel = sv.selected === h.id;
         ctx.fillStyle = sel ? 'rgba(122,208,255,0.16)' : on && unlocked ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
         ctx.globalAlpha = unlocked ? 1 : 0.35;
         drawHero(ctx, h, r.x + 24, r.y + 12, 1, 0, false);
         hudText(ctx, `${i + 1}`, r.x + 4, r.y + 3, '#777', 'left', 7);
-        hudText(ctx, h.name + (sel ? '  (선택 중)' : ''), r.x + 40, r.y + 3, sel ? '#7ad0ff' : '#fff', 'left', 9);
+        hudText(ctx, `${h.name}${jobLines(h.id).length > 1 ? ' · ' + line.name : ''}${sel ? '  (선택)' : ''}`, r.x + 40, r.y + 3, sel ? '#7ad0ff' : '#fff', 'left', 9);
         for (let k = 0; k < J.max; k++) { ctx.fillStyle = k < lv ? '#7ad0ff' : '#2e2a3e'; ctx.fillRect(r.x + 40 + k * 9, r.y + 16, 7, 5); } // 레벨 칸
         hudText(ctx, `Lv.${lv}`, r.x + 40 + J.max * 9 + 4, r.y + 14, '#7ad0ff', 'left', 8);
-        { const pk = J.perks && J.perks[h.id], atMax = lv >= J.max, off = pk && pk.toggle && game.save.jobPerkOff && game.save.jobPerkOff[h.id];
+        { const pk = game.linePerk(h.id), atMax = lv >= J.max, off = pk && pk.toggle && game.save.jobPerkOff && game.save.jobPerkOff[game.jobLvKey(h.id)];
           hudText(ctx, lv ? `체력 +${J.hp * lv} · 공격력 +${Math.round(J.atk * lv * 1000) / 10}% · 에너지 +${J.energy * lv}` : '강화 없음', r.x + 200, r.y + 3, atMax ? '#ffe0a0' : '#c8c0d8', 'left', 7);
-          if (pk) hudText(ctx, `${atMax ? '★ ' : 'Lv.10 '}${pk.name}: ${pk.desc}${pk.toggle && atMax ? (off ? '  [꺼짐·클릭 ON]' : '  [켜짐·클릭 OFF]') : ''}`, r.x + 200, r.y + 15, off ? '#8a8498' : atMax ? '#ffd84a' : '#8a8498', 'left', 7); }
+          hudText(ctx, pk ? `${atMax ? '★ ' : 'Lv.10 '}${pk.name}: ${pk.desc}${pk.toggle && atMax ? (off ? '  [꺼짐·클릭 ON]' : '  [켜짐·클릭 OFF]') : ''}` : (atMax ? '★ 숙련: 스킬 데미지 +10%' : 'Lv.10: 스킬 데미지 +10%'), r.x + 200, r.y + 15, off ? '#8a8498' : atMax ? '#ffd84a' : '#8a8498', 'left', 7); }
         const st = !unlocked ? ['미해금', '#888'] : cost === null ? ['최고 레벨', '#ffd84a'] : [`레벨업 ${cost} ${CUR.name}`, sv.bank >= cost ? '#fff' : '#886'];
         hudText(ctx, st[0], r.x + r.w - 6, r.y + 9, st[1], 'right', 8);
         ctx.globalAlpha = 1;
