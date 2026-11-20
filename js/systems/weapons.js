@@ -14,7 +14,7 @@ function odDouble(player) { return player.overdrive > 0 && player.odDouble; }
 function weaponTitle(w) { return w.def.name + (w.lv ? ` +${w.lv}` : ''); }
 class WeaponInstance {
   /* [사용자 결정] 기본 무기 +10강 각성: def를 읽으면 각성 능력이 더해진 정의를 돌려줌 (같은 무기는 같은 객체를 써서 비교도 그대로) */
-  get def() { const b = this.base; if (b && b.awaken && this.lv >= BALANCE.upgrade.maxLevel) return b._awakened || (b._awakened = Object.assign({}, b, b.awaken, { name: b.name + ' · 각성', awakened: true, awakenDesc: b.awaken.desc, desc: undefined })); return b; }
+  get def() { const b = this.base; if (b && b.awaken && this.lv >= BALANCE.upgrade.maxLevel) return b._awakened || (b._awakened = (() => { const a = Object.assign({}, b, b.awaken, { name: b.name + ' · 각성', awakened: true, awakenDesc: b.awaken.desc, desc: undefined }); const m = (BALANCE.awakenBonus || 1.1); if (typeof a.damage === 'number') a.damage = Math.round(a.damage * m); if (a.wave && typeof a.wave.damage === 'number') a.wave = Object.assign({}, a.wave, { damage: Math.round(a.wave.damage * m) }); if (a.slam && typeof a.slam.damage === 'number') a.slam = Object.assign({}, a.slam, { damage: Math.round(a.slam.damage * m) }); return a; })()); /* [사용자 결정] 각성 소폭 추가 강화: 피해 ×awakenBonus */ return b; }
   set def(v) { this.base = v; }
   constructor(def, lv = 0) { this.lv = lv; this.def = def; this.cooldown = 0; this.charge = 0; this.burstLeft = 0; this.burstTimer = 0; this.beamTick = 0; this.beamActive = false; this.beamEnd = null; }
 }
