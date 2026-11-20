@@ -37,8 +37,8 @@ const BALANCE = {
       hero_mage: { energyMul: 0.4, name: '마나의 심연', desc: '최대 에너지 +40%' },
       hero_engineer: { shieldMul: 0.5, name: '강화 장갑', desc: '최대 보호막 +50%' },
       hero_assassin: { speed: 0.12, name: '그림자 발놀림', desc: '이동 속도 +12%' },
-      hero_priest: { guard: 0.1, name: '성스러운 가호', desc: '받는 피해 -10%' },
-      hero_berserker: { lowHp: 0.2, name: '광폭', desc: '체력 절반 이하에서 공격력 +20%' },
+      hero_priest: { guard: 0.1, name: '성스러운 가호', desc: '받는 피해 -10% (멀티: 아군 전원)' },
+      hero_berserker: { lowHp: 0.25, lowHpAt: 0.6, name: '광폭', desc: '체력 60% 이하에서 공격력 +25%' },
       hero_druid: { regen: 0.012, name: '자연의 축복', desc: '초당 체력 +1.2% 재생' }
     } },
   lobbyCurrency: { name: '결정석', color: '#7ad0ff', perStage: 15, perBoss: 40, victory: 80 },

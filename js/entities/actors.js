@@ -43,7 +43,7 @@ class Player extends Entity {
   }
   get weapon() { return this.weapons[this.slot] || null; }
   get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0 || this.aegisT > 0 || this.scabbardT > 0 || this.hornT > 0; }
-  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.35 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hadesT > 0 ? this.treasure.atk : 0) + (this.avalonT > 0 ? this.avalonAtk : 0) + (this.buffT > 0 ? this.buffAtk || 0 : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0) + (this.jobLowHp && this.hp <= this.maxHp * 0.5 ? this.jobLowHp : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier, damageMult: this.feastPenaltyActive ? (this.feastPenaltyFactor || 0.6) : 1 }; }
+  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.35 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hadesT > 0 ? this.treasure.atk : 0) + (this.avalonT > 0 ? this.avalonAtk : 0) + (this.buffT > 0 ? this.buffAtk || 0 : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0) + (this.jobLowHp && this.hp <= this.maxHp * (this.jobLowHpAt || 0.5) ? this.jobLowHp : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier, damageMult: this.feastPenaltyActive ? (this.feastPenaltyFactor || 0.6) : 1 }; }
 
   update(dt, input, map, mouseWorld) {
     this.time += dt;
@@ -111,7 +111,9 @@ class Player extends Entity {
   }
   takeDamage(amount) {
     if (this.state === 'DEAD' || this.isInvulnerable) return false;
-    amount = Math.max(1, Math.round(amount * (1 - this.damageReduction) * (this.solomon > 0 ? 1 - this.treasure.guard : 1) * (this.avalonT > 0 ? 1 - this.avalonGuard : 1) * (this.buffT > 0 ? 1 - (this.buffGuard || 0) : 1) * (this.scabGuardT > 0 && this.treasure && this.treasure.use === 'scabbard' ? 1 - this.treasure.guard : 1)));
+    let aura = this.jobGuardAura || 0; // 사제 숙련 '성스러운 가호': 파티에 만렙 사제가 있으면 아군 전원 받는 피해 감소
+    if (typeof game !== 'undefined' && game.allPlayers) for (const q of game.allPlayers()) if ((q.jobGuardAura || 0) > aura) aura = q.jobGuardAura;
+    amount = Math.max(1, Math.round(amount * (1 - this.damageReduction) * (1 - aura) * (this.solomon > 0 ? 1 - this.treasure.guard : 1) * (this.avalonT > 0 ? 1 - this.avalonGuard : 1) * (this.buffT > 0 ? 1 - (this.buffGuard || 0) : 1) * (this.scabGuardT > 0 && this.treasure && this.treasure.use === 'scabbard' ? 1 - this.treasure.guard : 1)));
     this.sinceHit = 0;
     const absorbed = Math.min(this.shield, amount);
     this.shield -= absorbed;

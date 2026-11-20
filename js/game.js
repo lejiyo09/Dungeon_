@@ -67,8 +67,8 @@ class Game {
     if (pk.energyMul) { p.maxEnergy = Math.round(p.maxEnergy * (1 + pk.energyMul)); p.energy = p.maxEnergy; }
     if (pk.shieldMul) { p.maxShield = Math.round(p.maxShield * (1 + pk.shieldMul)); p.shield = p.maxShield; }
     if (pk.speed) p.moveSpeed *= 1 + pk.speed;
-    if (pk.guard) p.damageReduction = Math.min(0.8, (p.damageReduction || 0) + pk.guard);
-    if (pk.lowHp) p.jobLowHp = pk.lowHp;   // mods 게터에서 체력 절반 이하일 때 공격력 가산
+    if (pk.guard) p.jobGuardAura = pk.guard;   // takeDamage에서 팀 가드(멀티는 아군 전원)로 적용
+    if (pk.lowHp) { p.jobLowHp = pk.lowHp; p.jobLowHpAt = pk.lowHpAt || 0.5; }   // mods 게터에서 체력 문턱 이하일 때 공격력 가산
     if (pk.regen) p.jobRegen = pk.regen;   // Player.update에서 초당 체력 재생
   }
   jobLevelCost(id) { const J = BALANCE.jobLevel, lv = this.jobLevel(id); return lv >= J.max ? null : J.base + J.perLevel * lv; }
