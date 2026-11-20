@@ -43,7 +43,7 @@ class Player extends Entity {
   }
   get weapon() { return this.weapons[this.slot] || null; }
   get isInvulnerable() { return this.dashInvuln > 0 || this.hurtInvuln > 0 || this.whirl > 0 || this.blinkInv > 0 || this.aegisT > 0 || this.scabbardT > 0 || this.hornT > 0; }
-  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.35 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hadesT > 0 ? this.treasure.atk : 0) + (this.avalonT > 0 ? this.avalonAtk : 0) + (this.buffT > 0 ? this.buffAtk || 0 : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier, damageMult: this.feastPenaltyActive ? (this.feastPenaltyFactor || 0.6) : 1 }; }
+  get mods() { return { attackBonus: this.stats.attackBonus + (this.rage > 0 ? this.rageAtk : 0) + (this.overdrive > 0 ? this.odDmg : 0) + (this.sancBoost > 0 ? 0.35 : 0) + (this.solomon > 0 ? this.treasure.atk : 0) + (this.hadesT > 0 ? this.treasure.atk : 0) + (this.avalonT > 0 ? this.avalonAtk : 0) + (this.buffT > 0 ? this.buffAtk || 0 : 0) + (this.hero.lowHpBonus && this.hp <= this.maxHp * 0.5 ? this.hero.lowHpBonus : 0) + (this.jobLowHp && this.hp <= this.maxHp * 0.5 ? this.jobLowHp : 0), critChance: this.stats.critChance, critMultiplier: this.stats.critMultiplier, damageMult: this.feastPenaltyActive ? (this.feastPenaltyFactor || 0.6) : 1 }; }
 
   update(dt, input, map, mouseWorld) {
     this.time += dt;
@@ -66,6 +66,7 @@ class Player extends Entity {
     this.sinceHit += dt;
     if (this.sinceHit >= this.cfg.shieldRegenDelay)
       this.shield = Math.min(this.maxShield, this.shield + this.cfg.shieldRegenRate * (this.hero.shieldRegenMul || 1) * dt);
+    if (this.jobRegen && this.state !== 'DEAD') this.hp = Math.min(this.maxHp, this.hp + this.maxHp * this.jobRegen * dt); // 드루이드 숙련: 초당 체력 재생
 
     const ax = mouseWorld.x - this.x, ay = mouseWorld.y - this.y, alen = Math.hypot(ax, ay);
     if (alen > 0.5) { this.aim.x = ax / alen; this.aim.y = ay / alen; }

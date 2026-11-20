@@ -53,13 +53,24 @@ class Game {
     const p = new Player(x, y, hero, this.data.base);
     const J = BALANCE.jobLevel, lv = this.jobLevel(hero.id); // 직업 레벨 보너스
     if (lv) { p.maxHp += J.hp * lv; p.hp = p.maxHp; p.maxEnergy += J.energy * lv; p.energy = p.maxEnergy; p.stats.attackBonus += J.atk * lv; }
-    p.jobMaster = lv >= J.max; // 직업 숙련(만렙): 스킬 데미지·쿨타임 보너스
+    p.jobMaster = lv >= J.max; this.applyJobMaster(p, hero.id); // 직업 숙련(만렙): 스킬 데미지 +10% + 직업별 고유 효과
     p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
     const lo = this.save.loadout; // 무기고에서 장착한 시작 보조 무기
     if (lo && lo !== hero.startWeapon && this.data.weapons.get(lo) && this.save.armory.includes(lo)) p.weapons.push(new WeaponInstance(this.weaponDef(lo)));
     return p;
   }
   jobLevel(id) { return (this.save.jobLv && this.save.jobLv[id]) || 0; }
+  applyJobMaster(p, heroId) { // [사용자 결정] 만렙(Lv.10) 직업별 고유 특수효과
+    const pk = BALANCE.jobLevel.perks && BALANCE.jobLevel.perks[heroId]; if (!p.jobMaster || !pk) return;
+    if (pk.crit) p.stats.critChance += pk.crit;
+    if (pk.rate) p.stats.fireRateBonus += pk.rate;
+    if (pk.energyMul) { p.maxEnergy = Math.round(p.maxEnergy * (1 + pk.energyMul)); p.energy = p.maxEnergy; }
+    if (pk.shieldMul) { p.maxShield = Math.round(p.maxShield * (1 + pk.shieldMul)); p.shield = p.maxShield; }
+    if (pk.speed) p.moveSpeed *= 1 + pk.speed;
+    if (pk.guard) p.damageReduction = Math.min(0.8, (p.damageReduction || 0) + pk.guard);
+    if (pk.lowHp) p.jobLowHp = pk.lowHp;   // mods 게터에서 체력 절반 이하일 때 공격력 가산
+    if (pk.regen) p.jobRegen = pk.regen;   // Player.update에서 초당 체력 재생
+  }
   jobLevelCost(id) { const J = BALANCE.jobLevel, lv = this.jobLevel(id); return lv >= J.max ? null : J.base + J.perLevel * lv; }
   // 직업 레벨업 → 결과 메시지 [글, 색] (직업 레벨 창에서 사용)
   levelUpJob(hero) {
@@ -70,8 +81,8 @@ class Game {
     s.bank -= cost; s.jobLv = s.jobLv || {}; s.jobLv[hero.id] = this.jobLevel(hero.id) + 1; writeSave(s);
     const { x, y } = p; this.player = this.makePlayer(x, y);
     this.effects.ring(x, y, 30, '#7ad0ff'); this.effects.burst(x, y, '#7ad0ff', 18); SFX.play('buy');
-    const lv = s.jobLv[hero.id], J = BALANCE.jobLevel;
-    if (lv >= J.max) { this.effects.rays(x, y, '#ffd84a', 16, 70, 0.9); return [`${hero.name} Lv.${lv} — 직업 숙련 달성! 스킬 데미지 +${Math.round(J.maxDmg * 100)}% · 쿨타임 -${Math.round(J.maxCdr * 100)}%`, '#ffd84a']; }
+    const lv = s.jobLv[hero.id], J = BALANCE.jobLevel, pk = J.perks && J.perks[hero.id];
+    if (lv >= J.max) { this.effects.rays(x, y, '#ffd84a', 16, 70, 0.9); return [`${hero.name} Lv.${lv} — 직업 숙련! 스킬 데미지 +${Math.round(J.maxDmg * 100)}%${pk ? ` · ${pk.name}(${pk.desc})` : ''}`, '#ffd84a']; }
     return [`${hero.name} Lv.${lv} 달성!`, '#7ad0ff'];
   }
   // ── 탐험가 길드 (제안): 일일·주간 퀘스트, 토벌 의뢰, 칭호, 거래상 보급품, 결정석 도박
@@ -1554,7 +1565,7 @@ class Game {
     if (!this.zoneRight('job')) { this.effects.text(p.x, p.y - 20, '직업의 권리를 빼앗겼다', '#ffd84a'); return; } /* 귀환길: 첫 층 보스까지 스킬 봉인 */ /* 가레스의 부정 장판 안: 스킬 금지 */
     if (/^overdrive/.test(p.skillId || '') && p.odLockT > 0) return; /* 사수 과부하 계열: 효과가 끝나고 잠시 뒤까지 다시 못 씀 (쿨타임 감소가 쌓여도 효과가 끊기지 않고 계속 유지되던 버그) */
     if (charged) { if (p.dsCharges == null) p.dsCharges = BALANCE.TRAP.sentryCharges; p.dsCharges--; } /* 재사용 대기 없음 — 칸은 actors.js에서 sentryRecharge초마다 1칸씩 참 */
-    else p.skillCooldown = p.skillCdMax * (p.jobMaster ? 1 - (BALANCE.jobLevel.maxCdr || 0) : 1); /* 직업 숙련(Lv.10): 스킬 쿨타임 -12% */
+    else p.skillCooldown = p.skillCdMax;
     this.guildEvent('skills');
     SFX.play('skill');
     if (p.rank === 2) this.ultimateFx(p); // 최종 진화 스킬은 컷인과 함께
