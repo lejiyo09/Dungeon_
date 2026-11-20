@@ -20,8 +20,8 @@ class Effects {
   text(x, y, str, color, big = false) { this.push({ kind: 'text', x: x + (big ? 0 : randInt(-3, 3)), y, str, color, big, t: 0, life: big ? 0.8 : 0.6 }); }
   spark(x, y, color) { this.push({ kind: 'spark', x, y, color, t: 0, life: 0.08 }); }
   ring(x, y, r, color) { this.push({ kind: 'ring', x, y, r, r0: r * 0.4, color, t: 0, life: 0.22 }); }
-  slash(x, y, ang, r, arc, color) {
-    this.push({ kind: 'slash', x, y, ang, r, arc, color, t: 0, life: 0.16 });
+  slash(x, y, ang, r, arc, color, hi) {
+    this.push({ kind: 'slash', x, y, ang, r, arc, color, hi, t: 0, life: 0.16 });
     for (let i = 0; i < 5; i++) { const a = ang + (Math.random() - 0.5) * arc, d = r * (0.7 + Math.random() * 0.3);
       this.part(x + Math.cos(a) * d, y + Math.sin(a) * d, Math.cos(a) * 40, Math.sin(a) * 40, { color: '#ffffff', life: 0.18, size: 2, add: true }); }
   }
@@ -112,7 +112,7 @@ class Effects {
   }
   goldBurst(x, y, n = 16) { for (let i = 0; i < n; i++) { const a = Math.random() * TAU, s = 40 + Math.random() * 70;
     this.part(x, y, Math.cos(a) * s, Math.sin(a) * s - 20, { color: '#ffd84a', color2: '#c8a050', life: 0.5 + Math.random() * 0.3, size: 2, size2: 0, drag: 3, grav: 60, add: true }); } }
-  beamline(x, y, x1, y1, w, color) { this.push({ kind: 'beamline', x, y, x1, y1, w, color, t: 0, life: 0.3, add: true }); }
+  beamline(x, y, x1, y1, w, color, hi) { this.push({ kind: 'beamline', x, y, x1, y1, w, color, hi, t: 0, life: 0.3, add: true }); }
   afterimage(img, x, y, w, h) { this.push({ kind: 'ghost', img, x, y, w, h, t: 0, life: 0.22 }); } // 대시 잔상
   dust(x, y) { for (let i = 0; i < 2; i++) this.part(x + randInt(-3, 3), y, randInt(-12, 12), -randInt(4, 14), { color: 'rgba(200,190,170,0.5)', life: 0.35, size: 1.5, size2: 3, drag: 4, shape: 'circle' }); }
   sparkle(x, y, color) { // 획득 반짝임
@@ -127,7 +127,7 @@ class Effects {
   }
 
   rays(x, y, color, n = 12, len = 60, life = 0.6) { this.push({ kind: 'rays', x, y, color, n, len, rot: Math.random() * TAU, t: 0, life, add: true }); } // 방사형 빛살
-  skyBeam(x, y, color, delay = 0, w = 5) { this.push({ kind: 'beamline', x, y: y - 130, x1: x, y1: y, w, color, t: -delay, life: 0.35, add: true }); } // 하늘에서 내리꽂는 빛줄기 (delay초 뒤)
+  skyBeam(x, y, color, delay = 0, w = 5, hi) { this.push({ kind: 'beamline', x, y: y - 130, x1: x, y1: y, w, color, hi, t: -delay, life: 0.35, add: true }); } // 하늘에서 내리꽂는 빛줄기 (delay초 뒤)
   // 원소 반응: 반응마다 다른 문양(가산 혼합) + 작은 이름표
   reaction(x, y, kind, label, color) {
     const seed = Math.random() * 1000;
@@ -312,14 +312,14 @@ class Effects {
       }
       case 'beamline':
         ctx.strokeStyle = fx.color; ctx.lineWidth = fx.w * 2 * k + 1; ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x1, fx.y1); ctx.stroke();
-        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1, fx.w * 0.7 * k); ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x1, fx.y1); ctx.stroke();
+        ctx.strokeStyle = fx.hi || '#ffffff'; ctx.lineWidth = Math.max(1, fx.w * 0.7 * k); ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x1, fx.y1); ctx.stroke();
         ctx.lineWidth = 1; break;
       case 'ghost': ctx.globalAlpha = 0.45 * k; ctx.drawImage(fx.img, Math.round(fx.x), Math.round(fx.y), fx.w, fx.h); break;
       case 'slash': {
         const a0 = fx.ang - fx.arc / 2, a1 = fx.ang + fx.arc / 2;
         ctx.strokeStyle = fx.color; ctx.lineWidth = 4 * k + 1;
         ctx.beginPath(); ctx.arc(x, y, fx.r * 0.85, a0, a1); ctx.stroke();
-        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5;
+        ctx.strokeStyle = fx.hi || '#ffffff'; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(x, y, fx.r * 0.95, a0 + fx.arc * 0.15, a1 - fx.arc * 0.15); ctx.stroke();
         ctx.lineWidth = 1; break;
       }

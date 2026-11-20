@@ -1007,7 +1007,7 @@ class SkillCast {
     if (Math.random() < 0.6) { const a = Math.random() * TAU; world.effects.part(this.x + Math.cos(a) * this.r, this.y + Math.sin(a) * this.r * 0.6, -Math.cos(a) * this.r * 1.2, -Math.sin(a) * this.r * 0.7, { color: this.color, life: 0.5, size: 2, size2: 0, drag: 0, add: true }); } // 모여드는 빛
     if (Math.random() < 0.4) world.effects.part(this.owner.x + randInt(-6, 6), this.owner.y + 4, 0, -40 - Math.random() * 30, { color: this.color, life: 0.5, size: 1.5, size2: 0, drag: 1, add: true }); // 시전자 주위로 솟는 빛
     if (this.t >= this.time) { this.alive = false; this.owner.castLock = 0; this.done(world, this);
-      world.effects.rays(this.x, this.y, this.color, 16, this.r + 24, 0.6); world.effects.ring(this.x, this.y, this.r, '#ffffff'); } // 발동 순간 빛살
+      world.effects.rays(this.x, this.y, this.color, 16, this.r + 24, 0.6); world.effects.ring(this.x, this.y, this.r, this.ringColor || '#ffffff'); } // 발동 순간 빛살
   }
   render(ctx) {
     const k = Math.min(1, this.t / this.time), rot = this.t * 2;

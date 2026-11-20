@@ -1487,7 +1487,7 @@ class Game {
     const finish = () => {
       if (after) after();
       const appliedPenalty = this.applyFeastStartPenalty(this.player);
-      if (appliedPenalty) this.showBanner('소울 이터', '시작 기본 능력치 -40% · 포식 500 도달 시 해제', '#b8e05a');
+      if (appliedPenalty) this.showBanner('소울 이터', '시작 기본 능력치 -40% · 포식 500 도달 시 해제', '#a2426e');
       // 직업 갈래·심층 시작 장비·시작 페널티까지 이어하기 저장에 반영
       if (this.mode === 'dungeon' && !this.trialW && this.player) { this.save.run = this.snapshotRun(); writeSave(this.save); }
     };
@@ -1561,7 +1561,7 @@ class Game {
         this.damageEnemy(e, { damage: D(dmg), mods: p.mods, knockback: o.kb ?? 6, feast: !!o.feast, status: (o.status && o.status.dps && this.trialW) ? Object.assign({}, o.status, { dps: D(o.status.dps) }) : o.status || null }, (e.x - p.x) / 50, (e.y - p.y) / 50); /* 시련: 범위 스킬의 중독·화상도 스킬 피해만큼 커짐 */
         if (o.root) e.chainT = Math.max(e.chainT || 0, o.root); }
       if (o.clear) for (const b of this.enemyBullets) if (!b.blade && Math.hypot(b.x - p.x, b.y - p.y) < r) b.alive = false;
-      this.effects.ring(p.x, p.y, r, o.color || '#fff'); this.effects.ring(p.x, p.y, r * 0.6, '#ffffff'); this.effects.burst(p.x, p.y, o.color || '#fff', 16);
+      this.effects.ring(p.x, p.y, r, o.color || '#fff'); this.effects.ring(p.x, p.y, r * 0.6, o.inner || '#ffffff'); this.effects.burst(p.x, p.y, o.color || '#fff', 16);
     };
     const shoot = (o) => { // 스킬 투사체
       const n = o.n || 1;
@@ -1763,21 +1763,21 @@ class Game {
       case 'thornfield': { const c = at(170); this.zones.push(new Puddle(c.x, c.y, { r: 56, life: 6, tick: 0.35, dmg: D(9), status: { type: 'poison', chance: 1, duration: 3, dps: 10 }, color: '#5a9a3a' }, p.mods)); break; }
       case 'thornburst': for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; this.projectiles.push(new Projectile({ x: p.x, y: p.y, dx: Math.cos(a), dy: Math.sin(a), speed: 320, range: 200, damage: D(44), pierce: 2, knockback: 3, mods: p.mods, color: '#7adf4a', size: 2, arrow: true, status: { type: 'poison', chance: 1, duration: 3, dps: 10 } })); }
         this.effects.ring(p.x, p.y, 30, '#7adf4a'); break;
-      case 'feast1': { const a0 = A; for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 96 && Math.abs(((Math.atan2(e.y - p.y, e.x - p.x) - a0 + Math.PI * 3) % (2 * Math.PI)) - Math.PI) < 1.1) this.damageEnemy(e, { damage: D(70), mods: p.mods, knockback: 6, feast: true }, Math.cos(a0), Math.sin(a0)); this.effects.slash(p.x + Math.cos(a0) * 40, p.y + Math.sin(a0) * 40, a0, 90, 1.1, '#b8e05a'); this.effects.ring(p.x, p.y, 70, '#b8e05a'); break; } /* 혼을 거두는 낫: 앞쪽 부채꼴 */
+      case 'feast1': { const a0 = A; for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 96 && Math.abs(((Math.atan2(e.y - p.y, e.x - p.x) - a0 + Math.PI * 3) % (2 * Math.PI)) - Math.PI) < 1.1) this.damageEnemy(e, { damage: D(70), mods: p.mods, knockback: 6, feast: true }, Math.cos(a0), Math.sin(a0)); this.effects.slash(p.x + Math.cos(a0) * 40, p.y + Math.sin(a0) * 40, a0, 90, 1.1, '#9a3a6a', '#c86aa0'); this.effects.ring(p.x, p.y, 70, '#7a2a5a'); break; } /* 혼을 거두는 낫: 앞쪽 부채꼴 */
       case 'feast2': for (const e of this.enemies) if (e.targetable && !e.def.boss && Math.hypot(e.x - p.x, e.y - p.y) < 150) { const d = Math.hypot(e.x - p.x, e.y - p.y) || 1, k = Math.min(1, 60 / d); e.x += (p.x - e.x) * k * 0.6; e.y += (p.y - e.y) * k * 0.6; }
-        nova(120, 95, { color: '#b8e05a', kb: 0, feast: true }); this.effects.ring(p.x, p.y, 120, '#8ab03a'); this.effects.ring(p.x, p.y, 60, '#b8e05a'); break; /* 영혼 포식: 끌어당겨 벰 */
+        nova(120, 95, { color: '#5a1e46', inner: '#8a2a5a', kb: 0, feast: true }); this.effects.ring(p.x, p.y, 120, '#9a3a6a'); this.effects.ring(p.x, p.y, 60, '#7a2a5a'); break; /* 영혼 포식: 끌어당겨 벰 */
       case 'feast3': { /* 궁극기: 만혼 강림 — 흩어진 혼을 끌어모아 하늘에서 혼의 비를 쏟아붓는다 */
         const R = 190;
         /* 1) 주변 적을 중심으로 빨아들임 (보스 제외) */
         for (const e of this.enemies) if (e.targetable && !e.def.boss && Math.hypot(e.x - p.x, e.y - p.y) < R + 50) { const d = Math.hypot(e.x - p.x, e.y - p.y) || 1, k = Math.min(1, 100 / d); e.x += (p.x - e.x) * k * 0.7; e.y += (p.y - e.y) * k * 0.7; }
         /* 2) 혼 소용돌이 텔레그래프 → 혼의 비 + 대폭발 */
-        this.effects.ring(p.x, p.y, R, '#7ab03a'); this.effects.ring(p.x, p.y, R * 0.55, '#d8ff80'); this.effects.text(p.x, p.y - 26, '만혼 강림', '#d8ff80', true); SFX.play('gate', 0.5);
-        this.zones.push(new SkillCast(p, p.x, p.y, { r: R, time: 0.6, color: '#b8e05a' }, () => {
-          for (let i = 0; i < 20; i++) { const a = Math.random() * TAU, rr = Math.sqrt(Math.random()) * R; this.effects.skyBeam(p.x + Math.cos(a) * rr, p.y + Math.sin(a) * rr, i % 2 ? '#d8ff80' : '#7ab03a', 0.02 + i * 0.025, 5); }
-          nova(R, 220, { color: '#b8e05a', kb: 10, feast: true });
-          this.zones.push(new SkillAura(p, { r: R, life: 3, tick: 0.3, dmg: 46, color: '#b8e05a', kind: 'blood', feast: true, lifesteal: 0.2 }));
-          this.effects.ring(p.x, p.y, R, '#d8ff80'); this.effects.ring(p.x, p.y, R * 0.6, '#b8e05a'); this.effects.burst(p.x, p.y, '#b8e05a', 26);
-          this.screenFlash = 0.22; this.flashColor = '184,224,90'; this.addShake(0.5, 8); this.hitStop(0.07); SFX.play('gate');
+        this.effects.ring(p.x, p.y, R, '#1a0a22'); this.effects.ring(p.x, p.y, R * 0.55, '#6a2048'); this.effects.text(p.x, p.y - 26, '만혼 강림', '#a84674', true); SFX.play('gate', 0.5);
+        this.zones.push(new SkillCast(p, p.x, p.y, { r: R, time: 0.6, color: '#241036', ringColor: '#5a2060' }, () => {
+          for (let i = 0; i < 20; i++) { const a = Math.random() * TAU, rr = Math.sqrt(Math.random()) * R; this.effects.skyBeam(p.x + Math.cos(a) * rr, p.y + Math.sin(a) * rr, i % 2 ? '#5e2288' : '#86203a', 0.02 + i * 0.025, 5, i % 2 ? '#8a44b8' : '#b23a58'); }
+          nova(R, 220, { color: '#341448', inner: '#5a1e5a', kb: 10, feast: true });
+          this.zones.push(new SkillAura(p, { r: R, life: 3, tick: 0.3, dmg: 46, color: '#421022', kind: 'blood', feast: true, lifesteal: 0.2 }));
+          this.effects.ring(p.x, p.y, R, '#5e2288'); this.effects.ring(p.x, p.y, R * 0.6, '#6a2048'); this.effects.burst(p.x, p.y, '#4e1a40', 26);
+          this.screenFlash = 0.16; this.flashColor = '48,22,60'; this.addShake(0.5, 8); this.hitStop(0.07); SFX.play('gate');
         })); break; }
       case 'ancientroot': nova(140, 170, { color: '#7adf4a', root: 3, kb: 0, status: { type: 'poison', chance: 1, duration: 5, dps: 36 } }); this.addShake(0.3, 5); break;
       case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [8, 0.4, 0.4, 0], bearform2: [10, 0.45, 0.4, 10], primal: [12, 0.75, 0.4, 16] }[p.skillId];
@@ -2482,12 +2482,12 @@ class Game {
     { const fp = this.player, F = BALANCE.feast; if (fp && fp.line && fp.line.id === 'feast' && fp.hero.id === 'hero_berserker' && this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.boss) { /* 소울 이터: 혼 포식 (처치 수와 따로) */
       const before = fp.feast || 0, gain = enemy.feastHit && this.time - enemy.feastHit < 0.6 ? F.perSkillKill : F.perKill; fp.feast = before + gain;
       const penaltyReleased = before < (F.penaltyRemoveAt || 500) && fp.feast >= (F.penaltyRemoveAt || 500) ? this.releaseFeastStartPenalty(fp) : false;
-      if (gain > 1) this.effects.text(enemy.x, enemy.y - 12, `혼 +${gain}`, '#b8e05a');
+      if (gain > 1) this.effects.text(enemy.x, enemy.y - 12, `혼 +${gain}`, '#c05a84');
       if (fp.feast >= F.healAt && fp.state !== 'DEAD') fp.hp = Math.min(fp.maxHp, fp.hp + F.heal);
       const ev = F.evolve || []; for (let r = fp.rank; r < ev.length; r++) if (before < ev[r] && fp.feast >= ev[r]) { const r0 = fp.rank; this.evolve(null, fp.line);
         if (fp.rank > r0) { fp.maxHp = Math.round(fp.maxHp * 1.2); fp.hp = fp.maxHp; fp.maxShield = Math.round(fp.maxShield * 1.2); fp.shield = fp.maxShield; fp.stats.attackBonus += 0.2; } /* [사용자 결정] 소울 이터 2·3진: 체력·보호막·공격력 +20% */
         break; } /* [사용자 결정] 포식 스택 진화: 750 → 1진(2진째), 2000 → 2진(3진째) */
-      if (Math.floor(fp.feast / F.bannerEvery) > Math.floor(before / F.bannerEvery)) this.showBanner(`포식 ${Math.floor(fp.feast / F.bannerEvery) * F.bannerEvery}`, `일반 몬스터 피해 +${Math.round(fp.feast / 10 * F.dmgPer10 * 100)}% · 이동 +${Math.round(Math.min(F.speedCap, fp.feast / 10 * F.speedPer10) * 100)}% · 받는 피해 -${Math.round(Math.min(F.guardCap, fp.feast / 10 * F.guardPer10) * 100)}%${penaltyReleased ? ' · 시작 능력치 -40% 해제' : ''}${fp.rank < ev.length ? ` · 다음 진화 ${ev[fp.rank]}` : ''}`, '#b8e05a'); } }
+      if (Math.floor(fp.feast / F.bannerEvery) > Math.floor(before / F.bannerEvery)) this.showBanner(`포식 ${Math.floor(fp.feast / F.bannerEvery) * F.bannerEvery}`, `일반 몬스터 피해 +${Math.round(fp.feast / 10 * F.dmgPer10 * 100)}% · 이동 +${Math.round(Math.min(F.speedCap, fp.feast / 10 * F.speedPer10) * 100)}% · 받는 피해 -${Math.round(Math.min(F.guardCap, fp.feast / 10 * F.guardPer10) * 100)}%${penaltyReleased ? ' · 시작 능력치 -40% 해제' : ''}${fp.rank < ev.length ? ` · 다음 진화 ${ev[fp.rank]}` : ''}`, '#a2426e'); } }
     if (this.mode === 'dungeon' && !enemy.def.dummy && !enemy.def.master) {
       this.guildEvent('kills', 1, enemy.def.id);
       if (enemy.elite) this.guildEvent('elites');
