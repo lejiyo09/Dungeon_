@@ -162,17 +162,30 @@ class HUD {
     const o = game.overlay;
     ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'hero_info' || o.type === 'skins' || o.type === 'travel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' || o.type === 'rank' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
-      hudText(ctx, '일시정지', VIEW_W / 2, 90, '#fff', 'center', 16);
-      { const B = game.input.binds, k = (id) => B[id].filter(Boolean).map(keyLabel).join('/') || '없음'; hudText(ctx, `${k('up')}${k('left')}${k('down')}${k('right')} 이동 · 마우스 조준 · ${k('attack')} 공격 · ${k('dash')} 대시 · ${k('skill')} 스킬`, VIEW_W / 2, 120, '#ccc', 'center', 9); } /* 지금 조작키 */
-      const hasTr = (game.save.treasures || []).length > 0 || !!game.player.treasure; // 보구를 얻기 전에는 R 안내를 숨김
-      { const B = game.input.binds, k = (id) => B[id].filter(Boolean).map(keyLabel).join('/') || '없음'; hudText(ctx, `${k('interact')} 상호작용 · ${k('swap')}/휠 무기 교체 · ${hasTr ? k('treasure') + ' 보구 · ' : ''}M 소리 켜기/끄기   ·   O 조작키 설정`, VIEW_W / 2, 134, '#ccc', 'center', 9); }
-      hudText(ctx, '상태이상: 화상(불) · 빙결(얼음) · 중독(자연) · 전격(번개) · 실명(빛) · 저주(어둠)', VIEW_W / 2, 148, '#c8c0d8', 'center', 8);
-      hudText(ctx, '원소 반응: 화상+빙결=열충격 · 화상+중독=독 연소 · 빙결+전격=감전 · 화상+전격=과부하 · 중독+전격=마비', VIEW_W / 2, 160, '#9ad8ff', 'center', 8);
-      hudText(ctx, '실명+저주=일식 · 저주+중독=역병 · 화상+저주=지옥불 · 실명+전격=심판', VIEW_W / 2, 172, '#9ad8ff', 'center', 8);
-      hudText(ctx, 'I  상세 정보 (특수방 확률 · 무기 강화 · 원소 반응 효과)   ·   G  선물 코드', VIEW_W / 2, 190, '#ffd84a', 'center', 9);
-      { const h = game.player.hero.id, K = SKINS.find((k) => k.hero === h && (game.save.skins || []).includes(k.id)); hudText(ctx, `K  스킨 고르기${K && game.skinSprite(h) ? ` (지금: ${K.name})` : ''}`, VIEW_W / 2, 220, '#ffb0d8', 'center', 9); } /* 스킨 창 */
-      if (game.mode === 'lobby' && game.save.babylon && game.save.babylon.visited) hudText(ctx, '+  빠른 이동 (카멜롯 · 바빌로니아)', VIEW_W / 2, 234, '#ffbe28', 'center', 9);
-      hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기   ·   L 포기하고 로비로' : 'Esc 이어하기   ·   P 프롤로그 다시 보기   ·   L 로그아웃', VIEW_W / 2, 206, '#999', 'center', 9);
+      const B = game.input.binds, k = (id) => B[id].filter(Boolean).map(keyLabel).join('/') || '없음';
+      const hasTr = (game.save.treasures || []).length > 0 || !!game.player.treasure;
+      const CX = VIEW_W / 2, PW = 452, PX = Math.round((VIEW_W - PW) / 2);
+      const panel = (y, h, title) => { // 구획 패널 + 탭 제목
+        ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(PX, y, PW, h);
+        ctx.strokeStyle = '#4b3f5c'; ctx.strokeRect(PX + 0.5, y + 0.5, PW - 1, h - 1);
+        ctx.fillStyle = '#14101c'; ctx.fillRect(PX + 12, y - 5, title.length * 8 + 12, 11);
+        hudText(ctx, title, PX + 18, y - 3, '#ffd84a', 'left', 8);
+      };
+      hudText(ctx, '일시정지', CX, 18, '#fff', 'center', 15);
+      // 조작
+      panel(42, 36, '조작');
+      hudText(ctx, `${k('up')}${k('left')}${k('down')}${k('right')} 이동  ·  마우스 조준  ·  ${k('attack')} 공격  ·  ${k('dash')} 대시  ·  ${k('skill')} 스킬`, CX, 52, '#d8d0e0', 'center', 8);
+      hudText(ctx, `${k('interact')} 상호작용  ·  ${k('swap')}/휠 무기교체${hasTr ? '  ·  ' + k('treasure') + ' 보구' : ''}  ·  O 조작키 설정  ·  M 소리`, CX, 66, '#d8d0e0', 'center', 8);
+      // 상태이상 · 원소 반응
+      panel(92, 52, '상태이상 · 원소 반응');
+      hudText(ctx, '화상(불) · 빙결(얼음) · 중독(자연) · 전격(번개) · 실명(빛) · 저주(어둠)', CX, 104, '#c8c0d8', 'center', 8);
+      hudText(ctx, '화상+빙결=열충격  ·  화상+중독=독연소  ·  빙결+전격=초전도  ·  화상+전격=과부하', CX, 120, '#9ad8ff', 'center', 8);
+      hudText(ctx, '중독+전격=마비  ·  실명+저주=일식  ·  저주+중독=역병  ·  화상+저주=지옥불  ·  실명+전격=심판', CX, 134, '#9ad8ff', 'center', 8);
+      // 메뉴
+      panel(160, 54, '메뉴');
+      hudText(ctx, 'I  상세 정보 (특수방 확률 · 무기 강화 · 반응 효과)   ·   G  선물 코드', CX, 172, '#ffd84a', 'center', 9);
+      { const h = game.player.hero.id, K = SKINS.find((s) => s.hero === h && (game.save.skins || []).includes(s.id)); hudText(ctx, `K  스킨 고르기${K && game.skinSprite(h) ? ` (지금: ${K.name})` : ''}${game.mode === 'lobby' && game.save.babylon && game.save.babylon.visited ? '      +  빠른 이동' : ''}`, CX, 188, '#ffb0d8', 'center', 9); }
+      hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기        L 포기하고 로비로' : 'Esc 이어하기    ·    P 프롤로그 다시 보기    ·    L 로그아웃', CX, 202, '#bbb', 'center', 9);
     } else if (o.type === 'keys') { /* 조작키 설정 */
       hudText(ctx, '조작키 설정', VIEW_W / 2, 20, '#fff', 'center', 14);
       hudText(ctx, o.wait ? '새 키를 누르세요 — 마우스 버튼도 됩니다   (Backspace 지우기 · Esc 취소)' : '바꿀 칸을 누르세요 (주 키 · 보조 키)   ·   Esc 돌아가기', VIEW_W / 2, 36, o.wait ? '#ffd84a' : '#aaa', 'center', 8);
