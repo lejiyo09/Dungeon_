@@ -1032,6 +1032,9 @@ class BloodStorm {
       const red = Math.random() < 0.38, spd = 340 + Math.random() * 140; E.part(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d * 0.7, tx * spd - Math.cos(a) * 40, (ty * spd * 0.75 - Math.sin(a) * 28) * 0.7, { color: red ? '#d02338' : '#3e0a14', life: 0.3 + Math.random() * 0.3, size: 1.5 + Math.random() * 1.6, size2: 0, drag: 1.1, add: red }); }
     if (Math.random() < 0.6) { const a = Math.random() * TAU, tx = -Math.sin(a), ty = Math.cos(a); // 바깥으로 터져 나가는 돌풍 파편
       E.part(p.x + Math.cos(a) * this.r * 0.85, p.y + Math.sin(a) * this.r * 0.85 * 0.7, tx * 220 + Math.cos(a) * 150, (ty * 170 + Math.sin(a) * 110) * 0.7, { color: Math.random() < 0.5 ? '#7a1020' : '#b02034', life: 0.5 + Math.random() * 0.3, size: 2.5, size2: 0, drag: 1.4 }); }
+    for (let i = 0; i < 6; i++) { const a = -this.spin * 1.5 + i * TAU / 6 + Math.random() * 0.3, d = this.r * (0.9 + Math.random() * 0.2), tx = -Math.sin(a), ty = Math.cos(a); // 바깥 테두리를 빠르게 도는 붉은 혼령 (가장자리 반짝임)
+      E.part(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d * 0.7, tx * 440 - Math.cos(a) * 20, (ty * 340 - Math.sin(a) * 15) * 0.7, { color: Math.random() < 0.5 ? '#ff3a52' : '#d01f36', life: 0.35 + Math.random() * 0.2, size: 1.5 + Math.random() * 1.5, size2: 0, drag: 0.6, add: true }); }
+    this.pulse = (this.pulse || 0) - dt; if (this.pulse <= 0) { this.pulse = 0.4; E.ring(p.x, p.y, this.r * 1.08, '#e0283e'); } // 가장자리에서 퍼지는 충격 링 (주기적)
   }
   render(ctx) {
     const edge = this.t < this.gather ? this.t / this.gather : Math.min(1, (this.gather + this.life - this.t) / 0.5);
@@ -1046,11 +1049,18 @@ class BloodStorm {
     ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.55 * k; // 어둠 사이로 휘도는 붉은 빛
     for (let i = 0; i < 4; i++) { const rr = this.r * (0.32 + i * 0.2), a0 = -this.spin * (1.5 + i * 0.4) + i * 1.9;
       ctx.strokeStyle = '#d01f36'; ctx.lineWidth = 1.7; ctx.beginPath(); ctx.arc(0, 0, rr, a0, a0 + 1.5 + i * 0.2); ctx.stroke(); }
-    ctx.globalAlpha = 0.4 * k; ctx.strokeStyle = '#c0283c'; ctx.lineWidth = 1; // 바깥으로 길게 쓸리는 돌풍 스트리크
-    for (let i = 0; i < 10; i++) { const a = this.spin * 1.7 + i * TAU / 10, r0 = this.r * 0.45, r1 = this.r; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); ctx.lineTo(Math.cos(a + 0.55) * r1, Math.sin(a + 0.55) * r1); ctx.stroke(); }
+    ctx.globalAlpha = 0.45 * k; ctx.strokeStyle = '#c8283c'; ctx.lineWidth = 1.2; // 경계 밖으로 길게 뻗어 나가는 돌풍 채찍
+    for (let i = 0; i < 12; i++) { const a = this.spin * 1.7 + i * TAU / 12, r0 = this.r * 0.5, r1 = this.r * 1.18; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); ctx.lineTo(Math.cos(a + 0.6) * r1, Math.sin(a + 0.6) * r1); ctx.stroke(); }
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 0.55 * k; ctx.fillStyle = '#120307'; ctx.beginPath(); ctx.arc(0, 0, this.r * 0.13, 0, TAU); ctx.fill(); // 중심의 어두운 눈
-    ctx.globalAlpha = 0.75 * k; ctx.strokeStyle = '#420a14'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.7 * k; ctx.strokeStyle = '#420a14'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.stroke(); // 어두운 바탕 테두리
+    // ── 바깥 테두리를 화려하게: 빛나는 붉은 림 + 맥동 후광 + 고속 회전 초승달
+    ctx.globalCompositeOperation = 'lighter'; const pulse = 0.5 + 0.5 * Math.sin(this.t * 11);
+    ctx.globalAlpha = (0.5 + 0.35 * pulse) * k; ctx.strokeStyle = '#e82a44'; ctx.lineWidth = 3 + pulse * 2.5; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.28 * k; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, this.r * (1.07 + 0.05 * pulse), 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.9 * k; ctx.lineCap = 'round'; ctx.strokeStyle = '#ff4a5c';
+    for (let i = 0; i < 8; i++) { const a0 = -this.spin * 2.6 + i * TAU / 8; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, this.r * 0.99, a0, a0 + 0.46); ctx.stroke(); }
+    ctx.globalCompositeOperation = 'source-over';
     ctx.restore(); ctx.lineWidth = 1; ctx.lineCap = 'butt';
   }
 }
