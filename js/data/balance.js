@@ -72,11 +72,11 @@ const BALANCE = {
   mobDeep: { dmg: 1.3 },  // [사용자 결정] 심층 일반 몬스터(보스 아님) 공격력 배율 — 스테이지 곡선 위에 더 곱함
   deepBossTreasureMult: 0.5, // [사용자 결정] 심층 보스가 공격형 보구(게이트 오브 바빌론·엑스칼리버·롱고미니아드·게이볼그, 게이볼그 출혈 포함)에게 받는 피해 배율
   // 스킬 피해가 스테이지(깊이)를 따라 자라는 비율 (1 = 몬스터 체력 성장과 같음) · 직업 갈래별 예외 · 직업별 스킬 피해 배율 [제안 수치]
-  skillScale: { base: 0.5, from: 3, lines: { 'hero_engineer|trap': 0.72, 'hero_engineer|drone': 0.72 }, hero: { hero_druid: 1.1 } },
+  skillScale: { base: 0.5, from: 3, lines: { 'hero_engineer|trap': 0.66, 'hero_engineer|drone': 0.72 }, hero: { hero_druid: 1.1 } },
   // [사용자 결정] 드루이드 '포식' 갈래 [제안 수치]: 중첩 하나당 일반 몬스터 피해 +perStack (cap까지) · 이동 속도 +speedPer (speedCap까지) · 보스에게는 피해 ×bossMult · healAt 이상이면 처치마다 체력 회복
   // [사용자 결정] 소울 이터: 포식 스택 — 일반 몬스터 피해는 상한 없이 조금씩(10당 +0.4%), 이동속도·피해감소는 게임이 깨지지 않게 상한을 둠 · 보스에게는 약함 · 750·2000에서 진화
   //  dmgPer10: 10스택당 일반 몬스터 피해 배율 증가(상한 없음) · speed/guard: 10스택당 증가(상한 cap) · evolve: 스택 진화 문턱
-  feast: { perKill: 1, perSkillKill: 3, dmgPer10: 0.004, speedPer10: 0.0008, speedCap: 0.22, guardPer10: 0.0012, guardCap: 0.3, bossMult: 0.7, startPenalty: 0.4, penaltyRemoveAt: 500, healAt: 500, heal: 2, evolve: [750, 2000], bannerEvery: 250 },
+  feast: { perKill: 1, perSkillKill: 3, dmgPer10: 0.004, speedPer10: 0.0008, speedCap: 0.22, guardPer10: 0.0012, guardCap: 0.3, bossMult: 0.7, startPenalty: 0.32, penaltyRemoveAt: 500, healAt: 500, heal: 2, evolve: [750, 2000], bannerEvery: 250 },
   awakenBonus: 1.1, // [사용자 결정] 기본 무기 +10 각성 시 피해 ×1.1 (소폭 추가 강화)
   babylonMob: { hp: 1.3, dmg: 1.3 }, // [사용자 결정] 바빌로니아 귀환길 잡몹 체력·공격력 +30%
   babylonBoss: { hp: 1.35, dmg: 1.15, cooldown: 0.88 }, // [사용자 결정] 바빌로니아 귀환길 보스(층 보스 9 + 지구라트 4-4 길가메시) 체력 ×1.35 · 공격력 ×1.15 · 공격 간격 ×0.88 [제안 수치]

@@ -1766,7 +1766,19 @@ class Game {
       case 'feast1': { const a0 = A; for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 96 && Math.abs(((Math.atan2(e.y - p.y, e.x - p.x) - a0 + Math.PI * 3) % (2 * Math.PI)) - Math.PI) < 1.1) this.damageEnemy(e, { damage: D(70), mods: p.mods, knockback: 6, feast: true }, Math.cos(a0), Math.sin(a0)); this.effects.slash(p.x + Math.cos(a0) * 40, p.y + Math.sin(a0) * 40, a0, 90, 1.1, '#b8e05a'); this.effects.ring(p.x, p.y, 70, '#b8e05a'); break; } /* 혼을 거두는 낫: 앞쪽 부채꼴 */
       case 'feast2': for (const e of this.enemies) if (e.targetable && !e.def.boss && Math.hypot(e.x - p.x, e.y - p.y) < 150) { const d = Math.hypot(e.x - p.x, e.y - p.y) || 1, k = Math.min(1, 60 / d); e.x += (p.x - e.x) * k * 0.6; e.y += (p.y - e.y) * k * 0.6; }
         nova(120, 95, { color: '#b8e05a', kb: 0, feast: true }); this.effects.ring(p.x, p.y, 120, '#8ab03a'); this.effects.ring(p.x, p.y, 60, '#b8e05a'); break; /* 영혼 포식: 끌어당겨 벰 */
-      case 'feast3': nova(150, 110, { color: '#b8e05a', kb: 6, feast: true }); this.zones.push(new SkillAura(p, { r: 150, life: 2.5, tick: 0.35, dmg: 42, color: '#b8e05a', kind: 'blood', feast: true })); this.addShake(0.3, 5); break;
+      case 'feast3': { /* 궁극기: 만혼 강림 — 흩어진 혼을 끌어모아 하늘에서 혼의 비를 쏟아붓는다 */
+        const R = 190;
+        /* 1) 주변 적을 중심으로 빨아들임 (보스 제외) */
+        for (const e of this.enemies) if (e.targetable && !e.def.boss && Math.hypot(e.x - p.x, e.y - p.y) < R + 50) { const d = Math.hypot(e.x - p.x, e.y - p.y) || 1, k = Math.min(1, 100 / d); e.x += (p.x - e.x) * k * 0.7; e.y += (p.y - e.y) * k * 0.7; }
+        /* 2) 혼 소용돌이 텔레그래프 → 혼의 비 + 대폭발 */
+        this.effects.ring(p.x, p.y, R, '#7ab03a'); this.effects.ring(p.x, p.y, R * 0.55, '#d8ff80'); this.effects.text(p.x, p.y - 26, '만혼 강림', '#d8ff80', true); SFX.play('gate', 0.5);
+        this.zones.push(new SkillCast(p, p.x, p.y, { r: R, time: 0.6, color: '#b8e05a' }, () => {
+          for (let i = 0; i < 20; i++) { const a = Math.random() * TAU, rr = Math.sqrt(Math.random()) * R; this.effects.skyBeam(p.x + Math.cos(a) * rr, p.y + Math.sin(a) * rr, i % 2 ? '#d8ff80' : '#7ab03a', 0.02 + i * 0.025, 5); }
+          nova(R, 220, { color: '#b8e05a', kb: 10, feast: true });
+          this.zones.push(new SkillAura(p, { r: R, life: 3, tick: 0.3, dmg: 46, color: '#b8e05a', kind: 'blood', feast: true, lifesteal: 0.2 }));
+          this.effects.ring(p.x, p.y, R, '#d8ff80'); this.effects.ring(p.x, p.y, R * 0.6, '#b8e05a'); this.effects.burst(p.x, p.y, '#b8e05a', 26);
+          this.screenFlash = 0.22; this.flashColor = '184,224,90'; this.addShake(0.5, 8); this.hitStop(0.07); SFX.play('gate');
+        })); break; }
       case 'ancientroot': nova(140, 170, { color: '#7adf4a', root: 3, kb: 0, status: { type: 'poison', chance: 1, duration: 5, dps: 36 } }); this.addShake(0.3, 5); break;
       case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [8, 0.4, 0.4, 0], bearform2: [10, 0.45, 0.4, 10], primal: [12, 0.75, 0.4, 16] }[p.skillId];
         p.buffT = C[0]; p.buffAtk = C[1]; p.buffGuard = C[2]; p.buffSpeed = 0; p.buffKillHeal = 0;
