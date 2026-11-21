@@ -12,6 +12,11 @@ const REACTIONS = {
   'blind+shock': 'judgment'   // 심판
 };
 let nextEntityId = 1;
+function legendarySkinForPlayer(player) {
+  if (typeof game === 'undefined' || !game || game.player !== player || !game.skinSprite) return null;
+  const sprite = game.skinSprite(player.hero.id, game.playerLineId ? game.playerLineId(player) : null);
+  return sprite ? SKINS.find((k) => k.sprite === sprite && k.grade === 'legendary') || null : null;
+}
 class Entity {
   constructor(x, y, half) {
     this.id = nextEntityId++;
@@ -35,7 +40,7 @@ class Player extends Entity {
     this.skillCooldown = 0; this.whirl = 0; this.whirlTick = 0; this.overdrive = 0; this.vampire = 0; this.rage = 0; this.blinkInv = 0; this.treasure = null; this.treasureCd = 0; this.solomon = 0;
     this.line = null; this.rank = 0; this.skillId = hero.skill; this.skillName = hero.skillName; this.skillDesc = hero.skillDesc; this.skillBaseCd = hero.skillCooldown; // 직업 계열·진화 단계
     this.castLock = 0; this.blinkChain = 0; this.blinkWindowT = 0; this.odDmg = 0; this.rageAtk = 0.6; this.rageVamp = 0; this.sancBoost = 0;
-    this.sinceHit = 99; this.deathTimer = 0; this.time = 0; this.moving = false;
+    this.sinceHit = 99; this.deathTimer = 0; this.time = 0; this.moving = false; this.skinStepT = 0;
     this.swing = null; this.aimVis = 0; this.faceVis = 1; this.recoil = 0;
     this.stats = { attackBonus: 0, fireRateBonus: 0, critChance: base.critChance + (hero.critBonus || 0), critMultiplier: base.critMultiplier };
     this.weapons = []; this.slot = 0; this.buffs = [];
@@ -90,7 +95,17 @@ class Player extends Entity {
       this.startDash(); this.updateDash(dt, map); return;
     }
     const spd = this.moveSpeed * (this.rage > 0 ? 1.2 : 1) * (this.hasteT > 0 ? 1.2 : 1) * (this.buffT > 0 ? 1 + (this.buffSpeed || 0) : 1) * (this.solomon > 0 ? 1 + this.treasure.speed : 1) * (this.hadesT > 0 ? 1 + this.treasure.speed : 1);
+    const fromX = this.x, fromY = this.y;
     moveAndCollide(this, ix * spd * dt, iy * spd * dt, map);
+    const walked = Math.hypot(this.x - fromX, this.y - fromY);
+    const trailSkin = walked > 0.05 ? legendarySkinForPlayer(this) : null;
+    if (trailSkin && typeof game !== 'undefined' && game.effects) {
+      this.skinStepT = Math.max(0, this.skinStepT - dt);
+      if (this.skinStepT <= 0) {
+        this.skinStepT = 0.14;
+        game.effects.skinFootstep(trailSkin.id, fromX - ix * 2, fromY - iy * 2 + 7, ix, iy);
+      }
+    } else this.skinStepT = 0;
   }
   startDash() {
     this.state = 'DASH';
@@ -98,6 +113,9 @@ class Player extends Entity {
     this.dashRemaining = this.cfg.dashSpeed * this.cfg.dashDuration;
     this.dashCooldown = this.dashCdMax;
     this.dashInvuln = this.cfg.dashInvuln;
+    const trailSkin = legendarySkinForPlayer(this);
+    if (trailSkin && typeof game !== 'undefined' && game.effects)
+      game.effects.skinDash(trailSkin.id, this.x, this.y + 6, this.dashDir.x, this.dashDir.y);
   }
   updateDash(dt, map) {
     const dist = Math.min(this.cfg.dashSpeed * dt, this.dashRemaining);
@@ -204,7 +222,6 @@ class Player extends Entity {
     if (behind) drawW();
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
     drawHero(ctx, HH, x, y, face, heroHasDirs(HH) ? heroWalkFrame(HH, this.moving && this.state !== 'DASH', this.time) : frame, this.state === 'DASH', this.dir4 || 'down');
-    if(typeof game!=='undefined'&&game.effects){const skId=game.skinSprite&&game.skinSprite(this.hero.id,game.playerLineId?game.playerLineId(this):null);const K=SKINS.find(q=>q.sprite===skId&&q.grade==='legendary');if(K)game.effects.skinAura(K.id,x,y,this.time);}
 
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
     if (!behind) drawW();
