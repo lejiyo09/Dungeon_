@@ -210,10 +210,10 @@ class HUD {
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 30, o.msg.color, 'center', 8);
       hudText(ctx, `번호 키 / 클릭: 선택   ·   Esc / +: ${cam ? '뒤로' : '닫기'}`, VIEW_W / 2, VIEW_H - 14, '#888', 'center', 7);
     } else if (o.type === 'skins') { /* 스킨 고르기 */
-      const sv = game.save, m = game.input.mouse;
-      hudText(ctx, `스킨  ·  보유 ${SKINS.filter((k) => (sv.skins || []).includes(k.id)).length}/${SKINS.length}`, VIEW_W / 2, 10, '#ffb0d8', 'center', 12);
+      const sv = game.save, m = game.input.mouse, skins = skinsForMenu(sv);
+      hudText(ctx, `스킨  ·  보유 ${skins.filter((k) => (sv.skins || []).includes(k.id)).length}/${skins.length}`, VIEW_W / 2, 10, '#ffb0d8', 'center', 12);
       hudText(ctx, '외형만 바뀌고 능력은 그대로 · 정해진 직업·계열일 때만 보임', VIEW_W / 2, 26, '#aaa', 'center', 7);
-      SKINS.forEach((K, i) => {
+      skins.forEach((K, i) => {
         const r = HUD.skinRect(i), owned = (sv.skins || []).includes(K.id), on = owned && game.skinOnMap()[skinKey(K)] === K.id, hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
         const hero = game.data.heroes.get(K.hero), L = jobLines(K.hero).find((l) => l.id === K.line), leg = K.rarity === 'legendary';
         ctx.fillStyle = on ? 'rgba(255,176,216,0.18)' : leg ? 'rgba(255,216,74,0.08)' : hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
