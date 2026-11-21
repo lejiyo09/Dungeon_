@@ -18,6 +18,12 @@ class WeaponInstance {
 
 class WeaponSystem {
   constructor(world) { this.world = world; this.noEnergyMsgT = 0; }
+  skinWeaponFx(player,w,kind){
+    const skin=cosmeticSkinForPlayer(player);
+    if(!skin||skin.grade!=='legendary'||!this.world.effects)return;
+    const a=Math.atan2(player.aim.y,player.aim.x),d=weaponLength(w.def)+5;
+    this.world.effects.skinWeapon(skin.id,player.x+player.aim.x*d,player.y-1+player.aim.y*d*0.75,a,kind);
+  }
   noEnergy(player) {
     if (this.noEnergyMsgT <= 0) { this.world.effects.text(player.x, player.y - 18, '에너지 부족', '#7fb0ff'); this.noEnergyMsgT = 0.8; SFX.play('deny'); }
     this.world.noEnergyFlash = 0.4;
@@ -87,6 +93,7 @@ class WeaponSystem {
     if (!this.canPay(player, w.def.energyCost)) { this.weakAttack(player, w); return; }
     if (!this.spend(player, w.def.energyCost)) return;
     w.cooldown += 1 / this.getFireRate(player, w);
+    this.skinWeaponFx(player,w,w.def.trap?'trap':w.def.sentry?'sentry':w.def.deploy?'deploy':w.def.meteor?'meteor':w.def.summon?'summon':'shot');
     if (w.def.summon) { // 드론 소환: 최대 수를 넘으면 가장 오래된 드론이 사라짐
       const mine = this.world.allies.filter((a) => a instanceof Drone && a.def === w.def);
       while (mine.length >= w.def.summon.max) mine.shift().alive = false;
@@ -182,6 +189,7 @@ class WeaponSystem {
     const def = w.def, k = 0.3 + 0.7 * Math.min(1, w.charge / def.chargeTime), full = w.charge >= def.chargeTime;
     w.charge = 0;
     if (!this.spend(player, def.energyCost)) return;
+    this.skinWeaponFx(player,w,'charge');
     w.cooldown = 1 / this.getFireRate(player, w);
     if (def.beamShot) { this.world.fireBeamShot(player, def, k); return; }
     this.shootGun(player, w, { damage: def.damage * k, speed: def.projectileSpeed * (0.6 + 0.4 * k),
@@ -192,6 +200,7 @@ class WeaponSystem {
     if (!this.canPay(player, def.energyCost)) { this.weakAttack(player, w); return; }
     if (!this.spend(player, def.energyCost)) return;
     w.cooldown += 1 / this.getFireRate(player, w);
+    this.skinWeaponFx(player,w,'melee');
     const ang = Math.atan2(player.aim.y, player.aim.x), arc = def.arcDeg * Math.PI / 180;
     if (def.lunge) { // 돌격 찌르기: 조준 방향으로 돌진하며 찌름
       world.effects.dust(player.x, player.y + 4);
@@ -254,6 +263,7 @@ class WeaponSystem {
       if (player.energy <= 0) { w.beamActive = false; if (w.cooldown <= 0) this.weakAttack(player, w); return; } // 에너지 부족: 약한 공격
       player.energy = Math.max(0, player.energy - def.energyPerSec * dt);
     }
+    if(!w.beamActive)this.skinWeaponFx(player,w,'beam');
     w.beamActive = true;
     SFX.play('beam', 0.08);
     const sx = player.x + player.aim.x * 10, sy = player.y - 1 + player.aim.y * 10;
