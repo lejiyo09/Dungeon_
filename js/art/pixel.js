@@ -91,13 +91,12 @@ const HERO_SPRITES = {
   // [스킨] 은빛 엘프 마법사 — 사용자가 준 4방향 이미지를 그대로 사용 (skins/silverelf.png: 원본 색 그대로 22x24로 줄임)
   //  시트: 가로 서 있기·걸음1·걸음2 / 세로 앞·뒤·왼쪽·오른쪽 — 좌우 반전 없이 방향별 그림
   silverelf: { img: 'skins/silverelf.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'] },
-  // 전설 스킨: 은빛 엘프와 같은 22×24 출력 프레임으로 정규화한 4방향×3프레임 시트.
-  // 각 프레임은 투명 여백을 정리하고 발바닥 기준선을 통일했으며, 원본의 96×160 HD 셀에서 축소했다.
-  // 시트 행: 심연(남성 중갑 기사) → 홍련 → 성좌 → 공허 / 각 스킨: 아래·위·왼쪽·오른쪽.
-  abyssKnight: { img: 'skins/legendary_normalized.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 0, displayW: 22, displayH: 24 },
-  crimsonLotus: { img: 'skins/legendary_normalized.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 4, displayW: 22, displayH: 24 },
-  starPaladin: { img: 'skins/legendary_normalized.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 8, displayW: 22, displayH: 24 },
-  voidEmpress: { img: 'skins/legendary_normalized.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 12, displayW: 22, displayH: 24 },
+  // 전설 스킨: 기본 캐릭터와 같은 화면 출력 크기(16×20), 방향별 3프레임.
+  // 원본 프레임 해상도는 유지한다. 각 개별 시트는 아래/위/왼쪽/오른쪽 4행 × 3열.
+  abyssKnight: { img: 'skins/legendary_abyss.webp', fw: 40, fh: 64, dirs: ['down', 'up', 'left', 'right'], displayW: 16, displayH: 20 },
+  crimsonLotus: { img: 'skins/legendary_crimson.webp', fw: 40, fh: 64, dirs: ['down', 'up', 'left', 'right'], displayW: 16, displayH: 20 },
+  starPaladin: { img: 'skins/legendary_star.webp', fw: 48, fh: 60, dirs: ['down', 'up', 'left', 'right'], displayW: 16, displayH: 20 },
+  voidEmpress: { img: 'skins/legendary_void.webp', fw: 40, fh: 64, dirs: ['down', 'up', 'left', 'right'], displayW: 16, displayH: 20 },
   // 마도사: 끝이 휜 고깔모자(별·금띠), 바닥까지 끌리는 로브, 별 문양 (다리 대신 로브 자락이 흔들림)
   wizard: { pal: { y: '#f0d060' }, rows: [
     '.........kk.....',
