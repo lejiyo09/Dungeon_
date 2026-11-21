@@ -433,7 +433,7 @@ class Game {
   }
   skinSprite(heroId, lineId) { /* 이 직업에 켜 둔 스킨의 외형 이름 (없으면 null) — lineId를 주면 그 갈래에서 쓸 수 있는 스킨만, 안 주면(undefined) 갈래 검사 없이 */
     const id = this.save.skinOn && this.save.skinOn[heroId], K = id && (this.save.skins || []).includes(id) && SKINS.find((k) => k.id === id && k.hero === heroId);
-    if (!K) return null; if (lineId !== undefined && K.line && K.line !== lineId) return null; return K.sprite; }
+    if (!K) return null; if (lineId !== undefined && K.grade !== 'legendary' && K.line && K.line !== lineId) return null; return K.sprite; }
   chosenLine(heroId) { /* [사용자 결정] 로비에서 고른 진화 루트 (없으면 첫 갈래) */
     const lines = jobLines(heroId), id = this.save.lineChoice && this.save.lineChoice[heroId]; return lines.find((l) => l.id === id) || lines[0]; }
   playerLineId(p) { return p.line ? p.line.id : this.mode === 'lobby' ? this.chosenLine(p.hero.id).id : null; } /* 스킨 판정용: 로비에서는 고른 진화 루트 */

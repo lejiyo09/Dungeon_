@@ -1,7 +1,7 @@
 // 서비스 워커: 오프라인 플레이 지원
 //  · 설치 시 index.html과 그 안의 모든 스크립트, 매니페스트, 아이콘을 저장
 //  · 실행 중에는 '네트워크 우선': 온라인이면 항상 최신 버전을 받아 저장하고, 오프라인이면 저장본으로 실행
-const CACHE = 'project-dungeon-v3';
+const CACHE = 'project-dungeon-v4';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png', './skins/silverelf.png', './skins/legendary_abyss.webp', './skins/legendary_crimson.webp', './skins/legendary_star.webp', './skins/legendary_void.webp', './skins/legendary_normalized.png'];
 
 self.addEventListener('install', (e) => {
