@@ -1647,10 +1647,13 @@ class Game {
       // 불
       case 'fireball': shoot({ p: { damage: 40, explodeRadius: 30, color: '#ff8a3a', size: 5, speed: 280, status: { type: 'burn', chance: 1, duration: 3, dps: 10 } } }); SFX.play('fire_x' in SOUNDS ? 'fire_x' : 'flame'); break;
       case 'flamestorm': this.zones.push(new SkillAura(p, { r: 60, life: 5, tick: 0.25, dmg: 16, color: '#ff7a3a', kind: 'flame', status: { type: 'burn', chance: 0.5, duration: 2, dps: 8 } })); this.effects.ring(p.x, p.y, 54, '#ff7a3a'); break;
-      case 'explosion': { const fx = p.jobSkillFx === 'explosion', R = fx ? 100 : 90, c = at(200); this.zones.push(new ExplosionSigil(p, c.x, c.y, { r: R, time: 2 })); /* 공중 마법진 + 땅의 불기둥 · [직업 숙련] 폭심 확장: 범위↑·벽 부수기 */
+      case 'explosion': { const fx = p.jobSkillFx === 'explosion', R = fx ? 100 : 90, c = at(200); this.zones.push(new ExplosionSigil(p, c.x, c.y, { r: R, time: 2 })); /* 중앙 빛기둥 + 공중 마법진 3개 · [직업 숙련] 폭심 확장: 범위↑·벽 부수기 */
         this.zones.push(new SkillCast(p, c.x, c.y, { r: R, time: 2, color: '#ff7a3a' }, () => {
         this.explodeAt(c.x, c.y, R, { color: '#ff7a3a', hurtEnemies: true, src: { damage: D(506), mods: p.mods, knockback: 14, status: { type: 'burn', chance: 1, duration: 4, dps: 14 } } });
+        this.effects.explosion(c.x, c.y, R, '#ffd84a'); this.effects.ring(c.x, c.y, R, '#fff4c0'); this.effects.ring(c.x, c.y, R * 0.6, '#ffffff'); this.effects.rays(c.x, c.y, '#ffd84a', 22, R + 34, 0.8); this.effects.skyBeam(c.x, c.y, '#ffffff', 0, 26); this.effects.burst(c.x, c.y, '#ff9a4a', 26); /* 화려한 대폭발 */
         if (fx) this.breakWallsInRadius(c.x, c.y, R); /* 폭심 확장: 벽·엄폐물을 부숨 (활성 전투방 경계는 제외) */
+        const nSec = fx ? 7 : 5; for (let i = 0; i < nSec; i++) { const a = Math.random() * TAU, d = R * (0.35 + Math.random() * 0.65), sx = c.x + Math.cos(a) * d, sy = c.y + Math.sin(a) * d * 0.8; /* 메인 후 작게 번지는 연쇄 폭발 */
+          this.zones.push(new DelayCall(0.12 + i * 0.075, (w) => { w.explodeAt(sx, sy, R * 0.32, { color: '#ff9a4a', hurtEnemies: true, src: { damage: D(110), mods: p.mods, knockback: 6, status: { type: 'burn', chance: 1, duration: 2, dps: 8 } } }); w.addShake(0.14, 3); })); }
         this.screenFlash = 0.4; this.flashColor = '255,170,90'; this.addShake(0.6, 10); this.hitStop(0.1); SFX.play('excal'); })); break; }
       // 얼음
       case 'icelance': shoot({ n: 3, fan: 0.25, p: { damage: 28, pierce: 99, color: '#bfefff', size: 2, speed: 380, arrow: true, status: { type: 'freeze', chance: 0.7, duration: 1.6, slow: 0.4 } } }); break;
@@ -1744,7 +1747,7 @@ class Game {
       case 'turret2': for (const dx of [-14, 14]) this.allies.push(new Turret(p.x + dx, p.y, p, { damage: D(7), life: 15, rate: 0.3 })); break;
       case 'barrage': { const fx = p.jobSkillFx === 'barrage', c = at(200); this.zones.push(new SkillCast(p, p.x, p.y, { r: 20, time: 1, color: '#f0c030' }, () => { /* [숙련] 포격 확장: 범위·발수↑ */
         for (let i = 0; i < (fx ? 18 : 14); i++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * (fx ? 75 : 60);
-          this.zones.push(new Strike(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r * 0.7, 0.3 + i * 0.1, 30, { damage: D(95), mods: p.mods, knockback: 8 }, '#ffb04a', false)); } })); break; }
+          this.zones.push(new Strike(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r * 0.7, 0.3 + i * 0.1, 30, { damage: D(118), mods: p.mods, knockback: 8 }, '#ffb04a', false)); } })); break; } /* [버프] 전쟁 설계자(포격) 피해↑ */
       // 암살자
       case 'blink': case 'blink2': {
         const sx = p.x, sy = p.y, D2 = 90, ev = p.skillId === 'blink2';
@@ -1756,7 +1759,7 @@ class Game {
         break; }
       // 기술자 · 드론 갈래 / 방벽 갈래
       case 'drones': case 'drones2': case 'droneswarm': {
-        const n = { drones: 2, drones2: 3, droneswarm: 4 }[p.skillId] + (p.jobSkillFx === 'droneswarm' ? 1 : 0), dmg = { drones: 7, drones2: 7, droneswarm: 8 }[p.skillId], life = p.skillId === 'drones' ? 12 : 14; /* [숙련] 군단 증편: 드론 +1 */
+        const n = { drones: 2, drones2: 3, droneswarm: 4 }[p.skillId] + (p.jobSkillFx === 'droneswarm' ? 1 : 0), dmg = { drones: 8, drones2: 9, droneswarm: 11 }[p.skillId], life = p.skillId === 'drones' ? 12 : 14; /* [버프] 군단 설계자 드론 피해↑ · [숙련] 군단 증편: 드론 +1 */
         this.allies = this.allies.filter((a) => !(a instanceof Turret && a.follow)); // 이전 드론은 교체
         for (let i = 0; i < n; i++) this.allies.push(new Turret(p.x, p.y - 10, p, { damage: D(dmg), life, rate: p.skillId === 'drones' ? 0.35 : 0.38, range: 210, follow: { slot: i / n * TAU } }));
         if (p.skillId === 'droneswarm') nova(80, 45, { color: '#7ad0ff', kb: 10 }); this.effects.ring(p.x, p.y, 30, '#7ad0ff'); SFX.play('skill'); break; }
@@ -1774,7 +1777,7 @@ class Game {
         this.explodeAt(c.x, c.y, R, { color: '#fff4c0', hurtEnemies: true, src: { damage: D(330), mods: p.mods, knockback: 10, status: { type: 'blind', chance: 1, duration: fx ? 6 : 4 } } });
         p.hp = Math.min(p.maxHp, p.hp + (fx ? 35 : 25)); this.effects.heal(p.x, p.y); this.effects.skyBeam(c.x, c.y, '#ffffff', 0, 30); this.screenFlash = 0.25; this.flashColor = '255,244,192'; this.addShake(0.4, 6); SFX.play('excal'); })); break; }
       case 'bless': case 'bless2': { const big = p.skillId === 'bless2';
-        p.buffT = big ? 10 : 8; p.buffAtk = big ? 0.55 : 0.4; p.buffSpeed = big ? 0.2 : 0.15; p.buffGuard = big ? 0.25 : 0; p.buffKillHeal = 0; p.hp = Math.min(p.maxHp, p.hp + (big ? 25 : 15));
+        p.buffT = big ? 10 : 8; p.buffAtk = big ? 0.72 : 0.52; p.buffSpeed = big ? 0.2 : 0.15; p.buffGuard = big ? 0.25 : 0; p.buffKillHeal = 0; p.hp = Math.min(p.maxHp, p.hp + (big ? 25 : 15)); /* [버프] 축복 공격력↑ */
         this.effects.heal(p.x, p.y); this.effects.ring(p.x, p.y, 30, '#ffd8a0'); this.effects.text(p.x, p.y - 18, big ? '큰 축복!' : '축복!', '#ffd8a0'); break; }
       case 'miracle': { const fx = p.jobSkillFx === 'miracle'; p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * (fx ? 0.65 : 0.5))); p.blinkInv = 3; p.buffT = fx ? 13 : 10; p.buffAtk = 1.0; p.buffSpeed = 0.2; p.buffGuard = 0.25; nova(110, 200, { color: '#fff4c0', clear: true }); p.buffKillHeal = 0; /* [숙련] 기적 지속: 지속·회복↑ */ }
         this.effects.heal(p.x, p.y); this.effects.solomonSeal(p.x, p.y, 1.4); this.effects.text(p.x, p.y - 20, '기적!', '#ffd8a0', true); SFX.play('solomon'); break;
@@ -1841,8 +1844,8 @@ class Game {
       // 광전사
       case 'rage': p.rage = 5; p.rageAtk = 0.7; p.rageVamp = 0; this.effects.text(p.x, p.y - 18, '분노!', '#ff5a3a'); this.effects.ring(p.x, p.y, 30, '#ff5a3a'); this.addShake(0.15, 3); break;
       case 'rage2': p.rage = 8; p.rageAtk = 1.0; p.rageVamp = 5; this.effects.text(p.x, p.y - 18, '광란!', '#ff5a3a'); this.effects.ring(p.x, p.y, 36, '#ff5a3a'); this.addShake(0.2, 4); break;
-      case 'bloodstorm': { const fx = p.jobSkillFx === 'bloodstorm'; p.rage = fx ? 8 : 6; p.rageAtk = 0.8; p.rageVamp = fx ? 6 : 4; /* [숙련] 피의 광풍: 지속·흡혈↑ */
-        this.zones.push(new SkillAura(p, { r: fx ? 74 : 60, life: fx ? 8 : 6, tick: 0.25, dmg: 24, color: '#ff3a3a', kind: 'blood', lifesteal: fx ? 0.7 : 0.5 })); this.effects.text(p.x, p.y - 18, '피의 폭풍!', '#ff3a3a'); this.addShake(0.25, 5); break; }
+      case 'bloodstorm': { const fx = p.jobSkillFx === 'bloodstorm'; p.rage = fx ? 8 : 6; p.rageAtk = 0.95; p.rageVamp = fx ? 6 : 4; /* [버프] 피의 군주 강화 · [숙련] 피의 광풍: 지속·흡혈↑ */
+        this.zones.push(new SkillAura(p, { r: fx ? 74 : 60, life: fx ? 8 : 6, tick: 0.25, dmg: 32, color: '#ff3a3a', kind: 'blood', lifesteal: fx ? 0.7 : 0.5 })); this.effects.text(p.x, p.y - 18, '피의 폭풍!', '#ff3a3a'); this.addShake(0.25, 5); break; }
       // 드루이드
       case 'wolves': for (let i = 0; i < 3; i++) this.allies.push(new SpiritWolf(p.x + (i - 1) * 12, p.y, p, { dmg: 5, life: 12 })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); break;
       case 'wolves2': for (let i = 0; i < 4; i++) this.allies.push(new SpiritWolf(p.x + (i - 1.5) * 12, p.y, p, { dmg: 5, life: 16, slow: true })); this.effects.sparkle(p.x, p.y, '#9ad8ff'); this.effects.ring(p.x, p.y, 30, '#9ad8ff'); break;

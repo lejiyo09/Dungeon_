@@ -1223,40 +1223,37 @@ class DarkHole {
 /* 익스플로전: 범위 위 공중에 불꽃 마법진이 떠오르고, 아래 땅에 작은 불기둥이 하나씩 솟았다가 발동 순간 차례로 터짐 (보이는 연출만, 피해는 SkillCast가 처리) */
 class ExplosionSigil {
   constructor(owner, x, y, o) {
-    Object.assign(this, { r: 90, time: 2, H: 46 }, o); this.owner = owner; this.x = x; this.y = y; this.t = 0; this.alive = true; this.boomed = 0;
-    this.pillars = []; const n = 9;
-    for (let i = 0; i < n; i++) { const a = i * 2.4 + Math.random() * 0.6, d = (i === 0 ? 0 : 0.35 + 0.55 * Math.random()) * this.r * 0.85;
-      this.pillars.push({ x: Math.round(x + Math.cos(a) * d), y: Math.round(y + Math.sin(a) * d * 0.6), at: 0.35 + i * 0.14, h: 16 + Math.round(Math.random() * 12) }); }
+    Object.assign(this, { r: 90, time: 2, H: 52 }, o); this.owner = owner; this.x = x; this.y = y; this.t = 0; this.alive = true; this.boomed = false;
+    // [사용자 결정] 공중 마법진: 큰 거 1 + 작은 거 2 (서로 다른 높이·위치·회전)
+    this.circles = [{ ox: 0, oy: 0, rr: this.r * 0.7, hh: this.H, sp: 1.6 },
+      { ox: -this.r * 0.44, oy: 0, rr: this.r * 0.3, hh: this.H + 16, sp: -2.3 },
+      { ox: this.r * 0.42, oy: 0, rr: this.r * 0.26, hh: this.H + 24, sp: 2.7 }];
   }
   update(dt, world) {
     this.t += dt;
     if (this.owner && this.owner.state === 'DEAD' && this.t < this.time) { this.alive = false; return; }
-    for (const p of this.pillars) if (this.t > p.at && this.t < this.time && Math.random() < 0.25) world.effects.part(p.x + randInt(-1, 1), p.y - p.h * Math.min(1, (this.t - p.at) / 0.25), randInt(-8, 8), -30 - Math.random() * 30, { color: Math.random() < 0.5 ? '#ffd84a' : '#ff7a3a', life: 0.4, size: 1.5, size2: 0, drag: 1, add: true });
-    while (this.t >= this.time + this.boomed * 0.045 && this.boomed < this.pillars.length) { /* 발동: 기둥이 차례로 터짐 */
-      const p = this.pillars[this.boomed++]; world.effects.explosion(p.x, p.y - 4, 14 + (p.h >> 2), pick(['#ffffff', '#ffd84a', '#ff7a3a']));
-      world.effects.skyBeam && world.effects.skyBeam(p.x, p.y, '#ffb04a', 0, 3); }
-    if (this.boomed >= this.pillars.length && this.t > this.time + 0.5) this.alive = false;
+    if (this.t < this.time && Math.random() < 0.9) { // 중앙 얇고 긴 빛기둥을 따라 솟아오르는 불씨
+      const yy = this.y - Math.random() * (this.H + 14); world.effects.part(this.x + randInt(-1, 1), yy, randInt(-5, 5), -36 - Math.random() * 44, { color: Math.random() < 0.5 ? '#ffd84a' : '#ff7a3a', life: 0.5, size: 1.5, size2: 0, drag: 1, add: true }); }
+    if (!this.boomed && this.t >= this.time) { this.boomed = true; world.effects.explosion(this.x, this.y - 4, 22, '#ffffff'); }
+    if (this.t > this.time + 0.5) this.alive = false;
   }
   render(ctx) {
-    const T = this.t, before = T < this.time, k = Math.min(1, T / 0.5), fade = before ? 1 : Math.max(0, 1 - (T - this.time) / 0.4), rot = T * 1.6;
-    const cx = Math.round(this.x), cy = Math.round(this.y - this.H), R = this.r * 0.7;
+    const T = this.t, before = T < this.time, k = Math.min(1, T / 0.5), fade = before ? 1 : Math.max(0, 1 - (T - this.time) / 0.4);
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    ctx.save(); ctx.translate(cx, cy); ctx.scale(1, 0.38); /* 공중 마법진 */
-    ctx.globalAlpha = 0.18 * k * fade; ctx.fillStyle = '#ff7a3a'; ctx.beginPath(); ctx.arc(0, 0, R * k, 0, TAU); ctx.fill();
-    ctx.globalAlpha = 0.9 * k * fade; ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, R * k, 0, TAU); ctx.stroke();
-    ctx.lineWidth = 1; ctx.strokeStyle = '#ff9a4a'; ctx.beginPath(); ctx.arc(0, 0, R * 0.82 * k, 0, TAU); ctx.stroke();
+    // 중앙 얇고 긴 빛기둥 (바닥 → 공중 마법진)
+    const topY = this.y - this.H - 26, bw = 1.6 + 1.4 * k;
+    ctx.globalAlpha = 0.5 * k * fade; ctx.fillStyle = '#ff9a3a'; ctx.fillRect(Math.round(this.x - bw), topY, Math.max(1, Math.round(bw * 2)), this.y - topY);
+    ctx.globalAlpha = 0.95 * k * fade; ctx.fillStyle = '#fff4c0'; ctx.fillRect(Math.round(this.x - bw * 0.4), topY, Math.max(1, Math.round(bw * 0.8)), this.y - topY);
     const star = (rr, n, step, a0) => { ctx.beginPath(); for (let i = 0; i <= n; i++) { const a = a0 + (i * step % n) / n * TAU; i ? ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr) : ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); } ctx.stroke(); };
-    ctx.strokeStyle = '#ffb04a'; star(R * 0.8 * k, 5, 2, rot); ctx.strokeStyle = '#ffe9a0'; star(R * 0.42 * k, 3, 1, -rot * 1.5);
-    for (let i = 0; i < 12; i++) { const a = -rot * 0.7 + i * TAU / 12; ctx.fillStyle = i % 2 ? '#ffd84a' : '#ffffff'; ctx.fillRect(Math.round(Math.cos(a) * R * 0.91 * k) - 1, Math.round(Math.sin(a) * R * 0.91 * k) - 1, 2, 2); } /* 룬 */
-    ctx.restore();
-    ctx.globalAlpha = 0.12 * k * fade; ctx.fillStyle = '#ffb04a'; ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.lineTo(this.x + this.r * 0.85, this.y); ctx.lineTo(this.x - this.r * 0.85, this.y); ctx.closePath(); ctx.fill(); /* 마법진에서 내려오는 빛 */
-    this.pillars.forEach((p, i) => { /* 땅의 작은 불기둥 */
-      if (T < p.at) return; const g = Math.min(1, (T - p.at) / 0.25), boom = i < this.boomed; if (boom) return;
-      const h = Math.round(p.h * g), w = 3, fl = 0.75 + 0.25 * Math.sin(T * 30 + i);
-      ctx.globalAlpha = 0.35 * fl; ctx.fillStyle = '#ff7a3a'; ctx.beginPath(); ctx.ellipse(p.x, p.y, 5, 2, 0, 0, TAU); ctx.fill();
-      ctx.globalAlpha = 0.8 * fl; ctx.fillStyle = '#ff7a3a'; ctx.fillRect(p.x - w, p.y - h, w * 2, h);
-      ctx.fillStyle = '#ffd84a'; ctx.fillRect(p.x - 1.5, p.y - h, 3, h); ctx.fillStyle = '#ffffff'; ctx.fillRect(p.x - 0.5, p.y - h, 1, h);
-      ctx.globalAlpha = 0.25 * fl; ctx.fillStyle = '#ffd84a'; ctx.fillRect(Math.round(p.x) - 0.5, cy, 1, p.y - h - cy); /* 마법진과 이어진 가는 빛 */ });
+    for (const cr of this.circles) { // 공중 마법진 3개
+      const cx = Math.round(this.x + cr.ox), cy = Math.round(this.y - cr.hh), R = cr.rr * k, rot = T * cr.sp;
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(1, 0.38);
+      ctx.globalAlpha = 0.16 * k * fade; ctx.fillStyle = '#ff7a3a'; ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fill();
+      ctx.globalAlpha = 0.85 * k * fade; ctx.strokeStyle = '#ffd84a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.stroke();
+      ctx.lineWidth = 1; ctx.strokeStyle = '#ff9a4a'; ctx.beginPath(); ctx.arc(0, 0, R * 0.8, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = '#ffb04a'; star(R * 0.78, 5, 2, rot); ctx.strokeStyle = '#ffe9a0'; star(R * 0.4, 3, 1, -rot * 1.5);
+      ctx.restore();
+    }
     ctx.restore(); ctx.globalAlpha = 1;
   }
 }
