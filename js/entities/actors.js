@@ -204,6 +204,8 @@ class Player extends Entity {
     if (behind) drawW();
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
     drawHero(ctx, HH, x, y, face, heroHasDirs(HH) ? heroWalkFrame(HH, this.moving && this.state !== 'DASH', this.time) : frame, this.state === 'DASH', this.dir4 || 'down');
+    if(typeof game!=='undefined'&&game.effects){const skId=game.skinSprite&&game.skinSprite(this.hero.id,game.playerLineId?game.playerLineId(this):null);const K=SKINS.find(q=>q.sprite===skId&&q.grade==='legendary');if(K)game.effects.skinAura(K.id,x,y,this.time);}
+
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
     if (!behind) drawW();
     if (this.whirl > 0) {

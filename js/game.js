@@ -421,6 +421,16 @@ class Game {
     p.treasure = tr || null; if (tr && tr.apply) tr.apply(p);
     if (p === this.player) for (const w of p.weapons) this.discover(w.def.id);
   }
+
+  openSkinGacha(){this.overlay={type:'skin_gacha',msg:null};}
+  rollSkinGacha(count=1){
+    const sv=this.save,cost=count===10?SKIN_GACHA.tenCost:SKIN_GACHA.singleCost;
+    if(sv.bank<cost){SFX.play('deny');return ['결정석이 부족합니다','#ff8a8a'];}
+    sv.bank-=cost;const out=[];for(let i=0;i<count;i++)out.push(skinGachaRoll(sv));
+    writeSave(sv);SFX.play('buy');this.skinGachaResults=out;
+    const legendary=out.filter(x=>x.grade==='legendary').length,duplicates=out.filter(x=>x.duplicate).length;
+    return [`${count}회 소환 완료 · 전설 ${legendary}개 · 중복 ${duplicates}개`,legendary?'#ffd36a':'#d8c8ff'];
+  }
   skinSprite(heroId, lineId) { /* 이 직업에 켜 둔 스킨의 외형 이름 (없으면 null) — lineId를 주면 그 갈래에서 쓸 수 있는 스킨만, 안 주면(undefined) 갈래 검사 없이 */
     const id = this.save.skinOn && this.save.skinOn[heroId], K = id && (this.save.skins || []).includes(id) && SKINS.find((k) => k.id === id && k.hero === heroId);
     if (!K) return null; if (lineId !== undefined && K.line && K.line !== lineId) return null; return K.sprite; }
@@ -855,7 +865,8 @@ class Game {
       if (input.wasPressed('Escape')) this.overlay = null;
       else if (input.wasPressed('KeyI')) { this.overlay = { type: 'details', tab: 0 }; return; } // 상세 정보
       else if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; } // 선물 코드
-      else if (input.wasPressed('KeyK')) { this.overlay = { type: 'skins', back: 'pause', msg: null }; return; } // 스킨 고르기 창
+      else if (input.wasPressed('KeyK')) { this.overlay = { type: 'skins', back: 'pause', msg: null }; return; }
+      else if (input.wasPressed('KeyB')) { this.openSkinGacha(); return; } // 스킨 고르기 창
       else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
       else if (this.mode === 'lobby' && input.wasPressed('KeyP')) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => {} }; return; }
       else if (this.mode === 'dungeon' && input.wasPressed('KeyL')) { this.player.state = 'DEAD'; this.endRun(false); }
@@ -964,6 +975,17 @@ class Game {
       if (o.sub === 'camelot') { this.askTrial(items[ch]); return; }
       if (items[ch] === 'camelot') { if (this.camelotFloors().length) o.sub = 'camelot'; else o.msg = { text: '아직 카멜롯에 갈 수 없습니다 — 멀린의 시련을 진행하세요', color: '#ff9a9a', t: 2.5 }; }
       else { this.overlay = null; this.transition = { t: 0, swapped: false, action: () => this.startBabylonThrone(null) }; } /* 길가메시의 왕좌로 */
+      return;
+    } else if (o.type === 'skin_gacha') {
+      if(input.wasPressed('Escape')||input.wasPressed('KeyB')){this.overlay={type:'pause'};return;}
+      if(input.wasPressed('Digit1')){const [text,color]=this.rollSkinGacha(1);o.msg={text,color,t:3};return;}
+      if(input.wasPressed('Digit0')){const [text,color]=this.rollSkinGacha(10);o.msg={text,color,t:3};return;}
+      if(input.wasPressed('Mouse0')){
+        const m=input.mouse,one={x:VIEW_W/2-112,y:82,w:100,h:34},ten={x:VIEW_W/2+12,y:82,w:100,h:34};
+        if(m.x>=one.x&&m.x<=one.x+one.w&&m.y>=one.y&&m.y<=one.y+one.h){const [text,color]=this.rollSkinGacha(1);o.msg={text,color,t:3};}
+        else if(m.x>=ten.x&&m.x<=ten.x+ten.w&&m.y>=ten.y&&m.y<=ten.y+ten.h){const [text,color]=this.rollSkinGacha(10);o.msg={text,color,t:3};}
+        this.input.mouse.down=false;
+      }
       return;
     } else if (o.type === 'skins') { // 스킨 고르기: 카드 클릭·번호 키로 장착/해제
       if (o.msg) o.msg.t -= STEP;

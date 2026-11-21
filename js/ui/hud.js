@@ -203,6 +203,16 @@ class HUD {
       });
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 26, o.msg.color, 'center', 8);
       hudText(ctx, '번호 키 / 클릭: 장착·해제   ·   G: 선물 코드   ·   Esc: 돌아가기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
+    } else if (o.type === 'skin_gacha') {
+      const sv=game.save,st=sv.skinGacha||{pity:0,shards:0,total:0},m=game.input.mouse;
+      hudText(ctx,'스킨 소환',VIEW_W/2,18,'#ffe0a0','center',15);
+      hudText(ctx,'외형 전용 · 능력치 변화 없음 · 중복은 스킨 파편으로 환급',VIEW_W/2,38,'#aaa','center',7);
+      hudText(ctx,'결정석 '+(sv.bank||0)+'   ·   천장 '+st.pity+'/50   ·   파편 '+st.shards,VIEW_W/2,58,'#f0d080','center',9);
+      const buttons=[{x:VIEW_W/2-112,y:82,w:100,h:34,c:1,t:'1회 · 120'},{x:VIEW_W/2+12,y:82,w:100,h:34,c:10,t:'10회 · 1080'}];
+      buttons.forEach(b=>{const over=m.x>=b.x&&m.x<=b.x+b.w&&m.y>=b.y&&m.y<=b.y+b.h;ctx.fillStyle=over?'#51405f':'#292239';ctx.fillRect(b.x,b.y,b.w,b.h);ctx.strokeStyle='#c8a060';ctx.strokeRect(b.x+.5,b.y+.5,b.w-1,b.h-1);hudText(ctx,b.t,b.x+b.w/2,b.y+12,'#fff','center',8);});
+      SKIN_GACHA_POOL.forEach((K,i)=>{const col=i%4,row=Math.floor(i/4),x=42+col*108,y=136+row*30;hudText(ctx,(K.grade==='legendary'?'★ ':'◆ ')+K.name+((sv.skins||[]).includes(K.id)?' ✓':''),x,y,K.grade==='legendary'?'#ffb35c':'#caa7ff','left',7);});
+      if(game.skinGachaResults&&game.skinGachaResults.length){const names=game.skinGachaResults.slice(0,5).map(r=>r.skin.name+(r.duplicate?' 중복 +'+r.refund+'조각':'')).join(' · ');hudText(ctx,names,VIEW_W/2,VIEW_H-27,'#fff','center',7);}
+      hudText(ctx,'마우스 버튼 · Esc 닫기',VIEW_W/2,VIEW_H-12,'#888','center',7);
     } else if (o.type === 'gift') { /* 선물 코드 입력 */
       const bw = 260, bh = 110, bx = VIEW_W / 2 - bw / 2, by = VIEW_H / 2 - bh / 2;
       ctx.fillStyle = 'rgba(20,16,30,0.95)'; ctx.fillRect(bx, by, bw, bh); ctx.strokeStyle = '#ffd84a'; ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
