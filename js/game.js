@@ -1257,9 +1257,10 @@ class Game {
       if (o.msg) o.msg.t -= STEP;
       if (input.wasPressed('Escape') || input.wasPressed('KeyK') || input.wasPressed('KeyE')) { this.overlay = o.back === 'hero_info' ? { type: 'hero_info', heroId: this.save.selected, branchIndex: o.backIndex || 0 } : o.back === 'pause' ? { type: 'pause' } : null; return; }
       if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; }
-      let ch = -1; SKINS.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) ch = i; });
-      if (input.wasPressed('Mouse0')) { const m = input.mouse; SKINS.forEach((_, i) => { const r = HUD.skinRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) ch = i; }); this.input.mouse.down = false; }
-      if (ch >= 0) { const K = SKINS[ch], sv = this.save; sv.skinOn = sv.skinOn || {};
+      const skins = skinsForMenu(this.save);
+      let ch = -1; skins.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) ch = i; });
+      if (input.wasPressed('Mouse0')) { const m = input.mouse; skins.forEach((_, i) => { const r = HUD.skinRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) ch = i; }); this.input.mouse.down = false; }
+      if (ch >= 0) { const K = skins[ch], sv = this.save; sv.skinOn = sv.skinOn || {};
         if (!(sv.skins || []).includes(K.id)) o.msg = { text: `아직 없는 스킨입니다 — 선물 코드로 얻을 수 있어요 (G)`, color: '#ff9a9a', t: 2.5 };
         else { const M = this.skinOnMap(), key = skinKey(K), on = M[key] === K.id; M[key] = on ? null : K.id; writeSave(sv); SFX.play('ui');
           const L = jobLines(K.hero).find((l) => l.id === K.line); o.msg = { text: on ? `'${K.name}' 해제 — 기본 외형` : `'${K.name}' 장착${L ? ` — ${this.data.heroes.get(K.hero).name} ${L.name} 계열일 때 보임` : ''}`, color: '#ffd84a', t: 2.5 }; } }
