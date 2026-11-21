@@ -217,6 +217,37 @@ class Effects {
         else { const r = Math.max(1, Math.round(s)); ctx.fillRect(x - (r >> 1), y - (r >> 1), r, r); }
         break;
       }
+      case 'skinDash': {
+        const p = Math.min(1, fx.t / fx.life), R = 7 + p * 10, a = fx.angle;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(a);
+        ctx.globalAlpha *= fx.opacity || 0.3;
+        ctx.strokeStyle = fx.color; ctx.fillStyle = fx.accent; ctx.lineWidth = 1.2;
+        if (fx.id === 'skin_abyss_knight') {
+          ctx.beginPath(); ctx.ellipse(0, 0, R, R * 0.48, 0, 0.18, 1.22); ctx.stroke();
+          ctx.beginPath(); ctx.ellipse(0, 0, R * 0.78, R * 0.38, 0, 3.24, 4.42); ctx.stroke();
+          ctx.fillRect(-R * 0.55, -2, 2, 2); ctx.fillRect(R * 0.45, 1, 2, 2);
+        } else if (fx.id === 'skin_star_paladin') {
+          ctx.beginPath(); ctx.moveTo(0, -R); ctx.lineTo(1.5, -2); ctx.lineTo(R, 0);
+          ctx.lineTo(1.5, 2); ctx.lineTo(0, R); ctx.lineTo(-1.5, 2);
+          ctx.lineTo(-R, 0); ctx.lineTo(-1.5, -2); ctx.closePath(); ctx.stroke();
+          ctx.fillRect(-1, -1, 2, 2);
+        } else if (fx.id === 'skin_void_empress') {
+          ctx.beginPath(); ctx.ellipse(-3, 0, R * 0.7, R * 0.42, -0.35, 0.15, 2.35); ctx.stroke();
+          ctx.beginPath(); ctx.ellipse(4, 0, R * 0.62, R * 0.36, 0.35, 3.1, 5.25); ctx.stroke();
+          ctx.fillRect(-R * 0.55, -3, 2, 2); ctx.fillRect(R * 0.42, 2, 2, 2);
+        } else if (fx.id === 'skin_crimson_lotus') {
+          for (let i = 0; i < 4; i++) {
+            ctx.save(); ctx.rotate(i * Math.PI / 2);
+            ctx.globalAlpha *= 0.72;
+            ctx.beginPath(); ctx.ellipse(0, -R * 0.48, 2, R * 0.24, 0, 0, TAU);
+            ctx.fill(); ctx.restore();
+          }
+        }
+        ctx.restore();
+        break;
+      }
       case 'rlabel': { // 반응 이름표: 작은 글씨로 살짝 튀어나왔다가 떠오름 (배경 없음, 1px 그림자로만 구분)
         const pop = 1 + 0.25 * Math.max(0, 1 - fx.t / 0.1), sz = Math.round(7 * pop);
         ctx.globalAlpha = Math.min(1, k * 2.5);
