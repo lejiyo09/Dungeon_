@@ -206,7 +206,16 @@ class Player extends Entity {
     };
     if (behind) drawW();
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
-    drawHero(ctx, sk ? this._skinH.h : this.hero, x, y, drawFace, drawFrame, this.state === 'DASH', legDir);
+    let drew = false;
+    if (sk === 'druid_bandi' && typeof druidSprite === 'function') { // [변신 드루이드 스킨] 평소 반디(방향별) ↔ 변신 샘(대기/공격, 좌우 반전)
+      const ax = Math.cos(this.aimVis), ay = Math.sin(this.aimVis); let key, flip = false;
+      if (this.transformT > 0) { const atk = this.swing && this.swing.t < this.swing.dur; key = atk ? 'sam_atk' : 'sam_idle'; flip = ax < 0; } // 샘: 기본 오른쪽, 왼쪽 조준이면 반전
+      else if (Math.abs(ay) > Math.abs(ax)) key = ay >= 0 ? 'bandi_down' : 'bandi_up'; // 앞/뒤
+      else { key = 'bandi_side'; flip = ax > 0; } // 옆: 원본이 왼쪽 → 오른쪽이면 반전
+      const spr = druidSprite(key);
+      if (spr) { ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - 5, y + 6, 10, 2); drawSprite(ctx, spr, x, y + 7, { flip }); drew = true; }
+    }
+    if (!drew) drawHero(ctx, (sk && sk !== 'druid_bandi') ? this._skinH.h : this.hero, x, y, drawFace, drawFrame, this.state === 'DASH', legDir);
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
     if (!behind) drawW();
     if (this.whirl > 0) {

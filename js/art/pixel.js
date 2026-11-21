@@ -470,3 +470,17 @@ function drawPotion(ctx, x, y, color) { drawSprite(ctx, getSprite('potion', colo
 
 if (typeof document !== 'undefined') loadLegSheet(); // 전설 스킨 스프라이트시트 미리 로드
 
+// ── 변신 드루이드 스킨 (반디↔샘): assets/druidskin.png, 좌표표 DRUID_SKIN
+let _druidSheetImg = null, _druidSheetReady = false;
+function loadDruidSheet() { if (_druidSheetImg) return; _druidSheetImg = new Image(); _druidSheetImg.onload = () => { _druidSheetReady = true; }; _druidSheetImg.src = 'assets/druidskin.png'; }
+function druidSprite(key) {
+  if (typeof DRUID_SKIN === 'undefined' || !DRUID_SKIN[key]) return null;
+  if (!_druidSheetReady) { loadDruidSheet(); return null; }
+  const ck = 'druidsk|' + key; let s = spriteCache.get(ck); if (s) return s;
+  const [sx, sy, w, h] = DRUID_SKIN[key];
+  const make = (flip, white) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.save(); if (flip) { g.translate(w, 0); g.scale(-1, 1); } g.drawImage(_druidSheetImg, sx, sy, w, h, 0, 0, w, h); g.restore(); if (white) { g.globalCompositeOperation = 'source-atop'; g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); } return c; };
+  s = { w, h, n: make(false, false), f: make(true, false), wn: make(false, true), wf: make(true, true) };
+  spriteCache.set(ck, s); return s;
+}
+if (typeof document !== 'undefined') loadDruidSheet();
+
