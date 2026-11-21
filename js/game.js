@@ -1964,6 +1964,8 @@ class Game {
     r.state = 'active'; r.visited = true; this.activeRoom = r; /* 전투가 걸리면(몸이 안으로) 확실히 방문 처리 */
     if (this.coop && this.coop.host) this.coopGather(r, leader); // 멀티: 방 밖에 있는 동료를 모두 이 방으로 모음 (문 밖에 갇히지 않게)
     this.map.setDoors(r, true);
+    { const cc = this.map.tileCenter(r.cx, r.cy); for (const q of this.allPlayers()) { if (q.state === 'DEAD') continue; // [버그 수정] 문턱에 발 들이자마자 문이 닫혀 끼던 것 → 닫힌 뒤 문에 걸친 플레이어를 방 안쪽으로 밀어넣음
+      for (const d of r.doors) if (Math.hypot(q.x - (d.x * TILE + 8), q.y - (d.y * TILE + 8)) < TILE + q.half) { const dx = cc.x - q.x, dy = cc.y - q.y, dd = Math.hypot(dx, dy) || 1; moveAndCollide(q, dx / dd * (TILE + 4), dy / dd * (TILE + 4), this.map); break; } } }
     this.enemyBullets.length = 0;
     if (r.type === 'boss') {
       const id = this.W.boss, c = this.map.tileCenter(r.cx, r.cy - 3);
