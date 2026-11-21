@@ -31,7 +31,9 @@ function bakeSprite(rows, pal) {
 function drawSprite(ctx, spr, x, y, o = {}) {
   const sc = o.scale || 1, sq = o.squash || 0;
   const img = o.white ? (o.flip ? spr.wf : spr.wn) : (o.flip ? spr.f : spr.n);
-  const w = spr.w * sc + sq * 2, h = spr.h * sc - sq;
+  // 원본 픽셀 크기와 무관하게 스킨별 지정된 화면 크기로 출력한다.
+  const dw = spr.displayW || spr.w, dh = spr.displayH || spr.h;
+  const w = dw * sc + sq * 2, h = dh * sc - sq;
   ctx.drawImage(img, Math.round(x - w / 2), Math.round(y - h), w, h);
 }
 
@@ -86,11 +88,12 @@ const HERO_SPRITES = {
   // [스킨] 은빛 엘프 마법사 — 사용자가 준 4방향 이미지를 그대로 사용 (skins/silverelf.png: 원본 색 그대로 22x24로 줄임)
   //  시트: 가로 서 있기·걸음1·걸음2 / 세로 앞·뒤·왼쪽·오른쪽 — 좌우 반전 없이 방향별 그림
   silverelf: { img: 'skins/silverelf.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'] },
-  // 전설 스킨: 은빛 엘프와 같은 22×24 픽셀 시트. 스프라이트 파일은 스킨별 4방향×3프레임을 세로로 묶은 16행 시트.
-  abyssKnight: { img: 'skins/legendary_sprites.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 0 },
-  crimsonLotus: { img: 'skins/legendary_sprites.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 4 },
-  starPaladin: { img: 'skins/legendary_sprites.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 8 },
-  voidEmpress: { img: 'skins/legendary_sprites.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 12 },
+  // 전설 스킨: 고해상도 40×64 셀, 게임 내 표시 크기는 네 스킨 모두 24×36으로 통일.
+  // 심연은 기존 남성 중갑 기사 원본 디자인을 유지한다. 각 시트는 하/상/좌/우 3프레임.
+  abyssKnight: { img: 'skins/legendary_abyss.webp', fw: 40, fh: 64, dirs: ['down', 'up', 'left', 'right'], displayW: 24, displayH: 36 },
+  crimsonLotus: { img: 'skins/legendary_crimson.webp', fw: 40, fh: 64, dirs: ['down', 'up', 'left', 'right'], displayW: 24, displayH: 36 },
+  starPaladin: { img: 'skins/legendary_star.webp', fw: 40, fh: 64, dirs: ['down', 'up', 'left', 'right'], displayW: 24, displayH: 36 },
+  voidEmpress: { img: 'skins/legendary_void.webp', fw: 40, fh: 64, dirs: ['down', 'up', 'left', 'right'], displayW: 24, displayH: 36 },
   // 마도사: 끝이 휜 고깔모자(별·금띠), 바닥까지 끌리는 로브, 별 문양 (다리 대신 로브 자락이 흔들림)
   wizard: { pal: { y: '#f0d060' }, rows: [
     '.........kk.....',
@@ -362,7 +365,16 @@ function heroWalkFrame(hero, moving, t) { return heroHasDirs(hero) ? (moving ? H
 function heroDir4(dx, dy, prev) { if (Math.abs(dx) < 1e-3 && Math.abs(dy) < 1e-3) return prev || 'down'; return Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down'); } /* 대각선은 좌우 그림 */
 // 이미지 스킨: 시트 파일을 미리 불러 둠 (다 불러오기 전에는 기본 외형으로 그림)
 const HERO_IMG = {};
-function heroSheet(T) { let I = HERO_IMG[T.img]; if (!I) { I = HERO_IMG[T.img] = new Image(); I.src = T.img; } return I.complete && I.naturalWidth ? I : null; }
+function heroSheet(T) {
+  let I = HERO_IMG[T.img];
+  if (!I) {
+    I = HERO_IMG[T.img] = new Image();
+    I.onload = () => { I._dungeonLoaded = true; };
+    I.onerror = () => { I._dungeonFailed = true; console.warn('[Dungeon] 스킨 이미지 로드 실패:', I.src); };
+    I.src = new URL(T.img, document.baseURI).href;
+  }
+  return I.complete && I.naturalWidth ? I : null;
+}
 for (const T of Object.values(HERO_SPRITES)) if (T.img && typeof Image !== 'undefined') heroSheet(T);
 function bakeSheetFrame(I, sx, sy, w, h) { /* 시트의 한 칸 → { n, f, wn, wf } (흰 번쩍임은 실루엣으로) */
   const make = (flip, white) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
@@ -374,7 +386,9 @@ function heroSprite(hero, frame, dir) {
   const TD = HERO_SPRITES[hero.look.sprite];
   if (TD && TD.img) { const I = heroSheet(TD);
     if (I) { const row = Math.max(0, TD.dirs.indexOf(dir)) + (TD.rowOffset || 0), col = frame % 3, key = 'hero|' + hero.id + '|' + hero.look.sprite + '|' + row + '|' + col; let s = spriteCache.get(key); if (s) return s;
-      s = bakeSheetFrame(I, col * TD.fw, row * TD.fh, TD.fw, TD.fh); spriteCache.set(key, s); return s; }
+      s = bakeSheetFrame(I, col * TD.fw, row * TD.fh, TD.fw, TD.fh);
+      s.displayW = TD.displayW || TD.fw; s.displayH = TD.displayH || TD.fh;
+      spriteCache.set(key, s); return s; }
     hero = Object.create(hero, { look: { value: Object.assign({}, hero.look, { sprite: ((typeof DATA_HEROES !== 'undefined' && DATA_HEROES.find((h) => h.id === hero.id)) || { look: {} }).look.sprite || null }) } }); frame %= 2; } /* 이미지 불러오는 중: 기본 외형 */
   const key = 'hero|' + hero.id + '|' + (hero.look.sprite || '') + '|' + hero.look.body + '|' + hero.look.accent + '|' + frame; /* 스킨(외형)이 다르면 따로 */ // 같은 직업이라도 옷색(갈래)이 다르면 따로
   let s = spriteCache.get(key);
