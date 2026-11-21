@@ -210,12 +210,15 @@ class Player extends Entity {
        앞모습: 몸 앞(위로 겨눌 때만 뒤) · 뒷모습: 몸 뒤에 가려짐(아래로 겨눌 때만 앞) · 옆모습: 바라보는 쪽 손, 반대쪽으로 겨누면 몸 뒤 */
     const behind = !D4 ? sa < -0.4 : D4 === 'down' ? sa < -0.75 : D4 === 'up' ? sa < 0.55 : (D4 === 'left' ? ca > 0.35 : ca < -0.35) || sa < -0.6;
     /* 손 위치 = 그림의 소매 끝 (발밑 y+7 기준): 앞·뒷모습은 겨누는 쪽 손, 옆모습은 바라보는 쪽 손 (반대로 겨누면 뒤쪽 손) */
-    const elfDirectional=HH.look&&HH.look.sprite==='silverelf';
+    const elfDirectional=heroHasDirs(HH);
     const hand=elfDirectional
       ? (D4==='down'?{x:ca>=0?7:-7,y:-1,r:3}:D4==='up'?{x:ca>=0?7:-7,y:-4,r:3}:D4==='left'?{x:-7,y:-3,r:3}:D4==='right'?{x:7,y:-3,r:3}:{x:ca>=0?7:-7,y:-2,r:3})
       : !D4?{x:0,y:2,r:4}:D4==='down'?{x:ca>=0?4:-4,y:-1,r:2}:D4==='up'?{x:ca>=0?4:-4,y:-2,r:2}
       :{x:(D4==='left'?-3:3)*(behind?-1:1),y:-3,r:2};
     const skinCosmetic=cosmeticSkinForPlayer(this);
+    // 전설 마력진은 캐릭터 몸을 감지 않고 발밑 바닥에 먼저 그린다.
+    if(skinCosmetic&&skinCosmetic.grade==='legendary'&&typeof drawLegendarySkinWeave==='function')
+      drawLegendarySkinWeave(ctx,skinCosmetic.id,x,y,this.time);
     const w = this.weapon;
     const drawW = () => {
       if (!w) return;
@@ -232,10 +235,6 @@ class Player extends Entity {
 
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
     if (!behind) drawW();
-    if(skinCosmetic&&skinCosmetic.grade==='legendary'&&typeof drawLegendarySkinWeave==='function'){
-      // 몸통 중앙에 얹어 마력선이 스프라이트에 묻히지 않도록 전면에 렌더링
-      drawLegendarySkinWeave(ctx,skinCosmetic.id,x,y,this.time,true);
-    }
     if (this.whirl > 0) {
       ctx.strokeStyle = 'rgba(220,240,255,0.8)'; ctx.lineWidth = 2;
       const a = this.time * 30;

@@ -86,6 +86,11 @@ const HERO_SPRITES = {
   // [스킨] 은빛 엘프 마법사 — 사용자가 준 4방향 이미지를 그대로 사용 (skins/silverelf.png: 원본 색 그대로 22x24로 줄임)
   //  시트: 가로 서 있기·걸음1·걸음2 / 세로 앞·뒤·왼쪽·오른쪽 — 좌우 반전 없이 방향별 그림
   silverelf: { img: 'skins/silverelf.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'] },
+  // 전설 스킨: 은빛 엘프와 같은 22×24 픽셀 시트. 스프라이트 파일은 스킨별 4방향×3프레임을 세로로 묶은 16행 시트.
+  abyssKnight: { img: 'skins/legendary_sprites.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 0 },
+  crimsonLotus: { img: 'skins/legendary_sprites.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 4 },
+  starPaladin: { img: 'skins/legendary_sprites.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 8 },
+  voidEmpress: { img: 'skins/legendary_sprites.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'], rowOffset: 12 },
   // 마도사: 끝이 휜 고깔모자(별·금띠), 바닥까지 끌리는 로브, 별 문양 (다리 대신 로브 자락이 흔들림)
   wizard: { pal: { y: '#f0d060' }, rows: [
     '.........kk.....',
@@ -368,7 +373,7 @@ function bakeSheetFrame(I, sx, sy, w, h) { /* 시트의 한 칸 → { n, f, wn, 
 function heroSprite(hero, frame, dir) {
   const TD = HERO_SPRITES[hero.look.sprite];
   if (TD && TD.img) { const I = heroSheet(TD);
-    if (I) { const row = Math.max(0, TD.dirs.indexOf(dir)), col = frame % 3, key = 'hero|' + hero.id + '|' + hero.look.sprite + '|' + row + '|' + col; let s = spriteCache.get(key); if (s) return s;
+    if (I) { const row = Math.max(0, TD.dirs.indexOf(dir)) + (TD.rowOffset || 0), col = frame % 3, key = 'hero|' + hero.id + '|' + hero.look.sprite + '|' + row + '|' + col; let s = spriteCache.get(key); if (s) return s;
       s = bakeSheetFrame(I, col * TD.fw, row * TD.fh, TD.fw, TD.fh); spriteCache.set(key, s); return s; }
     hero = Object.create(hero, { look: { value: Object.assign({}, hero.look, { sprite: ((typeof DATA_HEROES !== 'undefined' && DATA_HEROES.find((h) => h.id === hero.id)) || { look: {} }).look.sprite || null }) } }); frame %= 2; } /* 이미지 불러오는 중: 기본 외형 */
   const key = 'hero|' + hero.id + '|' + (hero.look.sprite || '') + '|' + hero.look.body + '|' + hero.look.accent + '|' + frame; /* 스킨(외형)이 다르면 따로 */ // 같은 직업이라도 옷색(갈래)이 다르면 따로
