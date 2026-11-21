@@ -61,9 +61,10 @@ const SKINS = [
   { id: 'skin_leg_void', name: '공허의 마도사', hero: 'hero_mage', sprite: 'leg_void', rarity: 'legendary', source: 'gacha', desc: '마법사 전설 외형 — 어둠을 휘감은 공허의 현자 (전직: 어둠)' },
   { id: 'skin_leg_star', name: '성역의 성자', hero: 'hero_priest', sprite: 'leg_star', rarity: 'legendary', source: 'gacha', desc: '사제 전설 외형 — 별빛 성역의 성자 (전직: 성역)' }
 ];
-// 전설 스킨 시트 매핑: sprite 이름 → 시트 행 번호 (프레임은 가로 3칸). 런타임은 drawImage만 사용
+// 전설 스킨 시트 매핑: sprite 이름 → 스킨 번호. assets/legskins.png = 3열(걷기 프레임) × (스킨×3방향)행
+//  행 = 스킨*3 + 방향(0=앞/아래, 1=뒤/위, 2=옆) · 셀은 이미 인게임 크기로 구워둠(저해상도 청키) → 런타임은 1:1 drawImage
 const LEG_SKINS = { leg_abyss: 0, leg_crimson: 1, leg_void: 2, leg_star: 3 };
-const LEG_SHEET = { cols: 3, cellW: 106, cellH: 108, frames: 3, targetH: 27 }; // targetH: 인게임 높이(전설은 기본보다 살짝 큼)
+const LEG_SHEET = { cellW: 21, cellH: 22, frames: 3, dirs: 3 };
 // 선물 코드: 글자 그대로 두지 않고 해시로만 보관 (giftHash) — 코드 하나에 보상 하나, 계정마다 한 번
 const GIFT_CODES = [
   { hash: 'd6b73fd4', skin: 'skin_flamewitch' },

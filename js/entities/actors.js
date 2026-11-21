@@ -196,10 +196,17 @@ class Player extends Entity {
     if (behind) drawW();
     const sk = this.skinShown !== undefined ? this.skinShown /* 멀티 참가자 화면: 방장이 이미 갈래까지 확인해 보낸 값 */ : this.remoteSkin !== undefined ? (this.remoteSkin && skinAllowed(this.remoteSkin, this.hero.id, this.line && this.line.id) ? this.remoteSkin : null) /* 방장 쪽 동료: 갈래 확인 */ : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id, game.playerLineId(this)) : null); /* 내 캐릭터 */
     if (sk && (!this._skinH || this._skinH.src !== this.hero || this._skinH.sk !== sk)) this._skinH = { src: this.hero, sk, h: heroWithLook(this.hero, { sprite: sk }) };
-    const legAnim = sk && typeof LEG_SKINS !== 'undefined' && LEG_SKINS[sk] !== undefined; // 전설 스킨: 가만히 있어도 3프레임 애니메이션
-    const drawFrame = legAnim ? Math.floor(this.time * 6) % 3 : frame;
+    // 전설 스킨: 조준 방향으로 상/하/옆 스프라이트, 걷기 3프레임(정지 시 가운데)
+    const legAnim = sk && typeof LEG_SKINS !== 'undefined' && LEG_SKINS[sk] !== undefined;
+    let drawFrame = frame, drawFace = face, legDir;
+    if (legAnim) {
+      const ax = Math.cos(this.aimVis), ay = Math.sin(this.aimVis); // aimVis: 로컬·원격 모두 동기화됨
+      if (Math.abs(ay) >= Math.abs(ax)) { legDir = ay >= 0 ? 0 : 1; drawFace = 1; } // 아래(앞)/위(뒤): 뒤집지 않음
+      else { legDir = 2; drawFace = ax < 0 ? -1 : 1; } // 옆: 좌우 뒤집기
+      drawFrame = (this.moving && this.state !== 'DASH') ? Math.floor(this.time * 9) % 3 : 1; // 정지 시 가운데 프레임
+    }
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
-    drawHero(ctx, sk ? this._skinH.h : this.hero, x, y, face, drawFrame, this.state === 'DASH');
+    drawHero(ctx, sk ? this._skinH.h : this.hero, x, y, drawFace, drawFrame, this.state === 'DASH', legDir);
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
     if (!behind) drawW();
     if (this.whirl > 0) {
