@@ -12,10 +12,11 @@ const REACTIONS = {
   'blind+shock': 'judgment'   // 심판
 };
 let nextEntityId = 1;
-function legendarySkinForPlayer(player) {
-  if (typeof game === 'undefined' || !game || game.player !== player || !game.skinSprite) return null;
-  const sprite = game.skinSprite(player.hero.id, game.playerLineId ? game.playerLineId(player) : null);
-  return sprite ? SKINS.find((k) => k.sprite === sprite && k.grade === 'legendary') || null : null;
+function cosmeticSkinForPlayer(player) {
+  if (!player) return null;
+  const shown=player.shownHero?player.shownHero():player.hero;
+  const sprite=shown&&shown.look?shown.look.sprite:null;
+  return sprite?SKINS.find((k)=>k.sprite===sprite&&(k.grade==='legendary'||k.grade==='epic'))||null:null;
 }
 class Entity {
   constructor(x, y, half) {
@@ -40,7 +41,7 @@ class Player extends Entity {
     this.skillCooldown = 0; this.whirl = 0; this.whirlTick = 0; this.overdrive = 0; this.vampire = 0; this.rage = 0; this.blinkInv = 0; this.treasure = null; this.treasureCd = 0; this.solomon = 0;
     this.line = null; this.rank = 0; this.skillId = hero.skill; this.skillName = hero.skillName; this.skillDesc = hero.skillDesc; this.skillBaseCd = hero.skillCooldown; // 직업 계열·진화 단계
     this.castLock = 0; this.blinkChain = 0; this.blinkWindowT = 0; this.odDmg = 0; this.rageAtk = 0.6; this.rageVamp = 0; this.sancBoost = 0;
-    this.sinceHit = 99; this.deathTimer = 0; this.time = 0; this.moving = false; this.skinStepT = 0;
+    this.sinceHit = 99; this.deathTimer = 0; this.time = 0; this.moving = false; this.skinStepT = 0; this.skinStepSide = 1; this.skinDashT = 0;
     this.swing = null; this.aimVis = 0; this.faceVis = 1; this.recoil = 0;
     this.stats = { attackBonus: 0, fireRateBonus: 0, critChance: base.critChance + (hero.critBonus || 0), critMultiplier: base.critMultiplier };
     this.weapons = []; this.slot = 0; this.buffs = [];
@@ -98,14 +99,12 @@ class Player extends Entity {
     const fromX = this.x, fromY = this.y;
     moveAndCollide(this, ix * spd * dt, iy * spd * dt, map);
     const walked = Math.hypot(this.x - fromX, this.y - fromY);
-    const trailSkin = walked > 0.05 ? legendarySkinForPlayer(this) : null;
-    if (trailSkin && typeof game !== 'undefined' && game.effects) {
-      this.skinStepT = Math.max(0, this.skinStepT - dt);
-      if (this.skinStepT <= 0) {
-        this.skinStepT = 0.14;
-        game.effects.skinFootstep(trailSkin.id, fromX - ix * 2, fromY - iy * 2 + 7, ix, iy);
-      }
-    } else this.skinStepT = 0;
+    this.skinStepT = Math.max(0,this.skinStepT-dt);
+    const trailSkin = walked > 0.05 ? cosmeticSkinForPlayer(this) : null;
+    if(trailSkin && trailSkin.grade==='legendary' && typeof game!=='undefined' && game.effects && this.skinStepT<=0){
+      this.skinStepT=0.095;this.skinStepSide*=-1;
+      game.effects.skinFootstep(trailSkin.id,fromX-ix*1.5,fromY+7,ix,iy,this.skinStepSide);
+    }
   }
   startDash() {
     this.state = 'DASH';
@@ -113,15 +112,19 @@ class Player extends Entity {
     this.dashRemaining = this.cfg.dashSpeed * this.cfg.dashDuration;
     this.dashCooldown = this.dashCdMax;
     this.dashInvuln = this.cfg.dashInvuln;
-    const trailSkin = legendarySkinForPlayer(this);
-    if (trailSkin && typeof game !== 'undefined' && game.effects)
-      game.effects.skinDash(trailSkin.id, this.x, this.y + 6, this.dashDir.x, this.dashDir.y);
+    this.skinDashT=0;
   }
-  updateDash(dt, map) {
-    const dist = Math.min(this.cfg.dashSpeed * dt, this.dashRemaining);
-    this.dashRemaining -= dist;
-    const hit = moveAndCollide(this, this.dashDir.x * dist, this.dashDir.y * dist, map);
-    if (hit.x || hit.y || this.dashRemaining <= 0) this.state = 'NORMAL';
+  updateDash(dt,map){
+    const fromX=this.x,fromY=this.y;
+    const dist=Math.min(this.cfg.dashSpeed*dt,this.dashRemaining);
+    this.dashRemaining-=dist;
+    const hit=moveAndCollide(this,this.dashDir.x*dist,this.dashDir.y*dist,map);
+    const trailSkin=cosmeticSkinForPlayer(this);
+    if(trailSkin&&typeof game!=='undefined'&&game.effects){
+      this.skinDashT=Math.max(0,this.skinDashT-dt);
+      if(this.skinDashT<=0){game.effects.skinDash(trailSkin.id,fromX,fromY+3,this.dashDir.x,this.dashDir.y);this.skinDashT=0.045;}
+    }
+    if(hit.x||hit.y||this.dashRemaining<=0)this.state='NORMAL';
   }
   takeDamage(amount) {
     if (this.state === 'DEAD' || this.isInvulnerable) return false;
@@ -207,8 +210,13 @@ class Player extends Entity {
        앞모습: 몸 앞(위로 겨눌 때만 뒤) · 뒷모습: 몸 뒤에 가려짐(아래로 겨눌 때만 앞) · 옆모습: 바라보는 쪽 손, 반대쪽으로 겨누면 몸 뒤 */
     const behind = !D4 ? sa < -0.4 : D4 === 'down' ? sa < -0.75 : D4 === 'up' ? sa < 0.55 : (D4 === 'left' ? ca > 0.35 : ca < -0.35) || sa < -0.6;
     /* 손 위치 = 그림의 소매 끝 (발밑 y+7 기준): 앞·뒷모습은 겨누는 쪽 손, 옆모습은 바라보는 쪽 손 (반대로 겨누면 뒤쪽 손) */
-    const hand = !D4 ? { x: 0, y: 2, r: 4 } : D4 === 'down' ? { x: ca >= 0 ? 4 : -4, y: -1, r: 2 } : D4 === 'up' ? { x: ca >= 0 ? 4 : -4, y: -2, r: 2 }
-      : { x: (D4 === 'left' ? -3 : 3) * (behind ? -1 : 1), y: -3, r: 2 };
+    const elfDirectional=HH.look&&HH.look.sprite==='silverelf';
+    const hand=elfDirectional
+      ? (D4==='down'?{x:ca>=0?7:-7,y:-1,r:3}:D4==='up'?{x:ca>=0?7:-7,y:-4,r:3}:D4==='left'?{x:-7,y:-3,r:3}:D4==='right'?{x:7,y:-3,r:3}:{x:ca>=0?7:-7,y:-2,r:3})
+      : !D4?{x:0,y:2,r:4}:D4==='down'?{x:ca>=0?4:-4,y:-1,r:2}:D4==='up'?{x:ca>=0?4:-4,y:-2,r:2}
+      :{x:(D4==='left'?-3:3)*(behind?-1:1),y:-3,r:2};
+    const skinCosmetic=cosmeticSkinForPlayer(this);
+    if(skinCosmetic&&skinCosmetic.grade==='legendary'&&typeof drawLegendarySkinWeave==='function')drawLegendarySkinWeave(ctx,skinCosmetic.id,x,y,this.time,false);
     const w = this.weapon;
     const drawW = () => {
       if (!w) return;
@@ -222,6 +230,7 @@ class Player extends Entity {
     if (behind) drawW();
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
     drawHero(ctx, HH, x, y, face, heroHasDirs(HH) ? heroWalkFrame(HH, this.moving && this.state !== 'DASH', this.time) : frame, this.state === 'DASH', this.dir4 || 'down');
+    if(skinCosmetic&&skinCosmetic.grade==='legendary'&&typeof drawLegendarySkinWeave==='function')drawLegendarySkinWeave(ctx,skinCosmetic.id,x,y,this.time,true);
 
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
     if (!behind) drawW();
