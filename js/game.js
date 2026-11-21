@@ -989,10 +989,13 @@ class Game {
       return;
     } else if (o.type === 'skins') { // 스킨 고르기: 카드 클릭·번호 키로 장착/해제
       if (o.msg) o.msg.t -= STEP;
+      const maxSkinScroll=HUD.skinMaxScroll();
+      if(input.wasPressed('WheelDown')||input.wasPressed('WheelPageDown')||input.wasPressed('ArrowDown')||input.wasPressed('PageDown'))o.scroll=Math.min(maxSkinScroll,(o.scroll||0)+54);
+      if(input.wasPressed('WheelUp')||input.wasPressed('WheelPageUp')||input.wasPressed('ArrowUp')||input.wasPressed('PageUp'))o.scroll=Math.max(0,(o.scroll||0)-54);
       if (input.wasPressed('Escape') || input.wasPressed('KeyK') || input.wasPressed('KeyE')) { this.overlay = o.back === 'hero_info' ? { type: 'hero_info', heroId: this.save.selected, branchIndex: o.backIndex || 0 } : o.back === 'pause' ? { type: 'pause' } : null; return; }
       if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; }
       let ch = -1; SKINS.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) ch = i; });
-      if (input.wasPressed('Mouse0')) { const m = input.mouse; SKINS.forEach((_, i) => { const r = HUD.skinRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) ch = i; }); this.input.mouse.down = false; }
+      if (input.wasPressed('Mouse0')) { const m = input.mouse; SKINS.forEach((_, i) => { const r = HUD.skinRect(i,o.scroll||0); if (m.y>=38&&m.y<=VIEW_H-34&&m.x>=r.x&&m.x<=r.x+r.w&&m.y>=r.y&&m.y<=r.y+r.h) ch = i; }); this.input.mouse.down = false; }
       if (ch >= 0) { const K = SKINS[ch], sv = this.save; sv.skinOn = sv.skinOn || {};
         if (!(sv.skins || []).includes(K.id)) o.msg = { text: `아직 없는 스킨입니다 — 선물 코드로 얻을 수 있어요 (G)`, color: '#ff9a9a', t: 2.5 };
         else { const on = sv.skinOn[K.hero] === K.id; sv.skinOn[K.hero] = on ? null : K.id; writeSave(sv); SFX.play('ui');

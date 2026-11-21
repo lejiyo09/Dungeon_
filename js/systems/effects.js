@@ -251,17 +251,50 @@ class Effects {
         }
         ctx.restore();break;
       }
-      case 'skinSkill': {
-        const p=Math.min(1,fx.t/fx.life),reach=10+p*19;ctx.save();ctx.translate(x,y-4);ctx.rotate(fx.angle);ctx.globalAlpha*=fx.opacity*(1-p*0.35);
-        ctx.strokeStyle=fx.color;ctx.fillStyle=fx.accent;ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';
+      case 'skinWeapon': {
+        const p=fx.t/fx.life,k=1-p,a=fx.angle;ctx.save();ctx.translate(x,y);ctx.rotate(a);
+        ctx.globalCompositeOperation='lighter';ctx.globalAlpha*=fx.opacity*k;ctx.strokeStyle=fx.color;ctx.fillStyle=fx.accent;ctx.lineCap='round';ctx.lineJoin='round';
         if(fx.id==='skin_abyss_knight'){
-          ctx.beginPath();ctx.moveTo(2,-3);ctx.lineTo(9,-10);ctx.lineTo(14,-1);ctx.lineTo(21,5);ctx.stroke();ctx.beginPath();ctx.moveTo(4,5);ctx.lineTo(11,1);ctx.lineTo(16,8);ctx.stroke();ctx.fillRect(12,-3,3,3);
+          ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(-3,-7);ctx.lineTo(2,-2);ctx.lineTo(10,-8);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(0,5);ctx.lineTo(7,0);ctx.lineTo(13,5);ctx.stroke();ctx.fillRect(7,-2,3,3);
         }else if(fx.id==='skin_star_paladin'){
-          ctx.beginPath();ctx.moveTo(0,-reach);ctx.lineTo(2,-3);ctx.lineTo(reach,0);ctx.lineTo(2,3);ctx.lineTo(0,reach);ctx.lineTo(-2,3);ctx.lineTo(-reach,0);ctx.lineTo(-2,-3);ctx.closePath();ctx.stroke();ctx.fillRect(-2,-2,4,4);ctx.fillRect(reach+2,-1,2,2);
+          ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-8,0);ctx.lineTo(0,-3);ctx.lineTo(8,0);ctx.lineTo(0,3);ctx.closePath();ctx.stroke();
+          ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(0,10);ctx.moveTo(-10,0);ctx.lineTo(10,0);ctx.stroke();ctx.fillRect(-2,-2,4,4);
         }else if(fx.id==='skin_void_empress'){
-          ctx.beginPath();ctx.arc(3,0,reach,-1.8,1.15);ctx.stroke();ctx.beginPath();ctx.moveTo(-5,-8);ctx.lineTo(-1,-3);ctx.lineTo(4,-8);ctx.stroke();ctx.fillRect(10,2,3,3);
+          ctx.lineWidth=2.4;ctx.beginPath();ctx.arc(0,0,7+p*4,-1.1,1.65);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(-8,-5);ctx.quadraticCurveTo(0,-12,8,-5);ctx.stroke();ctx.fillRect(5,3,3,3);
         }else if(fx.id==='skin_crimson_lotus'){
-          for(let i=0;i<5;i++){const q=i/4;ctx.save();ctx.translate(q*reach,Math.sin(q*Math.PI*2)*6);ctx.rotate(q*Math.PI-0.8);ctx.beginPath();ctx.ellipse(0,0,3,7,0,0,Math.PI*2);ctx.fill();ctx.restore();}ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(reach*0.4,-12,reach,0);ctx.stroke();
+          for(let i=0;i<3;i++){ctx.save();ctx.rotate((i-1)*0.72);ctx.translate(5,0);ctx.beginPath();ctx.ellipse(0,0,3,7,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+          ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(-8,0);ctx.quadraticCurveTo(0,-7,9,0);ctx.stroke();
+        }
+        ctx.restore();break;
+      }
+      case 'skinSkill': {
+        const p=fx.t/fx.life,k=1-p,reach=14+p*23;ctx.save();ctx.translate(x,y-4);ctx.rotate(fx.angle);
+        ctx.globalCompositeOperation='lighter';ctx.globalAlpha*=fx.opacity*(0.9+0.1*k);
+        ctx.strokeStyle=fx.color;ctx.fillStyle=fx.accent;ctx.lineCap='round';ctx.lineJoin='round';
+        if(fx.id==='skin_abyss_knight'){
+          // 봉인핵에서 터져 나오는 균열 세 갈래와 깨진 칼날 조각
+          ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-2,3);ctx.lineTo(5,-2);ctx.lineTo(11,-13);ctx.moveTo(4,0);ctx.lineTo(14,4);ctx.lineTo(22,1);ctx.moveTo(1,5);ctx.lineTo(-8,12);ctx.stroke();
+          ctx.lineWidth=1.5;for(let i=0;i<4;i++){const q=i*Math.PI/2+p*1.4;ctx.beginPath();ctx.moveTo(Math.cos(q)*8,Math.sin(q)*8);ctx.lineTo(Math.cos(q)*(reach+7),Math.sin(q)*(reach+7));ctx.stroke();}
+          ctx.fillRect(10,-5,4,4);ctx.fillRect(-8,9,3,3);
+        }else if(fx.id==='skin_star_paladin'){
+          // 성좌의 집행: 대형 별 인장과 네 방향으로 쏟아지는 성광
+          ctx.lineWidth=2.6;ctx.beginPath();
+          for(let i=0;i<8;i++){const a=i*Math.PI/4+(p*0.2),r=i%2?9:reach;const px=Math.cos(a)*r,py=Math.sin(a)*r;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.closePath();ctx.stroke();
+          ctx.lineWidth=2;for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(Math.cos(a)*11,Math.sin(a)*11);ctx.lineTo(Math.cos(a)*(reach+8),Math.sin(a)*(reach+8));ctx.stroke();}
+          ctx.fillRect(-3,-3,6,6);
+        }else if(fx.id==='skin_void_empress'){
+          // 공허의 문: 역방향 초승달 두 겹과 안쪽에서 뻗는 마력 파편
+          ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,reach,-2.1,1.15);ctx.stroke();
+          ctx.lineWidth=1.7;ctx.beginPath();ctx.arc(0,0,reach*0.67,1.2,4.4);ctx.stroke();
+          for(let i=0;i<5;i++){const a=i*TAU/5-p*0.7;ctx.beginPath();ctx.moveTo(Math.cos(a)*7,Math.sin(a)*7);ctx.lineTo(Math.cos(a)*(reach+8),Math.sin(a)*(reach+8));ctx.stroke();}
+          ctx.fillRect(-2,-2,5,5);
+        }else if(fx.id==='skin_crimson_lotus'){
+          // 홍련 개화: 여섯 장의 꽃잎이 차례로 펼쳐지며 붉은 곡선이 가로지름
+          ctx.lineWidth=2;for(let i=0;i<6;i++){const a=i*TAU/6+p*0.35;ctx.save();ctx.rotate(a);ctx.beginPath();ctx.ellipse(0,-reach*0.62,4,reach*0.34,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
+          ctx.beginPath();ctx.moveTo(-reach,-4);ctx.quadraticCurveTo(0,reach*0.55,reach,-4);ctx.stroke();
+          ctx.fillRect(-3,-3,6,6);
         }
         ctx.restore();break;
       }
