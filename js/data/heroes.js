@@ -52,8 +52,8 @@ const DATA_HEROES = [
 ];
 // ── 스킨 (외형만 바뀜, 능력은 그대로) [사용자 결정] 선물 코드로 얻음 — 일시정지(Esc) → G 선물 코드
 const SKINS = [
-  { id: 'skin_flamewitch', name: '불꽃 마녀', hero: 'hero_mage', line: 'fire', sprite: 'flamewitch', desc: '불 마도사 외형: 끝이 꺾인 마녀 모자와 붉은 원피스' },
-  { id: 'skin_redgunner', name: '붉은 머리 총잡이', hero: 'hero_gunner', line: 'base', sprite: 'redgunner', desc: '속사 사수 외형: 붉은 머리와 보안관 별을 단 남색 조끼' },
+  { id: 'skin_flamewitch', name: '불꽃 마녀', hero: 'hero_mage', line: 'fire', sprite: 'flamewitch', grade: 'special', desc: '불 마도사 외형: 끝이 꺾인 마녀 모자와 붉은 원피스' },
+  { id: 'skin_redgunner', name: '붉은 머리 총잡이', hero: 'hero_gunner', line: 'base', sprite: 'redgunner', grade: 'special', desc: '속사 사수 외형: 붉은 머리와 보안관 별을 단 남색 조끼' },
   { id: 'skin_silverelf', name: '은빛 엘프 마법사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', grade: 'special', desc: '빛 마도사 외형: 은발 양갈래 엘프, 흰 옷에 금테 — 상하좌우 걷는 그림이 따로 있음' },
   {id:'skin_abyss_knight',name:'심연의 맹세',hero:'hero_swordsman',line:'sword',sprite:'abyssKnight',grade:'legendary',desc:'청록 균열광의 심연 갑주'},
   {id:'skin_star_paladin',name:'성좌의 집행자',hero:'hero_priest',line:'base',sprite:'starPaladin',grade:'legendary',desc:'별빛 갑주와 황금 성흔'},
