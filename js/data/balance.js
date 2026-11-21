@@ -101,7 +101,7 @@ const BALANCE = {
     prey: { dur: 3, bonus: 0.2 },                                                // 사냥터 각인: 덫 장비·망자의 파수기에게 받는 피해 +bonus
     firetoss: { dmg: 55, radius: 40, /* [사용자 결정] 소폭 너프 60 → 55 */ kb: 14, range: 210, speed: 320, lifesteal: 0.6 },            // 화염 투척 (기본) — 준 피해의 lifesteal 회복 [사용자 결정]
     grid: { r: 46, life: 4, stun: 1, range: 200, dot: 55, tick: 1, lifesteal: 0.6 }, /* [사용자 결정] 소폭 너프 dot 60 → 55 */ // 전류 격자 (1차) = 쇼크 웹: 가시·전류선·그물 안에 닿아 있는 동안 tick초마다 dot 전격 피해(스킬 피해 배율·공격력 적용), 처음 닿을 때 stun초 기절, 준 피해의 lifesteal 회복 [사용자 결정]
-    death: { life: 15, range: 150, every: 0.6, dmg: 24, /* [사용자 결정] 소폭 너프 26 → 24 */ corpseRange: 120, corpseR: 52, corpseEvery: 1.2, corpseHp: 0.8, corpseHeal: 0.1, lifesteal: 0.05, bossCorpse: 60, corpseCap: 700, corpseHealCap: 0.04 }, /* 시체 폭발: 일반 몬스터 skillDmg(corpseCap)·보스 skillDmg(bossCorpse)까지, 시체 1개 회복은 최대 체력 corpseHealCap까지 */ // 망자의 파수기 (2차) — 번개 = dmg(스킬 피해 배율·공격력 적용), 시체 폭발 피해 = 죽은 적 최대 체력 × corpseHp, 폭발 때 죽은 적 최대 체력 × corpseHeal 회복, 파수기가 준 피해 × lifesteal 회복 [사용자 결정]
+    death: { life: 15, range: 150, every: 0.6, dmg: 20, /* [밸런스 조정] 파수기 직선 번개 피해 24 → 20 */ corpseRange: 120, corpseR: 46, corpseEvery: 1.2, corpseHp: 0.65, /* [밸런스 조정] 시체 폭발 피해 80% → 65%, 범위 52 → 46 */ corpseHeal: 0.1, lifesteal: 0.05, bossCorpse: 60, corpseCap: 700, corpseHealCap: 0.04 }, /* 시체 폭발: 일반 몬스터 skillDmg(corpseCap)·보스 skillDmg(bossCorpse)까지, 시체 1개 회복은 최대 체력 corpseHealCap까지 */ // 망자의 파수기 (2차) — 번개 = dmg(스킬 피해 배율·공격력 적용), 시체 폭발 피해 = 죽은 적 최대 체력 × corpseHp, 폭발 때 죽은 적 최대 체력 × corpseHeal 회복, 파수기가 준 피해 × lifesteal 회복 [사용자 결정]
     corpseLife: 6           // 시체가 남아 있는 시간(초)
   },
   upgrade: { maxLevel: 10, perLevel: 0.12, base: 30, chance: [1, 0.9, 0.75, 0.6, 0.45, 0.38, 0.32, 0.26, 0.2, 0.15],
