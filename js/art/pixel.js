@@ -92,10 +92,10 @@ const HERO_SPRITES = {
   //  시트: 가로 서 있기·걸음1·걸음2 / 세로 앞·뒤·왼쪽·오른쪽 — 좌우 반전 없이 방향별 그림
   silverelf: { img: 'skins/silverelf.png', fw: 22, fh: 24, dirs: ['down', 'up', 'left', 'right'] },
   // 전설 스킨: 2배 픽셀 격자(32×40), 4방향×3프레임. 게임 내 출력 크기는 기존 16×20 유지.
-  abyssKnight: { img: 'skins/legendary_abyss_2x.webp', fw: 32, fh: 40, dirs: ['down', 'up', 'left', 'right'], displayW: 24, displayH: 30 },
-  crimsonLotus: { img: 'skins/legendary_crimson_2x.webp', fw: 32, fh: 40, dirs: ['down', 'up', 'left', 'right'], displayW: 24, displayH: 30 },
-  starPaladin: { img: 'skins/legendary_star_2x.webp', fw: 32, fh: 40, dirs: ['down', 'up', 'left', 'right'], displayW: 24, displayH: 30 },
-  voidEmpress: { img: 'skins/legendary_void_2x.webp', fw: 32, fh: 40, dirs: ['down', 'up', 'left', 'right'], displayW: 24, displayH: 30 },
+  abyssKnight: { img: 'skins/legendary_abyss_2x.webp', fw: 32, fh: 40, dirs: ['down', 'up', 'left', 'right'], displayW: 20, displayH: 25 },
+  crimsonLotus: { img: 'skins/legendary_crimson_2x.webp', fw: 32, fh: 40, dirs: ['down', 'up', 'left', 'right'], displayW: 20, displayH: 25 },
+  starPaladin: { img: 'skins/legendary_star_2x.webp', fw: 32, fh: 40, dirs: ['down', 'up', 'left', 'right'], displayW: 20, displayH: 25 },
+  voidEmpress: { img: 'skins/legendary_void_2x.webp', fw: 32, fh: 40, dirs: ['down', 'up', 'left', 'right'], displayW: 20, displayH: 25 },
   // 마도사: 끝이 휜 고깔모자(별·금띠), 바닥까지 끌리는 로브, 별 문양 (다리 대신 로브 자락이 흔들림)
   wizard: { pal: { y: '#f0d060' }, rows: [
     '.........kk.....',
