@@ -202,7 +202,7 @@ class Player extends Entity {
     if (legAnim) {
       const ax = Math.cos(this.aimVis), ay = Math.sin(this.aimVis); // aimVis: 로컬·원격 모두 동기화됨
       if (Math.abs(ay) >= Math.abs(ax)) { legDir = ay >= 0 ? 0 : 1; drawFace = 1; } // 아래(앞)/위(뒤): 뒤집지 않음
-      else { legDir = 2; drawFace = ax < 0 ? -1 : 1; } // 옆: 좌우 뒤집기
+      else { legDir = 2; drawFace = ax < 0 ? 1 : -1; } // 옆: 원본이 왼쪽을 보므로, 오른쪽 조준일 때 뒤집음
       drawFrame = (this.moving && this.state !== 'DASH') ? Math.floor(this.time * 9) % 3 : 1; // 정지 시 가운데 프레임
     }
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
