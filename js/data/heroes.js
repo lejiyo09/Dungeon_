@@ -61,7 +61,7 @@ const SKINS = [
   { id: 'skin_leg_void', name: '공허의 마도사', hero: 'hero_mage', sprite: 'leg_void', rarity: 'legendary', source: 'gacha', desc: '마법사 전설 외형 — 어둠을 휘감은 공허의 현자 (전직: 어둠)' },
   { id: 'skin_leg_star', name: '성역의 성자', hero: 'hero_priest', sprite: 'leg_star', rarity: 'legendary', source: 'gacha', desc: '사제 전설 외형 — 별빛 성역의 성자 (전직: 성역)' },
   // ── 변신 드루이드 스킨: 평소 반디(앞/옆/뒤) ↔ 변신 시 샘(대기=22·공격=21, 좌우 반전만)
-  { id: 'skin_bandi', name: '반디', hero: 'hero_druid', sprite: 'druid_bandi', rarity: 'legendary', source: 'gacha', druid: true, desc: '드루이드 변신 스킨 — 평소엔 반디, 변신하면 날개 돋친 샘으로' }
+  { id: 'skin_bandi', name: '반디', hero: 'hero_druid', sprite: 'druid_bandi', rarity: 'legendary', source: 'code', druid: true, desc: '드루이드 변신 스킨 — 평소엔 반디, 변신하면 날개 돋친 샘으로 (선물 코드)' }
 ];
 // 드루이드 스킨 시트(assets/druidskin.png) 스프라이트 좌표 [x,y,w,h] — 이미 인게임 크기로 구움
 const DRUID_SKIN = { bandi_down: [0, 13, 18, 21], bandi_up: [19, 13, 21, 21], bandi_side: [41, 13, 20, 21], sam_idle: [62, 0, 53, 34], sam_atk: [116, 12, 41, 22] };
@@ -73,7 +73,8 @@ const LEG_SHEET = { cellW: 24, cellH: 24, frames: 3, dirs: 3 };
 const GIFT_CODES = [
   { hash: 'd6b73fd4', skin: 'skin_flamewitch' },
   { hash: 'ca1080ea', skin: 'skin_redgunner' },
-  { hash: '8b67ec', skin: 'skin_silverelf' }
+  { hash: '8b67ec', skin: 'skin_silverelf' },
+  { hash: '30fbc0b', skin: 'skin_bandi' } // FireFly
 ];
 function giftHash(code) { let h = 0x811c9dc5; for (const ch of 'pd_gift:' + String(code).toUpperCase()) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); }
 function skinKey(K) { return K.line ? K.hero + '|' + K.line : K.hero; } /* 장착 칸: 직업·계열마다 하나 (마도사 불·빛 스킨을 따로 켜 둘 수 있게) */
