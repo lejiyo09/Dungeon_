@@ -216,7 +216,6 @@ class Player extends Entity {
       : !D4?{x:0,y:2,r:4}:D4==='down'?{x:ca>=0?4:-4,y:-1,r:2}:D4==='up'?{x:ca>=0?4:-4,y:-2,r:2}
       :{x:(D4==='left'?-3:3)*(behind?-1:1),y:-3,r:2};
     const skinCosmetic=cosmeticSkinForPlayer(this);
-    if(skinCosmetic&&skinCosmetic.grade==='legendary'&&typeof drawLegendarySkinWeave==='function')drawLegendarySkinWeave(ctx,skinCosmetic.id,x,y,this.time,false);
     const w = this.weapon;
     const drawW = () => {
       if (!w) return;
@@ -230,10 +229,13 @@ class Player extends Entity {
     if (behind) drawW();
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
     drawHero(ctx, HH, x, y, face, heroHasDirs(HH) ? heroWalkFrame(HH, this.moving && this.state !== 'DASH', this.time) : frame, this.state === 'DASH', this.dir4 || 'down');
-    if(skinCosmetic&&skinCosmetic.grade==='legendary'&&typeof drawLegendarySkinWeave==='function')drawLegendarySkinWeave(ctx,skinCosmetic.id,x,y,this.time,true);
 
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
     if (!behind) drawW();
+    if(skinCosmetic&&skinCosmetic.grade==='legendary'&&typeof drawLegendarySkinWeave==='function'){
+      // 몸통 중앙에 얹어 마력선이 스프라이트에 묻히지 않도록 전면에 렌더링
+      drawLegendarySkinWeave(ctx,skinCosmetic.id,x,y,this.time,true);
+    }
     if (this.whirl > 0) {
       ctx.strokeStyle = 'rgba(220,240,255,0.8)'; ctx.lineWidth = 2;
       const a = this.time * 30;
