@@ -39,6 +39,7 @@ class WeaponSystem {
     if (!w) return;
     w.cooldown = Math.max(w.cooldown - dt, -STEP);
     if (player.state === 'DEAD' || player.castLock > 0 || player.denyT > 0) { w.beamActive = false; w.charge = 0; return; } // 시전 중엔 공격 불가 (가레스의 부정 장판 안도)
+    if (player.transformT > 0) { w.beamActive = false; w.charge = 0; w.burstLeft = 0; this.transformMelee(player, dt, input); return; } // [변신] 변신 중엔 무기 불가 → 강력한 근접 베기
     if ((input.wasPressed('KeyQ') || input.wasPressed('Wheel')) && player.weapons.length > 1) {
       w.charge = 0; w.beamActive = false; w.burstLeft = 0;
       player.slot = (player.slot + 1) % player.weapons.length;
@@ -65,6 +66,23 @@ class WeaponSystem {
       case 'beam': this.updateBeam(player, w, dt, down); break;
     }
     if (!down) w.cooldown = Math.max(w.cooldown, 0);
+  }
+  // [변신] 변신 중 근접 베기 — 무기 없이 강력한 범위 베기, 샘의 청록 이펙트
+  transformMelee(player, dt, input) {
+    const world = this.world;
+    player.transCd = Math.max(0, (player.transCd || 0) - dt);
+    if (!input.mouse.down || player.transCd > 0) return;
+    const sk = player.transformSkill || 'bearform', base = { bearform: 58, bearform2: 76, primal: 108 }[sk] || 60;
+    player.transCd = 0.3; // 베기 간격
+    const a = Math.atan2(player.aim.y, player.aim.x), range = 40, arc = 2.0, dmg = world.skillDmg(base);
+    let hit = 0;
+    for (const e of world.enemies) { if (!e.targetable) continue; const dx = e.x - player.x, dy = e.y - player.y, d = Math.hypot(dx, dy);
+      if (d - e.radius <= range && (d < 6 || angleDiff(Math.atan2(dy, dx), a) < arc / 2)) { world.damageEnemy(e, { damage: dmg, mods: player.mods, knockback: 7 }, dx / (d || 1), dy / (d || 1)); hit++; } }
+    if (sk === 'primal' && hit) player.hp = Math.min(player.maxHp, player.hp + hit * 3); // 원시: 베기 흡혈
+    player.swing = { t: 0, dur: 0.16, ang: a, arc, thrust: false };
+    world.effects.slash(player.x, player.y - 1, a, range, arc, '#9af0ff');
+    world.effects.slash(player.x, player.y - 1, a, range * 0.68, arc * 0.7, 'rgba(200,180,255,0.75)');
+    world.addShake(0.06, 2); SFX.play('melee', 0.12);
   }
   canPay(player, cost) { return player.overdrive > 0 || !cost || player.energy >= cost * (1 - (player.hero.energySave || 0)); }
   // 에너지가 모자랄 때: 아주 약한 공격 (총·지팡이·활·광선은 작은 탄, 근접은 짧은 베기)

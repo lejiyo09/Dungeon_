@@ -61,7 +61,7 @@ class Player extends Entity {
     if (this.scabbardT > 0) this.scabbardT -= dt; if (this.scabGuardT > 0) this.scabGuardT -= dt; /* 성검의 칼집 */ if (this.fleeceT > 0) this.fleeceT = Math.max(0, this.fleeceT - dt); /* 아킬레우스의 방패 · 황금 양털 */
     this.overdrive = Math.max(0, this.overdrive - dt); if (this.odLockT > 0) { this.odLockT -= dt; if (this.skillCooldown < this.odLockT) this.skillCooldown = this.odLockT; } /* 과부하 계열 재사용 잠금 (스킬 칸에도 남은 시간으로 보이게) */ this.rage = Math.max(0, this.rage - dt); this.blinkInv = Math.max(0, this.blinkInv - dt); this.treasureCd = Math.max(0, this.treasureCd - dt); this.solomon = Math.max(0, this.solomon - dt); this.hadesT = Math.max(0, (this.hadesT || 0) - dt);
     if (this.kingChainT > 0) this.kingChainT = Math.max(0, this.kingChainT - dt);
-    this.castLock = Math.max(0, this.castLock - dt); this.blinkWindowT = Math.max(0, this.blinkWindowT - dt); this.sancBoost = Math.max(0, this.sancBoost - dt); this.hasteT = Math.max(0, (this.hasteT || 0) - dt); this.avalonT = Math.max(0, (this.avalonT || 0) - dt); this.buffT = Math.max(0, (this.buffT || 0) - dt);
+    this.castLock = Math.max(0, this.castLock - dt); this.blinkWindowT = Math.max(0, this.blinkWindowT - dt); this.sancBoost = Math.max(0, this.sancBoost - dt); this.hasteT = Math.max(0, (this.hasteT || 0) - dt); this.avalonT = Math.max(0, (this.avalonT || 0) - dt); this.buffT = Math.max(0, (this.buffT || 0) - dt); this.transformT = Math.max(0, (this.transformT || 0) - dt); /* [변신] 변신 지속 */
     if (this.swing) { this.swing.t += dt; if (this.swing.t >= this.swing.dur) this.swing = null; }
     this.sinceHit += dt;
     if (this.sinceHit >= this.cfg.shieldRegenDelay)
@@ -196,7 +196,7 @@ class Player extends Entity {
     }
     const w = this.weapon, behind = Math.sin(this.aimVis) < -0.4;
     const drawW = () => {
-      if (!w) return;
+      if (!w || this.transformT > 0) return; // [변신] 변신 중엔 무기 숨김 (근접 베기)
       const ang = this.weaponAngle();
       const reach = this.swing && this.swing.thrust ? Math.sin(Math.PI * this.swing.t / this.swing.dur) * 10 : 0;
       // 손 위치: 어깨(몸 중앙 약간 아래)를 중심으로 도는 궤도, 반동 시 뒤로 밀림 · 전설 스킨은 버스트형이라 손을 몸통 쪽으로 올림

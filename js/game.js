@@ -1812,9 +1812,10 @@ class Game {
         this.zones.push(new BloodStorm(p, { r: R, gather: 0.55, life: fx ? 3.8 : 3, tick: 0.3, dmg: 42, bigDmg: 200, lifesteal: 0.2, feast: true, kb: 10 }));
         break; }
       case 'ancientroot': { const fx = p.jobSkillFx === 'ancientroot'; nova(fx ? 170 : 140, 170, { color: '#7adf4a', root: fx ? 4.5 : 3, kb: 0, status: { type: 'poison', chance: 1, duration: fx ? 7 : 5, dps: 36 } }); this.addShake(0.3, 5); break; } /* [숙련] 고대 결박: 범위·속박↑ */
-      case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [10, 0.55, 0.45, 0], bearform2: [12, 0.6, 0.45, 16], primal: [14, 0.95, 0.45, 24] }[p.skillId];
+      case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [10, 0.55, 0.55, 0], bearform2: [12, 0.6, 0.58, 16], primal: [14, 0.95, 0.62, 24] }[p.skillId];
         if (p.skillId === 'primal' && p.jobSkillFx === 'primal') { C[0] += 3; C[1] += 0.2; } /* [숙련] 태초 각성: 변신 지속·공격력↑ */
         p.buffT = C[0]; p.buffAtk = C[1]; p.buffGuard = C[2]; p.buffSpeed = 0; p.buffKillHeal = 0;
+        p.transformT = C[0]; p.transformSkill = p.skillId; // [변신] 변신 상태: 무기 불가 + 근접 베기 (이펙트/강공), 받는 피해 감소↑
         if (C[3]) this.zones.push(new SkillAura(p, { r: p.skillId === 'primal' ? 66 : 50, life: C[0], tick: 0.3, dmg: C[3], color: '#c8a070', kind: 'blood', lifesteal: p.skillId === 'primal' ? 0.35 : 0 }));
         if (p.skillId === 'primal') p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.25));
         this.effects.burst(p.x, p.y, '#c8a070', 18); this.effects.ring(p.x, p.y, 34, '#c8a070'); this.effects.text(p.x, p.y - 20, '야성의 힘!', '#e0c090'); this.addShake(0.15, 3); break; }
