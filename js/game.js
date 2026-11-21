@@ -1565,6 +1565,7 @@ class Game {
         phase2Patterns: [{ type: 'spiral', duration: 2.2, arms: 3 + next, interval: 0.09, spin: 1.8, color: col }, { type: 'slam', radius: 46, chain: next, color: col }] });
     }
     npc.gone = true; r.trial = next; r.trialPlayer = p; r.hybrid = hy || null; r.branch = npc.branch || null; r.state = 'active'; this.activeRoom = r; r.wavesLeft = 0; // 시련을 시작한 사람이 진화 (멀티)
+    for (const q of this.allPlayers()) if (q.state !== 'DEAD') this.map.pushOffDoors(q, r); // [버그 수정] 문 닫기 전 문턱에서 안쪽으로 밀기
     this.map.setDoors(r, true); this.enemyBullets.length = 0; if (this.coop && this.coop.host) this.coopGather(r, p); // 멀티: 동료도 시련 방으로
     const c = this.map.tileCenter(r.cx, r.cy - 1), m = this.spawnEnemy(key, c.x, c.y, r); m.phase = 1;
     this.showBanner(`${trialName}의 시련`, hy ? `${hy.el.name}의 마도사 상위자를 쓰러뜨리면 ${trialName}(으)로 진화합니다` : '상위자를 쓰러뜨리면 진화합니다', '#ffd84a'); SFX.play('boss');
@@ -1953,6 +1954,7 @@ class Game {
     const map = this.map;
     for (const p of this.allPlayers()) { // 멀티: 누구든 먼저 들어가면 그 방 전투 시작 (쓰러진 사람 제외)
       if (p.state === 'DEAD') continue;
+      map.unstick(p); /* [버그 수정] 문이 닫히며 벽에 박혀도 매 프레임 가장 가까운 바닥으로 빼냄 (끼임 방지 안전장치) */
       const here = map.roomAtPoint(p.x, p.y);
       if (here && !here.visited && map.isFullyInside(p, here)) here.visited = true; /* [버그 수정] 방 끝에 몸만 걸쳐도 visited 처리되어 연결된 방을 미리 엿보던 꼼수 → 몸 전체가 방 안에 들어와야 공개 */
       if (!this.activeRoom && here && here.state === 'idle') { /* [버그 수정] 방 바닥에 발을 들이는 순간(중심이 방 안) 전투 시작 — 벽에 붙어 전투를 건너뛰던 꼼수 차단 */ this.activateRoom(here, p); break; }
@@ -1966,9 +1968,8 @@ class Game {
   activateRoom(r, leader = this.player) {
     r.state = 'active'; r.visited = true; this.activeRoom = r; /* 전투가 걸리면(몸이 안으로) 확실히 방문 처리 */
     if (this.coop && this.coop.host) this.coopGather(r, leader); // 멀티: 방 밖에 있는 동료를 모두 이 방으로 모음 (문 밖에 갇히지 않게)
+    for (const q of this.allPlayers()) if (q.state !== 'DEAD') this.map.pushOffDoors(q, r); // [버그 수정] 문을 닫기 전에 문턱에 걸친 플레이어를 방 안쪽으로 밀어 애초에 끼지 않게
     this.map.setDoors(r, true);
-    { const cc = this.map.tileCenter(r.cx, r.cy); for (const q of this.allPlayers()) { if (q.state === 'DEAD') continue; // [버그 수정] 문턱에 발 들이자마자 문이 닫혀 끼던 것 → 닫힌 뒤 문에 걸친 플레이어를 방 안쪽으로 밀어넣음
-      for (const d of r.doors) if (Math.hypot(q.x - (d.x * TILE + 8), q.y - (d.y * TILE + 8)) < TILE + q.half) { const dx = cc.x - q.x, dy = cc.y - q.y, dd = Math.hypot(dx, dy) || 1; moveAndCollide(q, dx / dd * (TILE + 4), dy / dd * (TILE + 4), this.map); break; } } }
     this.enemyBullets.length = 0;
     if (r.type === 'boss') {
       const id = this.W.boss, c = this.map.tileCenter(r.cx, r.cy - 3);

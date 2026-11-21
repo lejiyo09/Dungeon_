@@ -30,6 +30,37 @@ class DungeonMap {
            ent.y - ent.half >= r.y0 * TILE + m && ent.y + ent.half <= (r.y0 + r.h) * TILE - m;
   }
   setDoors(room, closed) { for (const d of room.doors) this.set(d.x, d.y, closed ? T_DOOR : T_FLOOR); }
+  // [버그 수정] 문을 "닫기 전에" 문 타일에 걸친 엔티티를 방 안쪽으로 밀어넣어, 애초에 벽에 끼지 않게 함
+  pushOffDoors(ent, room) {
+    const h = ent.half + 0.5, rx1 = room.x0 + room.w, ry1 = room.y0 + room.h;
+    for (const d of room.doors) {
+      if (ent.x + ent.half <= d.x * TILE || ent.x - ent.half >= (d.x + 1) * TILE) continue; // 가로로 안 겹침
+      if (ent.y + ent.half <= d.y * TILE || ent.y - ent.half >= (d.y + 1) * TILE) continue; // 세로로 안 겹침
+      if (d.x < room.x0) ent.x = Math.max(ent.x, (d.x + 1) * TILE + h);       // 왼쪽 벽 문 → 오른쪽(안쪽)
+      else if (d.x >= rx1) ent.x = Math.min(ent.x, d.x * TILE - h);           // 오른쪽 벽 문 → 왼쪽(안쪽)
+      else if (d.y < room.y0) ent.y = Math.max(ent.y, (d.y + 1) * TILE + h);  // 위쪽 벽 문 → 아래쪽(안쪽)
+      else if (d.y >= ry1) ent.y = Math.min(ent.y, d.y * TILE - h);           // 아래쪽 벽 문 → 위쪽(안쪽)
+    }
+  }
+  // [버그 수정] 벽 끼임 안전장치: 중심이 solid 타일에 박힌 엔티티를 가장 가까운(몸이 들어갈 수 있는) 바닥 타일 중심으로 빼냄
+  unstick(ent) {
+    if (!overlapsSolid(ent.x, ent.y, ent.half, this)) return false;
+    const ctx = Math.floor(ent.x / TILE), cty = Math.floor(ent.y / TILE);
+    let best = null, bd = Infinity;
+    for (let rad = 1; rad <= 5 && !best; rad++) {
+      for (let oy = -rad; oy <= rad; oy++) for (let ox = -rad; ox <= rad; ox++) {
+        if (Math.max(Math.abs(ox), Math.abs(oy)) !== rad) continue; // 현재 반경의 테두리만
+        const tx = ctx + ox, ty = cty + oy;
+        if (this.isSolidTile(tx, ty)) continue;
+        const cx = tx * TILE + TILE / 2, cy = ty * TILE + TILE / 2;
+        if (overlapsSolid(cx, cy, ent.half, this)) continue; // 몸이 통째로 들어갈 수 있는 칸만
+        const d = (cx - ent.x) ** 2 + (cy - ent.y) ** 2;
+        if (d < bd) { bd = d; best = { x: cx, y: cy }; }
+      }
+    }
+    if (best) { ent.x = best.x; ent.y = best.y; return true; }
+    return false;
+  }
   carveRoom(x0, y0, w, h) {
     for (let ty = y0 - 1; ty <= y0 + h; ty++)
       for (let tx = x0 - 1; tx <= x0 + w; tx++) this.set(tx, ty, T_WALL);
