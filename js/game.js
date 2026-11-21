@@ -1291,10 +1291,6 @@ class Game {
     SFX.play('skill');
     if (p.rank === 2) this.ultimateFx(p); // 최종 진화 스킬은 컷인과 함께
     const D = (b) => this.skillDmg(b), mw = this.mouseWorld(), A = Math.atan2(p.aim.y, p.aim.x);
-    const cosmeticSprite=this.skinSprite(p.hero.id,this.playerLineId(p));
-    const cosmeticSkin=SKINS.find(k=>k.sprite===cosmeticSprite&&k.grade==='legendary');
-    if(cosmeticSkin)this.effects.skinSkill(cosmeticSkin.id,p.x,p.y,A); // 전설 스킨 전용 스킬 발동 VFX (피해·쿨타임에는 영향 없음)
-
     const at = (range) => { const dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, range / d); return { x: p.x + dx * k, y: p.y + dy * k }; }; // 조준 지점 (사거리 제한)
     const nova = (r, dmg, o = {}) => { // 자기 주변 범위 피해
       for (const e of this.enemies) { if (!e.targetable || Math.hypot(e.x - p.x, e.y - p.y) > r + e.radius) continue;
