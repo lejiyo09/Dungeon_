@@ -200,7 +200,7 @@ class Player extends Entity {
       const ang = this.weaponAngle();
       const reach = this.swing && this.swing.thrust ? Math.sin(Math.PI * this.swing.t / this.swing.dur) * 10 : 0;
       // 손 위치: 어깨(몸 중앙 약간 아래)를 중심으로 도는 궤도, 반동 시 뒤로 밀림 · 전설 스킨은 버스트형이라 손을 몸통 쪽으로 올림
-      const R = 4 + reach - this.recoil * 2.5, hy0 = legAnim ? (legDir === 2 ? 0 : -4) : 2; // 전설: 앞뒤는 몸통(-4), 옆은 손 높이(0)
+      const R = 4 + reach - this.recoil * 2.5, hy0 = legAnim ? (legDir === 2 ? 4 : -3) : 2; // 전설: 앞뒤는 가슴(-3), 옆은 손 높이(아래로)
       const hx = x + Math.cos(ang) * R, hy = y + hy0 + Math.sin(ang) * R * 0.75;
       drawWeapon(ctx, w.def, hx, hy, ang);
     };
