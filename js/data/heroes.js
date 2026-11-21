@@ -73,7 +73,7 @@ const GIFT_CODES = [
   { hash: '8b67ec', skin: 'skin_silverelf' }
 ];
 function giftHash(code) { let h = 0x811c9dc5; for (const ch of 'pd_gift:' + String(code).toUpperCase()) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); }
-function skinAllowed(sp, heroId, lineId) { return SKINS.some((k) => k.sprite === sp && k.hero === heroId && (!k.line || k.line === lineId)); } /* [사용자 결정] 스킨은 정해진 갈래일 때만 (불꽃 마녀 = 불 마도사 · 붉은 머리 총잡이 = 속사 사수 · 은빛 엘프 마법사 = 빛 마도사) */
+function skinAllowed(sp, heroId, lineId) { return SKINS.some((k) => k.sprite === sp && k.hero === heroId && (k.grade === 'legendary' || !k.line || k.line === lineId)); } /* [사용자 결정] 스킨은 정해진 갈래일 때만 (불꽃 마녀 = 불 마도사 · 붉은 머리 총잡이 = 속사 사수 · 은빛 엘프 마법사 = 빛 마도사) */
 function skinSpriteOk(sp) { return SKINS.some((k) => k.sprite === sp) ? sp : null; } /* 멀티로 받은 외형 이름은 아는 스킨만 */
 
 const SKIN_GACHA={singleCost:120,tenCost:1080,pity:50,featuredId:'skin_void_empress',rates:{legendary:0.02,epic:0.18},duplicateShards:{legendary:80,epic:25,special:40}};
