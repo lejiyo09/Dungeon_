@@ -179,7 +179,7 @@ class Player extends Entity {
     if (this.state === 'DEAD') {
       const DH = this.shownHero(), spr = heroSprite(DH, 0, this.dir4 || 'down'); /* 쓰러져도 스킨 그대로 */
       ctx.save(); ctx.translate(x, y + 3); ctx.rotate(face * Math.PI / 2); ctx.globalAlpha = 0.85;
-      ctx.drawImage(spr.n, -spr.w / 2, -spr.h / 2); ctx.restore(); ctx.globalAlpha = 1; return;
+      ctx.drawImage(spr.n, -((spr.displayW || spr.w) / 2), -((spr.displayH || spr.h) / 2), spr.displayW || spr.w, spr.displayH || spr.h); ctx.restore(); ctx.globalAlpha = 1; return;
     }
     if (this.hurtInvuln > 0 && Math.floor(this.time * 20) % 2 === 0) return;
     const frame = this.moving && this.state !== 'DASH' ? Math.floor(this.time * 8) % 2 : 0;
