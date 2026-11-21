@@ -352,11 +352,36 @@ function getSprite(name, color, color2) {
 }
 // 옷색만 바꾼 영웅 (마도사 속성별 옷 등): 나머지 정보는 원래 영웅 그대로 이어받음
 function heroWithLook(hero, look) { return look ? Object.create(hero, { look: { value: Object.assign({}, hero.look, look), enumerable: true } }) : hero; }
+
+// ── 전설 스킨 (애니메이션 이미지 시트: assets/legskins.png) — getImageData 없이 drawImage 만 사용(교차출처 taint 안전)
+let _legSheetImg = null, _legSheetReady = false;
+function loadLegSheet() { if (_legSheetImg) return; _legSheetImg = new Image(); _legSheetImg.onload = () => { _legSheetReady = true; }; _legSheetImg.src = 'assets/legskins.png'; }
+function bakeLegSkin(rowIdx, frame) {
+  const S = LEG_SHEET, fr = ((frame % S.frames) + S.frames) % S.frames;
+  const sc = S.targetH / S.cellH, dw = Math.max(1, Math.round(S.cellW * sc)), dh = Math.max(1, Math.round(S.cellH * sc));
+  const sx = fr * S.cellW, sy = rowIdx * S.cellH;
+  const make = (flip, white) => {
+    const c = document.createElement('canvas'); c.width = dw; c.height = dh;
+    const g = c.getContext('2d'); g.imageSmoothingEnabled = true;
+    g.save(); if (flip) { g.translate(dw, 0); g.scale(-1, 1); }
+    g.drawImage(_legSheetImg, sx, sy, S.cellW, S.cellH, 0, 0, dw, dh); g.restore();
+    if (white) { g.globalCompositeOperation = 'source-atop'; g.fillStyle = '#ffffff'; g.fillRect(0, 0, dw, dh); }
+    return c;
+  };
+  return { w: dw, h: dh, n: make(false, false), f: make(true, false), wn: make(false, true), wf: make(true, true) };
+}
+
 function heroSprite(hero, frame) {
   const key = 'hero|' + hero.id + '|' + (hero.look.sprite || '') + '|' + hero.look.body + '|' + hero.look.accent + '|' + frame; /* 스킨(외형)이 다르면 따로 */ // 같은 직업이라도 옷색(갈래)이 다르면 따로
   let s = spriteCache.get(key);
   if (s) return s;
-  const L = hero.look, T = HERO_SPRITES[L.sprite] || HERO_SPRITES.knight;
+  const L = hero.look;
+  const legRow = (typeof LEG_SKINS !== 'undefined') ? LEG_SKINS[L.sprite] : undefined; // 전설 애니메이션 스킨
+  if (legRow !== undefined) {
+    if (!_legSheetReady) { loadLegSheet(); const base = (typeof DATA_HEROES !== 'undefined') && DATA_HEROES.find((h) => h.id === hero.id); return heroSprite(heroWithLook(hero, { sprite: base ? base.look.sprite : 'knight' }), frame); } // 로드 전: 기본 외형 (스킨 키로 캐시 안 함)
+    s = bakeLegSkin(legRow, frame); spriteCache.set(key, s); return s;
+  }
+  const T = HERO_SPRITES[L.sprite] || HERO_SPRITES.knight;
   const pal = Object.assign({ k: OUTLINE, s: '#f0c8a0', a: L.body, b: shade(L.body, 0.68), c: shade(L.body, 1.35), m: '#c9d6e0', w: '#ffffff',
     r: L.accent, y: '#e0c060', l: '#3a3048', h: L.accent, g: shade(L.accent, 0.68), e: '#7ad0ff', n: '#6a4628', d: '#3a2a1a' }, T.pal);
   const P2 = HERO_PROCS[L.sprite]; // 도형으로 그린 새 외형이 있으면 그것을 사용
@@ -443,4 +468,6 @@ function drawEnemy(ctx, e, x, y, flash) {
 }
 
 function drawPotion(ctx, x, y, color) { drawSprite(ctx, getSprite('potion', color), x, y + 4); }
+
+if (typeof document !== 'undefined') loadLegSheet(); // 전설 스킨 스프라이트시트 미리 로드
 

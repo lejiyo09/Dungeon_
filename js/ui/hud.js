@@ -215,15 +215,17 @@ class HUD {
       hudText(ctx, '외형만 바뀌고 능력은 그대로 · 정해진 직업·계열일 때만 보임', VIEW_W / 2, 26, '#aaa', 'center', 7);
       SKINS.forEach((K, i) => {
         const r = HUD.skinRect(i), owned = (sv.skins || []).includes(K.id), on = owned && game.skinOnMap()[skinKey(K)] === K.id, hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
-        const hero = game.data.heroes.get(K.hero), L = jobLines(K.hero).find((l) => l.id === K.line);
-        ctx.fillStyle = on ? 'rgba(255,176,216,0.18)' : hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
-        ctx.strokeStyle = on ? '#ffb0d8' : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
-        const spr = heroSprite(heroWithLook(hero, { sprite: K.sprite }), Math.floor(game.time * 3) % 2); /* 미리보기 (걷기 2프레임 번갈아) */
-        if (!owned) ctx.globalAlpha = 0.25; drawSprite(ctx, spr, r.x + r.w / 2, r.y + 50, { scale: 2 }); ctx.globalAlpha = 1;
+        const hero = game.data.heroes.get(K.hero), L = jobLines(K.hero).find((l) => l.id === K.line), leg = K.rarity === 'legendary';
+        ctx.fillStyle = on ? 'rgba(255,176,216,0.18)' : leg ? 'rgba(255,216,74,0.08)' : hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
+        if (leg) { const gl = 0.5 + 0.3 * Math.sin(game.time * 3); ctx.strokeStyle = on ? '#ffb0d8' : `rgba(255,216,74,${gl})`; ctx.lineWidth = 1.5; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); ctx.lineWidth = 1; }
+        else { ctx.strokeStyle = on ? '#ffb0d8' : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
+        const spr = heroSprite(heroWithLook(hero, { sprite: K.sprite }), leg ? Math.floor(game.time * 6) % 3 : Math.floor(game.time * 3) % 2); /* 미리보기 (전설 3프레임 / 그 외 2프레임) */
+        if (!owned) ctx.globalAlpha = 0.28; drawSprite(ctx, spr, r.x + r.w / 2, r.y + 50, { scale: leg ? 1.5 : 2 }); ctx.globalAlpha = 1;
+        if (leg) hudText(ctx, '★ 전설', r.x + 5, r.y + 4, '#ffd84a', 'left', 6);
         if (!owned) hudText(ctx, '🔒', r.x + r.w / 2, r.y + 22, '#fff', 'center', 10);
-        hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + 54, owned ? '#fff' : '#888', 'center', 8);
-        hudText(ctx, `${hero ? hero.name.split(' ')[0] : ''}${L ? ' · ' + L.name + ' 계열' : ''}`, r.x + r.w / 2, r.y + 66, '#c8c0d8', 'center', 6);
-        hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : '선물 코드로 획득', r.x + r.w / 2, r.y + 78, on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
+        hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + 54, owned ? (leg ? '#ffe9a0' : '#fff') : '#888', 'center', 8);
+        hudText(ctx, `${hero ? hero.name.split(' ')[0] : ''}${L ? ' · ' + L.name + ' 계열' : leg ? ' · 전 계열' : ''}`, r.x + r.w / 2, r.y + 66, '#c8c0d8', 'center', 6);
+        hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : K.source === 'gacha' ? '뽑기로 획득 (준비 중)' : '선물 코드로 획득', r.x + r.w / 2, r.y + 78, on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
       });
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 26, o.msg.color, 'center', 8);
       hudText(ctx, '번호 키 / 클릭: 장착·해제   ·   G: 선물 코드   ·   Esc: 돌아가기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);

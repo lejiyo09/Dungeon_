@@ -54,8 +54,16 @@ const DATA_HEROES = [
 const SKINS = [
   { id: 'skin_flamewitch', name: '불꽃 마녀', hero: 'hero_mage', line: 'fire', sprite: 'flamewitch', desc: '불 마도사 외형: 끝이 꺾인 마녀 모자와 붉은 원피스' },
   { id: 'skin_redgunner', name: '붉은 머리 총잡이', hero: 'hero_gunner', line: 'base', sprite: 'redgunner', desc: '속사 사수 외형: 붉은 머리와 보안관 별을 단 남색 조끼' },
-  { id: 'skin_silverelf', name: '은발 엘프 마도사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', desc: '빛 마도사 외형: 은발 트윈테일과 뾰족한 귀, 금테 흰 망토' }
+  { id: 'skin_silverelf', name: '은발 엘프 마도사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', desc: '빛 마도사 외형: 은발 트윈테일과 뾰족한 귀, 금테 흰 망토' },
+  // ── 전설 등급 스킨 (애니메이션, 고퀄) — assets/legskins.png (4행 × 3프레임, 셀 106×108)
+  { id: 'skin_leg_abyss', name: '심연의 기사', hero: 'hero_swordsman', sprite: 'leg_abyss', rarity: 'legendary', source: 'gacha', desc: '검사 전설 외형 — 심연에서 돌아온 뿔투구 기사 (전직: 심연)' },
+  { id: 'skin_leg_crimson', name: '진홍의 그림자', hero: 'hero_assassin', sprite: 'leg_crimson', rarity: 'legendary', source: 'gacha', desc: '암살자 전설 외형 — 핏빛 장막을 두른 그림자 (전직: 그림자)' },
+  { id: 'skin_leg_void', name: '공허의 마도사', hero: 'hero_mage', sprite: 'leg_void', rarity: 'legendary', source: 'gacha', desc: '마법사 전설 외형 — 어둠을 휘감은 공허의 현자 (전직: 어둠)' },
+  { id: 'skin_leg_star', name: '성역의 성자', hero: 'hero_priest', sprite: 'leg_star', rarity: 'legendary', source: 'gacha', desc: '사제 전설 외형 — 별빛 성역의 성자 (전직: 성역)' }
 ];
+// 전설 스킨 시트 매핑: sprite 이름 → 시트 행 번호 (프레임은 가로 3칸). 런타임은 drawImage만 사용
+const LEG_SKINS = { leg_abyss: 0, leg_crimson: 1, leg_void: 2, leg_star: 3 };
+const LEG_SHEET = { cols: 3, cellW: 106, cellH: 108, frames: 3, targetH: 27 }; // targetH: 인게임 높이(전설은 기본보다 살짝 큼)
 // 선물 코드: 글자 그대로 두지 않고 해시로만 보관 (giftHash) — 코드 하나에 보상 하나, 계정마다 한 번
 const GIFT_CODES = [
   { hash: 'd6b73fd4', skin: 'skin_flamewitch' },

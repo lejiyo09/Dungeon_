@@ -412,6 +412,7 @@ class Game {
       { name: '이 필드의 보스 스테이지로', ok: d && !this.trialW && !this.isBossStage, run: () => { this.levelIdx = STAGES_PER_WORLD - 1; this.loadStage(); } },
       { name: `다음 필드로 (${stageLabel(this.worldIdx + 1, 0)})`, ok: d && !this.trialW, run: () => { this.worldIdx++; this.levelIdx = 0; this.loadStage(); } },
       { name: '결정석 999,999로 채우기', run: () => { this.save.bank = 999999; writeSave(this.save); } },
+      { name: '모든 스킨 해금 (미리보기용)', run: () => { this.save.skins = SKINS.map((k) => k.id); writeSave(this.save); } },
       { name: '롱고미니아드의 시련 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('rhongo') }; } },
       { name: '로드 투 카멜롯 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot') }; } },
       { name: '카멜롯 2층 (트리스탄) 바로 시작', ok: !this.trialW, run: () => { this.transition = { t: 0, swapped: false, action: () => this.startQuestTrial('camelot2') }; } },
