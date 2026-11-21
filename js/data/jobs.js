@@ -172,7 +172,7 @@ const JOB_LINES = {
       skills: [
         { id: 'bearform', name: '야성 변신', desc: '10초간 받는 피해 -45%·공격력 +55%', cd: 12 },
         { id: 'bearform2', name: '광포한 야성', desc: '12초간 받는 피해 -45%·공격력 +60% + 주위를 할퀴는 기운', cd: 12 },
-        { id: 'primal', name: '원시의 분노', desc: '11초간 받는 피해 -45%·공격력 +95% + 넓게 할퀴는 기운(흡혈) + 체력 25% 회복', cd: 15 }] } }
+        { id: 'primal', name: '원시의 분노', desc: '11초간 받는 피해 -45%·공격력 +80% + 넓게 할퀴는 기운(흡혈) + 체력 25% 회복', cd: 15 }] } }
 };
 // 직업의 갈래 목록 (title 제외)
 function jobLines(heroId) { const J = JOB_LINES[heroId] || {}; return Object.keys(J).filter((k) => J[k] && typeof J[k] === 'object').map((k) => Object.assign({ id: k }, J[k])); }
