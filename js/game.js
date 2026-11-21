@@ -421,6 +421,16 @@ class Game {
     p.treasure = tr || null; if (tr && tr.apply) tr.apply(p);
     if (p === this.player) for (const w of p.weapons) this.discover(w.def.id);
   }
+
+  openSkinGacha(){this.overlay={type:'skin_gacha',msg:null};}
+  rollSkinGacha(count=1){
+    const sv=this.save,cost=count===10?SKIN_GACHA.tenCost:SKIN_GACHA.singleCost;
+    if(sv.bank<cost){SFX.play('deny');return ['결정석이 부족합니다','#ff8a8a'];}
+    sv.bank-=cost;const out=[];for(let i=0;i<count;i++)out.push(skinGachaRoll(sv));
+    writeSave(sv);SFX.play('buy');this.skinGachaResults=out;
+    const legendary=out.filter(x=>x.grade==='legendary').length,duplicates=out.filter(x=>x.duplicate).length;
+    return [`${count}회 소환 완료 · 전설 ${legendary}개 · 중복 ${duplicates}개`,legendary?'#ffd36a':'#d8c8ff'];
+  }
   skinSprite(heroId, lineId) { /* 이 직업에 켜 둔 스킨의 외형 이름 (없으면 null) — lineId를 주면 그 갈래에서 쓸 수 있는 스킨만, 안 주면(undefined) 갈래 검사 없이 */
     const id = this.save.skinOn && this.save.skinOn[heroId], K = id && (this.save.skins || []).includes(id) && SKINS.find((k) => k.id === id && k.hero === heroId);
     if (!K) return null; if (lineId !== undefined && K.line && K.line !== lineId) return null; return K.sprite; }
@@ -855,7 +865,7 @@ class Game {
       if (input.wasPressed('Escape')) this.overlay = null;
       else if (input.wasPressed('KeyI')) { this.overlay = { type: 'details', tab: 0 }; return; } // 상세 정보
       else if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; } // 선물 코드
-      else if (input.wasPressed('KeyK')) { this.overlay = { type: 'skins', back: 'pause', msg: null }; return; } // 스킨 고르기 창
+      else if (input.wasPressed('KeyK')) { this.overlay = { type: 'skins', back: 'pause', msg: null }; return; }\n      else if (input.wasPressed('KeyB')) { this.openSkinGacha(); return; } // 스킨 고르기 창
       else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
       else if (this.mode === 'lobby' && input.wasPressed('KeyP')) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => {} }; return; }
       else if (this.mode === 'dungeon' && input.wasPressed('KeyL')) { this.player.state = 'DEAD'; this.endRun(false); }

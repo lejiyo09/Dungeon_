@@ -54,10 +54,18 @@ const DATA_HEROES = [
 const SKINS = [
   { id: 'skin_flamewitch', name: '불꽃 마녀', hero: 'hero_mage', line: 'fire', sprite: 'flamewitch', desc: '불 마도사 외형: 끝이 꺾인 마녀 모자와 붉은 원피스' },
   { id: 'skin_redgunner', name: '붉은 머리 총잡이', hero: 'hero_gunner', line: 'base', sprite: 'redgunner', desc: '속사 사수 외형: 붉은 머리와 보안관 별을 단 남색 조끼' },
-  { id: 'skin_silverelf', name: '은빛 엘프 마법사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', grade: 'special', desc: '빛 마도사 외형: 은발 양갈래 엘프, 흰 옷에 금테 — 상하좌우 걷는 그림이 따로 있음' }
+  { id: 'skin_silverelf', name: '은빛 엘프 마법사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', grade: 'special', desc: '빛 마도사 외형: 은발 양갈래 엘프, 흰 옷에 금테 — 상하좌우 걷는 그림이 따로 있음' },
+  {id:'skin_abyss_knight',name:'심연의 맹세',hero:'hero_swordsman',line:'sword',sprite:'abyssKnight',grade:'legendary',desc:'청록 균열광의 심연 갑주'},
+  {id:'skin_star_paladin',name:'성좌의 집행자',hero:'hero_priest',line:'base',sprite:'starPaladin',grade:'legendary',desc:'별빛 갑주와 황금 성흔'},
+  {id:'skin_void_empress',name:'공허의 여제',hero:'hero_mage',line:'dark',sprite:'voidEmpress',grade:'legendary',desc:'검보라 왕관과 공허 망토'},
+  {id:'skin_crimson_lotus',name:'홍련의 무희',hero:'hero_assassin',line:'shadow',sprite:'crimsonLotus',grade:'legendary',desc:'진홍 장막과 연꽃 장식'},
+  {id:'skin_moon_shrine',name:'월하 무녀',hero:'hero_mage',line:'ice',sprite:'moonShrine',grade:'epic',desc:'청백색 무녀복과 초승달 장식'},
+  {id:'skin_arcane_idol',name:'성운 아이돌',hero:'hero_priest',line:'bless',sprite:'arcaneIdol',grade:'epic',desc:'별 리본과 은하 프릴의 오리지널 애니풍 스킨'},
+  {id:'skin_dragon_samurai',name:'용혈의 낭인',hero:'hero_berserker',line:'base',sprite:'dragonRonin',grade:'epic',desc:'용뿔 투구와 붉은 비늘 갑주'},
+  {id:'skin_clockwork_fox',name:'시계태엽 여우',hero:'hero_engineer',line:'base',sprite:'clockworkFox',grade:'epic',desc:'기계 귀와 황동 고글'}
 ];
 // 스킨 등급 [사용자 결정] 은빛 엘프 마법사 = 특별 등급 (grade 없는 스킨은 등급 표시 없음)
-const SKIN_GRADES = { special: { name: '특별', color: '#ffd84a', glow: '#fff2a8' } };
+const SKIN_GRADES = { special:{name:'특별',color:'#ffd84a',glow:'#fff2a8'}, epic:{name:'영웅',color:'#b080ff',glow:'#e0c0ff'}, legendary:{name:'전설',color:'#ff9a3a',glow:'#ffe0a0'} };
 // 선물 코드: 글자 그대로 두지 않고 해시로만 보관 (giftHash) — 코드 하나에 보상 하나, 계정마다 한 번
 const GIFT_CODES = [
   { hash: 'd6b73fd4', skin: 'skin_flamewitch' },
@@ -67,3 +75,16 @@ const GIFT_CODES = [
 function giftHash(code) { let h = 0x811c9dc5; for (const ch of 'pd_gift:' + String(code).toUpperCase()) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); }
 function skinAllowed(sp, heroId, lineId) { return SKINS.some((k) => k.sprite === sp && k.hero === heroId && (!k.line || k.line === lineId)); } /* [사용자 결정] 스킨은 정해진 갈래일 때만 (불꽃 마녀 = 불 마도사 · 붉은 머리 총잡이 = 속사 사수 · 은빛 엘프 마법사 = 빛 마도사) */
 function skinSpriteOk(sp) { return SKINS.some((k) => k.sprite === sp) ? sp : null; } /* 멀티로 받은 외형 이름은 아는 스킨만 */
+
+const SKIN_GACHA={singleCost:120,tenCost:1080,pity:50,featuredId:'skin_void_empress',rates:{legendary:0.02,epic:0.18},duplicateShards:{legendary:80,epic:25,special:40}};
+const SKIN_GACHA_POOL=SKINS.filter(k=>k.grade==='legendary'||k.grade==='epic'||k.grade==='special');
+function skinGachaRoll(sv){
+ const st=sv.skinGacha||(sv.skinGacha={pity:0,shards:0,total:0});
+ const forced=st.pity>=SKIN_GACHA.pity-1,r=Math.random();
+ let grade=forced?'legendary':r<SKIN_GACHA.rates.legendary?'legendary':r<SKIN_GACHA.rates.legendary+SKIN_GACHA.rates.epic?'epic':'special';
+ let pool=SKIN_GACHA_POOL.filter(k=>k.grade===grade);if(!pool.length)pool=SKIN_GACHA_POOL.filter(k=>k.grade==='epic');
+ if(grade==='legendary'&&Math.random()<.5){const f=pool.find(k=>k.id===SKIN_GACHA.featuredId);if(f)pool=[f];}
+ const skin=pool[Math.floor(Math.random()*pool.length)];st.total++;st.pity=grade==='legendary'?0:st.pity+1;
+ const duplicate=sv.skins.includes(skin.id),refund=duplicate?(SKIN_GACHA.duplicateShards[grade]||10):0;
+ if(duplicate)st.shards+=refund;else sv.skins.push(skin.id);sv.skinGacha=st;return{skin,grade,duplicate,refund,forced};
+}
