@@ -168,11 +168,11 @@ const JOB_LINES = {
         { id: 'thornfield', name: '가시 덤불', desc: '조준 지점에 6초간 가시 덤불 (지속 피해 + 중독)', cd: 8 },
         { id: 'thornburst', name: '가시 폭발', desc: '사방으로 꿰뚫는 가시 16개 (중독)', cd: 7 },
         { id: 'ancientroot', name: '고대의 뿌리', desc: '넓은 범위의 적을 3초간 묶고 큰 피해 + 강한 중독', cd: 12 }] },
-    shape: { name: '변신', desc: '곰의 힘을 몸에 두름', ranks: ['곰의 아이', '곰 전사', '원시의 군주'], color: '#c8a070',
+    shape: { name: '변신', desc: '원시의 힘을 몸에 두름', ranks: ['야성의 아이', '야성 투사', '원시의 군주'], color: '#c8a070',
       skills: [
-        { id: 'bearform', name: '곰 변신', desc: '8초간 받는 피해 -40%·공격력 +40%', cd: 13 },
-        { id: 'bearform2', name: '성난 곰', desc: '10초간 받는 피해 -40%·공격력 +45% + 주위를 할퀴는 기운', cd: 13 },
-        { id: 'primal', name: '원시의 분노', desc: '12초간 받는 피해 -40%·공격력 +75% + 넓게 할퀴는 기운 + 체력 회복', cd: 16 }] } }
+        { id: 'bearform', name: '야성 변신', desc: '10초간 받는 피해 -45%·공격력 +55%', cd: 12 },
+        { id: 'bearform2', name: '광포한 야성', desc: '12초간 받는 피해 -45%·공격력 +60% + 주위를 할퀴는 기운', cd: 12 },
+        { id: 'primal', name: '원시의 분노', desc: '14초간 받는 피해 -45%·공격력 +95% + 넓게 할퀴는 기운(흡혈) + 체력 25% 회복', cd: 15 }] } }
 };
 // 직업의 갈래 목록 (title 제외)
 function jobLines(heroId) { const J = JOB_LINES[heroId] || {}; return Object.keys(J).filter((k) => J[k] && typeof J[k] === 'object').map((k) => Object.assign({ id: k }, J[k])); }

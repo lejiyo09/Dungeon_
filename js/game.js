@@ -1812,12 +1812,12 @@ class Game {
         this.zones.push(new BloodStorm(p, { r: R, gather: 0.55, life: fx ? 3.8 : 3, tick: 0.3, dmg: 42, bigDmg: 200, lifesteal: 0.2, feast: true, kb: 10 }));
         break; }
       case 'ancientroot': { const fx = p.jobSkillFx === 'ancientroot'; nova(fx ? 170 : 140, 170, { color: '#7adf4a', root: fx ? 4.5 : 3, kb: 0, status: { type: 'poison', chance: 1, duration: fx ? 7 : 5, dps: 36 } }); this.addShake(0.3, 5); break; } /* [숙련] 고대 결박: 범위·속박↑ */
-      case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [8, 0.4, 0.4, 0], bearform2: [10, 0.45, 0.4, 10], primal: [12, 0.75, 0.4, 16] }[p.skillId];
+      case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [10, 0.55, 0.45, 0], bearform2: [12, 0.6, 0.45, 16], primal: [14, 0.95, 0.45, 24] }[p.skillId];
         if (p.skillId === 'primal' && p.jobSkillFx === 'primal') { C[0] += 3; C[1] += 0.2; } /* [숙련] 태초 각성: 변신 지속·공격력↑ */
         p.buffT = C[0]; p.buffAtk = C[1]; p.buffGuard = C[2]; p.buffSpeed = 0; p.buffKillHeal = 0;
-        if (C[3]) this.zones.push(new SkillAura(p, { r: p.skillId === 'primal' ? 60 : 44, life: C[0], tick: 0.3, dmg: C[3], color: '#c8a070', kind: 'blood', lifesteal: p.skillId === 'primal' ? 0.3 : 0 }));
-        if (p.skillId === 'primal') p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.2));
-        this.effects.burst(p.x, p.y, '#c8a070', 18); this.effects.ring(p.x, p.y, 34, '#c8a070'); this.effects.text(p.x, p.y - 20, '곰의 힘!', '#e0c090'); this.addShake(0.15, 3); break; }
+        if (C[3]) this.zones.push(new SkillAura(p, { r: p.skillId === 'primal' ? 66 : 50, life: C[0], tick: 0.3, dmg: C[3], color: '#c8a070', kind: 'blood', lifesteal: p.skillId === 'primal' ? 0.35 : 0 }));
+        if (p.skillId === 'primal') p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.25));
+        this.effects.burst(p.x, p.y, '#c8a070', 18); this.effects.ring(p.x, p.y, 34, '#c8a070'); this.effects.text(p.x, p.y - 20, '야성의 힘!', '#e0c090'); this.addShake(0.15, 3); break; }
       // 암살자 · 독 갈래
       case 'venomfan': shoot({ n: 7, fan: 0.9, p: { damage: 32, pierce: 1, color: '#9aff5a', size: 2, speed: 340, arrow: true, status: { type: 'poison', chance: 1, duration: 4, dps: 18 } } }); SFX.play('bow'); break;
       case 'plaguecloud': { const fx = p.jobSkillFx === 'plaguecloud'; this.zones.push(new SkillAura(p, { r: fx ? 108 : 88, life: 7, tick: 0.3, dmg: fx ? 38 : 30, color: '#7adf4a', kind: 'flame', vuln: fx ? 0.3 : 0.2, status: { type: 'poison', chance: 1, duration: fx ? 4 : 3, dps: fx ? 24 : 18 } })); } /* [숙련] 맹독 창궐: 범위·중독↑ */
