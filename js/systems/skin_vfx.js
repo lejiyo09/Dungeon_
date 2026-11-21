@@ -1,2 +1,39 @@
-Effects.prototype.skinAura=function(id,x,y,time=0){const c={skin_abyss_knight:'#26e6ce',skin_star_paladin:'#ffe27a',skin_void_empress:'#c35cff',skin_crimson_lotus:'#ff527f'}[id];if(!c)return;const p=.5+.5*Math.sin(time*4);this.ring(x,y+3,12+p*2,c);if(Math.random()<.18)this.part(x+randInt(-9,9),y+randInt(-7,5),randInt(-5,5),-10-randInt(0,10),{color:c,life:.45,size:1.5,size2:0,drag:1,add:true,shape:'plus'});};
-Effects.prototype.skinSkill=function(id,x,y,angle=0){const s={skin_abyss_knight:['#26e6ce',18],skin_star_paladin:['#ffe27a',22],skin_void_empress:['#c35cff',24],skin_crimson_lotus:['#ff527f',20]}[id];if(!s)return;this.ring(x,y,36,s[0]);this.rays(x,y,s[0],s[1],68,.5);for(let i=0;i<s[1];i++){const a=angle+i/s[1]*TAU,v=35+Math.random()*75;this.part(x,y,Math.cos(a)*v,Math.sin(a)*v,{color:i%3?'#fff':s[0],life:.4,size:1.5,size2:0,drag:2,add:true,shape:id==='skin_crimson_lotus'?'plus':'circle'});}};
+/* Legendary skin movement cosmetics: subtle steps + one dash signature. */
+const LEGENDARY_SKIN_VFX = {
+  skin_abyss_knight: { main:'#36d8c9', soft:'#8ff6e9', step:'#49cabc', dark:'#1c686a' },
+  skin_star_paladin: { main:'#e8c96b', soft:'#fff1bd', step:'#d9bd78', dark:'#9b7b3c' },
+  skin_void_empress: { main:'#b77ae5', soft:'#e3b9ff', step:'#ab78cc', dark:'#633b82' },
+  skin_crimson_lotus: { main:'#eb557e', soft:'#ffc0d0', step:'#d75a79', dark:'#84304f' }
+};
+
+Effects.prototype.skinFootstep = function(id, x, y, dx, dy) {
+  const s = LEGENDARY_SKIN_VFX[id];
+  if (!s) return;
+  const side = (Math.random() < 0.5 ? -1 : 1);
+  const sx = -dy * side * 1.6, sy = dx * side * 1.1;
+  this.part(x + sx, y + sy, -dx * 5 + sx * 2, -dy * 5 + sy * 2 + 5,
+    { color:s.step, life:0.24, size:1.35, size2:0.15, drag:5, grav:8, shape:'circle' });
+  this.part(x - sx, y - sy, -dx * 3 - sx, -dy * 3 - sy + 4,
+    { color:s.dark, life:0.18, size:1, size2:0, drag:6, grav:7 });
+  if (Math.random() < 0.35) {
+    this.part(x - dx * 2, y - dy * 2, -dx * 9, -dy * 9 - 4,
+      { color:s.soft, life:0.16, size:1, size2:0, drag:7, add:true });
+  }
+};
+
+Effects.prototype.skinDash = function(id, x, y, dx=1, dy=0) {
+  const s = LEGENDARY_SKIN_VFX[id];
+  if (!s) return;
+  this.push({
+    kind:'skinDash', id, x, y, angle:Math.atan2(dy, dx),
+    color:s.main, accent:s.soft, t:0, life:0.28, opacity:0.32
+  });
+  for (let i=0;i<4;i++) {
+    const back = 4 + i * 3, spread = (Math.random() - 0.5) * 5;
+    this.part(x - dx * back - dy * spread, y - dy * back + dx * spread,
+      -dx * (18 + i * 3) + dy * spread * 2,
+      -dy * (18 + i * 3) - dx * spread * 2,
+      { color:i % 2 ? s.main : s.soft, life:0.16 + i * 0.025,
+        size:1.5, size2:0, drag:5, add:i===0 });
+  }
+};
