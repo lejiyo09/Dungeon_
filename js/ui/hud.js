@@ -182,11 +182,12 @@ class HUD {
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 30, o.msg.color, 'center', 8);
       hudText(ctx, `번호 키 / 클릭: 선택   ·   Esc / +: ${cam ? '뒤로' : '닫기'}`, VIEW_W / 2, VIEW_H - 14, '#888', 'center', 7);
     } else if (o.type === 'skins') { /* 스킨 고르기 */
-      const sv = game.save, m = game.input.mouse;
+      const sv = game.save, m = game.input.mouse, scroll=Math.max(0,Math.min(HUD.skinMaxScroll(),o.scroll||0));
       hudText(ctx, `스킨  ·  보유 ${SKINS.filter((k) => (sv.skins || []).includes(k.id)).length}/${SKINS.length}`, VIEW_W / 2, 10, '#ffb0d8', 'center', 12);
       hudText(ctx, '외형만 바뀌고 능력은 그대로 · 정해진 직업·계열일 때만 보임', VIEW_W / 2, 26, '#aaa', 'center', 7);
+      ctx.save();ctx.beginPath();ctx.rect(0,38,VIEW_W,VIEW_H-72);ctx.clip();
       SKINS.forEach((K, i) => {
-        const r = HUD.skinRect(i), owned = (sv.skins || []).includes(K.id), on = owned && sv.skinOn && sv.skinOn[K.hero] === K.id, hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        const r = HUD.skinRect(i,scroll), owned = (sv.skins || []).includes(K.id), on = owned && sv.skinOn && sv.skinOn[K.hero] === K.id, hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
         const hero = game.data.heroes.get(K.hero), L = jobLines(K.hero).find((l) => l.id === K.line);
         ctx.fillStyle = on ? 'rgba(255,176,216,0.18)' : hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
         const GR = K.grade && SKIN_GRADES[K.grade]; /* 스킨 등급 (특별 등급: 금빛 테두리가 반짝이고 왼쪽 위에 ★ 특별) */
@@ -201,6 +202,14 @@ class HUD {
         hudText(ctx, `${hero ? hero.name.split(' ')[0] : ''}${L ? ' · ' + L.name + ' 계열' : ''}`, r.x + r.w / 2, r.y + 66, '#c8c0d8', 'center', 6);
         hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : '선물 코드로 획득', r.x + r.w / 2, r.y + 78, on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
       });
+      ctx.restore();
+      // 오른쪽 얇은 스크롤바: 목록이 더 있다는 것을 표시
+      if(HUD.skinMaxScroll()>0){
+        const top=40,trackH=VIEW_H-80,contentH=HUD.skinMaxScroll()+trackH;
+        const thumbH=Math.max(24,trackH*trackH/contentH),thumbY=top+(trackH-thumbH)*(scroll/HUD.skinMaxScroll());
+        ctx.fillStyle='rgba(255,255,255,0.12)';ctx.fillRect(VIEW_W-5,top,2,trackH);
+        ctx.fillStyle='rgba(255,216,74,0.72)';ctx.fillRect(VIEW_W-5,thumbY,2,thumbH);
+      }
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 26, o.msg.color, 'center', 8);
       hudText(ctx, '번호 키 / 클릭: 장착·해제   ·   G: 선물 코드   ·   Esc: 돌아가기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
     } else if (o.type === 'skin_gacha') {
@@ -623,7 +632,8 @@ class HUD {
   static reviveRect(i) { return { x: VIEW_W / 2 - 154 + i * 160, y: 151, w: 148, h: 30 }; }
   static jobRowRect(i) { return { x: 36, y: 36 + i * 27, w: VIEW_W - 72, h: 24 }; }
   static travelRect(i, n) { const w = 300, h = 30, x = (VIEW_W - w) / 2, y0 = 70; return { x, y: y0 + i * (h + 6), w, h }; }
-  static skinRect(i) { const cols = 4, w = 112, h = 92, gap = 8, x0 = (VIEW_W - (cols * w + (cols - 1) * gap)) / 2; return { x: x0 + (i % cols) * (w + gap), y: 40 + Math.floor(i / cols) * (h + gap), w, h }; }
+  static skinMaxScroll() { const rows=Math.ceil(SKINS.length/4),contentH=rows*92+(rows-1)*8;return Math.max(0,40+contentH-(VIEW_H-34)); }
+  static skinRect(i,scroll=0) { const cols = 4, w = 112, h = 92, gap = 8, x0 = (VIEW_W - (cols * w + (cols - 1) * gap)) / 2; return { x: x0 + (i % cols) * (w + gap), y: 40 + Math.floor(i / cols) * (h + gap)-scroll, w, h }; }
   static heroBranchRect(i, n) { return { x: 18 + (i % 2) * 240, y: 85 + Math.floor(i / 2) * 29, w: 236, h: 26 }; }
   static variantRect(i, n) { const cols = Math.min(3, n), w = 156, h = 58, gap = 8, rows = Math.ceil(n / cols), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % cols) * (w + gap), y: 66 + Math.floor(i / cols) * (h + gap) + (rows === 1 ? 30 : 0), w, h }; }
   // 컷신: 위아래 검은 띠 + 아래 띠에 한 자씩 나오는 대사
