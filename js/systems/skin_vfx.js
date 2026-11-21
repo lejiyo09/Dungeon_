@@ -10,73 +10,71 @@ const SKIN_VFX={
   skin_clockwork_fox:{main:'#70e4ee',soft:'#fff0b0',step:'#d8b66b'}
 };
 
-function legendaryOrbitPoint(id,t){
-  const a=t*Math.PI*2;
-  if(id==='skin_abyss_knight'){
-    // 각진 파편 궤도: 고정된 불완전한 육각형 타원
-    const r=1+0.08*Math.cos(a*6);
-    return {x:11.8*Math.cos(a)*r,y:-4.2+5.4*Math.sin(a)*r};
-  }
-  if(id==='skin_star_paladin'){
-    // 성좌 궤도: 네 개의 별 꼭짓점이 있는 기울어진 타원
-    const r=1+0.18*Math.cos(a*4);
-    const px=12.2*Math.cos(a)*r,py=5.2*Math.sin(a)*r,rot=-0.42;
-    return {x:px*Math.cos(rot)-py*Math.sin(rot),y:-4.2+px*Math.sin(rot)+py*Math.cos(rot)};
-  }
-  if(id==='skin_void_empress'){
-    // 공허 궤도: 세로로 긴 초승달형 타원
-    const r=1+0.06*Math.sin(a*2);
-    const px=7.7*Math.cos(a)*r,py=9.5*Math.sin(a)*r,rot=0.3;
-    return {x:px*Math.cos(rot)-py*Math.sin(rot),y:-4.2+px*Math.sin(rot)+py*Math.cos(rot)};
-  }
-  // 홍련 궤도: 세 잎 연꽃을 닮은 일정한 꽃잎 곡선
-  const r=1+0.2*Math.cos(a*3);
-  return {x:11.3*Math.cos(a)*r,y:-4.1+5.7*Math.sin(a)*r};
-}
 function drawLegendarySkinWeave(ctx,id,x,y,time){
   const c=SKIN_VFX[id];
   if(!c||!['skin_abyss_knight','skin_star_paladin','skin_void_empress','skin_crimson_lotus'].includes(id))return;
-  const speed=id==='skin_abyss_knight'?0.78:id==='skin_star_paladin'?0.52:id==='skin_void_empress'?0.4:0.65;
-  const phase=((time*speed)%1+1)%1;
-  const path=id==='skin_abyss_knight'?'broken-hex':id==='skin_star_paladin'?'star-orbit':id==='skin_void_empress'?'crescent-ellipse':'lotus-orbit';
-  ctx.save();ctx.translate(x,y-4);ctx.globalCompositeOperation='lighter';
-  // 고정 궤도 본선: 형태는 바뀌지 않고 은은하게 남아 경로가 읽힌다.
-  ctx.beginPath();
-  for(let i=0;i<=96;i++){const p=legendaryOrbitPoint(id,i/96);if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}
-  ctx.closePath();ctx.strokeStyle=c.main;ctx.lineWidth=1;ctx.globalAlpha=0.24;ctx.stroke();
-  // 고정 궤도 위를 따라 이동하는 짧은 마력선. 몸을 나선으로 감거나 궤도를 변형하지 않는다.
-  const drawMover=(offset,alpha,width,accent)=>{
-    const count=15,span=0.16;
-    ctx.beginPath();
-    for(let i=0;i<=count;i++){
-      const u=(phase+offset-i/count*span+1)%1,p=legendaryOrbitPoint(id,u);
-      if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
-    }
-    ctx.strokeStyle=accent;ctx.lineWidth=width;ctx.lineCap='round';ctx.globalAlpha=alpha;ctx.stroke();
-    const head=legendaryOrbitPoint(id,(phase+offset+1)%1);
-    ctx.fillStyle=c.soft;ctx.globalAlpha=0.98;ctx.fillRect(Math.round(head.x)-1,Math.round(head.y)-1,3,3);
-    const tail=legendaryOrbitPoint(id,(phase+offset-0.045+1)%1);
-    ctx.fillStyle=c.main;ctx.globalAlpha=0.85;ctx.fillRect(Math.round(tail.x),Math.round(tail.y),2,2);
-  };
+  const t=time*0.9+(id==='skin_star_paladin'?0.7:id==='skin_void_empress'?1.6:id==='skin_crimson_lotus'?2.3:0);
+  ctx.save();
+  // 캐릭터 발밑의 바닥에 눕힌 원형 마법진. 몸이나 화면을 감싸는 궤도는 그리지 않는다.
+  ctx.translate(Math.round(x),Math.round(y)+9);
+  ctx.globalCompositeOperation='lighter';
+  ctx.lineCap='round';
+  ctx.lineJoin='round';
+
+  const pulse=0.88+0.12*Math.sin(time*3.4);
+  ctx.globalAlpha=0.11*pulse;
+  ctx.fillStyle=c.main;
+  ctx.beginPath();ctx.ellipse(0,0,14.5,4.3,0,0,Math.PI*2);ctx.fill();
+
+  // 바닥에 고정된 두 겹의 얇은 원과 끊어진 외곽 고리
+  ctx.globalAlpha=0.78*pulse;ctx.strokeStyle=c.main;ctx.lineWidth=1.15;
+  ctx.beginPath();ctx.ellipse(0,0,15.5,4.8,0,0,Math.PI*2);ctx.stroke();
+  ctx.globalAlpha=0.48*pulse;ctx.strokeStyle=c.soft;ctx.lineWidth=0.8;
+  ctx.beginPath();ctx.ellipse(0,0,10.5,3.05,0,0,Math.PI*2);ctx.stroke();
+  for(let i=0;i<4;i++){
+    const a=t*0.42+i*Math.PI/2;
+    ctx.globalAlpha=0.72;ctx.strokeStyle=c.soft;ctx.lineWidth=1;
+    ctx.beginPath();ctx.ellipse(0,0,17.2,5.35,0,a,a+0.38);ctx.stroke();
+  }
+
+  // 원 둘레를 따라 흐르는 빛점. 경로는 항상 바닥 원형으로 유지된다.
+  for(let i=0;i<3;i++){
+    const a=-t*0.9+i*Math.PI*2/3;
+    const px=Math.cos(a)*15.5,py=Math.sin(a)*4.8;
+    ctx.fillStyle=i===0?c.soft:c.main;ctx.globalAlpha=i===0?0.98:0.68;
+    ctx.fillRect(Math.round(px)-1,Math.round(py)-1,2,2);
+  }
+
   if(id==='skin_abyss_knight'){
-    drawMover(0,0.98,2.1,c.soft);
-    drawMover(0.49,0.55,1.2,c.main);
-    // 궤도에 고정된 세 균열 표식은 움직이지 않고 빛만 맥동
-    ctx.fillStyle=c.soft;ctx.globalAlpha=0.5+0.4*Math.sin(time*5);
-    for(const u of [0.08,0.42,0.72]){const p=legendaryOrbitPoint(id,u);ctx.fillRect(Math.round(p.x)-1,Math.round(p.y)-1,2,2);}
+    // 심연: 네 방향의 봉인 못과 짧은 균열선
+    ctx.strokeStyle=c.soft;ctx.globalAlpha=0.78;ctx.lineWidth=1;
+    for(const a of [0,Math.PI/2,Math.PI,Math.PI*1.5]){
+      const px=Math.cos(a)*12.2,py=Math.sin(a)*3.7;
+      ctx.beginPath();ctx.moveTo(px-1.5,py);ctx.lineTo(px+1.5,py);ctx.stroke();
+      ctx.fillStyle=c.main;ctx.fillRect(Math.round(px),Math.round(py)-1,1,2);
+    }
   }else if(id==='skin_star_paladin'){
-    drawMover(0,0.95,2,c.soft);
-    const star=legendaryOrbitPoint(id,(phase+0.5)%1);
-    ctx.fillStyle=c.soft;ctx.globalAlpha=0.95;ctx.fillRect(Math.round(star.x)-1,Math.round(star.y)-2,3,1);ctx.fillRect(Math.round(star.x),Math.round(star.y)-3,1,3);
+    // 성좌: 원 안쪽의 네 별빛 표식
+    ctx.fillStyle=c.soft;ctx.globalAlpha=0.9;
+    for(let i=0;i<4;i++){
+      const a=t*0.18+i*Math.PI/2,px=Math.cos(a)*8.5,py=Math.sin(a)*2.4;
+      ctx.fillRect(Math.round(px)-1,Math.round(py),3,1);
+      ctx.fillRect(Math.round(px),Math.round(py)-1,1,3);
+    }
   }else if(id==='skin_void_empress'){
-    drawMover(0,0.92,2,c.soft);
-    drawMover(0.5,0.6,1.1,c.main);
-    // 공허의 작은 위성 두 개는 서로 반대 방향으로 같은 타원 궤도를 돈다.
-    for(const off of [0.25,0.75]){const p=legendaryOrbitPoint(id,(phase+off)%1);ctx.fillStyle=c.soft;ctx.globalAlpha=0.9;ctx.fillRect(Math.round(p.x)-1,Math.round(p.y)-1,2,2);}
+    // 공허: 중심을 향해 열린 두 개의 초승달 호
+    ctx.strokeStyle=c.soft;ctx.lineWidth=1.1;ctx.globalAlpha=0.82;
+    ctx.beginPath();ctx.ellipse(0,0,7.2,2.05,0,t*0.22,t*0.22+Math.PI*1.15);ctx.stroke();
+    ctx.beginPath();ctx.ellipse(0,0,7.2,2.05,0,t*0.22+Math.PI,t*0.22+Math.PI*2.15);ctx.stroke();
   }else if(id==='skin_crimson_lotus'){
-    drawMover(0,0.96,2,c.soft);
-    // 꽃잎 세 장은 같은 고정 꽃잎 궤도를 일정한 간격으로 공전한다.
-    for(let i=0;i<3;i++){const p=legendaryOrbitPoint(id,(phase+i/3)%1),a=time*2+i*2.1;ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.rotate(a);ctx.fillStyle=i===1?c.soft:c.main;ctx.globalAlpha=0.9;ctx.beginPath();ctx.ellipse(0,0,2,1,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+    // 홍련: 원 둘레에 고정된 세 꽃잎 문장
+    for(let i=0;i<3;i++){
+      const a=t*0.12+i*Math.PI*2/3,px=Math.cos(a)*11,py=Math.sin(a)*3.35;
+      ctx.save();ctx.translate(Math.round(px),Math.round(py));ctx.rotate(a+Math.PI/2);
+      ctx.fillStyle=i===1?c.soft:c.main;ctx.globalAlpha=0.86;
+      ctx.beginPath();ctx.ellipse(0,0,2.1,1.05,0,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
   }
   ctx.restore();
 }
