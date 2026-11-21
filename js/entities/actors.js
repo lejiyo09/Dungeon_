@@ -66,7 +66,7 @@ class Player extends Entity {
     this.sinceHit += dt;
     if (this.sinceHit >= this.cfg.shieldRegenDelay)
       this.shield = Math.min(this.maxShield, this.shield + this.cfg.shieldRegenRate * (this.hero.shieldRegenMul || 1) * dt);
-    if (this.jobRegen && this.state !== 'DEAD') this.hp = Math.min(this.maxHp, this.hp + this.maxHp * this.jobRegen * dt); // 드루이드 숙련: 초당 체력 재생
+    if (this.reflectT > 0) this.reflectT = Math.max(0, this.reflectT - dt); // 반사 방벽 지속
 
     const ax = mouseWorld.x - this.x, ay = mouseWorld.y - this.y, alen = Math.hypot(ax, ay);
     if (alen > 0.5) { this.aim.x = ax / alen; this.aim.y = ay / alen; }
@@ -122,6 +122,10 @@ class Player extends Entity {
     const F = this.treasure; /* 황금 양털: 쓰고 나서 버티는 시간 안이면 쓰러질 피해를 한 번 버팀 (한 판에 endureMax번) */
     if (this.hp <= 0 && this.fleeceT > 0 && F && F.use === 'fleece' && (this.fleeceUsed || 0) < F.endureMax) {
       this.fleeceUsed = (this.fleeceUsed || 0) + 1; this.fleeceT = 0; this.hp = Math.max(1, Math.round(this.maxHp * F.endureHp)); this.hurtInvuln = 1.5; this.endured = true; }
+    if (this.reflectT > 0 && typeof game !== 'undefined' && game.enemies && this.state !== 'DEAD') { // [숙련] 반사 방벽: 받은 피해 일부를 가까운 적에게 되돌림
+      let best = null, bd = 170; for (const e of game.enemies) { if (!e.targetable) continue; const d = Math.hypot(e.x - this.x, e.y - this.y); if (d < bd) { bd = d; best = e; } }
+      if (best) { game.damageEnemy(best, { damage: amount * (this.reflectFrac || 0.5), mods: { attackBonus: 0, critChance: 0, critMultiplier: 1 }, knockback: 2 }, (best.x - this.x) / 40, (best.y - this.y) / 40); game.effects.beamline(this.x, this.y, best.x, best.y, 2, '#9ac0e0'); }
+    }
     if (this.hp <= 0) { this.state = 'DEAD'; this.deathTimer = 0; }
     return true;
   }
