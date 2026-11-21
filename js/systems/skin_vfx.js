@@ -10,96 +10,73 @@ const SKIN_VFX={
   skin_clockwork_fox:{main:'#70e4ee',soft:'#fff0b0',step:'#d8b66b'}
 };
 
-function drawLegendarySkinWeave(ctx,id,x,y,time,front){
-  const colors=SKIN_VFX[id];
-  if(!colors||!['skin_abyss_knight','skin_star_paladin','skin_void_empress','skin_crimson_lotus'].includes(id))return;
-  // 뒤쪽 반쪽은 무기/몸 아래, 앞쪽 반쪽은 몸 위에 그린다.
-  // 시간에 따라 위상과 곡률을 크게 바꿔 16x20 도트 크기에서도 움직임이 읽히게 한다.
-  const phase=time*2.8;
-  const line=(path,color,width,alpha)=>{
-    ctx.save();ctx.globalAlpha*=alpha;ctx.strokeStyle=color;ctx.lineWidth=width;
-    ctx.lineCap='round';ctx.lineJoin='round';
-    ctx.beginPath();
-    for(let i=0;i<=24;i++){
-      const u=i/24,pt=path(u);
-      if(i===0)ctx.moveTo(pt.x,pt.y);else ctx.lineTo(pt.x,pt.y);
-    }
-    ctx.stroke();ctx.restore();
-  };
-  const strand=(u,offset,rate,dir)=>{
-    const a=u*Math.PI*3+phase*dir+offset;
-    return {
-      x:Math.sin(a)*(9+1.7*Math.sin(time*1.9+u*7+offset)),
-      y:-12+u*19+Math.cos(a*0.72+time*1.4)*1.8
-    };
-  };
-  ctx.save();ctx.translate(x,y-4);
-  ctx.globalCompositeOperation='lighter';
-  ctx.globalAlpha=0.94;
-
-  // 전면/후면 분리: 캐릭터 실루엣을 감싸되 한쪽은 몸 뒤로 숨긴다.
-  const isFront=(u,offset,dir)=>{
-    const a=u*Math.PI*3+phase*dir+offset;
-    return Math.cos(a)>0;
-  };
-  const drawSegmented=(offset,dir,color,soft,width,alpha)=>{
-    let drawing=false;
-    ctx.save();ctx.globalAlpha*=alpha;ctx.strokeStyle=color;ctx.lineWidth=width;
-    ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
-    for(let i=0;i<=48;i++){
-      const u=i/48,pt=strand(u,offset,0,dir),visible=isFront(u,offset,dir);
-      if(visible===front){
-        if(!drawing){ctx.moveTo(pt.x,pt.y);drawing=true;}else ctx.lineTo(pt.x,pt.y);
-      }else if(drawing){ctx.stroke();ctx.beginPath();drawing=false;}
-    }
-    if(drawing)ctx.stroke();
-    ctx.restore();
-
-    // 밝은 점이 같은 궤적을 따라 이동
-    const beadU=((time*0.48+offset/Math.PI/2)%1+1)%1;
-    const p=strand(beadU,offset,0,dir);
-    if(isFront(beadU,offset,dir)===front){
-      ctx.save();ctx.globalAlpha*=0.98;ctx.fillStyle=soft;
-      ctx.fillRect(Math.round(p.x)-1,Math.round(p.y)-1,3,3);
-      ctx.fillStyle=color;ctx.fillRect(Math.round(p.x)+1,Math.round(p.y)+1,2,1);
-      ctx.restore();
-    }
-  };
-
+function legendaryOrbitPoint(id,t){
+  const a=t*Math.PI*2;
   if(id==='skin_abyss_knight'){
-    // 깨진 청록 균열이 갑옷 주위를 타고 흐르며 짧게 번쩍인다.
-    drawSegmented(0,1,colors.main,colors.soft,2,0.94);
-    drawSegmented(1.3,-1,colors.soft,colors.main,1.1,0.52);
-    const flash=Math.sin(time*7.5);
-    if(flash>0.35){ctx.globalAlpha=0.95;ctx.fillStyle=colors.soft;ctx.fillRect(Math.round(Math.sin(phase*1.4)*10)-1,Math.round(Math.cos(phase)*7)-2,3,3);}
+    // 각진 파편 궤도: 고정된 불완전한 육각형 타원
+    const r=1+0.08*Math.cos(a*6);
+    return {x:11.8*Math.cos(a)*r,y:-4.2+5.4*Math.sin(a)*r};
+  }
+  if(id==='skin_star_paladin'){
+    // 성좌 궤도: 네 개의 별 꼭짓점이 있는 기울어진 타원
+    const r=1+0.18*Math.cos(a*4);
+    const px=12.2*Math.cos(a)*r,py=5.2*Math.sin(a)*r,rot=-0.42;
+    return {x:px*Math.cos(rot)-py*Math.sin(rot),y:-4.2+px*Math.sin(rot)+py*Math.cos(rot)};
+  }
+  if(id==='skin_void_empress'){
+    // 공허 궤도: 세로로 긴 초승달형 타원
+    const r=1+0.06*Math.sin(a*2);
+    const px=7.7*Math.cos(a)*r,py=9.5*Math.sin(a)*r,rot=0.3;
+    return {x:px*Math.cos(rot)-py*Math.sin(rot),y:-4.2+px*Math.sin(rot)+py*Math.cos(rot)};
+  }
+  // 홍련 궤도: 세 잎 연꽃을 닮은 일정한 꽃잎 곡선
+  const r=1+0.2*Math.cos(a*3);
+  return {x:11.3*Math.cos(a)*r,y:-4.1+5.7*Math.sin(a)*r};
+}
+function drawLegendarySkinWeave(ctx,id,x,y,time){
+  const c=SKIN_VFX[id];
+  if(!c||!['skin_abyss_knight','skin_star_paladin','skin_void_empress','skin_crimson_lotus'].includes(id))return;
+  const speed=id==='skin_abyss_knight'?0.78:id==='skin_star_paladin'?0.52:id==='skin_void_empress'?0.4:0.65;
+  const phase=((time*speed)%1+1)%1;
+  const path=id==='skin_abyss_knight'?'broken-hex':id==='skin_star_paladin'?'star-orbit':id==='skin_void_empress'?'crescent-ellipse':'lotus-orbit';
+  ctx.save();ctx.translate(x,y-4);ctx.globalCompositeOperation='lighter';
+  // 고정 궤도 본선: 형태는 바뀌지 않고 은은하게 남아 경로가 읽힌다.
+  ctx.beginPath();
+  for(let i=0;i<=96;i++){const p=legendaryOrbitPoint(id,i/96);if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}
+  ctx.closePath();ctx.strokeStyle=c.main;ctx.lineWidth=1;ctx.globalAlpha=0.24;ctx.stroke();
+  // 고정 궤도 위를 따라 이동하는 짧은 마력선. 몸을 나선으로 감거나 궤도를 변형하지 않는다.
+  const drawMover=(offset,alpha,width,accent)=>{
+    const count=15,span=0.16;
+    ctx.beginPath();
+    for(let i=0;i<=count;i++){
+      const u=(phase+offset-i/count*span+1)%1,p=legendaryOrbitPoint(id,u);
+      if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
+    }
+    ctx.strokeStyle=accent;ctx.lineWidth=width;ctx.lineCap='round';ctx.globalAlpha=alpha;ctx.stroke();
+    const head=legendaryOrbitPoint(id,(phase+offset+1)%1);
+    ctx.fillStyle=c.soft;ctx.globalAlpha=0.98;ctx.fillRect(Math.round(head.x)-1,Math.round(head.y)-1,3,3);
+    const tail=legendaryOrbitPoint(id,(phase+offset-0.045+1)%1);
+    ctx.fillStyle=c.main;ctx.globalAlpha=0.85;ctx.fillRect(Math.round(tail.x),Math.round(tail.y),2,2);
+  };
+  if(id==='skin_abyss_knight'){
+    drawMover(0,0.98,2.1,c.soft);
+    drawMover(0.49,0.55,1.2,c.main);
+    // 궤도에 고정된 세 균열 표식은 움직이지 않고 빛만 맥동
+    ctx.fillStyle=c.soft;ctx.globalAlpha=0.5+0.4*Math.sin(time*5);
+    for(const u of [0.08,0.42,0.72]){const p=legendaryOrbitPoint(id,u);ctx.fillRect(Math.round(p.x)-1,Math.round(p.y)-1,2,2);}
   }else if(id==='skin_star_paladin'){
-    // 금빛 성좌의 실이 몸을 감싸고, 별빛 조각이 궤도를 따라 이동한다.
-    drawSegmented(0.2,1,colors.main,colors.soft,1.8,0.9);
-    drawSegmented(2.5,-1,colors.soft,colors.main,1,0.55);
-    const a=phase*0.9,sx=Math.round(Math.cos(a)*9),sy=Math.round(Math.sin(a*1.3)*8)-3;
-    if((front&&Math.cos(a)>0)||(!front&&Math.cos(a)<=0)){
-      ctx.fillStyle=colors.soft;ctx.fillRect(sx,sy,3,1);ctx.fillRect(sx+1,sy-1,1,3);
-    }
+    drawMover(0,0.95,2,c.soft);
+    const star=legendaryOrbitPoint(id,(phase+0.5)%1);
+    ctx.fillStyle=c.soft;ctx.globalAlpha=0.95;ctx.fillRect(Math.round(star.x)-1,Math.round(star.y)-2,3,1);ctx.fillRect(Math.round(star.x),Math.round(star.y)-3,1,3);
   }else if(id==='skin_void_empress'){
-    // 보랏빛 두 가닥이 반대 방향으로 교차하는 이중 나선.
-    drawSegmented(0,1,colors.main,colors.soft,1.9,0.88);
-    drawSegmented(Math.PI,-1,colors.soft,colors.main,1.6,0.82);
-    const a=-phase*1.1;
-    if((front&&Math.cos(a)>0)||(!front&&Math.cos(a)<=0)){
-      ctx.fillStyle=colors.soft;ctx.fillRect(Math.round(Math.sin(a)*9)-1,Math.round(Math.cos(a)*7)-4,3,3);
-    }
+    drawMover(0,0.92,2,c.soft);
+    drawMover(0.5,0.6,1.1,c.main);
+    // 공허의 작은 위성 두 개는 서로 반대 방향으로 같은 타원 궤도를 돈다.
+    for(const off of [0.25,0.75]){const p=legendaryOrbitPoint(id,(phase+off)%1);ctx.fillStyle=c.soft;ctx.globalAlpha=0.9;ctx.fillRect(Math.round(p.x)-1,Math.round(p.y)-1,2,2);}
   }else if(id==='skin_crimson_lotus'){
-    // 홍련의 붉은 비단끈과 꽃잎 세 장이 몸을 따라 흐른다.
-    drawSegmented(0.8,1,colors.main,colors.soft,2,0.88);
-    drawSegmented(2.9,-1,colors.soft,colors.main,1,0.5);
-    for(let i=0;i<3;i++){
-      const u=((time*0.38+i/3)%1+1)%1,p=strand(u,0.8,0,1);
-      if(isFront(u,0.8,1)===front){
-        ctx.save();ctx.translate(p.x,p.y);ctx.rotate(phase+u*3);
-        ctx.fillStyle=i===1?colors.soft:colors.main;ctx.globalAlpha=0.9;
-        ctx.beginPath();ctx.ellipse(0,0,2.8,1.4,0,0,Math.PI*2);ctx.fill();ctx.restore();
-      }
-    }
+    drawMover(0,0.96,2,c.soft);
+    // 꽃잎 세 장은 같은 고정 꽃잎 궤도를 일정한 간격으로 공전한다.
+    for(let i=0;i<3;i++){const p=legendaryOrbitPoint(id,(phase+i/3)%1),a=time*2+i*2.1;ctx.save();ctx.translate(Math.round(p.x),Math.round(p.y));ctx.rotate(a);ctx.fillStyle=i===1?c.soft:c.main;ctx.globalAlpha=0.9;ctx.beginPath();ctx.ellipse(0,0,2,1,0,0,Math.PI*2);ctx.fill();ctx.restore();}
   }
   ctx.restore();
 }
@@ -118,7 +95,18 @@ Effects.prototype.skinDash=function(id,x,y,dx=1,dy=0){
     this.part(x-dx*back-dy*spread,y-dy*back+dx*spread,-dx*(24+i*5)+dy*spread*2,-dy*(24+i*5)-dx*spread*2,
       {color:i===1?s.soft:s.main,life:0.2+i*0.025,size:2.1,size2:0,drag:5,add:i===1});}
 };
+Effects.prototype.skinWeapon=function(id,x,y,angle=0,kind='weapon'){
+  const s=SKIN_VFX[id];if(!s||!['skin_abyss_knight','skin_star_paladin','skin_void_empress','skin_crimson_lotus'].includes(id))return;
+  this.push({kind:'skinWeapon',id,x,y,angle,color:s.main,accent:s.soft,t:0,life:0.28,opacity:1,weaponType:kind});
+  for(let i=0;i<5;i++){
+    const a=angle+(Math.random()-0.5)*1.6,spd=32+Math.random()*42;
+    this.part(x,y,Math.cos(a)*spd,Math.sin(a)*spd,{color:i%2?s.main:s.soft,life:0.16+Math.random()*0.12,size:1.6,size2:0,drag:6,add:true});
+  }
+};
 Effects.prototype.skinSkill=function(id,x,y,angle=0){
   if(!['skin_abyss_knight','skin_star_paladin','skin_void_empress','skin_crimson_lotus'].includes(id))return;
-  const s=SKIN_VFX[id];this.push({kind:'skinSkill',id,x,y,angle,color:s.main,accent:s.soft,t:0,life:0.52,opacity:0.9});
+  const s=SKIN_VFX[id];this.push({kind:'skinSkill',id,x,y,angle,color:s.main,accent:s.soft,t:0,life:0.72,opacity:1.15});
+  for(let i=0;i<10;i++){const a=i*TAU/10+angle,r=7+(i%3)*2;
+    this.part(x+Math.cos(a)*r,y+Math.sin(a)*r,Math.cos(a)*48,Math.sin(a)*48,
+      {color:i%2?s.main:s.soft,life:0.26+Math.random()*0.12,size:2.2,size2:0,drag:5,add:true});}
 };
