@@ -1289,6 +1289,8 @@ class Game {
     else p.skillCooldown = p.skillCdMax;
     this.guildEvent('skills');
     SFX.play('skill');
+    const skillSkin=cosmeticSkinForPlayer(p);
+    if(skillSkin&&skillSkin.grade==='legendary')this.effects.skinSkill(skillSkin.id,p.x,p.y,Math.atan2(p.aim.y,p.aim.x));
     if (p.rank === 2) this.ultimateFx(p); // 최종 진화 스킬은 컷인과 함께
     const D = (b) => this.skillDmg(b), mw = this.mouseWorld(), A = Math.atan2(p.aim.y, p.aim.x);
     const at = (range) => { const dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, range / d); return { x: p.x + dx * k, y: p.y + dy * k }; }; // 조준 지점 (사거리 제한)
@@ -2340,6 +2342,7 @@ class Game {
     this.map.render(ctx, { x: cx, y: cy });
     this.map.renderDoors(ctx, this.time);
     this.map.renderAnim(ctx, this.time, { x: cx, y: cy });
+    this.effects.renderFloor(ctx); // 발걸음 흔적을 액터 뒤, 바닥 위에 렌더링
     for (const po of this.portals) po.render(ctx);
     this.renderGather(ctx); // 멀티 단체 입장 안내
     for (const h of this.hazards) h.render(ctx);

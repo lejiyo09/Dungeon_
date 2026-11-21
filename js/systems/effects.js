@@ -5,8 +5,9 @@
 // ════════════════════════════════════════════
 const MAX_FX = 2600;
 class Effects {
-  constructor() { this.list = []; }
-  clear() { this.list.length = 0; }
+  constructor() { this.list = []; this.floorList = []; }
+  clear() { this.list.length = 0; this.floorList.length = 0; }
+  pushFloor(fx) { if (this.floorList.length < 700) this.floorList.push(fx); }
   push(fx) { // 가벼운 모드: 작은 파티클은 절반만, 전체 개수도 줄임
     if (PERF.low) { if (fx.kind === 'p' && (this.skip = !this.skip)) return; if (this.list.length >= 700) return; }
     if (this.list.length < MAX_FX) this.list.push(fx);
@@ -146,7 +147,9 @@ class Effects {
       }
     }
     let n = 0; const L = this.list; for (let i = 0; i < L.length; i++) if (L[i].t < L[i].life) L[n++] = L[i]; L.length = n; // 새 배열을 만들지 않고 정리
+    let g = 0; const F = this.floorList; for (let i = 0; i < F.length; i++) { const fx=F[i]; fx.t += dt; if (fx.t < fx.life) F[g++] = fx; } F.length = g;
   }
+  renderFloor(ctx) { for (const fx of this.floorList) this.draw(ctx,fx); ctx.globalAlpha=1; }
   render(ctx) {
     // 1) 일반 혼합
     for (const fx of this.list) if (!fx.add && fx.kind !== 'boom' && fx.kind !== 'flash' && fx.kind !== 'rlabel') this.draw(ctx, fx);
@@ -217,36 +220,50 @@ class Effects {
         else { const r = Math.max(1, Math.round(s)); ctx.fillRect(x - (r >> 1), y - (r >> 1), r, r); }
         break;
       }
+      case 'skinStep': {
+        const k=1-fx.t/fx.life,a=fx.angle||0;ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.globalAlpha*=0.78*k;
+        ctx.fillStyle=fx.color;ctx.fillRect(-1,-3,2,4);ctx.fillRect(-2,-2,1,2);ctx.fillRect(1,-2,1,2);
+        ctx.fillStyle=fx.accent;ctx.fillRect(-1,-4,2,1);ctx.fillRect(-1,2,2,1);ctx.restore();break;
+      }
       case 'skinDash': {
-        const p = Math.min(1, fx.t / fx.life), R = 7 + p * 10, a = fx.angle;
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(a);
-        ctx.globalAlpha *= fx.opacity || 0.3;
-        ctx.strokeStyle = fx.color; ctx.fillStyle = fx.accent; ctx.lineWidth = 1.2;
-        if (fx.id === 'skin_abyss_knight') {
-          ctx.beginPath(); ctx.ellipse(0, 0, R, R * 0.48, 0, 0.18, 1.22); ctx.stroke();
-          ctx.beginPath(); ctx.ellipse(0, 0, R * 0.78, R * 0.38, 0, 3.24, 4.42); ctx.stroke();
-          ctx.fillRect(-R * 0.55, -2, 2, 2); ctx.fillRect(R * 0.45, 1, 2, 2);
-        } else if (fx.id === 'skin_star_paladin') {
-          ctx.beginPath(); ctx.moveTo(0, -R); ctx.lineTo(1.5, -2); ctx.lineTo(R, 0);
-          ctx.lineTo(1.5, 2); ctx.lineTo(0, R); ctx.lineTo(-1.5, 2);
-          ctx.lineTo(-R, 0); ctx.lineTo(-1.5, -2); ctx.closePath(); ctx.stroke();
-          ctx.fillRect(-1, -1, 2, 2);
-        } else if (fx.id === 'skin_void_empress') {
-          ctx.beginPath(); ctx.ellipse(-3, 0, R * 0.7, R * 0.42, -0.35, 0.15, 2.35); ctx.stroke();
-          ctx.beginPath(); ctx.ellipse(4, 0, R * 0.62, R * 0.36, 0.35, 3.1, 5.25); ctx.stroke();
-          ctx.fillRect(-R * 0.55, -3, 2, 2); ctx.fillRect(R * 0.42, 2, 2, 2);
-        } else if (fx.id === 'skin_crimson_lotus') {
-          for (let i = 0; i < 4; i++) {
-            ctx.save(); ctx.rotate(i * Math.PI / 2);
-            ctx.globalAlpha *= 0.72;
-            ctx.beginPath(); ctx.ellipse(0, -R * 0.48, 2, R * 0.24, 0, 0, TAU);
-            ctx.fill(); ctx.restore();
-          }
+        const p=Math.min(1,fx.t/fx.life),R=9+p*15,a=fx.angle,fade=1-p*0.42;
+        ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.globalAlpha*=fx.opacity*fade;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=fx.color;ctx.fillStyle=fx.accent;ctx.lineWidth=2;
+        if(fx.id==='skin_abyss_knight'){
+          ctx.beginPath();ctx.moveTo(-R-8,-5);ctx.lineTo(-R*0.5,-1);ctx.lineTo(-R+2,4);ctx.lineTo(-R*0.2,7);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(-R-5,4);ctx.lineTo(-R*0.45,1);ctx.lineTo(-R+5,-4);ctx.stroke();
+        }else if(fx.id==='skin_star_paladin'){
+          ctx.beginPath();ctx.moveTo(-R-10,0);ctx.lineTo(-R*0.4,0);ctx.lineTo(-3,-2);ctx.lineTo(0,-R*0.55);ctx.lineTo(3,-2);ctx.lineTo(R*0.35,0);ctx.stroke();
+          ctx.fillRect(-2,-2,4,4);ctx.fillRect(-R-7,-1,3,2);
+        }else if(fx.id==='skin_void_empress'){
+          ctx.beginPath();ctx.moveTo(-R-7,4);ctx.bezierCurveTo(-R*0.5,-9,-R*0.1,9,3,-4);ctx.bezierCurveTo(8,-9,12,-5,14,-1);ctx.stroke();
+          ctx.fillRect(-R*0.65,-5,2,2);ctx.fillRect(-R*0.18,5,2,2);
+        }else if(fx.id==='skin_crimson_lotus'){
+          for(let i=0;i<3;i++){ctx.save();ctx.translate(-R*0.7+i*7,(i-1)*3);ctx.rotate(-0.45+i*0.4);ctx.beginPath();ctx.ellipse(0,0,2.4,5,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+          ctx.beginPath();ctx.moveTo(-R-5,0);ctx.quadraticCurveTo(-R*0.4,-5,4,0);ctx.stroke();
+        }else if(fx.id==='skin_moon_shrine'){
+          ctx.beginPath();ctx.moveTo(-R-7,2);ctx.quadraticCurveTo(-R*0.4,-9,4,-2);ctx.stroke();ctx.beginPath();ctx.arc(4,-1,5,-1.1,1.45);ctx.stroke();ctx.fillRect(-R*0.35,3,2,2);
+        }else if(fx.id==='skin_arcane_idol'){
+          ctx.beginPath();ctx.moveTo(-R-7,2);ctx.lineTo(-5,0);ctx.stroke();ctx.beginPath();ctx.moveTo(-2,-4);ctx.lineTo(0,0);ctx.lineTo(2,-4);ctx.moveTo(0,0);ctx.lineTo(0,5);ctx.stroke();ctx.fillRect(-R*0.5,-3,2,2);ctx.fillRect(5,2,2,2);
+        }else if(fx.id==='skin_dragon_samurai'){
+          ctx.beginPath();ctx.moveTo(-R-8,5);ctx.lineTo(-R*0.45,-4);ctx.lineTo(2,-1);ctx.stroke();ctx.beginPath();ctx.moveTo(-R*0.65,6);ctx.lineTo(-R*0.1,3);ctx.stroke();ctx.fillRect(-R*0.4,-5,3,2);
+        }else if(fx.id==='skin_clockwork_fox'){
+          ctx.beginPath();ctx.moveTo(-R-8,0);ctx.lineTo(-R*0.45,0);ctx.lineTo(-R*0.25,-4);ctx.lineTo(-R*0.05,0);ctx.lineTo(5,0);ctx.stroke();ctx.strokeRect(-R*0.6,-3,5,5);ctx.fillRect(2,-2,3,3);
         }
-        ctx.restore();
-        break;
+        ctx.restore();break;
+      }
+      case 'skinSkill': {
+        const p=Math.min(1,fx.t/fx.life),reach=10+p*19;ctx.save();ctx.translate(x,y-4);ctx.rotate(fx.angle);ctx.globalAlpha*=fx.opacity*(1-p*0.35);
+        ctx.strokeStyle=fx.color;ctx.fillStyle=fx.accent;ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';
+        if(fx.id==='skin_abyss_knight'){
+          ctx.beginPath();ctx.moveTo(2,-3);ctx.lineTo(9,-10);ctx.lineTo(14,-1);ctx.lineTo(21,5);ctx.stroke();ctx.beginPath();ctx.moveTo(4,5);ctx.lineTo(11,1);ctx.lineTo(16,8);ctx.stroke();ctx.fillRect(12,-3,3,3);
+        }else if(fx.id==='skin_star_paladin'){
+          ctx.beginPath();ctx.moveTo(0,-reach);ctx.lineTo(2,-3);ctx.lineTo(reach,0);ctx.lineTo(2,3);ctx.lineTo(0,reach);ctx.lineTo(-2,3);ctx.lineTo(-reach,0);ctx.lineTo(-2,-3);ctx.closePath();ctx.stroke();ctx.fillRect(-2,-2,4,4);ctx.fillRect(reach+2,-1,2,2);
+        }else if(fx.id==='skin_void_empress'){
+          ctx.beginPath();ctx.arc(3,0,reach,-1.8,1.15);ctx.stroke();ctx.beginPath();ctx.moveTo(-5,-8);ctx.lineTo(-1,-3);ctx.lineTo(4,-8);ctx.stroke();ctx.fillRect(10,2,3,3);
+        }else if(fx.id==='skin_crimson_lotus'){
+          for(let i=0;i<5;i++){const q=i/4;ctx.save();ctx.translate(q*reach,Math.sin(q*Math.PI*2)*6);ctx.rotate(q*Math.PI-0.8);ctx.beginPath();ctx.ellipse(0,0,3,7,0,0,Math.PI*2);ctx.fill();ctx.restore();}ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(reach*0.4,-12,reach,0);ctx.stroke();
+        }
+        ctx.restore();break;
       }
       case 'rlabel': { // 반응 이름표: 작은 글씨로 살짝 튀어나왔다가 떠오름 (배경 없음, 1px 그림자로만 구분)
         const pop = 1 + 0.25 * Math.max(0, 1 - fx.t / 0.1), sz = Math.round(7 * pop);
