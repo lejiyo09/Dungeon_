@@ -10,85 +10,95 @@ const SKIN_VFX={
   skin_clockwork_fox:{main:'#70e4ee',soft:'#fff0b0',step:'#d8b66b'}
 };
 
-function skinWeaveCubic(p0,p1,p2,p3,u){
-  const v=1-u;
-  return {
-    x:v*v*v*p0.x+3*v*v*u*p1.x+3*v*u*u*p2.x+u*u*u*p3.x,
-    y:v*v*v*p0.y+3*v*v*u*p1.y+3*v*u*u*p2.y+u*u*u*p3.y
-  };
-}
-function drawSkinWeaveRibbon(ctx,points,time,phase,color,soft){
-  const [p0,p1,p2,p3]=points;
-  ctx.save();
-  ctx.lineCap='round';ctx.lineJoin='round';
-  ctx.strokeStyle=color;ctx.lineWidth=1.15;ctx.globalAlpha*=0.9;
-  ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.bezierCurveTo(p1.x,p1.y,p2.x,p2.y,p3.x,p3.y);ctx.stroke();
-
-  // 선을 따라 움직이는 빛의 흐름. 후광이 아니라 선 위를 짧은 광맥이 지나간다.
-  ctx.strokeStyle=soft;ctx.lineWidth=1.35;ctx.globalAlpha*=0.78;
-  ctx.setLineDash([2.4,5.2]);ctx.lineDashOffset=-(time*7.5+phase*5);
-  ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.bezierCurveTo(p1.x,p1.y,p2.x,p2.y,p3.x,p3.y);ctx.stroke();
-  ctx.setLineDash([]);
-
-  const u=((time*0.42+phase)%1+1)%1, bead=skinWeaveCubic(p0,p1,p2,p3,u);
-  ctx.globalAlpha=0.95;ctx.fillStyle=soft;
-  ctx.fillRect(Math.round(bead.x)-1,Math.round(bead.y)-1,2,2);
-  ctx.fillStyle=color;
-  ctx.fillRect(Math.round(bead.x)+1,Math.round(bead.y),1,1);
-  ctx.restore();
-}
 function drawLegendarySkinWeave(ctx,id,x,y,time,front){
-  const s=SKIN_VFX[id];
-  if(!s||!['skin_abyss_knight','skin_star_paladin','skin_void_empress','skin_crimson_lotus'].includes(id))return;
-  const phase=time*1.65+(front?1.7:0);
-  const w=Math.sin(time*1.6+(front?0.9:0));
-  const q=Math.cos(time*1.15+(front?1.1:0));
+  const colors=SKIN_VFX[id];
+  if(!colors||!['skin_abyss_knight','skin_star_paladin','skin_void_empress','skin_crimson_lotus'].includes(id))return;
+  // 뒤쪽 반쪽은 무기/몸 아래, 앞쪽 반쪽은 몸 위에 그린다.
+  // 시간에 따라 위상과 곡률을 크게 바꿔 16x20 도트 크기에서도 움직임이 읽히게 한다.
+  const phase=time*2.8;
+  const line=(path,color,width,alpha)=>{
+    ctx.save();ctx.globalAlpha*=alpha;ctx.strokeStyle=color;ctx.lineWidth=width;
+    ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.beginPath();
+    for(let i=0;i<=24;i++){
+      const u=i/24,pt=path(u);
+      if(i===0)ctx.moveTo(pt.x,pt.y);else ctx.lineTo(pt.x,pt.y);
+    }
+    ctx.stroke();ctx.restore();
+  };
+  const strand=(u,offset,rate,dir)=>{
+    const a=u*Math.PI*3+phase*dir+offset;
+    return {
+      x:Math.sin(a)*(9+1.7*Math.sin(time*1.9+u*7+offset)),
+      y:-12+u*19+Math.cos(a*0.72+time*1.4)*1.8
+    };
+  };
   ctx.save();ctx.translate(x,y-4);
-  ctx.globalAlpha=0.64+0.09*Math.sin(time*2.6);
-  ctx.lineWidth=1;ctx.strokeStyle=s.main;ctx.fillStyle=s.soft;
+  ctx.globalCompositeOperation='lighter';
+  ctx.globalAlpha=0.94;
+
+  // 전면/후면 분리: 캐릭터 실루엣을 감싸되 한쪽은 몸 뒤로 숨긴다.
+  const isFront=(u,offset,dir)=>{
+    const a=u*Math.PI*3+phase*dir+offset;
+    return Math.cos(a)>0;
+  };
+  const drawSegmented=(offset,dir,color,soft,width,alpha)=>{
+    let drawing=false;
+    ctx.save();ctx.globalAlpha*=alpha;ctx.strokeStyle=color;ctx.lineWidth=width;
+    ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
+    for(let i=0;i<=48;i++){
+      const u=i/48,pt=strand(u,offset,0,dir),visible=isFront(u,offset,dir);
+      if(visible===front){
+        if(!drawing){ctx.moveTo(pt.x,pt.y);drawing=true;}else ctx.lineTo(pt.x,pt.y);
+      }else if(drawing){ctx.stroke();ctx.beginPath();drawing=false;}
+    }
+    if(drawing)ctx.stroke();
+    ctx.restore();
+
+    // 밝은 점이 같은 궤적을 따라 이동
+    const beadU=((time*0.48+offset/Math.PI/2)%1+1)%1;
+    const p=strand(beadU,offset,0,dir);
+    if(isFront(beadU,offset,dir)===front){
+      ctx.save();ctx.globalAlpha*=0.98;ctx.fillStyle=soft;
+      ctx.fillRect(Math.round(p.x)-1,Math.round(p.y)-1,3,3);
+      ctx.fillStyle=color;ctx.fillRect(Math.round(p.x)+1,Math.round(p.y)+1,2,1);
+      ctx.restore();
+    }
+  };
 
   if(id==='skin_abyss_knight'){
-    // 심연: 균열이 갑옷의 어깨에서 허리를 향해 꿈틀거리며 이어진다.
-    const pts=front
-      ? [{x:-10,y:5},{x:-8+w*1.4,y:-3},{x:5+q,y:10+w*1.2},{x:10,y:-5+q*1.5}]
-      : [{x:-9,y:-7},{x:-13+w,y:0+q},{x:0+q,y:9-w},{x:9,y:4+w}];
-    drawSkinWeaveRibbon(ctx,pts,time,0.1,s.main,s.soft);
-    ctx.globalAlpha*=0.8;ctx.beginPath();
-    ctx.moveTo(-8+w,-4+q);ctx.lineTo(-4, -7+w);ctx.lineTo(0+q,-4);ctx.stroke();
-    ctx.fillRect(Math.round(Math.sin(phase)*8)-8,Math.round(Math.cos(phase*0.8)*4)-5,2,2);
+    // 깨진 청록 균열이 갑옷 주위를 타고 흐르며 짧게 번쩍인다.
+    drawSegmented(0,1,colors.main,colors.soft,2,0.94);
+    drawSegmented(1.3,-1,colors.soft,colors.main,1.1,0.52);
+    const flash=Math.sin(time*7.5);
+    if(flash>0.35){ctx.globalAlpha=0.95;ctx.fillStyle=colors.soft;ctx.fillRect(Math.round(Math.sin(phase*1.4)*10)-1,Math.round(Math.cos(phase)*7)-2,3,3);}
   }else if(id==='skin_star_paladin'){
-    // 성좌: 별빛 실이 어깨와 가슴을 감고, 작은 성흔이 선을 따라 순환한다.
-    const pts=front
-      ? [{x:-10,y:4+w},{x:-6,y:-2+q*2},{x:3+w,y:-10},{x:10,y:-4+q}]
-      : [{x:-9,y:-7},{x:-4-w,y:-11+q},{x:3,y:1+w},{x:10,y:5+q}];
-    drawSkinWeaveRibbon(ctx,pts,time,0.34,s.main,s.soft);
-    const a=phase*0.85+(front?0:Math.PI);
-    const sx=Math.round(Math.cos(a)*8),sy=Math.round(Math.sin(a)*5)-3;
-    ctx.fillRect(sx,sy,2,2);ctx.fillRect(sx+1,sy-2,1,1);
-    ctx.globalAlpha*=0.72;ctx.beginPath();ctx.moveTo(sx-3,sy+3);ctx.lineTo(sx,sy-2);ctx.lineTo(sx+3,sy+3);ctx.stroke();
+    // 금빛 성좌의 실이 몸을 감싸고, 별빛 조각이 궤도를 따라 이동한다.
+    drawSegmented(0.2,1,colors.main,colors.soft,1.8,0.9);
+    drawSegmented(2.5,-1,colors.soft,colors.main,1,0.55);
+    const a=phase*0.9,sx=Math.round(Math.cos(a)*9),sy=Math.round(Math.sin(a*1.3)*8)-3;
+    if((front&&Math.cos(a)>0)||(!front&&Math.cos(a)<=0)){
+      ctx.fillStyle=colors.soft;ctx.fillRect(sx,sy,3,1);ctx.fillRect(sx+1,sy-1,1,3);
+    }
   }else if(id==='skin_void_empress'){
-    // 공허: 두 겹의 보랏빛 실이 서로 엇갈리며 허리와 어깨를 천천히 휘감는다.
-    const pts=front
-      ? [{x:-10,y:5+q},{x:-5,y:-2+w*2},{x:3,y:10-q*2},{x:10,y:1+w}]
-      : [{x:-9,y:-7+w},{x:-3,y:-12+q*2},{x:4,y:-1-w*2},{x:9,y:-6+q}];
-    drawSkinWeaveRibbon(ctx,pts,time,0.56,s.main,s.soft);
-    const pts2=front
-      ? [{x:-8,y:-5-w},{x:-2,y:1+q*2},{x:5,y:-8-w},{x:9,y:-5+q}]
-      : [{x:-8,y:5+q},{x:-3,y:-3-w*2},{x:4,y:9+q*2},{x:8,y:2-w}];
-    ctx.globalAlpha*=0.7;drawSkinWeaveRibbon(ctx,pts2,time,0.82,s.soft,s.main);
+    // 보랏빛 두 가닥이 반대 방향으로 교차하는 이중 나선.
+    drawSegmented(0,1,colors.main,colors.soft,1.9,0.88);
+    drawSegmented(Math.PI,-1,colors.soft,colors.main,1.6,0.82);
+    const a=-phase*1.1;
+    if((front&&Math.cos(a)>0)||(!front&&Math.cos(a)<=0)){
+      ctx.fillStyle=colors.soft;ctx.fillRect(Math.round(Math.sin(a)*9)-1,Math.round(Math.cos(a)*7)-4,3,3);
+    }
   }else if(id==='skin_crimson_lotus'){
-    // 홍련: 비단 리본처럼 흔들리는 선을 따라 꽃잎 세 장이 차례로 흘러간다.
-    const pts=front
-      ? [{x:-10,y:-2+w},{x:-3,y:8+q*2},{x:4,y:1-w*2},{x:10,y:-7+q}]
-      : [{x:-9,y:6+q},{x:-4,y:-4-w*2},{x:3,y:-8+q*2},{x:9,y:-2+w}];
-    drawSkinWeaveRibbon(ctx,pts,time,0.18,s.main,s.soft);
+    // 홍련의 붉은 비단끈과 꽃잎 세 장이 몸을 따라 흐른다.
+    drawSegmented(0.8,1,colors.main,colors.soft,2,0.88);
+    drawSegmented(2.9,-1,colors.soft,colors.main,1,0.5);
     for(let i=0;i<3;i++){
-      const u=((time*0.34+i/3+(front?0.12:0.55))%1+1)%1;
-      const p=skinWeaveCubic(...pts,u),angle=time*1.1+i*2.1+(front?0:Math.PI);
-      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(angle);
-      ctx.globalAlpha=0.74;ctx.fillStyle=i===1?s.soft:s.main;
-      ctx.beginPath();ctx.ellipse(0,0,2.5,1.2,0,0,Math.PI*2);ctx.fill();
-      ctx.restore();
+      const u=((time*0.38+i/3)%1+1)%1,p=strand(u,0.8,0,1);
+      if(isFront(u,0.8,1)===front){
+        ctx.save();ctx.translate(p.x,p.y);ctx.rotate(phase+u*3);
+        ctx.fillStyle=i===1?colors.soft:colors.main;ctx.globalAlpha=0.9;
+        ctx.beginPath();ctx.ellipse(0,0,2.8,1.4,0,0,Math.PI*2);ctx.fill();ctx.restore();
+      }
     }
   }
   ctx.restore();
