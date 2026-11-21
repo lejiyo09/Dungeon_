@@ -975,6 +975,17 @@ class Game {
       if (items[ch] === 'camelot') { if (this.camelotFloors().length) o.sub = 'camelot'; else o.msg = { text: '아직 카멜롯에 갈 수 없습니다 — 멀린의 시련을 진행하세요', color: '#ff9a9a', t: 2.5 }; }
       else { this.overlay = null; this.transition = { t: 0, swapped: false, action: () => this.startBabylonThrone(null) }; } /* 길가메시의 왕좌로 */
       return;
+    } else if (o.type === 'skin_gacha') {
+      if(input.wasPressed('Escape')||input.wasPressed('KeyB')){this.overlay={type:'pause'};return;}
+      if(input.wasPressed('Digit1')){const [text,color]=this.rollSkinGacha(1);o.msg={text,color,t:3};return;}
+      if(input.wasPressed('Digit0')){const [text,color]=this.rollSkinGacha(10);o.msg={text,color,t:3};return;}
+      if(input.wasPressed('Mouse0')){
+        const m=input.mouse,one={x:VIEW_W/2-112,y:82,w:100,h:34},ten={x:VIEW_W/2+12,y:82,w:100,h:34};
+        if(m.x>=one.x&&m.x<=one.x+one.w&&m.y>=one.y&&m.y<=one.y+one.h){const [text,color]=this.rollSkinGacha(1);o.msg={text,color,t:3};}
+        else if(m.x>=ten.x&&m.x<=ten.x+ten.w&&m.y>=ten.y&&m.y<=ten.y+ten.h){const [text,color]=this.rollSkinGacha(10);o.msg={text,color,t:3};}
+        this.input.mouse.down=false;
+      }
+      return;
     } else if (o.type === 'skins') { // 스킨 고르기: 카드 클릭·번호 키로 장착/해제
       if (o.msg) o.msg.t -= STEP;
       if (input.wasPressed('Escape') || input.wasPressed('KeyK') || input.wasPressed('KeyE')) { this.overlay = o.back === 'hero_info' ? { type: 'hero_info', heroId: this.save.selected, branchIndex: o.backIndex || 0 } : o.back === 'pause' ? { type: 'pause' } : null; return; }
