@@ -2119,13 +2119,22 @@ class Game {
     if (t instanceof Pickup) this.pickWeapon(t);
     else t.interact(this);
   }
+  // [버그 수정] 상호작용 시야: 대상 바로 앞(한 타일 못 미친 지점)까지만 벽을 검사 → 벽 너머 꼼수는 막고, 벽/가구 타일 위 소품은 허용
+  interactClear(p, o) {
+    const dx = o.x - p.x, dy = o.y - p.y, d = Math.hypot(dx, dy);
+    if (d <= TILE) return true; // 바로 옆이면 통과
+    const back = d - TILE, ux = dx / d, uy = dy / d;
+    return sweepWall(p.x, p.y, p.x + ux * back, p.y + uy * back, this.map, 6) < 0;
+  }
   findInteractTarget() {
     const p = this.player;
     let best = null, bestD = Infinity;
     for (const o of this.props) {
       if (!o.radius || !o.label(this)) continue;
       const d = Math.hypot(o.x - p.x, o.y - p.y);
-      if (d < o.radius && d < bestD && hasLineOfSight(p, o, this.map)) { best = o; bestD = d; } /* [버그 수정] 벽 너머로 상자·제단·상점을 여는 꼼수 차단 */
+      // [버그 수정] 벽 너머로 상자·제단·상점을 여는 꼼수는 막되, 벽/카펫 타일 위에 놓인 가구(길드 탁자·게시판 등)는 상호작용되게 —
+      // 대상 중심이 아니라 "한 타일 못 미친 지점"까지만 시야를 봄 (중간에 벽이 있으면 여전히 차단)
+      if (d < o.radius && d < bestD && this.interactClear(p, o)) { best = o; bestD = d; }
     }
     for (const pk of this.pickups) {
       if (pk.kind !== 'weapon') continue;
