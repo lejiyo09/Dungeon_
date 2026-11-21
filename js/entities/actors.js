@@ -167,7 +167,8 @@ class Player extends Entity {
     }
     if (this.hurtInvuln > 0 && Math.floor(this.time * 20) % 2 === 0) return;
     const frame = this.moving && this.state !== 'DASH' ? Math.floor(this.time * 8) % 2 : 0;
-    if (this.buffT > 0) { const col = this.buffKillHeal ? '#c02a3a' : this.buffGuard >= 0.4 ? '#c8a070' : '#ffd8a0', a = 0.25 + 0.15 * Math.sin(performance.now() / 120); // 축복·변신·서약 기운
+    const sk = this.skinShown !== undefined ? this.skinShown /* 멀티 참가자 화면: 방장이 이미 갈래까지 확인해 보낸 값 */ : this.remoteSkin !== undefined ? (this.remoteSkin && skinAllowed(this.remoteSkin, this.hero.id, this.line && this.line.id) ? this.remoteSkin : null) /* 방장 쪽 동료: 갈래 확인 */ : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id, game.playerLineId(this)) : null); /* 내 캐릭터 */
+    if (this.buffT > 0) { const col = this.transformT > 0 && sk === 'druid_bandi' ? '#5ef4ff' : this.buffKillHeal ? '#c02a3a' : this.buffGuard >= 0.4 ? '#c8a070' : '#ffd8a0', a = 0.25 + 0.15 * Math.sin(performance.now() / 120); // 축복·변신·서약 기운
       ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = col; ctx.beginPath(); ctx.ellipse(Math.round(this.x), Math.round(this.y) + 6, 11, 4, 0, 0, TAU); ctx.stroke(); ctx.restore(); }
     if (this.solomon > 0) { // 솔로몬의 반지: 보랏빛·금빛 고리
       ctx.strokeStyle = `rgba(200,160,255,${0.5 + 0.3 * Math.sin(this.time * 8)})`; ctx.beginPath(); ctx.ellipse(x, y + 6, 11, 4, 0, 0, TAU); ctx.stroke();
@@ -183,7 +184,6 @@ class Player extends Entity {
       ctx.fillStyle = `rgba(255,200,60,${0.25 + 0.15 * Math.sin(this.time * 20)})`;
       ctx.beginPath(); ctx.arc(x, y - 1, 12, 0, TAU); ctx.fill();
     }
-    const sk = this.skinShown !== undefined ? this.skinShown /* 멀티 참가자 화면: 방장이 이미 갈래까지 확인해 보낸 값 */ : this.remoteSkin !== undefined ? (this.remoteSkin && skinAllowed(this.remoteSkin, this.hero.id, this.line && this.line.id) ? this.remoteSkin : null) /* 방장 쪽 동료: 갈래 확인 */ : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id, game.playerLineId(this)) : null); /* 내 캐릭터 */
     if (sk && (!this._skinH || this._skinH.src !== this.hero || this._skinH.sk !== sk)) this._skinH = { src: this.hero, sk, h: heroWithLook(this.hero, { sprite: sk }) };
     // 전설 스킨: 조준 방향으로 상/하/옆 스프라이트, 걷기 3프레임(정지 시 가운데)
     const legAnim = sk && typeof LEG_SKINS !== 'undefined' && LEG_SKINS[sk] !== undefined;
