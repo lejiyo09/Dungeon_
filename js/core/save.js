@@ -17,7 +17,8 @@ function sanitizeSave(s) {
   for (const k of ['unlocked', 'armory', 'discovered', 'treasures', 'skins', 'giftsUsed']) if (!Array.isArray(s[k])) s[k] = D[k];
   for (const k of ['jobLv', 'skinOn', 'lineChoice']) if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = D[k];
   for (const k of ['bank', 'clears', 'bestStage']) if (typeof s[k] !== 'number' || !isFinite(s[k])) s[k] = D[k];
-  if (!s.skinGacha || typeof s.skinGacha !== 'object' || Array.isArray(s.skinGacha)) s.skinGacha = D.skinGacha;\n  if (s.stats && typeof s.stats !== 'object') s.stats = {};
+  if (!s.skinGacha || typeof s.skinGacha !== 'object' || Array.isArray(s.skinGacha)) s.skinGacha = D.skinGacha;
+  if (s.stats && typeof s.stats !== 'object') s.stats = {};
   for (const k of ['guild', 'merlin', 'babylon']) if (s[k] && (typeof s[k] !== 'object' || Array.isArray(s[k]))) delete s[k]; // 다시 만들어짐
   if (s.supplies && !Array.isArray(s.supplies)) s.supplies = [];
   if (s.deepCheckpoints && typeof s.deepCheckpoints !== 'object') s.deepCheckpoints = {};
