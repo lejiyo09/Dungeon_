@@ -69,7 +69,7 @@ const BALANCE = {
       // 드루이드
       'hero_druid|base': { skillFx: 'guardian', name: '정령 가호', desc: '수호 정령 지속↑·추가 소환' },
       'hero_druid|thorn': { skillFx: 'ancientroot', name: '고대 결박', desc: '고대 뿌리 범위↑·속박↑' },
-      'hero_druid|shape': { skillFx: 'primal', name: '태초 각성', desc: '태초의 힘 지속↑·공격력↑' }
+      'hero_druid|shape': { skillFx: 'primal', name: '태초 각성', desc: '변신 지속↑·공격력↑·변신 시작 시 범위 폭발' }
     } },
   lobbyCurrency: { name: '결정석', color: '#7ad0ff', perStage: 15, perBoss: 40, victory: 80 },
   bossHealRatio: 0.5,         // 월드 보스 처치 시 최대 체력 대비 회복
