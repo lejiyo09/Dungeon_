@@ -68,6 +68,14 @@ class Game {
     if (pk.skillFx && !(this.save.jobPerkOff && this.save.jobPerkOff[this.jobLvKey(heroId, lineId)])) p.jobSkillFx = pk.skillFx;   // 스킬 강화 효과(루트 최종 스킬 토큰, 토글 가능)
   }
   jobLevelCost(id, line) { const J = BALANCE.jobLevel, lv = this.jobLevel(id, line); return lv >= J.max ? null : J.base + J.perLevel * lv; }
+  // [사용자 결정] 1회성: 직업 레벨업에 쓴 결정석 환불 + 전체 레벨 초기화 (환불은 당시 가격 base 50·레벨당 30 기준)
+  jobResetRefund() {
+    const s = this.save; if (s.jobResetV1) return; s.jobResetV1 = true;
+    const B = 50, P = 30, jl = s.jobLv || {}; let refund = 0;
+    for (const k in jl) { const lv = jl[k] | 0; if (lv > 0) refund += B * lv + P * lv * (lv - 1) / 2; }
+    refund = Math.round(refund); s.jobLv = {}; if (refund > 0) s.bank = (s.bank || 0) + refund; writeSave(s);
+    this._jobRefund = refund;
+  }
   // 직업 레벨업 → 결과 메시지 [글, 색] (직업 레벨 창에서 사용)
   levelUpJob(hero) {
     const s = this.save, cost = this.jobLevelCost(hero.id), p = this.player;
@@ -974,6 +982,7 @@ class Game {
   login(profile) {
     Auth.current = profile; this.profile = profile;
     this.save = loadSave(); SFX.setMuted(!!this.save.muted);
+    this.jobResetRefund(); // [사용자 결정] 직업 레벨 초기화 + 결정석 환불 (1회)
     this.admin = profile && profile.admin ? { god: false, nocd: false } : null; if (this.admin) this.applyAdmin();
     this.locked = false; this.recoverDeepCheckpoints(); this.enterLobby();
     if (this.save.run) this.overlay = { type: 'resume' };
@@ -983,6 +992,8 @@ class Game {
     const checkpointSub = this.deepRecovered ? `심층 10-4 캐릭터 기록 ${this.deepRecovered}개를 복구했습니다 — 당시 무기·강화·축복 정보도 함께 저장했습니다` : this.deepRecordMissing ? '10-4 클리어 흔적은 있지만 원본 무기·강화·축복 스냅샷은 남아 있지 않습니다. 없는 장비 기록을 임의로 만들지 않았습니다' : accountSub;
     this.showBanner(profile ? `환영합니다, ${profile.name}!` : '게스트로 시작', checkpointSub, this.deepRecordMissing ? '#ffb06a' : '#ffd84a');
     this.deepRecovered = 0; this.deepRecordMissing = false;
+    if (this._jobRefund > 0) this.showBanner('직업 레벨 초기화', `레벨업에 쓴 결정석 ${this._jobRefund}개를 돌려드렸습니다 — 루트별 레벨업으로 개편되어 모든 레벨이 초기화됐어요`, '#7ad0ff');
+    this._jobRefund = 0;
   }
   logout() {
     writeSave(this.save); Auth.current = null; this.profile = null; Auth.setAuto(null);
