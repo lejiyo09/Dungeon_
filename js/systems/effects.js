@@ -20,6 +20,21 @@ class Effects {
   text(x, y, str, color, big = false) { this.push({ kind: 'text', x: x + (big ? 0 : randInt(-3, 3)), y, str, color, big, t: 0, life: big ? 0.8 : 0.6 }); }
   spark(x, y, color) { this.push({ kind: 'spark', x, y, color, t: 0, life: 0.08 }); }
   ring(x, y, r, color) { this.push({ kind: 'ring', x, y, r, r0: r * 0.4, color, t: 0, life: 0.22 }); }
+  _slashSprite() { // 샘 베기: 깃털 질감 초승달 블레이드 (회전 중심 = 왼쪽, 오른쪽을 향함) — 한 번만 구워 캐시
+    if (this._slashImg) return this._slashImg;
+    const S = 64, c = document.createElement('canvas'); c.width = S; c.height = S; const g = c.getContext('2d');
+    const cx = 15, cy = S / 2, A0 = -0.95, A1 = 0.95; g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+    for (let i = 0; i < 30; i++) { const t = i / 29, th = A0 + (A1 - A0) * t, edge = Math.sin(t * Math.PI); // 가운데가 길고 밝음
+      const Rin = 18 + edge * 9, Rout = 40 + edge * 7 + (Math.random() - 0.5) * 2;
+      const x1 = cx + Math.cos(th) * Rin, y1 = cy + Math.sin(th) * Rin, x2 = cx + Math.cos(th) * Rout, y2 = cy + Math.sin(th) * Rout;
+      const gr = g.createLinearGradient(x1, y1, x2, y2);
+      gr.addColorStop(0, 'rgba(90,220,255,0)'); gr.addColorStop(0.5, 'rgba(140,245,255,' + (0.5 * edge + 0.18) + ')'); gr.addColorStop(1, 'rgba(235,255,255,' + (0.7 * edge + 0.12) + ')');
+      g.strokeStyle = gr; g.lineWidth = 1.5 + edge; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
+    g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 1.4; g.beginPath(); // 바깥 날 가장자리
+    for (let i = 0; i <= 30; i++) { const t = i / 30, th = A0 + (A1 - A0) * t, R = 40 + Math.sin(t * Math.PI) * 7, px = cx + Math.cos(th) * R, py = cy + Math.sin(th) * R; i ? g.lineTo(px, py) : g.moveTo(px, py); }
+    g.stroke(); this._slashImg = { img: c, cx, cy }; return this._slashImg;
+  }
+  samSlash(x, y, ang, scale) { this.push({ kind: 'samslash', x, y, ang, scale, t: 0, life: 0.18, add: true }); }
   slash(x, y, ang, r, arc, color, hi, color2) {
     this.push({ kind: 'slash', x, y, ang, r, arc, color, hi, color2, t: 0, life: 0.16 });
     for (let i = 0; i < 5; i++) { const a = ang + (Math.random() - 0.5) * arc, d = r * (0.7 + Math.random() * 0.3);
@@ -331,6 +346,11 @@ class Effects {
           const px = Math.round(fx.x + nx * s * 2), py = Math.round(fx.y + ny * s * 2), sz = t < 0.55 ? 2 : 1;
           ctx.globalAlpha = (0.95 - t * 0.75) * k; ctx.fillStyle = t < 0.5 ? '#5af2ff' : '#b6ff5a'; ctx.fillRect(px, py, sz, sz); }
         break;
+      }
+      case 'samslash': { // 깃털 질감 초승달 베기 스프라이트를 조준 각도로 회전해 그림 (살짝 커지며 사라짐)
+        const S = this._slashSprite(), prog = fx.t / fx.life, s = fx.scale * (0.9 + 0.25 * prog);
+        ctx.save(); ctx.globalAlpha = (1 - prog) * 0.95; ctx.translate(x, y); ctx.rotate(fx.ang);
+        ctx.drawImage(S.img, -S.cx * s, -S.cy * s, S.img.width * s, S.img.height * s); ctx.restore(); break;
       }
       case 'slash': {
         const a0 = fx.ang - fx.arc / 2, a1 = fx.ang + fx.arc / 2;
