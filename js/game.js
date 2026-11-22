@@ -667,6 +667,14 @@ class Game {
   chosenLine(heroId) { /* [사용자 결정] 로비에서 고른 진화 루트 (없으면 첫 갈래) */
     const lines = jobLines(heroId), id = this.save.lineChoice && this.save.lineChoice[heroId]; return lines.find((l) => l.id === id) || lines[0]; }
   playerLineId(p) { return p.line ? p.line.id : this.mode === 'lobby' ? this.chosenLine(p.hero.id).id : null; } /* 스킨 판정용: 로비에서는 고른 진화 루트 */
+  _samTrail(white) { /* 샘 흰 실루엣 → 민트 그린 그라데이션(청록↔형광 연두) 실루엣, 스프라이트당 한 번만 구워 캐시 */
+    if (!this._samTrailMap) this._samTrailMap = new WeakMap();
+    let c = this._samTrailMap.get(white); if (c) return c;
+    const w = white.width, h = white.height; c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(white, 0, 0);
+    g.globalCompositeOperation = 'source-in'; const grad = g.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, '#3af5e6'); grad.addColorStop(0.5, '#64ffbe'); grad.addColorStop(1, '#b6ff5a'); // 청록 → 민트 → 형광 연두
+    g.fillStyle = grad; g.fillRect(0, 0, w, h); this._samTrailMap.set(white, c); return c; }
   redeemGift(code) { /* 선물 코드 입력 → [문구, 색] */
     code = String(code || '').trim().toUpperCase(); if (!code) return ['코드를 입력해 주세요', '#ff9a9a'];
     const G = GIFT_CODES.find((g) => g.hash === giftHash(code)); if (!G) return ['올바르지 않은 코드입니다', '#ff9a9a'];
@@ -1062,6 +1070,11 @@ class Game {
       if (p.state === 'DASH') { // 잔상
         const spr = heroSprite(p.hero, 0), img = p.faceVis < 0 ? spr.f : spr.n;
         this.effects.afterimage(img, p.x - spr.w / 2, p.y + 7 - spr.h, spr.w, spr.h); this.fxT = 0.025;
+      } else if (p.transformT > 0 && p.moving && this.skinSprite && this.skinSprite(p.hero.id, this.playerLineId(p)) === 'druid_bandi' && typeof druidSprite === 'function') {
+        const spr = druidSprite('sam_idle'); // [샘 변신 이동] 날개색 민트 그린 그라데이션 잔상
+        if (spr) { const flip = p.lastMoveDir.x < 0, white = flip ? spr.wf : spr.wn, img = this._samTrail(white);
+          this.effects.minttrail(img, p.x - spr.w / 2, p.y + 7 - spr.h, spr.w, spr.h); }
+        this.fxT = 0.045;
       } else if (p.moving) { this.effects.dust(p.x, p.y + 6); this.fxT = 0.22; }
     }
     if (p.state !== 'DEAD' && p.hp < p.maxHp * 0.3) { this.heartT -= dt; if (this.heartT <= 0) { SFX.play('heart'); this.heartT = 0.9; } }

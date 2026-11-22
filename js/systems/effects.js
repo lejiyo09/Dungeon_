@@ -114,6 +114,7 @@ class Effects {
     this.part(x, y, Math.cos(a) * s, Math.sin(a) * s - 20, { color: '#ffd84a', color2: '#c8a050', life: 0.5 + Math.random() * 0.3, size: 2, size2: 0, drag: 3, grav: 60, add: true }); } }
   beamline(x, y, x1, y1, w, color, hi) { this.push({ kind: 'beamline', x, y, x1, y1, w, color, hi, t: 0, life: 0.3, add: true }); }
   afterimage(img, x, y, w, h) { this.push({ kind: 'ghost', img, x, y, w, h, t: 0, life: 0.22 }); } // 대시 잔상
+  minttrail(img, x, y, w, h) { this.push({ kind: 'mtrail', img, x, y, w, h, t: 0, life: 0.38, add: true }); } // 샘 변신 이동: 민트 그린 잔상(가산 글로우)
   dust(x, y) { for (let i = 0; i < 2; i++) this.part(x + randInt(-3, 3), y, randInt(-12, 12), -randInt(4, 14), { color: 'rgba(200,190,170,0.5)', life: 0.35, size: 1.5, size2: 3, drag: 4, shape: 'circle' }); }
   sparkle(x, y, color) { // 획득 반짝임
     this.ring(x, y, 8, color);
@@ -315,6 +316,7 @@ class Effects {
         ctx.strokeStyle = fx.hi || '#ffffff'; ctx.lineWidth = Math.max(1, fx.w * 0.7 * k); ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x1, fx.y1); ctx.stroke();
         ctx.lineWidth = 1; break;
       case 'ghost': ctx.globalAlpha = 0.45 * k; ctx.drawImage(fx.img, Math.round(fx.x), Math.round(fx.y), fx.w, fx.h); break;
+      case 'mtrail': ctx.globalAlpha = 0.4 * k * k; ctx.drawImage(fx.img, Math.round(fx.x), Math.round(fx.y), fx.w, fx.h); break; // 민트 실루엣 잔상, 꼬리로 갈수록 은은하게 사라짐
       case 'slash': {
         const a0 = fx.ang - fx.arc / 2, a1 = fx.ang + fx.arc / 2;
         ctx.strokeStyle = fx.color; ctx.lineWidth = 4 * k + 1;
