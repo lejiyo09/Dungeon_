@@ -82,19 +82,10 @@ class WeaponSystem {
     player.swing = { t: 0, dur: 0.16, ang: a, arc, thrust: false };
     // [변신 스킨] 반디/샘 스킨을 끼면 베기 이펙트를 샘 날개색(시안/아쿠아)으로
     const samSkin = world.skinSprite && world.skinSprite(player.hero.id) === 'druid_bandi';
-    if (samSkin) { // 샘 베기: 깃털 질감 초승달 블레이드 스프라이트 + 호를 스치는 불꽃 + 앞으로 뻗는 파편
-      const ex = player.x, ey = player.y - 1, E = world.effects, sc = range / 40;
-      E.samSlash(ex, ey, a, sc * 1.05); // 텍스처드 베기(회전)
-      E.samSlash(ex, ey, a, sc * 0.72); // 안쪽 겹
-      for (let i = 0; i < 12; i++) { const aa = a + (i / 11 - 0.5) * arc, d = range * (0.72 + Math.random() * 0.34); // 호를 따라 스치는 시안 불꽃
-        E.part(ex + Math.cos(aa) * d, ey + Math.sin(aa) * d, Math.cos(aa) * 80, Math.sin(aa) * 80, { color: '#9ffcff', color2: 'rgba(80,210,255,0)', life: 0.22 + Math.random() * 0.14, size: 2, size2: 0, drag: 5, add: true, shape: 'circle' }); }
-      for (let i = 0; i < 4; i++) { const aa = a + (Math.random() - 0.5) * arc * 0.7, sp = 150 + Math.random() * 70; // 앞으로 뻗는 아쿠아 깃털 파편
-        E.part(ex + Math.cos(a) * 8, ey + Math.sin(a) * 8, Math.cos(aa) * sp, Math.sin(aa) * sp, { color: '#e6ffff', color2: 'rgba(100,230,255,0)', life: 0.26, size: 2.5, size2: 0, drag: 6, add: true, shape: 'circle' }); }
-      E.part(ex + Math.cos(a) * range, ey + Math.sin(a) * range, 0, 0, { color: '#ffffff', color2: 'rgba(150,240,255,0)', life: 0.14, size: 6, size2: 0, add: true, shape: 'circle' }); // 끝 글린트
-    } else {
-      world.effects.slash(player.x, player.y - 1, a, range, arc, '#9af0ff');
-      world.effects.slash(player.x, player.y - 1, a, range * 0.68, arc * 0.7, 'rgba(200,180,255,0.75)');
-    }
+    const c1 = samSkin ? '#5ef4ff' : '#9af0ff', c2 = samSkin ? 'rgba(170,240,255,0.85)' : 'rgba(200,180,255,0.75)';
+    world.effects.slash(player.x, player.y - 1, a, range, arc, c1);
+    world.effects.slash(player.x, player.y - 1, a, range * 0.68, arc * 0.7, c2);
+    if (samSkin) world.effects.slash(player.x, player.y - 1, a, range * 0.9, arc * 0.9, 'rgba(255,255,255,0.6)'); // 흰 코어
     world.addShake(0.06, 2); SFX.play('melee', 0.12);
   }
   canPay(player, cost) { return player.overdrive > 0 || !cost || player.energy >= cost * (1 - (player.hero.energySave || 0)); }
