@@ -20,8 +20,8 @@ class Effects {
   text(x, y, str, color, big = false) { this.push({ kind: 'text', x: x + (big ? 0 : randInt(-3, 3)), y, str, color, big, t: 0, life: big ? 0.8 : 0.6 }); }
   spark(x, y, color) { this.push({ kind: 'spark', x, y, color, t: 0, life: 0.08 }); }
   ring(x, y, r, color) { this.push({ kind: 'ring', x, y, r, r0: r * 0.4, color, t: 0, life: 0.22 }); }
-  slash(x, y, ang, r, arc, color, hi) {
-    this.push({ kind: 'slash', x, y, ang, r, arc, color, hi, t: 0, life: 0.16 });
+  slash(x, y, ang, r, arc, color, hi, color2) {
+    this.push({ kind: 'slash', x, y, ang, r, arc, color, hi, color2, t: 0, life: 0.16 });
     for (let i = 0; i < 5; i++) { const a = ang + (Math.random() - 0.5) * arc, d = r * (0.7 + Math.random() * 0.3);
       this.part(x + Math.cos(a) * d, y + Math.sin(a) * d, Math.cos(a) * 40, Math.sin(a) * 40, { color: '#ffffff', life: 0.18, size: 2, add: true }); }
   }
@@ -334,7 +334,9 @@ class Effects {
       }
       case 'slash': {
         const a0 = fx.ang - fx.arc / 2, a1 = fx.ang + fx.arc / 2;
-        ctx.strokeStyle = fx.color; ctx.lineWidth = 4 * k + 1;
+        let stroke = fx.color;
+        if (fx.color2) { const g = ctx.createRadialGradient(x, y, fx.r * 0.45, x, y, fx.r * 1.02); g.addColorStop(0, fx.color2); g.addColorStop(1, fx.color); stroke = g; } // 안쪽(형광 연두)→바깥(청록) 민트 그라데이션
+        ctx.strokeStyle = stroke; ctx.lineWidth = 4 * k + 1;
         ctx.beginPath(); ctx.arc(x, y, fx.r * 0.85, a0, a1); ctx.stroke();
         ctx.strokeStyle = fx.hi || '#ffffff'; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(x, y, fx.r * 0.95, a0 + fx.arc * 0.15, a1 - fx.arc * 0.15); ctx.stroke();

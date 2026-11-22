@@ -480,6 +480,15 @@ function druidSprite(key) {
   const [sx, sy, w, h] = DRUID_SKIN[key];
   const make = (flip, white) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.save(); if (flip) { g.translate(w, 0); g.scale(-1, 1); } g.drawImage(_druidSheetImg, sx, sy, w, h, 0, 0, w, h); g.restore(); if (white) { g.globalCompositeOperation = 'source-atop'; g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); } return c; };
   s = { w, h, n: make(false, false), f: make(true, false), wn: make(false, true), wf: make(true, true) };
+  if (key.indexOf('bandi') === 0) { // 반디: 걷기 2프레임 (좌우 다리 ±1px 교차) — 이동 중 다리 움직임
+    const legStep = (src, lift) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+      const legTop = Math.round(h * 0.66), mid = Math.round(w / 2), lh = h - legTop;
+      g.drawImage(src, 0, 0, w, legTop, 0, 0, w, legTop); // 상체 고정
+      g.drawImage(src, 0, legTop, mid, lh, 0, legTop - lift, mid, lh); // 왼다리
+      g.drawImage(src, mid, legTop, w - mid, lh, mid, legTop + lift, w - mid, lh); // 오른다리 (반대로)
+      return c; };
+    s.steps = { n: [legStep(s.n, 1), legStep(s.n, -1)], f: [legStep(s.f, 1), legStep(s.f, -1)] };
+  }
   spriteCache.set(ck, s); return s;
 }
 if (typeof document !== 'undefined') loadDruidSheet();

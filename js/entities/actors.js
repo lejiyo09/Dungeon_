@@ -213,7 +213,11 @@ class Player extends Entity {
       else if (Math.abs(ay) > Math.abs(ax)) key = ay >= 0 ? 'bandi_down' : 'bandi_up'; // 앞/뒤
       else { key = 'bandi_side'; flip = ax > 0; } // 옆: 원본이 왼쪽 → 오른쪽이면 반전
       const spr = druidSprite(key);
-      if (spr) { ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - 5, y + 6, 10, 2); drawSprite(ctx, spr, x, y + 7, { flip }); drew = true; }
+      if (spr) { ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - 5, y + 6, 10, 2);
+        if (spr.steps && this.moving && this.state !== 'DASH') { const ph = Math.floor(this.time * 7) % 2, img = (flip ? spr.steps.f : spr.steps.n)[ph]; // 이동 중: 다리 걷기 2프레임
+          ctx.drawImage(img, Math.round(x - spr.w / 2), Math.round(y + 7 - spr.h), spr.w, spr.h); }
+        else drawSprite(ctx, spr, x, y + 7, { flip });
+        drew = true; }
     }
     if (!drew) drawHero(ctx, (sk && sk !== 'druid_bandi') ? this._skinH.h : this.hero, x, y, drawFace, drawFrame, this.state === 'DASH', legDir);
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
