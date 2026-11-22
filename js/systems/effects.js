@@ -25,7 +25,6 @@ class Effects {
     for (let i = 0; i < 5; i++) { const a = ang + (Math.random() - 0.5) * arc, d = r * (0.7 + Math.random() * 0.3);
       this.part(x + Math.cos(a) * d, y + Math.sin(a) * d, Math.cos(a) * 40, Math.sin(a) * 40, { color: '#ffffff', life: 0.18, size: 2, add: true }); }
   }
-  samWhirl(x, y, ang, r) { this.push({ kind: 'samwhirl', x, y, ang, r: r || 32, t: 0, life: 0.28, add: true }); } // 샘 베기: 캐릭터를 휘감는 청록/흰 깃털 소용돌이 스윕
   lightning(x0, y0, x1, y1) {
     this.push({ kind: 'bolt', x: x0, y: y0, x1, y1, t: 0, life: 0.16 });
     this.part(x1, y1, 0, 0, { color: '#dff4ff', life: 0.12, size: 6, size2: 0, add: true, shape: 'circle' });
@@ -332,27 +331,6 @@ class Effects {
           const px = Math.round(fx.x + nx * s * 2), py = Math.round(fx.y + ny * s * 2), sz = t < 0.55 ? 2 : 1;
           ctx.globalAlpha = (0.95 - t * 0.75) * k; ctx.fillStyle = t < 0.5 ? '#5af2ff' : '#b6ff5a'; ctx.fillRect(px, py, sz, sz); }
         break;
-      }
-      case 'samwhirl': { // 캐릭터를 휘감는 깃털 소용돌이 스윕 (두 겹, 반대로 도는 나선)
-        const prog = fx.t / fx.life, cx = x, cy = y - 6, sq = 0.82;
-        ctx.lineCap = 'round';
-        const sweep = (spin, dir, R0, span, N, thick, bright) => {
-          for (let i = 0; i < N; i++) { const u = i / (N - 1), th = spin + dir * (-span / 2 + span * u + u * 0.5), edge = Math.sin(u * Math.PI);
-            const Rin = R0 + edge * 9, Rout = R0 + 18 * fx.r / 32 + edge * 7, c = Math.cos(th), s = Math.sin(th) * sq;
-            const x1 = cx + c * Rin, y1 = cy + s * Rin, x2 = cx + c * Rout, y2 = cy + s * Rout;
-            const al = (bright * edge + 0.06) * (1 - prog * 0.55), gr = ctx.createLinearGradient(x1, y1, x2, y2);
-            gr.addColorStop(0, 'rgba(80,220,255,0)'); gr.addColorStop(0.5, 'rgba(120,240,255,' + al + ')'); gr.addColorStop(1, 'rgba(236,255,255,' + (al * 0.9) + ')');
-            ctx.strokeStyle = gr; ctx.lineWidth = thick * (0.5 + edge); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-          }
-          // 바깥 흰 날 가장자리 (가운데만 밝게)
-          ctx.globalAlpha = (1 - prog) * 0.75 * bright; ctx.strokeStyle = '#eaffff'; ctx.lineWidth = 1.3; ctx.beginPath();
-          for (let i = 0; i <= N; i++) { const u = i / N, th = spin + dir * (-span / 2 + span * u + u * 0.5), edge = Math.sin(u * Math.PI), R = R0 + 18 * fx.r / 32 + edge * 7, px = cx + Math.cos(th) * R, py = cy + Math.sin(th) * R * sq; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
-          ctx.stroke(); ctx.globalAlpha = 1;
-        };
-        const R = (fx.r) * (0.9 + prog * 0.35); // 살짝 퍼짐
-        sweep(fx.ang + prog * 1.1, 1, R, Math.PI * 1.55, 30, 1.7, 0.6);        // 큰 스윕(시계)
-        sweep(fx.ang + Math.PI + prog * 1.1, 1, R * 0.62, Math.PI * 1.2, 20, 1.3, 0.42); // 안쪽 반대편 스윕
-        ctx.lineWidth = 1; ctx.lineCap = 'butt'; break;
       }
       case 'slash': {
         const a0 = fx.ang - fx.arc / 2, a1 = fx.ang + fx.arc / 2;

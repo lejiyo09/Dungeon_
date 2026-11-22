@@ -82,14 +82,10 @@ class WeaponSystem {
     player.swing = { t: 0, dur: 0.16, ang: a, arc, thrust: false };
     // [변신 스킨] 반디/샘 스킨을 끼면 베기 이펙트를 샘 날개색(시안/아쿠아)으로
     const samSkin = world.skinSprite && world.skinSprite(player.hero.id) === 'druid_bandi';
-    if (samSkin) { // 샘 베기: 캐릭터를 휘감는 청록/흰 깃털 소용돌이 스윕
-      world.effects.samWhirl(player.x, player.y - 1, a, range * 0.95);
-      world.addShake(0.07, 2.4); SFX.play('melee', 0.13);
-    } else {
-      world.effects.slash(player.x, player.y - 1, a, range, arc, '#9af0ff');
-      world.effects.slash(player.x, player.y - 1, a, range * 0.68, arc * 0.7, 'rgba(200,180,255,0.75)');
-      world.addShake(0.06, 2); SFX.play('melee', 0.12);
-    }
+    const c1 = samSkin ? '#5ef4ff' : '#9af0ff', c2 = samSkin ? 'rgba(170,240,255,0.85)' : 'rgba(200,180,255,0.75)'; // 샘: 일반 변신 베기와 동일하게, 색만 날개색(시안)으로
+    world.effects.slash(player.x, player.y - 1, a, range, arc, c1);
+    world.effects.slash(player.x, player.y - 1, a, range * 0.68, arc * 0.7, c2);
+    world.addShake(0.06, 2); SFX.play('melee', 0.12);
   }
   canPay(player, cost) { return player.overdrive > 0 || !cost || player.energy >= cost * (1 - (player.hero.energySave || 0)); }
   // 에너지가 모자랄 때: 아주 약한 공격 (총·지팡이·활·광선은 작은 탄, 근접은 짧은 베기)
