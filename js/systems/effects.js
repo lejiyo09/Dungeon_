@@ -114,12 +114,12 @@ class Effects {
     this.part(x, y, Math.cos(a) * s, Math.sin(a) * s - 20, { color: '#ffd84a', color2: '#c8a050', life: 0.5 + Math.random() * 0.3, size: 2, size2: 0, drag: 3, grav: 60, add: true }); } }
   beamline(x, y, x1, y1, w, color, hi) { this.push({ kind: 'beamline', x, y, x1, y1, w, color, hi, t: 0, life: 0.3, add: true }); }
   afterimage(img, x, y, w, h) { this.push({ kind: 'ghost', img, x, y, w, h, t: 0, life: 0.22 }); } // 대시 잔상
-  samWing(x, y, dx, dy, flip) { // 샘 변신 이동: 좌·우 날개에서 민트 그린(청록↔형광 연두) 그라데이션 가산 글로우 입자
+  samStreak(x, y, dx, dy) { // 샘 변신 이동: 좌·우 날개에서 이동 방향으로 뻗는 민트 그라데이션 속도선(비행감)
+    const ang = Math.atan2(dy, dx); // 이동 방향
     for (const sx of [-1, 1]) {
       const wx = x + sx * 9, wy = y - 12; // 날개 위치: 발밑 중앙 기준 위쪽 좌·우
-      for (let i = 0; i < 2; i++) { const sp = 16 + Math.random() * 18;
-        this.part(wx + randInt(-2, 2), wy + randInt(-3, 3), -dx * sp + sx * 9 + randInt(-6, 6), -dy * sp - 8 - Math.random() * 12,
-          { color: '#5af2ff', color2: '#b6ff5a', life: 0.34 + Math.random() * 0.22, size: 2, size2: 0, drag: 3.2, grav: -22, add: true, shape: 'circle' }); }
+      for (let i = 0; i < 2; i++) { const sp = 80 + Math.random() * 60, a = ang + (Math.random() - 0.5) * 0.45 + sx * 0.1; // 뒤로 흐르는 속도·깃털 부채꼴
+        this.push({ kind: 'streak', x: wx + randInt(-2, 2), y: wy + randInt(-3, 3), vx: -Math.cos(a) * sp, vy: -Math.sin(a) * sp - 10, len: 13 + Math.random() * 9, t: 0, life: 0.26 + Math.random() * 0.16, add: true }); }
     }
   }
   dust(x, y) { for (let i = 0; i < 2; i++) this.part(x + randInt(-3, 3), y, randInt(-12, 12), -randInt(4, 14), { color: 'rgba(200,190,170,0.5)', life: 0.35, size: 1.5, size2: 3, drag: 4, shape: 'circle' }); }
@@ -152,6 +152,7 @@ class Effects {
         const d = Math.exp(-fx.drag * dt); fx.vx *= d; fx.vy = fx.vy * d + fx.grav * dt;
         fx.x += fx.vx * dt; fx.y += fx.vy * dt;
       }
+      else if (fx.kind === 'streak') { const d = Math.exp(-2.4 * dt); fx.vx *= d; fx.vy *= d; fx.x += fx.vx * dt; fx.y += fx.vy * dt; }
     }
     let n = 0; const L = this.list; for (let i = 0; i < L.length; i++) if (L[i].t < L[i].life) L[n++] = L[i]; L.length = n; // 새 배열을 만들지 않고 정리
   }
@@ -323,6 +324,13 @@ class Effects {
         ctx.strokeStyle = fx.hi || '#ffffff'; ctx.lineWidth = Math.max(1, fx.w * 0.7 * k); ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x1, fx.y1); ctx.stroke();
         ctx.lineWidth = 1; break;
       case 'ghost': ctx.globalAlpha = 0.45 * k; ctx.drawImage(fx.img, Math.round(fx.x), Math.round(fx.y), fx.w, fx.h); break;
+      case 'streak': { // 민트 속도선: 머리(청록)→꼬리(형광 연두, 투명)로 길게 뻗음
+        const vl = Math.hypot(fx.vx, fx.vy) || 1, nx = fx.vx / vl, ny = fx.vy / vl, L = fx.len * (0.55 + 0.45 * k);
+        const x2 = fx.x + nx * L, y2 = fx.y + ny * L, g = ctx.createLinearGradient(fx.x, fx.y, x2, y2);
+        g.addColorStop(0, '#5af2ff'); g.addColorStop(0.5, '#8fffac'); g.addColorStop(1, 'rgba(182,255,90,0)');
+        ctx.globalAlpha = 0.72 * k; ctx.strokeStyle = g; ctx.lineWidth = 1.8 * k + 0.3; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(x2, y2); ctx.stroke(); ctx.lineCap = 'butt'; ctx.lineWidth = 1; break;
+      }
       case 'slash': {
         const a0 = fx.ang - fx.arc / 2, a1 = fx.ang + fx.arc / 2;
         ctx.strokeStyle = fx.color; ctx.lineWidth = 4 * k + 1;

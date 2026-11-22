@@ -1063,8 +1063,8 @@ class Game {
         const spr = heroSprite(p.hero, 0), img = p.faceVis < 0 ? spr.f : spr.n;
         this.effects.afterimage(img, p.x - spr.w / 2, p.y + 7 - spr.h, spr.w, spr.h); this.fxT = 0.025;
       } else if (p.transformT > 0 && p.moving && this.skinSprite && this.skinSprite(p.hero.id, this.playerLineId(p)) === 'druid_bandi') {
-        this.effects.samWing(p.x, p.y, p.lastMoveDir.x, p.lastMoveDir.y, p.lastMoveDir.x < 0); // [샘 변신 이동] 날개에서만 민트 그라데이션 글로우
-        this.fxT = 0.05;
+        this.effects.samStreak(p.x, p.y, p.lastMoveDir.x, p.lastMoveDir.y); // [샘 변신 이동] 날개에서 뻗는 민트 속도선 (비행감)
+        this.fxT = 0.045;
       } else if (p.moving) { this.effects.dust(p.x, p.y + 6); this.fxT = 0.22; }
     }
     if (p.state !== 'DEAD' && p.hp < p.maxHp * 0.3) { this.heartT -= dt; if (this.heartT <= 0) { SFX.play('heart'); this.heartT = 0.9; } }
