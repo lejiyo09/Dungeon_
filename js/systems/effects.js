@@ -114,7 +114,14 @@ class Effects {
     this.part(x, y, Math.cos(a) * s, Math.sin(a) * s - 20, { color: '#ffd84a', color2: '#c8a050', life: 0.5 + Math.random() * 0.3, size: 2, size2: 0, drag: 3, grav: 60, add: true }); } }
   beamline(x, y, x1, y1, w, color, hi) { this.push({ kind: 'beamline', x, y, x1, y1, w, color, hi, t: 0, life: 0.3, add: true }); }
   afterimage(img, x, y, w, h) { this.push({ kind: 'ghost', img, x, y, w, h, t: 0, life: 0.22 }); } // 대시 잔상
-  minttrail(img, x, y, w, h) { this.push({ kind: 'mtrail', img, x, y, w, h, t: 0, life: 0.38, add: true }); } // 샘 변신 이동: 민트 그린 잔상(가산 글로우)
+  samWing(x, y, dx, dy, flip) { // 샘 변신 이동: 좌·우 날개에서 민트 그린(청록↔형광 연두) 그라데이션 가산 글로우 입자
+    for (const sx of [-1, 1]) {
+      const wx = x + sx * 9, wy = y - 12; // 날개 위치: 발밑 중앙 기준 위쪽 좌·우
+      for (let i = 0; i < 2; i++) { const sp = 16 + Math.random() * 18;
+        this.part(wx + randInt(-2, 2), wy + randInt(-3, 3), -dx * sp + sx * 9 + randInt(-6, 6), -dy * sp - 8 - Math.random() * 12,
+          { color: '#5af2ff', color2: '#b6ff5a', life: 0.34 + Math.random() * 0.22, size: 2, size2: 0, drag: 3.2, grav: -22, add: true, shape: 'circle' }); }
+    }
+  }
   dust(x, y) { for (let i = 0; i < 2; i++) this.part(x + randInt(-3, 3), y, randInt(-12, 12), -randInt(4, 14), { color: 'rgba(200,190,170,0.5)', life: 0.35, size: 1.5, size2: 3, drag: 4, shape: 'circle' }); }
   sparkle(x, y, color) { // 획득 반짝임
     this.ring(x, y, 8, color);
@@ -316,7 +323,6 @@ class Effects {
         ctx.strokeStyle = fx.hi || '#ffffff'; ctx.lineWidth = Math.max(1, fx.w * 0.7 * k); ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x1, fx.y1); ctx.stroke();
         ctx.lineWidth = 1; break;
       case 'ghost': ctx.globalAlpha = 0.45 * k; ctx.drawImage(fx.img, Math.round(fx.x), Math.round(fx.y), fx.w, fx.h); break;
-      case 'mtrail': ctx.globalAlpha = 0.4 * k * k; ctx.drawImage(fx.img, Math.round(fx.x), Math.round(fx.y), fx.w, fx.h); break; // 민트 실루엣 잔상, 꼬리로 갈수록 은은하게 사라짐
       case 'slash': {
         const a0 = fx.ang - fx.arc / 2, a1 = fx.ang + fx.arc / 2;
         ctx.strokeStyle = fx.color; ctx.lineWidth = 4 * k + 1;
