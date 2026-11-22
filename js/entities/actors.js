@@ -208,7 +208,7 @@ class Player extends Entity {
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
     let drew = false;
     if (sk === 'druid_bandi' && typeof druidSprite === 'function') { // [변신 드루이드 스킨] 평소 반디(방향별) ↔ 변신 샘(대기/공격, 좌우 반전)
-      const ax = Math.cos(this.aimVis), ay = Math.sin(this.aimVis); let key, flip = false;
+      const md = this.lastMoveDir || { x: 1, y: 0 }, ax = md.x, ay = md.y; let key, flip = false; // [변신 스킨] 바라보는 방향 = 키보드 이동 방향(정지 시 마지막 방향)
       if (this.transformT > 0) { const atk = this.swing && this.swing.t < this.swing.dur; key = atk ? 'sam_atk' : 'sam_idle'; flip = ax < 0; } // 샘: 기본 오른쪽, 왼쪽 이동이면 반전
       else if (Math.abs(ay) > Math.abs(ax)) key = ay >= 0 ? 'bandi_down' : 'bandi_up'; // 앞/뒤
       else { key = 'bandi_side'; flip = ax > 0; } // 옆: 원본이 왼쪽 → 오른쪽이면 반전

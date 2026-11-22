@@ -52,9 +52,9 @@ const DATA_HEROES = [
 ];
 // ── 스킨 (외형만 바뀜, 능력은 그대로) [사용자 결정] 선물 코드로 얻음 — 일시정지(Esc) → G 선물 코드
 const SKINS = [
-  { id: 'skin_flamewitch', name: '불꽃 마녀', hero: 'hero_mage', line: 'fire', sprite: 'flamewitch', desc: '불 마도사 외형: 끝이 꺾인 마녀 모자와 붉은 원피스' },
-  { id: 'skin_redgunner', name: '붉은 머리 총잡이', hero: 'hero_gunner', line: 'base', sprite: 'redgunner', desc: '속사 사수 외형: 붉은 머리와 보안관 별을 단 남색 조끼' },
-  { id: 'skin_silverelf', name: '은발 엘프 마도사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', desc: '빛 마도사 외형: 은발 트윈테일과 뾰족한 귀, 금테 흰 망토' },
+  { id: 'skin_flamewitch', name: '불꽃 마녀', hero: 'hero_mage', line: 'fire', sprite: 'flamewitch', source: 'code', desc: '불 마도사 외형: 끝이 꺾인 마녀 모자와 붉은 원피스' },
+  { id: 'skin_redgunner', name: '붉은 머리 총잡이', hero: 'hero_gunner', line: 'base', sprite: 'redgunner', source: 'code', desc: '속사 사수 외형: 붉은 머리와 보안관 별을 단 남색 조끼' },
+  { id: 'skin_silverelf', name: '은발 엘프 마도사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', source: 'code', desc: '빛 마도사 외형: 은발 트윈테일과 뾰족한 귀, 금테 흰 망토' },
   // ── 전설 등급 스킨 (애니메이션, 고퀄) — assets/legskins.png (4행 × 3프레임, 셀 106×108)
   { id: 'skin_leg_abyss', name: '심연의 기사', hero: 'hero_swordsman', sprite: 'leg_abyss', rarity: 'legendary', source: 'gacha', desc: '검사 전설 외형 — 심연에서 돌아온 뿔투구 기사 (전직: 심연)' },
   { id: 'skin_leg_crimson', name: '진홍의 그림자', hero: 'hero_assassin', sprite: 'leg_crimson', rarity: 'legendary', source: 'gacha', desc: '암살자 전설 외형 — 핏빛 장막을 두른 그림자 (전직: 그림자)' },
