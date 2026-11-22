@@ -324,12 +324,13 @@ class Effects {
         ctx.strokeStyle = fx.hi || '#ffffff'; ctx.lineWidth = Math.max(1, fx.w * 0.7 * k); ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(fx.x1, fx.y1); ctx.stroke();
         ctx.lineWidth = 1; break;
       case 'ghost': ctx.globalAlpha = 0.45 * k; ctx.drawImage(fx.img, Math.round(fx.x), Math.round(fx.y), fx.w, fx.h); break;
-      case 'streak': { // 민트 속도선: 머리(청록)→꼬리(형광 연두, 투명)로 길게 뻗음
-        const vl = Math.hypot(fx.vx, fx.vy) || 1, nx = fx.vx / vl, ny = fx.vy / vl, L = fx.len * (0.55 + 0.45 * k);
-        const x2 = fx.x + nx * L, y2 = fx.y + ny * L, g = ctx.createLinearGradient(fx.x, fx.y, x2, y2);
-        g.addColorStop(0, '#5af2ff'); g.addColorStop(0.5, '#8fffac'); g.addColorStop(1, 'rgba(182,255,90,0)');
-        ctx.globalAlpha = 0.72 * k; ctx.strokeStyle = g; ctx.lineWidth = 1.8 * k + 0.3; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(fx.x, fx.y); ctx.lineTo(x2, y2); ctx.stroke(); ctx.lineCap = 'butt'; ctx.lineWidth = 1; break;
+      case 'streak': { // 민트 속도선(도트): 2px 네모 픽셀이 줄지어 머리(청록)→꼬리(형광 연두)로, 끝으로 갈수록 작고 투명
+        const vl = Math.hypot(fx.vx, fx.vy) || 1, nx = fx.vx / vl, ny = fx.vy / vl;
+        const seg = Math.max(2, Math.round(fx.len * (0.55 + 0.45 * k) / 2)); // 픽셀 조각 수
+        for (let s = 0; s < seg; s++) { const t = s / seg;
+          const px = Math.round(fx.x + nx * s * 2), py = Math.round(fx.y + ny * s * 2), sz = t < 0.55 ? 2 : 1;
+          ctx.globalAlpha = (0.95 - t * 0.75) * k; ctx.fillStyle = t < 0.5 ? '#5af2ff' : '#b6ff5a'; ctx.fillRect(px, py, sz, sz); }
+        break;
       }
       case 'slash': {
         const a0 = fx.ang - fx.arc / 2, a1 = fx.ang + fx.arc / 2;
