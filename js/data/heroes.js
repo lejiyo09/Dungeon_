@@ -64,7 +64,7 @@ const SKINS = [
   { id: 'skin_bandi', name: '반디', hero: 'hero_druid', sprite: 'druid_bandi', rarity: 'legendary', source: 'code', druid: true, desc: '드루이드 변신 스킨 — 평소엔 반디, 변신하면 날개 돋친 샘으로 (선물 코드)' }
 ];
 // 드루이드 스킨 시트(assets/druidskin.png) 스프라이트 좌표 [x,y,w,h] — 이미 인게임 크기로 구움
-const DRUID_SKIN = { bandi_down: [0, 13, 18, 21], bandi_up: [19, 13, 21, 21], bandi_side: [41, 13, 20, 21], sam_idle: [62, 0, 53, 34], sam_atk: [116, 12, 41, 22] };
+const DRUID_SKIN = { bandi_down: [41, 13, 20, 21], bandi_up: [19, 13, 21, 21], bandi_side: [0, 13, 18, 21], sam_idle: [62, 0, 53, 34], sam_atk: [116, 12, 41, 22] };
 // 전설 스킨 시트 매핑: sprite 이름 → 스킨 번호. assets/legskins.png = 3열(걷기 프레임) × (스킨×3방향)행
 //  행 = 스킨*3 + 방향(0=앞/아래, 1=뒤/위, 2=옆) · 셀은 이미 인게임 크기로 구워둠(저해상도 청키) → 런타임은 1:1 drawImage
 const LEG_SKINS = { leg_abyss: 0, leg_crimson: 1, leg_void: 2, leg_star: 3 };
