@@ -476,17 +476,17 @@ const DATA_WEAPONS = [
   //  공격 형태는 디아블로 2 어쌔신 덫과 같게: 산탄=차지드 볼트 센트리(지그재그로 흩어지는 전하 볼트) · 화염 파도=웨이크 오브 파이어 · 뇌격=라이트닝 센트리(일직선 관통 번개) · 업화=웨이크 오브 인페르노(천천히 돌며 뿜는 화염 줄기)
   //  sentry: kind(공격 방식) · max(개별 제한) · life(지속) · every(공격 간격) · range(사거리) · 그 밖에 종류별 값. 피해는 damage (강화 적용)
   { id: 'weapon_boltsentry_001', name: '산탄 전류탑', rarity: 'uncommon', type: 'gun', shape: 'gun',
-    damage: 30, fireRate: 10, energyCost: 5, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0,
-    sentry: { kind: 'bolt', max: 5, life: 18, every: 1.3, charge: 0.35, range: 150, count: 5, spread: 0.7, speed: 230, erratic: 1.3 }, color: '#4a6a9a', len: 9, bulletColor: '#9ad8ff' },
+    damage: 25, fireRate: 10, energyCost: 5, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0, /* [밸런스] 파수기 시리즈 너프: 피해 30→25 */
+    sentry: { kind: 'bolt', max: 4, life: 18, every: 1.3, charge: 0.35, range: 150, count: 5, spread: 0.7, speed: 230, erratic: 1.3 }, color: '#4a6a9a', len: 9, bulletColor: '#9ad8ff' },
   { id: 'weapon_infernosentry_001', name: '업화 분사기', rarity: 'epic', type: 'gun', shape: 'gun',
     damage: 48, fireRate: 10, energyCost: 6.5, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0,
-    sentry: { kind: 'inferno', max: 5, life: 18, every: 3, charge: 0.5, range: 130, beamTime: 1, tick: 0.15, width: 10, turn: 1.6, flow: 300 }, color: '#8a3a2a', len: 9, bulletColor: '#ffb04a' },
+    sentry: { kind: 'inferno', max: 4, life: 18, every: 3, charge: 0.5, range: 130, beamTime: 1, tick: 0.15, width: 10, turn: 1.6, flow: 300 }, color: '#8a3a2a', len: 9, bulletColor: '#ffb04a' },
   { id: 'weapon_wavesentry_001', name: '화염 파도탑', rarity: 'legendary', type: 'gun', shape: 'gun',
-    damage: 150, fireRate: 10, energyCost: 8, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0,
-    sentry: { kind: 'wave', max: 5, life: 20, every: 2.4, charge: 0.45, range: 150, shots: 5, waveSpeed: 160, emitEvery: 24, sideSpeed: 105, sideLife: 0.55 }, color: '#c86a2a', len: 9, bulletColor: '#ffd04a' },
+    damage: 130, fireRate: 10, energyCost: 8, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0, /* [밸런스] 파수기 시리즈 너프: 피해 150→130 */
+    sentry: { kind: 'wave', max: 4, life: 20, every: 2.4, charge: 0.45, range: 150, shots: 5, waveSpeed: 160, emitEvery: 24, sideSpeed: 105, sideLife: 0.55 }, color: '#c86a2a', len: 9, bulletColor: '#ffd04a' },
   { id: 'weapon_thundersentry_001', name: '뇌격탑', rarity: 'legendary', type: 'gun', shape: 'gun',
-    damage: 200, fireRate: 10, energyCost: 8, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0,
-    sentry: { kind: 'thunder', max: 5, life: 20, every: 1.6, charge: 0.4, range: 170, width: 6 }, color: '#3a4a8a', len: 9, bulletColor: '#e0f4ff' },
+    damage: 170, fireRate: 10, energyCost: 8, range: 170, projectileSpeed: 0, projectileCount: 1, knockback: 0, /* [밸런스] 파수기 시리즈 너프: 피해 200→170 */
+    sentry: { kind: 'thunder', max: 4, life: 20, every: 1.6, charge: 0.4, range: 170, width: 6 }, color: '#3a4a8a', len: 9, bulletColor: '#e0f4ff' },
   // ── 덫·속성 무기 (추가)
   { id: 'weapon_beartrap_001', name: '사냥꾼의 덫', rarity: 'uncommon', type: 'gun', shape: 'gun',
     damage: 42, fireRate: 1.2, energyCost: 1.5, range: 150, projectileSpeed: 0, projectileCount: 1, knockback: 0,
@@ -496,9 +496,9 @@ const DATA_WEAPONS = [
     trap: { max: 5, life: 25, radius: 18, root: 1.2, chain: { count: 3, range: 80, falloff: 0.7 } },
     status: { type: 'shock', chance: 1, duration: 3 }, color: '#4a5a8a', len: 9, bulletColor: '#fff27a' },
   { id: 'weapon_inferno_001', name: '겁화의 홀', rarity: 'legendary', type: 'gun', shape: 'staff',
-    damage: 40, fireRate: 2.3, energyCost: 1.8, range: 420, projectileSpeed: 480, projectileCount: 1, spreadDeg: 1,
-    explodeRadius: 34, status: { type: 'burn', chance: 1, duration: 3, dps: 10 },
-    puddle: { r: 22, life: 2, tick: 0.35, dmg: 5, status: { type: 'burn', chance: 0.6, duration: 2, dps: 10 }, color: '#ff6a2a' },
+    damage: 47, fireRate: 2.4, energyCost: 1.8, range: 420, projectileSpeed: 480, projectileCount: 1, spreadDeg: 1, /* [밸런스] 버프: 피해 40→47·연사 2.3→2.4·폭발 34→37·장판 강화 */
+    explodeRadius: 37, status: { type: 'burn', chance: 1, duration: 3, dps: 11 },
+    puddle: { r: 24, life: 2.2, tick: 0.32, dmg: 6, status: { type: 'burn', chance: 0.65, duration: 2, dps: 11 }, color: '#ff6a2a' },
     pierce: 0, knockback: 4, color: '#c04a1a', len: 14, bulletColor: '#ffb040', bulletSize: 3 },
   { id: 'weapon_holystaff_001', name: '성광의 지팡이', rarity: 'rare', type: 'gun', shape: 'staff',
     damage: 34, fireRate: 2.4, energyCost: 1.5, range: 380, projectileSpeed: 300, projectileCount: 1, spreadDeg: 1, homing: 2,
