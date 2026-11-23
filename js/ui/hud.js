@@ -378,30 +378,35 @@ class HUD {
       }
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 24, '#ffd84a', 'center', 8);
       hudText(ctx, `숫자 키 / 클릭: ${lines.length > 1 ? '진화 루트 고르기' : '계열 보기'}   ·   S: 스킨   ·   J: 직업 레벨   ·   E / Esc: 닫기`, VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
-    } else if (o.type === 'joblevel') { // 직업 레벨 창
+    } else if (o.type === 'joblevel') { // 직업 계열별 독립 레벨 창
       const sv = game.save, J = BALANCE.jobLevel, m = game.input.mouse;
-      hudText(ctx, `직업 레벨  ·  보유 ${CUR.name} ${sv.bank}`, VIEW_W / 2, 7, '#7ad0ff', 'center', 11);
-      hudText(ctx, `레벨마다 영구 강화: 최대 체력 +${J.hp} · 공격력 +${J.atk * 100}% · 최대 에너지 +${J.energy}  (최대 Lv.${J.max}, 직업마다 따로)`, VIEW_W / 2, 20, '#aaa', 'center', 8);
-      hudText(ctx, `★ Lv.${J.max} 루트 숙련: 스킬 데미지 +${Math.round(J.maxDmg * 100)}% (공통) + 루트별 고유 효과   ·   진화 루트는 캐릭터 정보(I)에서 변경`, VIEW_W / 2, 31, '#ffd84a', 'center', 7);
-      DATA_HEROES.forEach((h, i) => {
-        const r = HUD.jobRowRect(i), unlocked = sv.unlocked.includes(h.id), line = game.chosenLine(h.id), lv = game.jobLevel(h.id), cost = game.jobLevelCost(h.id);
-        const on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h, sel = sv.selected === h.id;
-        ctx.fillStyle = sel ? 'rgba(122,208,255,0.16)' : on && unlocked ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
-        ctx.globalAlpha = unlocked ? 1 : 0.35;
-        drawHero(ctx, h, r.x + 24, r.y + 12, 1, 0, false);
-        hudText(ctx, `${i + 1}`, r.x + 4, r.y + 3, '#777', 'left', 7);
-        hudText(ctx, `${h.name}${jobLines(h.id).length > 1 ? ' · ' + line.name : ''}${sel ? '  (선택)' : ''}`, r.x + 40, r.y + 3, sel ? '#7ad0ff' : '#fff', 'left', 9);
-        for (let k = 0; k < J.max; k++) { ctx.fillStyle = k < lv ? '#7ad0ff' : '#2e2a3e'; ctx.fillRect(r.x + 40 + k * 9, r.y + 16, 7, 5); } // 레벨 칸
-        hudText(ctx, `Lv.${lv}`, r.x + 40 + J.max * 9 + 4, r.y + 14, '#7ad0ff', 'left', 8);
-        { const pk = game.linePerk(h.id), atMax = lv >= J.max, off = pk && pk.toggle && game.save.jobPerkOff && game.save.jobPerkOff[game.jobLvKey(h.id)];
-          hudText(ctx, lv ? `체력 +${J.hp * lv} · 공격력 +${Math.round(J.atk * lv * 1000) / 10}% · 에너지 +${J.energy * lv}` : '강화 없음', r.x + 200, r.y + 3, atMax ? '#ffe0a0' : '#c8c0d8', 'left', 7);
-          hudText(ctx, pk ? `${atMax ? '★ ' : 'Lv.10 '}${pk.name}: ${pk.desc}${pk.toggle && atMax ? (off ? '  [꺼짐·클릭 ON]' : '  [켜짐·클릭 OFF]') : ''}` : (atMax ? '★ 숙련: 스킬 데미지 +10%' : 'Lv.10: 스킬 데미지 +10%'), r.x + 200, r.y + 15, off ? '#8a8498' : atMax ? '#ffd84a' : '#8a8498', 'left', 7); }
-        const st = !unlocked ? ['미해금', '#888'] : cost === null ? ['최고 레벨', '#ffd84a'] : [`레벨업 ${cost} ${CUR.name}`, sv.bank >= cost ? '#fff' : '#886'];
-        hudText(ctx, st[0], r.x + r.w - 6, r.y + 9, st[1], 'right', 8);
+      const entries = game.jobLevelEntries(), pageSize = 16, pageCount = Math.ceil(entries.length / pageSize), page = clamp(o.page || 0, 0, pageCount - 1);
+      hudText(ctx, `직업 계열 레벨  ·  보유 ${CUR.name} ${sv.bank}`, VIEW_W / 2, 7, '#7ad0ff', 'center', 11);
+      hudText(ctx, `계열마다 독립 성장 · Lv.당 체력 +${J.hp} / 공격력 +${J.atk * 100}% / 에너지 +${J.energy} · 최대 Lv.${J.max}`, VIEW_W / 2, 20, '#aaa', 'center', 7);
+      hudText(ctx, `Lv.${J.max} 숙련: 스킬 피해 +${Math.round(J.maxDmg * 100)}% + 계열별 고유 효과 · 현재 선택 계열은 ★ 표시`, VIEW_W / 2, 31, '#ffd84a', 'center', 7);
+      entries.slice(page * pageSize, (page + 1) * pageSize).forEach(({ hero, line }, i) => {
+        const r = HUD.jobLineRowRect(i), unlocked = sv.unlocked.includes(hero.id), lv = game.jobLevel(hero.id, line.id), cost = game.jobLevelCost(hero.id, line.id), pk = game.linePerk(hero.id, line.id);
+        const selected = sv.selected === hero.id && game.chosenLine(hero.id).id === line.id;
+        const on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        ctx.fillStyle = selected ? 'rgba(122,208,255,0.16)' : on && unlocked ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
+        ctx.strokeStyle = selected ? '#7ad0ff' : on && unlocked ? '#aaa' : '#40394c'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        ctx.globalAlpha = unlocked ? 1 : 0.45;
+        const shortHero = hero.name.split(' ')[0];
+        hudText(ctx, `${i + 1}. ${shortHero} · ${line.name}${selected ? ' ★' : ''}`, r.x + 5, r.y + 2, selected ? '#7ad0ff' : unlocked ? (line.color || '#eee') : '#888', 'left', 7);
+        hudText(ctx, `Lv.${lv}/${J.max}`, r.x + r.w - 5, r.y + 2, lv >= J.max ? '#ffd84a' : '#c8c0d8', 'right', 7);
+        const bonus = `HP +${J.hp * lv}  ATK +${Math.round(J.atk * lv * 1000) / 10}%  EN +${J.energy * lv}`;
+        const tail = !unlocked ? '직업 해금 필요' : cost !== null ? `다음 ${cost} ${CUR.name}` : `★ ${pk ? pk.name : '루트 숙련 완료'}`;
+        hudText(ctx, bonus, r.x + 5, r.y + 12, unlocked ? '#c8c0d8' : '#777', 'left', 6);
+        hudText(ctx, tail, r.x + r.w - 5, r.y + 12, unlocked ? (cost === null ? '#ffd84a' : '#8ab8ff') : '#777', 'right', 6);
         ctx.globalAlpha = 1;
       });
-      if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 26, o.msg.color, 'center', 9);
-      hudText(ctx, o.returnToHeroInfo ? '숫자 키 / 클릭: 레벨업   ·   E / Esc: 상세 정보로' : '숫자 키 / 클릭: 레벨업   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
+      for (let i = 0; i < pageCount; i++) { const r = HUD.jobLinePageRect(i, pageCount), active = page === i, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+        ctx.fillStyle = active ? 'rgba(122,208,255,0.24)' : on ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
+        ctx.strokeStyle = active ? '#7ad0ff' : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        hudText(ctx, `${i + 1} 페이지`, r.x + r.w / 2, r.y + 2, active ? '#7ad0ff' : '#aaa', 'center', 7);
+      }
+      if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, 267, o.msg.color, 'center', 8);
+      hudText(ctx, `클릭: 계열 레벨업 · 1~8: 빠른 선택 · ← / → 또는 PageUp / PageDown: 페이지 이동 · E / Esc: ${o.returnToHeroInfo ? '상세 정보로' : '닫기'}`, VIEW_W / 2, VIEW_H - 5, '#888', 'center', 6.5);
     } else if (o.type === 'buff') {
       hudText(ctx, o.title || '보스 처치! 축복을 하나 고르세요', VIEW_W / 2, 50, '#ffd84a', 'center', 14);
       o.options.forEach((b, i) => {
@@ -649,6 +654,8 @@ class HUD {
   static gemRect(i) { return { x: VIEW_W / 2 + (i - 1) * 64 - 16, y: 70, w: 32, h: 44 }; }
   static reviveRect(i) { return { x: VIEW_W / 2 - 154 + i * 160, y: 151, w: 148, h: 30 }; }
   static jobRowRect(i) { return { x: 36, y: 36 + i * 27, w: VIEW_W - 72, h: 24 }; }
+  static jobLineRowRect(i) { return { x: 12 + (i % 2) * 246, y: 47 + Math.floor(i / 2) * 25, w: 240, h: 23 }; }
+  static jobLinePageRect(i, n) { const w = 58, gap = 8, total = n * w + (n - 1) * gap; return { x: (VIEW_W - total) / 2 + i * (w + gap), y: 250, w, h: 13 }; }
   static travelRect(i, n) { const w = 300, h = 30, x = (VIEW_W - w) / 2, y0 = 70; return { x, y: y0 + i * (h + 6), w, h }; }
   static skinRect(i) { const cols = 4, w = 112, h = 92, gap = 8, x0 = (VIEW_W - (cols * w + (cols - 1) * gap)) / 2; return { x: x0 + (i % cols) * (w + gap), y: 40 + Math.floor(i / cols) * (h + gap), w, h }; }
   static heroBranchRect(i, n) { return { x: 18 + (i % 2) * 240, y: 85 + Math.floor(i / 2) * 29, w: 236, h: 26 }; }

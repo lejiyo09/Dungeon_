@@ -15,6 +15,7 @@ class Game {
     this.cam = { x: 0, y: 0 }; this.transition = null; this.banner = null; this.overlay = null;
     this.flow = null; this.flowTile = -1; this.flowTimer = 0;
     this.save = loadSave();
+    this.migrateLegacyJobLevels(); // 예전 직업 공통 레벨은 현재 선택 계열에 한 번만 이전
     this.hitStopT = 0; this.hurtFlash = 0; this.heartT = 0; this.noEnergyFlash = 0;
     this.cinematic = null; this.slowMo = null; this.screenFlash = 0;
     SFX.setMuted(!!this.save.muted);
@@ -51,17 +52,28 @@ class Game {
   makePlayer(x, y) {
     const hero = this.heroDef(this.save.selected);
     const p = new Player(x, y, hero, this.data.base);
-    const J = BALANCE.jobLevel, lv = this.jobLevel(hero.id); // 직업 레벨 보너스
+    const J = BALANCE.jobLevel, activeLine = this.chosenLine(hero.id), lineId = activeLine && activeLine.id;
+    const lv = this.jobLevel(hero.id, lineId); // 현재 선택한 계열의 영구 강화만 적용
     if (lv) { p.maxHp += J.hp * lv; p.hp = p.maxHp; p.maxEnergy += J.energy * lv; p.energy = p.maxEnergy; p.stats.attackBonus += J.atk * lv; }
-    p.jobMaster = lv >= J.max; this.applyJobMaster(p, hero.id); // 직업 숙련(만렙): 스킬 데미지 +10% + 직업별 고유 효과
+    p.jobMaster = lv >= J.max; this.applyJobMaster(p, hero.id, lineId); // 현재 계열의 루트 숙련 효과
     p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
     const lo = this.save.loadout; // 무기고에서 장착한 시작 보조 무기
     if (lo && lo !== hero.startWeapon && this.data.weapons.get(lo) && this.save.armory.includes(lo)) p.weapons.push(new WeaponInstance(this.weaponDef(lo)));
     return p;
   }
-  jobLvKey(id, line) { return id + '|' + (line || this.chosenLine(id).id); } // 루트별 레벨 키
-  jobLevel(id, line) { const jl = this.save.jobLv || {}, k = this.jobLvKey(id, line); return jl[k] != null ? jl[k] : (jl[id] || 0); } // 루트별 레벨 (옛 직업 단위 기록은 폴백)
+  jobLvKey(id, line) { const lid = typeof line === 'string' ? line : line && line.id || this.chosenLine(id).id; return id + '|' + lid; } // 직업·계열별 독립 레벨 키
+  jobLevel(id, line) { const jl = this.save.jobLv || {}, k = this.jobLvKey(id, line); return Math.max(0, Number(jl[k]) || 0); } // 다른 계열의 레벨은 절대 공유하지 않음
   linePerk(id, line) { return (BALANCE.jobLevel.perks || {})[this.jobLvKey(id, line)]; }
+  jobLevelEntries() { return DATA_HEROES.flatMap(hero => jobLines(hero.id).map(line => ({ hero, line }))); } // 모든 직업 계열을 독립 항목으로 나열
+  migrateLegacyJobLevels() {
+    const levels = this.save.jobLv = this.save.jobLv || {}; let changed = false;
+    for (const hero of DATA_HEROES) if (Object.prototype.hasOwnProperty.call(levels, hero.id)) {
+      const line = this.chosenLine(hero.id), key = this.jobLvKey(hero.id, line.id);
+      levels[key] = Math.max(Number(levels[key]) || 0, Number(levels[hero.id]) || 0);
+      delete levels[hero.id]; changed = true;
+    }
+    if (changed) writeSave(this.save);
+  }
   applyJobMaster(p, heroId, lineId) { // [사용자 결정] 만렙(Lv.10) 루트별 고유 특수효과 (스킬 강화형)
     const pk = this.linePerk(heroId, lineId); if (!p.jobMaster || !pk) return;
     if (pk.killHeal) p.jobKillHeal = pk.killHeal;   // onEnemyKilled에서 처치 시 체력 회복
@@ -77,18 +89,28 @@ class Game {
     this._jobRefund = refund;
   }
   // 직업 레벨업 → 결과 메시지 [글, 색] (직업 레벨 창에서 사용)
-  levelUpJob(hero) {
-    const s = this.save, cost = this.jobLevelCost(hero.id), p = this.player;
-    if (!s.unlocked.includes(hero.id)) { SFX.play('deny'); return ['아직 해금하지 않은 직업입니다', '#ff9a9a']; }
+  levelUpJob(hero, line) { // 지정한 직업 계열 하나만 독립적으로 강화
+    const s = this.save, targetLine = typeof line === 'string' ? jobLines(hero.id).find(l => l.id === line) : line || this.chosenLine(hero.id);
+    if (!targetLine) return ['직업 계열을 찾을 수 없습니다', '#ff9a9a'];
+    if (!s.unlocked.includes(hero.id)) { SFX.play('deny'); return ['먼저 로비에서 직업을 해금하세요', '#ff9a9a']; }
+    const lv = this.jobLevel(hero.id, targetLine.id), cost = this.jobLevelCost(hero.id, targetLine.id), p = this.player;
     if (cost === null) return ['이미 최고 레벨입니다', '#ffd84a'];
     if (s.bank < cost) { SFX.play('deny'); return [`${CUR.name}이 부족합니다 (${cost} 필요)`, '#ff9a9a']; }
-    const key = this.jobLvKey(hero.id), line = this.chosenLine(hero.id);
-    s.bank -= cost; s.jobLv = s.jobLv || {}; s.jobLv[key] = this.jobLevel(hero.id) + 1; writeSave(s);
-    const { x, y } = p; this.player = this.makePlayer(x, y);
-    this.effects.ring(x, y, 30, '#7ad0ff'); this.effects.burst(x, y, '#7ad0ff', 18); SFX.play('buy');
-    const lv = s.jobLv[key], J = BALANCE.jobLevel, pk = this.linePerk(hero.id), rn = line.ranks ? line.ranks[2] : line.name;
-    if (lv >= J.max) { this.effects.rays(x, y, '#ffd84a', 16, 70, 0.9); return [`${rn} Lv.${lv} — 루트 숙련! 스킬 데미지 +${Math.round(J.maxDmg * 100)}%${pk ? ` · ${pk.name}(${pk.desc})` : ''}`, '#ffd84a']; }
-    return [`${rn} Lv.${lv} 달성!`, '#7ad0ff'];
+    const key = this.jobLvKey(hero.id, targetLine.id);
+    s.bank -= cost; s.jobLv = s.jobLv || {}; s.jobLv[key] = lv + 1; writeSave(s);
+    // 현재 플레이 중인 캐릭터와 계열이 일치할 때만 능력치를 즉시 반영한다.
+    const activeLineId = p && p.hero && p.hero.id === hero.id ? (p.line ? p.line.id : this.chosenLine(hero.id).id) : null;
+    if (activeLineId === targetLine.id) {
+      p.maxHp += BALANCE.jobLevel.hp; p.hp = Math.min(p.maxHp, p.hp + BALANCE.jobLevel.hp);
+      p.maxEnergy += BALANCE.jobLevel.energy; p.energy = Math.min(p.maxEnergy, p.energy + BALANCE.jobLevel.energy);
+      p.stats.attackBonus += BALANCE.jobLevel.atk;
+      p.jobMaster = lv + 1 >= BALANCE.jobLevel.max;
+      this.applyJobMaster(p, hero.id, targetLine.id);
+    }
+    this.effects.ring(p.x, p.y, 30, '#7ad0ff'); this.effects.burst(p.x, p.y, '#7ad0ff', 18); SFX.play('buy');
+    const nextLv = lv + 1, J = BALANCE.jobLevel, pk = this.linePerk(hero.id, targetLine.id), rankName = targetLine.ranks ? targetLine.ranks[2] : targetLine.name;
+    if (nextLv >= J.max) { this.effects.rays(p.x, p.y, '#ffd84a', 16, 70, 0.9); return [`${targetLine.name} · ${rankName} Lv.${nextLv} — 루트 숙련! 스킬 피해 +${Math.round(J.maxDmg * 100)}%${pk ? ` · ${pk.name}(${pk.desc})` : ''}`, '#ffd84a']; }
+    return [`${targetLine.name} Lv.${nextLv} 달성!`, '#7ad0ff'];
   }
   // ── 탐험가 길드 (제안): 일일·주간 퀘스트, 토벌 의뢰, 칭호, 거래상 보급품, 결정석 도박
   guild() {
@@ -1397,7 +1419,7 @@ class Game {
       if (picked && lines[o.branchIndex] && lines.length > 1) { const hid = o.heroId || this.save.selected, L = lines[o.branchIndex]; /* 고르면 진화 루트로 저장 */
         this.save.lineChoice = this.save.lineChoice || {}; this.save.lineChoice[hid] = L.id; writeSave(this.save); o.msg = { text: `진화 루트: ${L.name} (${L.ranks.join(' → ')})`, t: 2.5 }; SFX.play('ui'); }
       if (o.msg) o.msg.t -= STEP;
-    } else if (o.type === 'joblevel') { // 직업 레벨 창: 숫자 키 / 클릭으로 레벨업
+    } else if (o.type === 'joblevel') { // 직업·계열별 독립 레벨 창
       if (o.msg) o.msg.t -= STEP;
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) {
         this.overlay = o.returnToHeroInfo
@@ -1405,16 +1427,30 @@ class Game {
           : null;
         return;
       }
-      let pickI = -1;
-      DATA_HEROES.forEach((h, i) => { if (input.wasPressed('Digit' + (i + 1))) pickI = i; });
-      if (input.wasPressed('Mouse0')) { const m = input.mouse; DATA_HEROES.forEach((h, i) => { const r = HUD.jobRowRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) pickI = i; }); }
-      if (pickI >= 0) { const h = DATA_HEROES[pickI], J = BALANCE.jobLevel, pk = this.linePerk(h.id), key = this.jobLvKey(h.id);
-        if (this.jobLevel(h.id) >= J.max && pk && pk.toggle) { /* 만렙 + 토글 가능한 스킬 효과: 클릭하면 on/off (루트별) */
+      const entries = this.jobLevelEntries(), pageSize = 16, pageCount = Math.ceil(entries.length / pageSize);
+      o.page = clamp(o.page || 0, 0, pageCount - 1);
+      if (input.wasPressed('PageDown') || input.wasPressed('ArrowRight')) { o.page = Math.min(pageCount - 1, o.page + 1); this.input.mouse.down = false; return; }
+      if (input.wasPressed('PageUp') || input.wasPressed('ArrowLeft')) { o.page = Math.max(0, o.page - 1); this.input.mouse.down = false; return; }
+      const click = input.wasPressed('Mouse0'), m = input.mouse;
+      let pagePick = -1;
+      if (click) for (let i = 0; i < pageCount; i++) { const r = HUD.jobLinePageRect(i, pageCount); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) pagePick = i; }
+      if (pagePick >= 0) { o.page = pagePick; this.input.mouse.down = false; return; }
+      const start = o.page * pageSize, visible = entries.slice(start, start + pageSize);
+      let pickLocal = -1;
+      for (let i = 0; i < Math.min(8, visible.length); i++) if (input.wasPressed('Digit' + (i + 1))) { pickLocal = i; break; }
+      if (click) visible.forEach((entry, i) => { const r = HUD.jobLineRowRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) pickLocal = i; });
+      if (pickLocal >= 0 && visible[pickLocal]) {
+        const { hero, line } = visible[pickLocal], J = BALANCE.jobLevel, lv = this.jobLevel(hero.id, line.id), pk = this.linePerk(hero.id, line.id), key = this.jobLvKey(hero.id, line.id);
+        if (lv >= J.max && pk && pk.toggle) {
           const sv = this.save; sv.jobPerkOff = sv.jobPerkOff || {}; sv.jobPerkOff[key] = !sv.jobPerkOff[key]; writeSave(sv);
-          const off = sv.jobPerkOff[key]; if (this.player && this.save.selected === h.id) this.player.jobSkillFx = off ? null : pk.skillFx; /* 즉시 반영 */
-          o.msg = { text: `${pk.name} ${off ? '꺼짐' : '켜짐'}`, color: off ? '#999' : '#ffd84a', t: 2 }; SFX.play('ui');
-        } else { const [text, color] = this.levelUpJob(h); o.msg = { text, color, t: 2 }; }
-        this.input.mouse.down = false; }
+          const off = sv.jobPerkOff[key];
+          if (this.player && this.player.hero.id === hero.id && (this.player.line ? this.player.line.id : this.chosenLine(hero.id).id) === line.id) this.player.jobSkillFx = off ? null : pk.skillFx;
+          o.msg = { text: `${line.name} · ${pk.name} ${off ? '꺼짐' : '켜짐'}`, color: off ? '#999' : '#ffd84a', t: 2 }; SFX.play('ui');
+        } else {
+          const [text, color] = this.levelUpJob(hero, line); o.msg = { text, color, t: 2 };
+        }
+        this.input.mouse.down = false;
+      }
     } else if (o.type === 'treasures') { // 로비 보구 보관대: 1개 장착
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
       const own = this.treasurePage(o, DATA_TREASURES.filter((t) => this.save.treasures.includes(t.id)), input); if (!own) return;
