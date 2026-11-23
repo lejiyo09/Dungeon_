@@ -774,13 +774,18 @@ class Game {
     if ((sv.bank || 0) < cost) return { error: '결정석이 부족합니다' };
     const K = gachaPool().find((k) => k.id === bannerSkinId); if (!K) return { error: '배너를 찾을 수 없습니다' };
     sv.bank -= cost; sv.skins = sv.skins || []; sv.mileage = sv.mileage || 0; sv.skinOn = sv.skinOn || {}; sv.shards = sv.shards || {};
-    const results = []; let gotSkin = false;
+    const commons = commonPool(), results = []; let gotSkin = false;
     for (let i = 0; i < n; i++) {
-      if (Math.random() < GACHA.shardRate) { // 전설 조각
+      const roll = Math.random();
+      if (roll < GACHA.shardRate) { // 전설 조각
         if (sv.skins.includes(K.id)) { sv.mileage += GACHA.dupeMileage; results.push({ type: 'dupe', id: K.id, mileage: GACHA.dupeMileage }); } // 이미 보유 → 마일리지
         else { sv.shards[K.id] = (sv.shards[K.id] || 0) + 1;
           if (sv.shards[K.id] >= GACHA.shardsNeeded) { sv.shards[K.id] -= GACHA.shardsNeeded; sv.skins.push(K.id); this.skinOnMap()[skinKey(K)] = K.id; results.push({ type: 'skin', id: K.id }); gotSkin = true; } // 20개 완성
           else results.push({ type: 'shard', id: K.id, count: sv.shards[K.id] }); }
+      } else if (roll < GACHA.shardRate + GACHA.commonRate && commons.length) { // 일반 스킨
+        const avail = commons.filter((c) => !sv.skins.includes(c.id)), C = (avail.length ? avail : commons)[randInt(0, (avail.length ? avail : commons).length - 1)];
+        if (sv.skins.includes(C.id)) { sv.mileage += GACHA.missMileage; results.push({ type: 'mileage', mileage: GACHA.missMileage }); } // 이미 보유 → 마일리지
+        else { sv.skins.push(C.id); results.push({ type: 'common', id: C.id }); gotSkin = true; } // 일반 스킨은 자동 장착하지 않음(스킨창 K에서 선택)
       } else { sv.mileage += GACHA.missMileage; results.push({ type: 'mileage', mileage: GACHA.missMileage }); }
     }
     writeSave(sv); SFX.play(gotSkin ? 'victory' : 'coin');

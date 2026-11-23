@@ -300,12 +300,13 @@ class HUD {
         hudText(ctx, got ? '✦ 전설 스킨 획득! ✦' : '뽑기 결과', VIEW_W / 2, 40, got ? '#ffd84a' : '#ddd', 'center', 15);
         const n = o.results.length, cw = 86, gap = 8, x0 = (VIEW_W - (n * cw + (n - 1) * gap)) / 2;
         o.results.forEach((res, i) => { const x = x0 + i * (cw + gap), y = 80, h = 120;
-          const isSkin = res.type === 'skin', isShard = res.type === 'shard', isDupe = res.type === 'dupe', hasImg = isSkin || isShard || isDupe;
-          ctx.fillStyle = isSkin ? 'rgba(255,216,74,0.14)' : isShard ? 'rgba(255,233,160,0.1)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(x, y, cw, h);
-          ctx.strokeStyle = isSkin ? '#ffd84a' : isShard ? GACHA.shardColor : isDupe ? '#ffb0d8' : '#51475f'; ctx.strokeRect(x + 0.5, y + 0.5, cw - 1, h - 1);
-          if (hasImg) { const Kk = pool.find((p) => p.id === res.id), th = bannerImg(GACHA.banners[res.id]); if (th) ctx.drawImage(th, 96, 0, 320, 288, x + 4, y + 4, cw - 8, 60); hudText(ctx, Kk ? Kk.name : '', x + cw / 2, y + 70, '#fff', 'center', 8); }
-          if (isSkin) hudText(ctx, '완성 획득!', x + cw / 2, y + 92, '#ffd84a', 'center', 9);
-          else if (isShard) { hudText(ctx, `${GACHA.shardName}`, x + cw / 2, y + 88, GACHA.shardColor, 'center', 8); hudText(ctx, `${res.count} / ${GACHA.shardsNeeded}`, x + cw / 2, y + 102, '#fff', 'center', 9); }
+          const isSkin = res.type === 'skin', isShard = res.type === 'shard', isDupe = res.type === 'dupe', isCommon = res.type === 'common';
+          ctx.fillStyle = isSkin ? 'rgba(255,216,74,0.14)' : isShard ? 'rgba(255,233,160,0.1)' : isCommon ? 'rgba(150,216,255,0.1)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(x, y, cw, h);
+          ctx.strokeStyle = isSkin ? '#ffd84a' : isShard ? GACHA.shardColor : isCommon ? '#9ad8ff' : isDupe ? '#ffb0d8' : '#51475f'; ctx.strokeRect(x + 0.5, y + 0.5, cw - 1, h - 1);
+          if (isSkin || isDupe) { const Kk = pool.find((p) => p.id === res.id), th = bannerImg(GACHA.banners[res.id]); if (th) ctx.drawImage(th, 96, 0, 320, 288, x + 4, y + 4, cw - 8, 60); hudText(ctx, Kk ? Kk.name : '', x + cw / 2, y + 70, '#fff', 'center', 8); }
+          if (isShard) { HUD.drawShard(ctx, x + cw / 2, y + 36, 16); hudText(ctx, GACHA.shardName, x + cw / 2, y + 70, GACHA.shardColor, 'center', 8); hudText(ctx, `${res.count} / ${GACHA.shardsNeeded}`, x + cw / 2, y + 96, '#fff', 'center', 10); } // 조각: 전용 아이콘(배경 없음)
+          else if (isCommon) { const Cs = SKINS.find((p) => p.id === res.id), spr = typeof commonSprite === 'function' && commonSprite(Cs && Cs.sprite); if (spr) { const sc = 2, dw = spr.w * sc, dh = spr.h * sc; ctx.drawImage(spr.n, x + cw / 2 - dw / 2, y + 56 - dh, dw, dh); } hudText(ctx, Cs ? Cs.name : '', x + cw / 2, y + 66, '#fff', 'center', 8); hudText(ctx, '일반 획득', x + cw / 2, y + 92, '#9ad8ff', 'center', 9); }
+          else if (isSkin) hudText(ctx, '완성 획득!', x + cw / 2, y + 92, '#ffd84a', 'center', 9);
           else if (isDupe) { hudText(ctx, '보유', x + cw / 2, y + 88, '#ffb0d8', 'center', 9); hudText(ctx, `+${res.mileage} M`, x + cw / 2, y + 102, GACHA.mileageColor, 'center', 8); }
           else { hudText(ctx, `+${res.mileage}`, x + cw / 2, y + 48, GACHA.mileageColor, 'center', 13); hudText(ctx, GACHA.mileageName, x + cw / 2, y + 68, '#bbb', 'center', 7); } });
         hudText(ctx, '아무 곳이나 클릭 / Enter — 닫기', VIEW_W / 2, VIEW_H - 30, '#999', 'center', 9);
@@ -313,13 +314,13 @@ class HUD {
       // 확률표 팝업
       if (o.rates) {
         ctx.fillStyle = 'rgba(6,5,12,0.92)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-        const pw = 300, ph = 150, px = VIEW_W / 2 - pw / 2, py = VIEW_H / 2 - ph / 2;
+        const pw = 320, ph = 180, px = VIEW_W / 2 - pw / 2, py = VIEW_H / 2 - ph / 2;
         ctx.fillStyle = 'rgba(20,16,30,0.98)'; ctx.fillRect(px, py, pw, ph); ctx.strokeStyle = '#ffd84a'; ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
         hudText(ctx, '뽑기 확률', VIEW_W / 2, py + 12, '#ffd84a', 'center', 12);
-        const rows = [[`${GACHA.shardName} (배너 스킨)`, `${Math.round(GACHA.shardRate * 100)}%`, GACHA.shardColor], [`${GACHA.mileageName} +${GACHA.missMileage}`, `${Math.round((1 - GACHA.shardRate) * 100)}%`, GACHA.mileageColor]];
-        rows.forEach(([n2, p2, c], i) => { const ry = py + 40 + i * 22; hudText(ctx, n2, px + 20, ry, '#eee', 'left', 9); hudText(ctx, p2, px + pw - 20, ry, c, 'right', 10); });
-        hudText(ctx, `· ${GACHA.shardName} ${GACHA.shardsNeeded}개를 모으면 그 배너 스킨 완성`, VIEW_W / 2, py + 92, '#bfe6ff', 'center', 8);
-        hudText(ctx, '· 이미 보유한 배너에서 조각이 뜨면 마일리지로 전환', VIEW_W / 2, py + 108, '#ffb0d8', 'center', 8);
+        const rows = [[`${GACHA.shardName} (배너 스킨)`, `${Math.round(GACHA.shardRate * 100)}%`, GACHA.shardColor], ['일반 스킨', `${Math.round(GACHA.commonRate * 100)}%`, '#9ad8ff'], [`${GACHA.mileageName} +${GACHA.missMileage}`, `${Math.round((1 - GACHA.shardRate - GACHA.commonRate) * 100)}%`, GACHA.mileageColor]];
+        rows.forEach(([n2, p2, c], i) => { const ry = py + 38 + i * 20; hudText(ctx, n2, px + 20, ry, '#eee', 'left', 9); hudText(ctx, p2, px + pw - 20, ry, c, 'right', 10); });
+        hudText(ctx, `· ${GACHA.shardName} ${GACHA.shardsNeeded}개를 모으면 그 배너 스킨 완성`, VIEW_W / 2, py + 108, '#bfe6ff', 'center', 8);
+        hudText(ctx, '· 이미 가진 스킨이 나오면 마일리지로 전환', VIEW_W / 2, py + 124, '#ffb0d8', 'center', 8);
         hudText(ctx, '클릭 / Esc — 닫기', VIEW_W / 2, py + ph - 16, '#999', 'center', 8);
       }
     } else if (o.type === 'codex' || o.type === 'armory' || o.type === 'trial_weapons') {
@@ -737,6 +738,14 @@ class HUD {
   static gachaShopRow(i) { const mw = HUD.gachaMainW(), h = 48, y0 = 52; return { x: 10, y: y0 + i * (h + 6), w: mw - 20, h }; } // 상점: 메인 영역 세로 리스트
   static gachaShopBuy(i) { const r = HUD.gachaShopRow(i); return { x: r.x + r.w - 78, y: r.y + r.h / 2 - 9, w: 72, h: 18 }; }
   static gachaRatesBtn() { return { x: 8, y: VIEW_H - 22, w: 72, h: 16 }; } // 좌측 하단 확률 보기
+  static drawShard(ctx, cx, cy, s) { // 전설 조각 전용 아이콘: 금빛 결정 (배너 배경 없이)
+    ctx.save(); ctx.globalAlpha = 0.5; ctx.fillStyle = '#ffe9a0'; ctx.beginPath(); ctx.arc(cx, cy, s * 0.95, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+    const top = cy - s, bot = cy + s, lx = cx - s * 0.62, rx = cx + s * 0.62, my = cy - s * 0.12;
+    ctx.beginPath(); ctx.moveTo(cx, top); ctx.lineTo(rx, my); ctx.lineTo(cx, bot); ctx.lineTo(lx, my); ctx.closePath(); ctx.fillStyle = '#ffd24a'; ctx.fill(); ctx.strokeStyle = '#8a6a10'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, top); ctx.lineTo(cx, bot); ctx.lineTo(lx, my); ctx.closePath(); ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(cx, top); ctx.lineTo(rx, my); ctx.lineTo(cx, my + 1); ctx.closePath(); ctx.fillStyle = 'rgba(255,252,220,0.85)'; ctx.fill();
+    ctx.lineWidth = 1; ctx.restore();
+  }
   static trialBtn(i) { return { x: VIEW_W / 2 - 214 + i * 108, y: 142, w: 100, h: 26 }; }
   static guildTab(i) { return { x: 60 + i * 134, y: 22, w: 126, h: 16 }; }
   static adminRow(i) { return { x: 60, y: 32 + i * 24, w: VIEW_W - 120, h: 21 }; }

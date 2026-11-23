@@ -488,3 +488,17 @@ function druidSprite(key) {
 }
 if (typeof document !== 'undefined') loadDruidSheet();
 
+// ── 일반 등급 스킨 (앞모습 1포즈, 좌우 반전): assets/commonskins.png, 좌표표 COMMON_SKIN
+let _commonSheetImg = null, _commonSheetReady = false;
+function loadCommonSheet() { if (_commonSheetImg) return; _commonSheetImg = new Image(); _commonSheetImg.onload = () => { _commonSheetReady = true; }; _commonSheetImg.src = 'assets/commonskins.png'; }
+function commonSprite(name) {
+  if (typeof COMMON_SKIN === 'undefined' || !COMMON_SKIN[name]) return null;
+  if (!_commonSheetReady) { loadCommonSheet(); return null; }
+  const ck = 'common|' + name; let s = spriteCache.get(ck); if (s) return s;
+  const [sx, sy, w, h] = COMMON_SKIN[name];
+  const make = (flip, white) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.save(); if (flip) { g.translate(w, 0); g.scale(-1, 1); } g.drawImage(_commonSheetImg, sx, sy, w, h, 0, 0, w, h); g.restore(); if (white) { g.globalCompositeOperation = 'source-atop'; g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); } return c; };
+  s = { w, h, n: make(false, false), f: make(true, false), wn: make(false, true), wf: make(true, true) };
+  spriteCache.set(ck, s); return s;
+}
+if (typeof document !== 'undefined') loadCommonSheet();
+

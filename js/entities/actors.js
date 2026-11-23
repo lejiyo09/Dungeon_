@@ -230,7 +230,13 @@ class Player extends Entity {
         else drawSprite(ctx, spr, x, y + 7, { flip });
         drew = true; }
     }
-    if (!drew) drawHero(ctx, (sk && sk !== 'druid_bandi') ? this._skinH.h : this.hero, x, y, drawFace, drawFrame, this.state === 'DASH', legDir);
+    else if (sk && sk.indexOf('c_') === 0 && typeof commonSprite === 'function') { // [일반 스킨] 앞모습 1포즈, 좌우 반전 + 이동 시 살짝 들썩
+      const spr = commonSprite(sk);
+      if (spr) { ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - 5, y + 6, 10, 2);
+        const bob = (this.moving && this.state !== 'DASH' && Math.floor(this.time * 8) % 2) ? -1 : 0;
+        drawSprite(ctx, spr, x, y + 7 + bob, { flip: face < 0 }); drew = true; }
+    }
+    if (!drew) drawHero(ctx, (sk && sk !== 'druid_bandi' && sk.indexOf('c_') !== 0) ? this._skinH.h : this.hero, x, y, drawFace, drawFrame, this.state === 'DASH', legDir);
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
     if (!behind) drawW();
     if (this.whirl > 0) {
