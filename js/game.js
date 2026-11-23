@@ -2108,7 +2108,7 @@ class Game {
   // 최종 진화 스킬 연출: 컷인 + 빛살 + 고리
   ultimateFx(p) {
     const color = (p.hybrid && p.hybrid.color) || (p.line && p.line.color) || '#ffd84a';
-    this.cutin = { kind: 'skill', name: p.skillName, sub: p.hybrid ? p.hybrid.title : p.line.ranks[2], color, hero: p.hero, start: performance.now() };
+    this.cutin = { kind: 'skill', name: p.skillName, sub: p.hybrid ? p.hybrid.title : p.line.ranks[2], color, hero: p.hero, skin: this.skinSprite(p.hero.id, p.line ? p.line.id : null), start: performance.now() };
     this.effects.rays(p.x, p.y, color, 14, 70); this.effects.rays(p.x, p.y, '#ffffff', 7, 44, 0.4);
     this.effects.ring(p.x, p.y, 34, color); this.effects.ring(p.x, p.y, 56, '#ffffff'); this.effects.burst(p.x, p.y, color, 24);
     for (let i = 0; i < 18; i++) this.effects.part(p.x + randInt(-14, 14), p.y + randInt(-4, 8), randInt(-10, 10), -50 - Math.random() * 50, { color, life: 0.8, size: 2, size2: 0, drag: 1, add: true });

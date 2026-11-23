@@ -688,7 +688,7 @@ class HUD {
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k;
     const ix = VIEW_W / 2 - (tr ? 78 : 66) + (1 - ease) * -40;
     if (tr && o.T) drawTreasureIcon(ctx, o.T, ix, cy, 1.25);
-    else if (o.hero) drawSprite(ctx, heroSprite(o.hero, 0), ix, cy + 10, { scale: 1 });
+    else if (o.hero) { const portrait = o.skin ? heroWithLook(o.hero, { sprite: o.skin }) : o.hero; drawSprite(ctx, heroSprite(portrait, 0), ix, cy + 10, { scale: 1 }); }
     hudText(ctx, o.name, VIEW_W / 2 + 8 - (1 - ease) * 24, cy - (tr ? 10 : 8), '#ffffff', 'center', tr ? 13 : 10);
     if (o.sub) hudText(ctx, o.sub, VIEW_W / 2 + 8, cy + (tr ? 5 : 3), o.color, 'center', 7);
     ctx.restore();
