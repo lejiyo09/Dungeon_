@@ -130,6 +130,16 @@ const DEEP_WORLDS = [
     enemies: [['enemy_vinesnake_001', 3], ['enemy_stoneguard_001', 3], ['enemy_dartshooter_001', 3], ['enemy_jungletotem_001', 2]],
     palette: { style: 'jungle', accent: '#6aba4a', floor: ['#4a4a3a', '#4d4d3c'], corridor: ['#34342a', '#36362c'], wall: '#4a5040', wallTop: '#5a6050',
       wallFace: '#7a806a', faceLine: '#6a705a', deco: 'rgba(106,186,74,0.35)' } }
+  // ── 심층 21: 잊힌 왕릉
+  { id: 'deep_crowncrypt', name: '잊힌 왕릉', boss: 'boss_crownless_king', waves: 2, deep: true,
+    enemies: [['enemy_graveguard_001', 3], ['enemy_bellwraith_001', 2], ['enemy_crownmoth_001', 3], ['enemy_cairntower_001', 2]],
+    palette: { style: 'bone', accent: '#c49aff', floor: ['#292333', '#2d2638'], corridor: ['#1d1928', '#201b2b'], wall: '#40334c', wallTop: '#554363',
+      wallFace: '#776486', faceLine: '#5d4d70', deco: 'rgba(196,154,255,0.34)' } },
+  // ── 심층 22: 일식의 천문대
+  { id: 'deep_eclipse', name: '일식의 천문대', boss: 'boss_eclipse_leviathan', waves: 2, deep: true,
+    enemies: [['enemy_eclipsehound_001', 3], ['enemy_stardrifter_001', 3], ['enemy_oraclescribe_001', 2], ['enemy_gravitypylon_001', 2]],
+    palette: { style: 'starfall', accent: '#8c9dff', floor: ['#171b32', '#1b2039'], corridor: ['#101426', '#13182c'], wall: '#282d50', wallTop: '#363c68',
+      wallFace: '#555d8e', faceLine: '#424970', deco: 'rgba(140,157,255,0.38)' } }
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {

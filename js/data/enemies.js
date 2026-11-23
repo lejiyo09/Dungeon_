@@ -1094,5 +1094,64 @@ const DATA_ENEMIES = [
       { type: 'spiral', duration: 3.2, arms: 7, interval: 0.055, spin: 2.8, color: '#7ab8ff' },
       { type: 'ringOut', rings: 6, count: 34, gap: 4, speed: 165, interval: 0.36, color: '#ffe9a0' }],
     finalPatterns: [{ type: 'excalibur', name: '엑스칼리버', charge: 1.4, lockT: 0.4, duration: 1.3, width: 26, turn: 0.45, mult: 1.7, radius: 90, bullets: 26, color: '#ffe9a0' },
-      { type: 'rhongo', name: '롱고미니아드', radius: 130, impact: 60, duration: 4.5, pull: 85, arms: 5, interval: 0.09, spin: 2.4, tick: 0.4, color: '#bfe6ff' }] }
+      { type: 'rhongo', name: '롱고미니아드', radius: 130, impact: 60, duration: 4.5, pull: 85, arms: 5, interval: 0.09, spin: 2.4, tick: 0.4, color: '#bfe6ff' }] },
+  // ── 심층 21: 잊힌 왕릉
+  { id: 'enemy_graveguard_001', name: '왕릉의 수문장', sprite: 'graveguard', color: '#776080', aiType: 'melee_chase', traits: ['shockwave'],
+    health: 470, damage: 24, moveSpeed: 48, hitboxHalf: 8, attackRange: 26, telegraphTime: 0.58, attackCooldown: 1.35, recoveryTime: 0.48, knockbackResist: 0.82, rewardGold: 8 },
+  { id: 'enemy_bellwraith_001', name: '장송의 종령', sprite: 'bellwraith', color: '#9b82b8', aiType: 'teleporter', traits: ['afterimage'],
+    health: 205, damage: 23, moveSpeed: 54, hitboxHalf: 6, preferredRange: 125, attackRange: 270, telegraphTime: 0.52,
+    attackCooldown: 1.95, recoveryTime: 0.32, bulletSpeed: 185, bulletCount: 7, bulletSpread: 0.2, bulletColor: '#d9b8ff', rewardGold: 7 },
+  { id: 'enemy_crownmoth_001', name: '왕관 나방', sprite: 'crownmoth', color: '#b090d0', aiType: 'charger', traits: ['dashTrail'],
+    health: 185, damage: 24, moveSpeed: 88, hitboxHalf: 6, attackRange: 165, telegraphTime: 0.42,
+    dashSpeed: 390, dashDuration: 0.42, attackCooldown: 1.45, recoveryTime: 0.28, stunTime: 0.55, rewardGold: 7 },
+  { id: 'enemy_cairntower_001', name: '봉분 파수탑', sprite: 'cairntower', color: '#756080', aiType: 'turret', traits: ['turretSweep'],
+    health: 235, damage: 24, moveSpeed: 0, hitboxHalf: 7, attackRange: 310, telegraphTime: 0.82,
+    attackCooldown: 2.15, recoveryTime: 0.28, bulletSpeed: 245, bulletCount: 9, bulletColor: '#c49aff', knockbackResist: 1, rewardGold: 8 },
+  // ── 심층 22: 일식의 천문대
+  { id: 'enemy_eclipsehound_001', name: '일식 사냥개', sprite: 'eclipsehound', color: '#343456', aiType: 'charger', traits: ['redash', 'dashTrail'],
+    health: 330, damage: 25, moveSpeed: 94, hitboxHalf: 7, attackRange: 170, telegraphTime: 0.42,
+    dashSpeed: 410, dashDuration: 0.42, attackCooldown: 1.5, recoveryTime: 0.28, stunTime: 0.55, knockbackResist: 0.45, rewardGold: 8 },
+  { id: 'enemy_stardrifter_001', name: '유성 표류체', sprite: 'stardrifter', color: '#6575b8', aiType: 'melee_chase', traits: ['pounce', 'deathBurst'],
+    health: 205, damage: 24, moveSpeed: 122, hitboxHalf: 6, attackRange: 20, telegraphTime: 0.3,
+    attackCooldown: 0.95, recoveryTime: 0.32, rewardGold: 7 },
+  { id: 'enemy_oraclescribe_001', name: '천체 기록관', sprite: 'oraclescribe', color: '#59649a', aiType: 'caster', traits: ['castMix'],
+    health: 195, damage: 24, moveSpeed: 30, hitboxHalf: 6, attackRange: 280, telegraphTime: 0.62,
+    attackCooldown: 2.15, recoveryTime: 0.36, bulletSpeed: 130, bulletCount: 18, bulletColor: '#a9b8ff', rewardGold: 8 },
+  { id: 'enemy_gravitypylon_001', name: '중력 관측기', sprite: 'gravitypylon', color: '#41466e', aiType: 'turret', traits: ['turretRing'],
+    health: 250, damage: 25, moveSpeed: 0, hitboxHalf: 7, attackRange: 315, telegraphTime: 0.82,
+    attackCooldown: 2.2, recoveryTime: 0.28, bulletSpeed: 245, bulletCount: 10, bulletColor: '#8c9dff', knockbackResist: 1, rewardGold: 8 },
+  // ── 심층 21 보스: 왕관 없는 군주
+  { id: 'boss_crownless_king', name: '왕관 없는 군주', title: '죽은 왕들의 맹세', sprite: 'boss_crownlessking', color: '#493452', phaseColors: ['#493452', '#5b3b6d', '#75438a'],
+    boss: true, aiType: 'boss', health: 2260, damage: 25, moveSpeed: 39, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.96, bulletSpeed: 150,
+    rewardGold: 360, patterns: [
+      { type: 'slam', radius: 56, color: '#c49aff' },
+      { type: 'charge', dashes: 3, speed: 410, color: '#e0c8ff' },
+      { type: 'ringOut', rings: 3, count: 30, gap: 5, speed: 130, interval: 0.48, color: '#c49aff' },
+      { type: 'aimed', volleys: 5, count: 7, spread: 0.13, color: '#e8d8ff' },
+      { type: 'summon', enemyId: 'enemy_graveguard_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'wall', waves: 4, gap: 4, speed: 130, interval: 0.75, color: '#e0c8ff' },
+      { type: 'spiral', duration: 2.7, arms: 6, interval: 0.075, spin: 2.1, color: '#c49aff' },
+      { type: 'meteor', count: 8, delay: 0.75, stagger: 0.22, radius: 28, bullets: 6, color: '#e0c8ff' },
+      { type: 'lances', count: 18, delay: 0.6, speed: 310, color: '#c49aff' }],
+    finalPatterns: [
+      { type: 'ringIn', name: '왕릉의 종언', rings: 4, count: 44, gap: 5, speed: 82, interval: 0.9, color: '#e8d8ff' },
+      { type: 'vortex', name: '왕관의 저주', duration: 3.5, pull: 42, arms: 4, interval: 0.09, spin: 2.2, color: '#c49aff' }] },
+  // ── 심층 22 보스: 일식의 포식자
+  { id: 'boss_eclipse_leviathan', name: '일식의 포식자', title: '별빛을 삼키는 검은 태양', sprite: 'boss_eclipseleviathan', color: '#30375c', phaseColors: ['#30375c', '#454b86', '#202746'], float: true,
+    boss: true, aiType: 'boss', health: 2480, damage: 26, moveSpeed: 43, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.94, bulletSpeed: 155,
+    rewardGold: 400, patterns: [
+      { type: 'laser', beams: 3, spreadAng: Math.PI * 2 / 3, sweep: 1.0, duration: 2.1, width: 7, telegraph: 0.9, color: '#a9b8ff' },
+      { type: 'split', volleys: 4, count: 3, spread: 0.34, speed: 160, splitAfter: 0.55, splitN: 8, color: '#d5ddff' },
+      { type: 'orbit', count: 18, radius: 54, spinTime: 1.1, spin: -3.2, speed: 170, color: '#8c9dff' },
+      { type: 'meteor', count: 8, delay: 0.7, stagger: 0.2, radius: 30, bullets: 6, color: '#a9b8ff' },
+      { type: 'summon', enemyId: 'enemy_stardrifter_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'reverse', rings: 4, count: 36, gap: 5, speed: 150, flip: 0.7, interval: 0.42, color: '#d5ddff' },
+      { type: 'spiral', duration: 2.8, arms: 7, interval: 0.065, spin: -2.5, color: '#8c9dff' },
+      { type: 'cross', waves: 4, len: 9, step: 22, radius: 13, delay: 0.7, interval: 0.46, bullets: 0, color: '#a9b8ff' },
+      { type: 'zones', count: 8, radius: 28, delay: 0.8, bullets: 7, spreadAround: 125, stagger: 0.07, color: '#d5ddff' }],
+    finalPatterns: [
+      { type: 'vortex', name: '완전 개기일식', duration: 4.0, pull: 50, arms: 5, interval: 0.085, spin: -2.6, color: '#8c9dff' },
+      { type: 'grid', name: '별의 봉인', spacing: 3, delay: 1.0, radius: 22, bullets: 4, color: '#d5ddff' }] }
 ];
