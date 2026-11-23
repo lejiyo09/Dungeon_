@@ -744,7 +744,7 @@ Object.assign(PIX, {
     P.rect(13, 16, 6, 4, 'r'); P.px(15, 17, 'e'); P.px(17, 17, 'e');
   } },
   // 심층 28 보스: 달빛 유원지를 지배하는 최후의 단장
-  boss_lastshowman: { tint: '#49365a', w: 32, h: 32, pal: { s: '#b8a0c8', d: '#36283f', y: '#ffd27c', e: '#fff1d2', r: '#ff83c8', c: '#8ef5e9', w: '#ffffff' }, proc: (P) => {
+  boss_lastshowman: { tint: '#49365a', w: 32, h: 32, pal: { s: '#b8a0c8', d: '#36283f', y: '#ffd27c', e: '#fff1d2', r: '#ff83c8', c: '#8ef5e9', w: '#ffffff', f: '#f3d3c2' }, proc: (P) => {
     P.tri(4, 31, 28, 31, 16, 10, 'a'); P.tri(8, 31, 24, 31, 16, 16, 'b');
     P.line(4, 31, 10, 20, 'r'); P.line(28, 31, 22, 20, 'c');
     P.rect(11, 24, 4, 7, 'd'); P.rect(17, 24, 4, 7, 'd'); P.rect(10, 13, 12, 12, 's');
