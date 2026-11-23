@@ -3,6 +3,8 @@
 // HUD / 오버레이
 // ════════════════════════════════════════════
 const HUD_FONTS = {}; // 글꼴 문자열은 크기마다 한 번만 만듦 (같은 문자열을 다시 지정하면 브라우저가 빠르게 처리)
+const _bannerImgs = {}; // 뽑기 배너 이미지 (assets/banners/<key>.jpg) — 쓸 때 지연 로드
+function bannerImg(key) { let im = _bannerImgs[key]; if (im === undefined) { im = new Image(); im.src = 'assets/banners/' + key + '.jpg'; _bannerImgs[key] = im; } return (im.complete && im.naturalWidth) ? im : null; }
 function hudText(ctx, str, x, y, color = '#fff', align = 'left', size = 10) {
   ctx.font = HUD_FONTS[size] || (HUD_FONTS[size] = `bold ${size}px 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif`); ctx.textAlign = align; ctx.textBaseline = 'top';
   ctx.fillStyle = '#000'; ctx.fillText(str, x + 1, y + 1);
@@ -183,7 +185,7 @@ class HUD {
       hudText(ctx, '중독+전격=마비  ·  실명+저주=일식  ·  저주+중독=역병  ·  화상+저주=지옥불  ·  실명+전격=심판', CX, 134, '#9ad8ff', 'center', 8);
       // 메뉴
       panel(160, 54, '메뉴');
-      hudText(ctx, 'I  상세 정보 (특수방 확률 · 무기 강화 · 반응 효과)   ·   G  선물 코드', CX, 172, '#ffd84a', 'center', 9);
+      hudText(ctx, `I  상세 정보 (특수방 확률 · 무기 강화 · 반응 효과)   ·   G  선물 코드${game.mode === 'lobby' ? '   ·   J  스킨 뽑기' : ''}`, CX, 172, '#ffd84a', 'center', 9);
       { const h = game.player.hero.id, K = SKINS.find((s) => s.hero === h && (game.save.skins || []).includes(s.id)); hudText(ctx, `K  스킨 고르기${K && game.skinSprite(h) ? ` (지금: ${K.name})` : ''}${game.mode === 'lobby' && game.save.babylon && game.save.babylon.visited ? '      +  빠른 이동' : ''}`, CX, 188, '#ffb0d8', 'center', 9); }
       hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기        L 포기하고 로비로' : 'Esc 이어하기    ·    P 프롤로그 다시 보기    ·    L 로그아웃', CX, 202, '#bbb', 'center', 9);
     } else if (o.type === 'keys') { /* 조작키 설정 */
@@ -237,6 +239,66 @@ class HUD {
       hudText(ctx, (o.code || '') + (Math.floor(game.time * 2) % 2 ? '_' : ' '), VIEW_W / 2, by + 39, '#ffffff', 'center', 11);
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, by + 64, o.msg.color, 'center', 8);
       hudText(ctx, '영문·숫자 입력 (Ctrl+V 붙여넣기) · Enter 받기 · Backspace 지우기 · Esc 돌아가기', VIEW_W / 2, by + bh - 16, '#999', 'center', 7);
+    } else if (o.type === 'gacha') { /* 스킨 뽑기 */
+      const sv = game.save, pool = gachaPool(), m = game.input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+      ctx.fillStyle = '#0c0a12'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+      const K = pool[o.banner] || pool[0], bkey = GACHA.banners[K.id];
+      if (o.tab === 0) { // ── 뽑기 탭: 선택 배너를 전체 배경으로
+        const bg = bannerImg(bkey);
+        if (bg) { ctx.drawImage(bg, 0, 0, VIEW_W, VIEW_H); } else { ctx.fillStyle = '#1a1626'; ctx.fillRect(0, 0, VIEW_W, VIEW_H); hudText(ctx, '배너 불러오는 중…', VIEW_W / 2, VIEW_H / 2, '#889', 'center', 9); }
+        const g = ctx.createLinearGradient(0, 0, 0, VIEW_H); g.addColorStop(0, 'rgba(10,8,18,0.55)'); g.addColorStop(0.45, 'rgba(10,8,18,0.08)'); g.addColorStop(1, 'rgba(10,8,18,0.9)'); ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+        // 좌우 화살표
+        for (const d of [0, 1]) { const r = HUD.gachaArrow(d), on = hit(r); ctx.fillStyle = on ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.35)'; ctx.fillRect(r.x, r.y, r.w, r.h); hudText(ctx, d ? '▶' : '◀', r.x + r.w / 2, r.y + r.h / 2 - 7, '#fff', 'center', 14); }
+        // 스킨 이름 · 확률
+        hudText(ctx, '✦ 전설 배너 ✦', VIEW_W / 2, 150, '#ffe9a0', 'center', 9);
+        hudText(ctx, K.name, VIEW_W / 2, 162, '#fff', 'center', 16);
+        hudText(ctx, `${game.data.heroes.get(K.hero).name} 전용   ·   전설 확률 ${Math.round(GACHA.legendRate * 100)}%`, VIEW_W / 2, 184, '#bfe6ff', 'center', 8);
+        // 배너 인디케이터 점
+        pool.forEach((_, i) => { const dx = VIEW_W / 2 - (pool.length - 1) * 6 + i * 12; ctx.fillStyle = i === o.banner ? '#ffd84a' : 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.arc(dx, 200, 2.5, 0, TAU); ctx.fill(); });
+        // 뽑기 버튼
+        const owned = (sv.skins || []).includes(K.id);
+        for (const b of [0, 1]) { const r = HUD.gachaPullBtn(b), cost = b ? GACHA.cost5 : GACHA.costSingle, can = (sv.bank || 0) >= cost, on = hit(r);
+          ctx.fillStyle = can ? (on ? 'rgba(255,216,74,0.34)' : 'rgba(120,150,210,0.26)') : 'rgba(90,90,90,0.18)'; ctx.fillRect(r.x, r.y, r.w, r.h);
+          ctx.strokeStyle = can ? '#ffd84a' : '#555'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+          hudText(ctx, b ? '5연 뽑기' : '1연 뽑기', r.x + r.w / 2, r.y + 5, can ? '#fff' : '#888', 'center', 11);
+          hudText(ctx, `${CUR.name} ${cost}`, r.x + r.w / 2, r.y + 19, can ? CUR.color : '#888', 'center', 8); }
+        if (owned) hudText(ctx, '이미 보유한 스킨 — 중복은 마일리지로 전환됩니다', VIEW_W / 2, 210, '#ffb0d8', 'center', 7);
+      } else { // ── 마일리지 상점 탭
+        hudText(ctx, `마일리지로 원하는 전설 스킨을 바로 구매  ·  1개 ${GACHA.shopPrice} ${GACHA.mileageName}`, VIEW_W / 2, 30, '#ddd', 'center', 8);
+        pool.forEach((Ks, i) => { const r = HUD.gachaShopCard(i), own = (sv.skins || []).includes(Ks.id);
+          ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = own ? '#ffd84a' : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+          const th = bannerImg(GACHA.banners[Ks.id]); const tw = 74, thh = r.h - 8;
+          if (th) ctx.drawImage(th, 0, 0, 512, 288, r.x + 4, r.y + 4, tw, thh); else { ctx.fillStyle = '#1a1626'; ctx.fillRect(r.x + 4, r.y + 4, tw, thh); }
+          hudText(ctx, Ks.name, r.x + tw + 12, r.y + 10, '#fff', 'left', 11);
+          hudText(ctx, game.data.heroes.get(Ks.hero).name, r.x + tw + 12, r.y + 26, '#9ad8ff', 'left', 7);
+          const buy = HUD.gachaShopBuy(i), can = !own && (sv.mileage || 0) >= GACHA.shopPrice, bon = hit(buy);
+          ctx.fillStyle = own ? 'rgba(255,216,74,0.14)' : can ? (bon ? 'rgba(255,216,74,0.34)' : 'rgba(255,176,216,0.22)') : 'rgba(90,90,90,0.18)'; ctx.fillRect(buy.x, buy.y, buy.w, buy.h);
+          ctx.strokeStyle = own ? '#ffd84a' : can ? GACHA.mileageColor : '#555'; ctx.strokeRect(buy.x + 0.5, buy.y + 0.5, buy.w - 1, buy.h - 1);
+          hudText(ctx, own ? '보유중' : `${GACHA.shopPrice}`, buy.x + buy.w / 2, buy.y + 4, own ? '#ffd84a' : can ? GACHA.mileageColor : '#888', 'center', 8); });
+      }
+      // 상단 바: 제목 · 탭 · 보유 재화
+      ctx.fillStyle = 'rgba(10,8,18,0.72)'; ctx.fillRect(0, 0, VIEW_W, 26);
+      hudText(ctx, '🎴 스킨 뽑기', 10, 7, '#ffd84a', 'left', 12);
+      for (const i of [0, 1]) { const r = HUD.gachaTab(i), act = (o.tab || 0) === i, on = hit(r); ctx.fillStyle = act ? 'rgba(255,216,74,0.28)' : on ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); hudText(ctx, i ? '마일리지 상점' : '뽑기', r.x + r.w / 2, r.y + 3, act ? '#ffd84a' : '#bbb', 'center', 9); }
+      hudText(ctx, `${CUR.name} ${sv.bank || 0}   ·   ${GACHA.mileageName} ${sv.mileage || 0}`, VIEW_W - 8, 8, CUR.color, 'right', 9);
+      if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 14, o.msg.color, 'center', 9);
+      else hudText(ctx, '1·2 탭 전환   ·   ←→ 배너 전환   ·   Esc / J 닫기', VIEW_W / 2, VIEW_H - 13, '#999', 'center', 7);
+      // 결과 공개
+      if (o.results) {
+        ctx.fillStyle = 'rgba(6,5,12,0.9)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+        const got = o.results.some((r) => r.type === 'skin');
+        hudText(ctx, got ? '✦ 전설 스킨 획득! ✦' : '뽑기 결과', VIEW_W / 2, 40, got ? '#ffd84a' : '#ddd', 'center', 15);
+        const n = o.results.length, cw = 86, gap = 8, x0 = (VIEW_W - (n * cw + (n - 1) * gap)) / 2;
+        o.results.forEach((res, i) => { const x = x0 + i * (cw + gap), y = 80, h = 120;
+          const isSkin = res.type === 'skin', isDupe = res.type === 'dupe';
+          ctx.fillStyle = isSkin ? 'rgba(255,216,74,0.14)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(x, y, cw, h);
+          ctx.strokeStyle = isSkin ? '#ffd84a' : isDupe ? '#ffb0d8' : '#51475f'; ctx.strokeRect(x + 0.5, y + 0.5, cw - 1, h - 1);
+          if (isSkin || isDupe) { const Kk = pool.find((p) => p.id === res.id), th = bannerImg(GACHA.banners[res.id]); if (th) ctx.drawImage(th, 0, 0, 512, 288, x + 4, y + 4, cw - 8, 60); hudText(ctx, Kk ? Kk.name : '', x + cw / 2, y + 70, '#fff', 'center', 8); }
+          if (isSkin) hudText(ctx, '획득!', x + cw / 2, y + 92, '#ffd84a', 'center', 10);
+          else if (isDupe) { hudText(ctx, '중복', x + cw / 2, y + 88, '#ffb0d8', 'center', 9); hudText(ctx, `+${res.mileage} M`, x + cw / 2, y + 102, GACHA.mileageColor, 'center', 8); }
+          else { hudText(ctx, `+${res.mileage}`, x + cw / 2, y + 48, GACHA.mileageColor, 'center', 13); hudText(ctx, GACHA.mileageName, x + cw / 2, y + 68, '#bbb', 'center', 7); } });
+        hudText(ctx, '아무 곳이나 클릭 / Enter — 닫기', VIEW_W / 2, VIEW_H - 30, '#999', 'center', 9);
+      }
     } else if (o.type === 'codex' || o.type === 'armory' || o.type === 'trial_weapons') {
       const sv = game.save, disc = new Set(sv.discovered), armory = o.type === 'armory', tw = o.type === 'trial_weapons';
       const m = game.input.mouse;
@@ -644,6 +706,11 @@ class HUD {
     btn();
   }
   static rankTab(i) { return { x: 40 + i * 110, y: 22, w: 104, h: 16 }; }
+  static gachaTab(i) { return { x: 150 + i * 88, y: 5, w: 84, h: 16 }; } // 뽑기/상점 탭
+  static gachaArrow(d) { return { x: d ? VIEW_W - 30 : 8, y: VIEW_H / 2 - 24, w: 22, h: 44 }; } // 배너 좌우 전환
+  static gachaPullBtn(i) { const w = 150, g = 12, x0 = (VIEW_W - (w * 2 + g)) / 2; return { x: x0 + i * (w + g), y: VIEW_H - 50, w, h: 30 }; } // 1연/5연
+  static gachaShopCard(i) { const cols = 2, w = 228, h = 92, gap = 12, x0 = (VIEW_W - (cols * w + (cols - 1) * gap)) / 2; return { x: x0 + (i % cols) * (w + gap), y: 42 + Math.floor(i / cols) * (h + gap), w, h }; }
+  static gachaShopBuy(i) { const r = HUD.gachaShopCard(i); return { x: r.x + r.w - 68, y: r.y + r.h - 22, w: 62, h: 17 }; }
   static trialBtn(i) { return { x: VIEW_W / 2 - 214 + i * 108, y: 142, w: 100, h: 26 }; }
   static guildTab(i) { return { x: 60 + i * 134, y: 22, w: 126, h: 16 }; }
   static adminRow(i) { return { x: 60, y: 32 + i * 24, w: VIEW_W - 120, h: 21 }; }

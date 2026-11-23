@@ -80,6 +80,16 @@ const GIFT_CODES = [
 ];
 function giftHash(code) { let h = 0x811c9dc5; for (const ch of 'pd_gift:' + String(code).toUpperCase()) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); }
 function skinsForMenu(save) { const owned = save && Array.isArray(save.skins) ? save.skins : []; return SKINS.filter((k) => k.source !== 'code' || owned.includes(k.id)); }
+// ── 스킨 뽑기 [사용자 결정] 재화=결정석, 1연/5연, 전설 1%, 꽝은 스킨 마일리지, 중복 전설도 마일리지, 마일리지 상점에서 직접 구매
+const GACHA = {
+  costSingle: 150, cost5: 650,            // 결정석 비용 (5연 약간 할인)
+  legendRate: 0.01,                        // 배너 전설 스킨 1%
+  missMileage: 12, dupeMileage: 250,       // 꽝 / 전설 중복 시 마일리지
+  shopPrice: 400,                          // 마일리지 상점 스킨 1개 가격
+  mileageName: '스킨 마일리지', mileageColor: '#ffb0d8',
+  banners: { skin_leg_abyss: 'abyss', skin_leg_crimson: 'crimson', skin_leg_void: 'void', skin_leg_star: 'star' } // 스킨별 배너 이미지 키 (assets/banners/<key>.jpg)
+};
+function gachaPool() { return SKINS.filter((k) => k.source === 'gacha'); } // 뽑기 대상 = 전설 뽑기 스킨
 function skinKey(K) { return K.line ? K.hero + '|' + K.line : K.hero; } /* 장착 칸: 직업·계열마다 하나 (마도사 불·빛 스킨을 따로 켜 둘 수 있게) */
 function skinAllowed(sp, heroId, lineId) { return SKINS.some((k) => k.sprite === sp && k.hero === heroId && (!k.line || k.line === lineId)); } /* [사용자 결정] 스킨은 정해진 갈래일 때만 (불꽃 마녀 = 불 마도사 · 붉은 머리 총잡이 = 속사 사수) */
 function skinSpriteOk(sp) { return SKINS.some((k) => k.sprite === sp) ? sp : null; } /* 멀티로 받은 외형 이름은 아는 스킨만 */
