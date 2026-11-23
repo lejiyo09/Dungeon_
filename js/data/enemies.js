@@ -1316,6 +1316,31 @@ const DATA_ENEMIES = [
   { id: 'enemy_archiveobelisk_001', name: '기록 봉인탑', sprite: 'archiveobelisk', color: '#665779', aiType: 'turret', traits: ['turretRing'],
     health: 470, damage: 36, moveSpeed: 0, hitboxHalf: 10, attackRange: 380, telegraphTime: 1.02, attackCooldown: 2.48, recoveryTime: 0.36,
     bulletSpeed: 285, bulletCount: 15, bulletColor: '#e8dcc0', knockbackResist: 1, rewardGold: 13 },
+  // ── 심층 31: 거울의 잔향
+  { id: 'enemy_mirrorblade_001', name: '반영의 검객', sprite: 'mirrorblade', color: '#827397', aiType: 'melee_chase', traits: ['shockwave'],
+    health: 1080, damage: 37, moveSpeed: 45, hitboxHalf: 10, attackRange: 35, telegraphTime: 0.72, attackCooldown: 1.58, recoveryTime: 0.55, knockbackResist: 0.97, rewardGold: 13 },
+  { id: 'enemy_prismwisp_001', name: '프리즘 도깨비불', sprite: 'prismwisp', color: '#7d91bf', aiType: 'charger', traits: ['redash', 'dashTrail'],
+    health: 455, damage: 37, moveSpeed: 110, hitboxHalf: 8, attackRange: 210, telegraphTime: 0.44, dashSpeed: 480, dashDuration: 0.5,
+    attackCooldown: 1.66, recoveryTime: 0.34, stunTime: 0.54, knockbackResist: 0.59, rewardGold: 12 },
+  { id: 'enemy_glassscribe_001', name: '유리 서기관', sprite: 'glassscribe', color: '#78658f', aiType: 'caster', traits: ['castMix'],
+    health: 365, damage: 37, moveSpeed: 30, hitboxHalf: 7, attackRange: 330, telegraphTime: 0.72, attackCooldown: 2.15, recoveryTime: 0.4,
+    bulletSpeed: 178, bulletCount: 20, bulletColor: '#d5c4ff', rewardGold: 12 },
+  { id: 'enemy_reflectionnode_001', name: '반사 결정체', sprite: 'reflectionnode', color: '#596b98', aiType: 'turret', traits: ['turretRing'],
+    health: 490, damage: 37, moveSpeed: 0, hitboxHalf: 10, attackRange: 385, telegraphTime: 1.0, attackCooldown: 2.45, recoveryTime: 0.36,
+    bulletSpeed: 290, bulletCount: 15, bulletColor: '#b9e5ff', knockbackResist: 1, rewardGold: 13 },
+  // ── 심층 32: 별을 잇는 천문원
+  { id: 'enemy_starchaser_001', name: '유성 추적자', sprite: 'starchaser', color: '#5577a8', aiType: 'charger', traits: ['redash', 'dashTrail'],
+    health: 475, damage: 38, moveSpeed: 112, hitboxHalf: 8, attackRange: 215, telegraphTime: 0.43, dashSpeed: 492, dashDuration: 0.5,
+    attackCooldown: 1.62, recoveryTime: 0.33, stunTime: 0.52, knockbackResist: 0.6, rewardGold: 13 },
+  { id: 'enemy_orbitowl_001', name: '궤도의 파수올빼미', sprite: 'orbitowl', color: '#586a9c', aiType: 'ranged_kite',
+    health: 420, damage: 38, moveSpeed: 48, hitboxHalf: 8, preferredRange: 190, attackRange: 360, telegraphTime: 0.68, attackCooldown: 2.0, recoveryTime: 0.38,
+    bulletSpeed: 225, bulletCount: 5, bulletSpread: 0.24, bulletColor: '#8fd8ff', rewardGold: 13 },
+  { id: 'enemy_constellation_001', name: '별자리 기록자', sprite: 'constellation', color: '#625a91', aiType: 'caster', traits: ['castMix'],
+    health: 385, damage: 38, moveSpeed: 31, hitboxHalf: 7, attackRange: 335, telegraphTime: 0.7, attackCooldown: 2.12, recoveryTime: 0.39,
+    bulletSpeed: 182, bulletCount: 21, bulletColor: '#d4c8ff', rewardGold: 13 },
+  { id: 'enemy_skybeacon_001', name: '천공의 등대', sprite: 'skybeacon', color: '#547b9c', aiType: 'turret', traits: ['turretRing'],
+    health: 510, damage: 38, moveSpeed: 0, hitboxHalf: 10, attackRange: 390, telegraphTime: 1.03, attackCooldown: 2.5, recoveryTime: 0.36,
+    bulletSpeed: 295, bulletCount: 16, bulletColor: '#9ce7ff', knockbackResist: 1, rewardGold: 13 },
   // ── 심층 27 보스: 마지막 차장
   { id: 'boss_last_conductor', name: '마지막 차장', title: '종착역을 지키는 망각의 안내자', sprite: 'boss_lastconductor', color: '#51434a', phaseColors: ['#51434a', '#806653', '#b58a68'],
     boss: true, aiType: 'boss', health: 3860, damage: 32, moveSpeed: 42, hitboxHalf: 16, knockbackResist: 1, attackCooldown: 0.98, bulletSpeed: 165,
@@ -1369,6 +1394,32 @@ const DATA_ENEMIES = [
       { type: 'spiral', duration: 3.5, arms: 9, interval: 0.058, spin: 3.0, color: '#e8dcc0' }],
     finalPatterns: [
       { type: 'grid', name: '지워진 이름', spacing: 3, delay: 0.86, radius: 28, bullets: 4, color: '#c5a4ff' },
-      { type: 'vortex', name: '기록의 소용돌이', duration: 4.8, pull: 62, arms: 8, interval: 0.07, spin: -3.2, color: '#b28be8' }] }
+      { type: 'vortex', name: '기록의 소용돌이', duration: 4.8, pull: 62, arms: 8, interval: 0.07, spin: -3.2, color: '#b28be8' }] },
+  // ── 심층 31 보스: 거울의 여왕
+  { id: 'boss_reflection_matriarch', name: '거울의 여왕', title: '수만 개의 반영을 거느린 자', sprite: 'boss_reflectionmatriarch', color: '#51445f', phaseColors: ['#51445f', '#8371a5', '#cbb4ff'],
+    boss: true, aiType: 'boss', health: 5050, damage: 37, moveSpeed: 40, hitboxHalf: 17, knockbackResist: 1, attackCooldown: 0.97, bulletSpeed: 178,
+    rewardGold: 720, patterns: [
+      { type: 'aimed', volleys: 5, count: 11, spread: 0.14, color: '#d5c4ff' },
+      { type: 'ringOut', rings: 3, count: 50, gap: 5, speed: 152, interval: 0.43, color: '#b9e5ff' },
+      { type: 'summon', enemyId: 'enemy_prismwisp_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'spiral', duration: 3.7, arms: 9, interval: 0.056, spin: -3.1, color: '#d5c4ff' },
+      { type: 'split', volleys: 5, count: 4, spread: 0.32, speed: 186, splitAfter: 0.56, splitN: 9, color: '#b9e5ff' }],
+    finalPatterns: [
+      { type: 'grid', name: '산산이 부서진 반영', spacing: 3, delay: 0.84, radius: 29, bullets: 4, color: '#d5c4ff' },
+      { type: 'vortex', name: '거울의 미궁', duration: 4.9, pull: 64, arms: 8, interval: 0.068, spin: 3.25, color: '#b9e5ff' }] },
+  // ── 심층 32 보스: 천체의 섭정
+  { id: 'boss_celestial_regent', name: '천체의 섭정', title: '별들의 궤도를 판결하는 관측자', sprite: 'boss_celestialregent', color: '#293c62', phaseColors: ['#293c62', '#496e9d', '#8fd8ff'],
+    boss: true, aiType: 'boss', health: 5350, damage: 38, moveSpeed: 39, hitboxHalf: 18, knockbackResist: 1, attackCooldown: 0.96, bulletSpeed: 182,
+    rewardGold: 760, patterns: [
+      { type: 'aimed', volleys: 5, count: 12, spread: 0.15, color: '#8fd8ff' },
+      { type: 'ringOut', rings: 4, count: 48, gap: 5, speed: 154, interval: 0.42, color: '#d4c8ff' },
+      { type: 'summon', enemyId: 'enemy_starchaser_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'spiral', duration: 3.8, arms: 10, interval: 0.054, spin: 3.2, color: '#8fd8ff' },
+      { type: 'split', volleys: 5, count: 5, spread: 0.3, speed: 190, splitAfter: 0.54, splitN: 10, color: '#d4c8ff' }],
+    finalPatterns: [
+      { type: 'grid', name: '별자리의 봉인', spacing: 3, delay: 0.82, radius: 30, bullets: 4, color: '#8fd8ff' },
+      { type: 'vortex', name: '천체의 수렴', duration: 5.0, pull: 66, arms: 9, interval: 0.066, spin: -3.35, color: '#d4c8ff' }] }
 
 ];

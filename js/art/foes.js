@@ -786,5 +786,45 @@ Object.assign(PIX, {
     P.rect(5, 5, 6, 9, 'b'); P.tri(5, 5, 8, 0, 11, 5, 'a'); P.rect(6, 6, 4, 7, 'c');
     P.ell(8, 8, 2, 2, 'r'); P.px(8, 8, 'e'); P.line(5, 5, 2, 2, 'y'); P.line(11, 5, 14, 2, 'y');
     P.rect(4, 14, 8, 1, 'y'); P.px(8, 2, 'e'); P.px(3, 9, 'r'); P.px(13, 9, 'r');
+  } },
+  // ── 심층 31: 거울의 잔향
+  mirrorblade: { tint: '#827397', w: 16, h: 16, pal: { y: '#d5c4ff', e: '#fff7ff', r: '#b9e5ff' }, proc: (P) => {
+    P.rect(4, 11, 3, 5, 'b'); P.rect(9, 11, 3, 5, 'b'); P.rect(3, 7, 10, 5, 'a'); P.rect(5, 8, 6, 3, 'c');
+    P.ell(8, 4, 4, 3, 'b'); P.rect(6, 2, 4, 4, 'a'); P.px(6, 4, 'e'); P.px(9, 4, 'e');
+    P.line(12, 8, 15, 2, 'y'); P.line(13, 8, 15, 4, 'r'); P.line(3, 8, 0, 12, 'y');
+  } },
+  prismwisp: { tint: '#7d91bf', w: 16, h: 16, pal: { y: '#d5c4ff', e: '#ffffff', r: '#b9e5ff' }, proc: (P) => {
+    P.tri(8, 1, 3, 7, 8, 13, 'a'); P.tri(8, 1, 13, 7, 8, 13, 'c'); P.tri(8, 4, 5, 9, 11, 9, 'r');
+    P.ell(8, 7, 2, 2, 'e'); P.line(5, 10, 2, 15, 'y'); P.line(11, 10, 14, 15, 'y'); P.px(8, 0, 'w');
+  } },
+  glassscribe: { tint: '#78658f', w: 16, h: 16, pal: { y: '#d5c4ff', e: '#fff7ff', r: '#b9e5ff' }, proc: (P) => {
+    P.tri(8, 1, 3, 6, 8, 13, 'b'); P.tri(8, 1, 13, 6, 8, 13, 'a'); P.rect(5, 7, 6, 7, 'c');
+    P.px(6, 9, 'e'); P.px(9, 9, 'e'); P.line(12, 5, 15, 1, 'y'); P.px(14, 2, 'w');
+    P.line(4, 7, 1, 3, 'r'); P.rect(6, 12, 4, 1, 'y');
+  } },
+  reflectionnode: { tint: '#596b98', w: 16, h: 16, pal: { y: '#b9e5ff', e: '#ffffff', r: '#d5c4ff' }, proc: (P) => {
+    P.ell(8, 8, 5, 5, 'b'); P.ell(8, 8, 3, 3, 'a'); P.ell(8, 8, 1, 1, 'e');
+    P.tri(8, 1, 5, 5, 11, 5, 'r'); P.tri(8, 15, 5, 11, 11, 11, 'c');
+    P.line(3, 8, 0, 8, 'y'); P.line(13, 8, 16, 8, 'y'); P.px(8, 0, 'w');
+  } },
+  // ── 심층 32: 별을 잇는 천문원
+  starchaser: { tint: '#5577a8', w: 16, h: 16, pal: { y: '#8fd8ff', e: '#ffffff', r: '#d4c8ff' }, proc: (P) => {
+    P.tri(8, 1, 2, 8, 8, 12, 'a'); P.tri(8, 1, 14, 8, 8, 12, 'b'); P.rect(5, 8, 6, 5, 'c');
+    P.px(6, 9, 'e'); P.px(9, 9, 'e'); P.tri(5, 12, 8, 16, 11, 12, 'y'); P.px(8, 0, 'w');
+  } },
+  orbitowl: { tint: '#586a9c', w: 16, h: 16, pal: { y: '#8fd8ff', e: '#fffbdc', r: '#d4c8ff' }, proc: (P) => {
+    P.ell(8, 8, 6, 6, 'b'); P.tri(3, 7, 8, 1, 13, 7, 'a'); P.rect(4, 7, 8, 5, 'c');
+    P.px(6, 8, 'e'); P.px(10, 8, 'e'); P.tri(8, 10, 6, 12, 10, 12, 'y');
+    P.tri(4, 10, 1, 15, 7, 13, 'a'); P.tri(12, 10, 9, 13, 15, 15, 'b'); P.px(8, 2, 'w');
+  } },
+  constellation: { tint: '#625a91', w: 16, h: 16, pal: { y: '#d4c8ff', e: '#ffffff', r: '#8fd8ff' }, proc: (P) => {
+    P.ell(8, 7, 4, 5, 'b'); P.rect(5, 8, 6, 6, 'a'); P.tri(8, 1, 3, 6, 13, 6, 'c');
+    P.line(4, 3, 8, 1, 'y'); P.line(8, 1, 12, 4, 'y'); P.line(4, 3, 5, 8, 'r');
+    P.px(4, 3, 'e'); P.px(8, 1, 'w'); P.px(12, 4, 'e'); P.px(6, 9, 'e'); P.px(10, 9, 'e');
+  } },
+  skybeacon: { tint: '#547b9c', w: 16, h: 16, pal: { y: '#8fd8ff', e: '#ffffff', r: '#d4c8ff' }, proc: (P) => {
+    P.rect(5, 5, 6, 9, 'b'); P.tri(5, 5, 8, 0, 11, 5, 'a'); P.rect(6, 6, 4, 7, 'c');
+    P.ell(8, 9, 2, 2, 'y'); P.px(8, 9, 'e'); P.line(5, 5, 2, 1, 'r'); P.line(11, 5, 14, 1, 'r');
+    P.px(8, 1, 'w'); P.rect(4, 14, 8, 1, 'y');
   } }
 });

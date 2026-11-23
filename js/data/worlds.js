@@ -188,7 +188,17 @@ const DEEP_WORLDS = [
   { id: 'deep_recordsource', name: '기록의 근원', boss: 'boss_nameless_archivist', waves: 2, deep: true,
     enemies: [['enemy_archiveguard_001', 3], ['enemy_inkwraith_001', 3], ['enemy_livingfolio_001', 2], ['enemy_archiveobelisk_001', 2]],
     palette: { style: 'library', accent: '#c5a4ff', floor: ['#37313f', '#3c3545'], corridor: ['#241e2c', '#28212f'], wall: '#40364a', wallTop: '#554765',
-      wallFace: '#7a6c83', faceLine: '#65596f', deco: 'rgba(197,164,255,0.36)' } }
+      wallFace: '#7a6c83', faceLine: '#65596f', deco: 'rgba(197,164,255,0.36)' } },
+  // ── 심층 31: 거울의 잔향
+  { id: 'deep_mirror_echo', name: '거울의 잔향', boss: 'boss_reflection_matriarch', waves: 2, deep: true,
+    enemies: [['enemy_mirrorblade_001', 3], ['enemy_prismwisp_001', 3], ['enemy_glassscribe_001', 2], ['enemy_reflectionnode_001', 2]],
+    palette: { style: 'mirror', accent: '#d5c4ff', floor: ['#393344', '#40384d'], corridor: ['#282332', '#2c2638'], wall: '#494052', wallTop: '#5d506b',
+      wallFace: '#857793', faceLine: '#6f627d', deco: 'rgba(213,196,255,0.38)' } },
+  // ── 심층 32: 별을 잇는 천문원
+  { id: 'deep_celestial_observatory', name: '별을 잇는 천문원', boss: 'boss_celestial_regent', waves: 2, deep: true,
+    enemies: [['enemy_starchaser_001', 3], ['enemy_orbitowl_001', 3], ['enemy_constellation_001', 2], ['enemy_skybeacon_001', 2]],
+    palette: { style: 'starfall', accent: '#8fd8ff', floor: ['#202c48', '#263250'], corridor: ['#172139', '#1b2541'], wall: '#303e64', wallTop: '#40527e',
+      wallFace: '#647ba9', faceLine: '#50658e', deco: 'rgba(143,216,255,0.4)' } }
 
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
