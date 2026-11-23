@@ -178,7 +178,12 @@ const DEEP_WORLDS = [
   { id: 'deep_moonfair', name: '달빛 유원지', boss: 'boss_last_showman', waves: 2, deep: true,
     enemies: [['enemy_carouselknight_001', 3], ['enemy_balloonmimic_001', 3], ['enemy_ticketjester_001', 2], ['enemy_ferriswheel_001', 2]],
     palette: { style: 'theater', accent: '#79eee2', floor: ['#30263e', '#352a43'], corridor: ['#211a30', '#241d34'], wall: '#49365a', wallTop: '#60466d',
-      wallFace: '#87627f', faceLine: '#704f70', deco: 'rgba(121,238,226,0.38)' } }
+      wallFace: '#87627f', faceLine: '#704f70', deco: 'rgba(121,238,226,0.38)' } },
+  // ── 심층 29: 접혀버린 종이도시
+  { id: 'deep_foldedcity', name: '접혀버린 종이도시', boss: 'boss_blank_emperor', waves: 2, deep: true,
+    enemies: [['enemy_paperknight_001', 3], ['enemy_foldcrow_001', 3], ['enemy_inkscribe_001', 2], ['enemy_paperlantern_001', 2]],
+    palette: { style: 'sanctum', accent: '#d8c2ff', floor: ['#b7a9a0', '#bdb0a7'], corridor: ['#756b78', '#7a7080'], wall: '#4a405c', wallTop: '#5e5274',
+      wallFace: '#897c99', faceLine: '#716481', deco: 'rgba(216,194,255,0.38)' } }
 
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층

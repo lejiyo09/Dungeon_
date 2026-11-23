@@ -1292,6 +1292,18 @@ const DATA_ENEMIES = [
   { id: 'enemy_ferriswheel_001', name: '관람차 감시기', sprite: 'ferriswheel', color: '#6a5684', aiType: 'turret', traits: ['turretRing'],
     health: 445, damage: 34, moveSpeed: 0, hitboxHalf: 10, attackRange: 370, telegraphTime: 1.0, attackCooldown: 2.42, recoveryTime: 0.35,
     bulletSpeed: 275, bulletCount: 14, bulletColor: '#ffd27c', knockbackResist: 1, rewardGold: 12 },
+  // ── 심층 29: 접혀버린 종이도시
+  { id: 'enemy_paperknight_001', name: '종이 갑주병', sprite: 'paperknight', color: '#9584ad', aiType: 'melee_chase', traits: ['shockwave'],
+    health: 960, damage: 35, moveSpeed: 44, hitboxHalf: 10, attackRange: 34, telegraphTime: 0.7, attackCooldown: 1.6, recoveryTime: 0.56, knockbackResist: 0.96, rewardGold: 12 },
+  { id: 'enemy_foldcrow_001', name: '접지 까마귀', sprite: 'foldcrow', color: '#51465f', aiType: 'charger', traits: ['redash', 'dashTrail'],
+    health: 395, damage: 35, moveSpeed: 108, hitboxHalf: 8, attackRange: 205, telegraphTime: 0.44, dashSpeed: 470, dashDuration: 0.49,
+    attackCooldown: 1.68, recoveryTime: 0.34, stunTime: 0.53, knockbackResist: 0.6, rewardGold: 11 },
+  { id: 'enemy_inkscribe_001', name: '먹물 서기관', sprite: 'inkscribe', color: '#4a3f66', aiType: 'caster', traits: ['castMix'],
+    health: 345, damage: 35, moveSpeed: 29, hitboxHalf: 7, attackRange: 325, telegraphTime: 0.73, attackCooldown: 2.18, recoveryTime: 0.4,
+    bulletSpeed: 170, bulletCount: 19, bulletColor: '#c3a8ff', rewardGold: 11 },
+  { id: 'enemy_paperlantern_001', name: '종이등대 포대', sprite: 'paperlantern', color: '#8e7aab', aiType: 'turret', traits: ['turretRing'],
+    health: 455, damage: 35, moveSpeed: 0, hitboxHalf: 10, attackRange: 375, telegraphTime: 1.0, attackCooldown: 2.45, recoveryTime: 0.36,
+    bulletSpeed: 280, bulletCount: 14, bulletColor: '#e8d9ff', knockbackResist: 1, rewardGold: 12 },
   // ── 심층 27 보스: 마지막 차장
   { id: 'boss_last_conductor', name: '마지막 차장', title: '종착역을 지키는 망각의 안내자', sprite: 'boss_lastconductor', color: '#51434a', phaseColors: ['#51434a', '#806653', '#b58a68'],
     boss: true, aiType: 'boss', health: 3860, damage: 32, moveSpeed: 42, hitboxHalf: 16, knockbackResist: 1, attackCooldown: 0.98, bulletSpeed: 165,
@@ -1319,6 +1331,19 @@ const DATA_ENEMIES = [
       { type: 'split', volleys: 4, count: 4, spread: 0.31, speed: 180, splitAfter: 0.58, splitN: 8, color: '#8ef5e9' }],
     finalPatterns: [
       { type: 'grid', name: '마지막 불꽃놀이', spacing: 3, delay: 0.9, radius: 27, bullets: 4, color: '#ff83c8' },
-      { type: 'vortex', name: '끝나지 않는 축제', duration: 4.6, pull: 58, arms: 7, interval: 0.076, spin: -3.0, color: '#ffd27c' }] }
+      { type: 'vortex', name: '끝나지 않는 축제', duration: 4.6, pull: 58, arms: 7, interval: 0.076, spin: -3.0, color: '#ffd27c' }] },
+  // ── 심층 29 보스: 백지의 제본왕
+  { id: 'boss_blank_emperor', name: '백지의 제본왕', title: '모든 이야기를 다시 쓰는 종이의 왕', sprite: 'boss_blankemperor', color: '#51465f', phaseColors: ['#51465f', '#82709d', '#d8c2ff'],
+    boss: true, aiType: 'boss', health: 4480, damage: 35, moveSpeed: 41, hitboxHalf: 17, knockbackResist: 1, attackCooldown: 0.98, bulletSpeed: 172,
+    rewardGold: 640, patterns: [
+      { type: 'aimed', volleys: 5, count: 9, spread: 0.14, color: '#d8c2ff' },
+      { type: 'ringOut', rings: 3, count: 46, gap: 5, speed: 148, interval: 0.46, color: '#e8d9ff' },
+      { type: 'summon', enemyId: 'enemy_foldcrow_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'cross', waves: 5, len: 12, step: 22, radius: 16, delay: 0.7, interval: 0.42, bullets: 0, color: '#c3a8ff' },
+      { type: 'spiral', duration: 3.5, arms: 8, interval: 0.06, spin: -2.9, color: '#e8d9ff' }],
+    finalPatterns: [
+      { type: 'grid', name: '마지막 원고', spacing: 3, delay: 0.9, radius: 28, bullets: 4, color: '#d8c2ff' },
+      { type: 'vortex', name: '백지의 폭풍', duration: 4.7, pull: 60, arms: 7, interval: 0.074, spin: 3.1, color: '#c3a8ff' }] }
 
 ];

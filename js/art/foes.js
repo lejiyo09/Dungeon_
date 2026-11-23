@@ -743,5 +743,26 @@ Object.assign(PIX, {
     P.line(8, 1, 8, 13, 'y'); P.line(2, 7, 14, 7, 'y'); P.line(4, 3, 12, 11, 'y'); P.line(12, 3, 4, 11, 'y');
     P.rect(7, 13, 2, 2, 'c'); P.line(8, 14, 4, 16, 'b'); P.line(8, 14, 12, 16, 'b');
     P.px(8, 7, 'e'); P.px(2, 1, 'r'); P.px(14, 1, 'r');
+  } },
+  // ── 심층 29: 접혀버린 종이도시
+  paperknight: { tint: '#9584ad', w: 16, h: 16, pal: { y: '#d8c2ff', e: '#fff7e8', r: '#82709d' }, proc: (P) => {
+    P.rect(4, 11, 3, 5, 'b'); P.rect(9, 11, 3, 5, 'b'); P.rect(3, 7, 10, 5, 'a'); P.rect(5, 8, 6, 3, 'c');
+    P.tri(4, 7, 8, 1, 12, 7, 'a'); P.tri(5, 7, 8, 3, 11, 7, 'y'); P.rect(6, 4, 4, 3, 'b');
+    P.px(6, 5, 'e'); P.px(9, 5, 'e'); P.line(3, 9, 0, 4, 'y'); P.line(12, 9, 15, 4, 'y');
+  } },
+  foldcrow: { tint: '#51465f', w: 16, h: 16, pal: { y: '#d8c2ff', e: '#fff7e8', r: '#a38fbe' }, proc: (P) => {
+    P.tri(8, 1, 1, 9, 8, 7, 'a'); P.tri(8, 1, 15, 9, 8, 7, 'b'); P.tri(7, 6, 14, 8, 8, 12, 'c');
+    P.tri(6, 7, 1, 13, 8, 11, 'a'); P.tri(10, 7, 15, 13, 8, 11, 'b');
+    P.px(6, 7, 'e'); P.px(9, 7, 'e'); P.tri(8, 9, 12, 10, 8, 12, 'y'); P.line(7, 12, 5, 15, 'r'); P.line(9, 12, 11, 15, 'r');
+  } },
+  inkscribe: { tint: '#4a3f66', w: 16, h: 16, pal: { y: '#d8c2ff', e: '#fff7e8', r: '#a38fbe' }, proc: (P) => {
+    P.tri(8, 1, 3, 6, 8, 13, 'a'); P.tri(8, 1, 13, 6, 8, 13, 'b'); P.rect(5, 7, 6, 7, 'c');
+    P.rect(4, 4, 8, 2, 'a'); P.px(6, 9, 'e'); P.px(9, 9, 'e'); P.rect(6, 12, 4, 2, 'r');
+    P.line(12, 4, 15, 1, 'y'); P.px(14, 2, 'e'); P.px(3, 6, 'y');
+  } },
+  paperlantern: { tint: '#8e7aab', w: 16, h: 16, pal: { y: '#e8d9ff', e: '#fff7e8', r: '#d8c2ff' }, proc: (P) => {
+    P.rect(4, 5, 8, 9, 'a'); P.rect(6, 6, 4, 7, 'c'); P.tri(4, 5, 8, 1, 12, 5, 'b');
+    P.line(4, 5, 4, 14, 'y'); P.line(12, 5, 12, 14, 'y'); P.rect(5, 14, 6, 1, 'r');
+    P.ell(8, 9, 2, 3, 'e'); P.px(8, 2, 'y'); P.line(8, 1, 8, 0, 'e');
   } }
 });
