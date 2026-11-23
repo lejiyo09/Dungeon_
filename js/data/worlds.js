@@ -130,6 +130,7 @@ const DEEP_WORLDS = [
     enemies: [['enemy_vinesnake_001', 3], ['enemy_stoneguard_001', 3], ['enemy_dartshooter_001', 3], ['enemy_jungletotem_001', 2]],
     palette: { style: 'jungle', accent: '#6aba4a', floor: ['#4a4a3a', '#4d4d3c'], corridor: ['#34342a', '#36362c'], wall: '#4a5040', wallTop: '#5a6050',
       wallFace: '#7a806a', faceLine: '#6a705a', deco: 'rgba(106,186,74,0.35)' } }
+,
   // ── 심층 21: 잊힌 왕릉
   { id: 'deep_crowncrypt', name: '잊힌 왕릉', boss: 'boss_crownless_king', waves: 2, deep: true,
     enemies: [['enemy_graveguard_001', 3], ['enemy_bellwraith_001', 2], ['enemy_crownmoth_001', 3], ['enemy_cairntower_001', 2]],
