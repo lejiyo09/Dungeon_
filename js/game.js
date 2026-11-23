@@ -252,8 +252,16 @@ class Game {
     this.startBabylonThrone(pending);
   }
   settleRun() { /* 귀환과 같은 정산 (결과 창만 나중에) */
-    this.submitRunScore(true); this.guildEvent('runs'); SFX.stopMusic(); this.save.run = null; this.save.runReviveUsed = false;
-    const { stages, bosses, reward } = this.runReward(true); this.save.clears++; writeSave(this.save); return { victory: true, stages, bosses, reward };
+    const coopRun = !!this.coopRunKey, key = this.coopRunKey;
+    if (!coopRun) this.submitRunScore(true);
+    this.guildEvent('runs'); SFX.stopMusic();
+    if (coopRun) {
+      this.updateCoopRecord(true);
+      if (key && this.save.coopRuns) delete this.save.coopRuns[key];
+      this.coopRunData = null;
+      if (this.coop && this.coop.host) Net.relay({ k: 'runClear', key });
+    } else { this.save.run = null; this.save.runReviveUsed = false; this.save.clears++; }
+    const { stages, bosses, reward } = this.runReward(true); writeSave(this.save); return { victory: true, stages, bosses, reward };
   }
   startBabylonThrone(pending) { /* 길가메시의 왕좌: 지금 캐릭터 그대로 (로비에서 바로 오면 심층 기본 장비) */
     this.babylonPending = pending || null; this.babylonFall = null;
@@ -502,17 +510,49 @@ class Game {
   coopPartyMembers(players = Net.players) {
     return (players || []).map((p) => String(typeof p === 'string' ? p : (p && (p.name || (p.id != null ? '#' + p.id : ''))) || '').trim().slice(0, 12)).filter(Boolean).sort((a, b) => a.localeCompare(b, 'ko'));
   }
-  coopPartyKey(players = Net.players) {
-    const names = this.coopPartyMembers(players);
-    return names.length > 1 ? 'party:' + names.map((n) => encodeURIComponent(n)).join('|') : null;
+  coopPartyIds(players = Net.players) {
+    return (players || []).map((p) => String(typeof p === 'string' ? p : (p && (p.uid || (p.id != null ? 'session:' + p.id : ''))) || '').trim()).filter(Boolean).sort();
   }
-  validCoopRun(run, key, members) {
-    if (!run || run.v !== 1 || run.key !== key || !Array.isArray(run.party) || !Array.isArray(run.members)) return false;
-    const expected = this.coopPartyMembers(members || []);
-    if (expected.length < 2 || this.coopPartyKey(run.party) !== key || JSON.stringify(expected) !== JSON.stringify(this.coopPartyMembers(run.party))) return false;
-    return Number.isInteger(run.worldIdx) && run.worldIdx >= 0 && run.worldIdx < DEEP_START
-      && Number.isInteger(run.levelIdx) && run.levelIdx >= 0 && run.levelIdx < STAGES_PER_WORLD
-      && run.members.every((m) => m && expected.includes(m.name) && DATA_HEROES.some((h) => h.id === m.hero) && m.p && typeof m.p === 'object' && Array.isArray(m.p.weapons));
+  coopPlayerUid(id) {
+    const p = Net.players.find((q) => q.id === id);
+    return p ? String(p.uid || ('session:' + p.id)) : 'session:' + id;
+  }
+  coopPartyKey(players = Net.players) {
+    const ids = this.coopPartyIds(players);
+    return ids.length > 1 ? 'party:' + ids.map((id) => encodeURIComponent(id)).join('|') : null;
+  }
+  validCoopRun(run, key, memberIds) {
+    if (!run || run.v !== 1 || run.key !== key || !Array.isArray(run.party) || !Array.isArray(run.partyIds) || !Array.isArray(run.members)) return false;
+    const expected = this.coopPartyIds(memberIds || []), stored = this.coopPartyIds(run.partyIds);
+    if (expected.length < 2 || expected.length !== stored.length || JSON.stringify(expected) !== JSON.stringify(stored) || this.coopPartyKey(expected) !== key) return false;
+    if (!Number.isInteger(run.worldIdx) || run.worldIdx < 0 || run.worldIdx >= DEEP_START || !Number.isInteger(run.levelIdx) || run.levelIdx < 0 || run.levelIdx >= STAGES_PER_WORLD) return false;
+    const have = new Set(run.members.map((m) => m && m.uid).filter(Boolean));
+    return run.members.length === expected.length && have.size === expected.length && expected.every((uid) => have.has(uid))
+      && run.members.every((m) => DATA_HEROES.some((h) => h.id === m.hero) && m.p && typeof m.p === 'object' && Array.isArray(m.p.weapons));
+  }
+  migrateLegacyCoopRun(names, ids, key) {
+    const oldKey = 'party:' + names.map((n) => encodeURIComponent(n)).join('|');
+    if (oldKey === key || !this.save.coopRuns || !this.save.coopRuns[oldKey]) return null;
+    const old = this.save.coopRuns[oldKey];
+    if (!old || old.key !== oldKey || !Array.isArray(old.party) || !Array.isArray(old.members)) return null;
+    if (JSON.stringify(this.coopPartyMembers(old.party)) !== JSON.stringify(names)) return null;
+    const current = new Map();
+    for (const p of Net.players) {
+      const name = String(p.name || '').trim().slice(0, 12);
+      if (!name || current.has(name)) return null;
+      current.set(name, String(p.uid || ('session:' + p.id)));
+    }
+    const migratedMembers = [];
+    for (const m of old.members) {
+      const uid = current.get(String(m.name || '').trim().slice(0, 12));
+      if (!uid || migratedMembers.some((x) => x.uid === uid)) return null;
+      migratedMembers.push(Object.assign({}, m, { uid }));
+    }
+    if (migratedMembers.length !== ids.length || ids.some((uid) => !migratedMembers.some((m) => m.uid === uid))) return null;
+    const migrated = Object.assign({}, old, { key, party: names.slice(), partyIds: ids.slice(), members: migratedMembers });
+    this.save.coopRuns[key] = migrated; delete this.save.coopRuns[oldKey];
+    if (this.save.coopRecords && this.save.coopRecords[oldKey]) { this.save.coopRecords[key] = this.save.coopRecords[oldKey]; delete this.save.coopRecords[oldKey]; }
+    writeSave(this.save); return migrated;
   }
   updateCoopRecord(victory = false) {
     const key = this.coopRunKey; if (!key || !this.save) return null;
@@ -817,14 +857,15 @@ class Game {
   startRun(deep = false) {
     const partyLaunch = Net.inRoom && Net.isHost && Net.players.length > 1;
     if (partyLaunch) {
-      const members = this.coopPartyMembers(), key = this.coopPartyKey(members);
-      this.coopRunKey = key; this.coopPartyMembersList = members;
-      const prior = this.save.coopRuns && this.save.coopRuns[key];
-      this.coopRunData = this.validCoopRun(prior, key, members) ? prior : null;
-      if (this.coopRunData) { this.resumeCoopRun(this.coopRunData, key, members); return; }
+      const members = this.coopPartyMembers(), memberIds = this.coopPartyIds(), key = this.coopPartyKey(memberIds);
+      this.coopRunKey = key; this.coopPartyMembersList = members; this.coopPartyIdsList = memberIds;
+      let prior = this.save.coopRuns && this.save.coopRuns[key];
+      if (!prior) prior = this.migrateLegacyCoopRun(members, memberIds, key);
+      this.coopRunData = this.validCoopRun(prior, key, memberIds) ? prior : null;
+      if (this.coopRunData) { this.resumeCoopRun(this.coopRunData, key, members, memberIds); return; }
       this.coopReviveUsed = false; deep = false;
     } else {
-      this.coopRunKey = null; this.coopPartyMembersList = null; this.coopRunData = null; this.coopReviveUsed = false;
+      this.coopRunKey = null; this.coopPartyMembersList = null; this.coopPartyIdsList = null; this.coopRunData = null; this.coopReviveUsed = false;
     }
     this.mode = 'dungeon'; this.trialW = null; this.areaId = null; this.runDeep = !!deep;
     this.worldIdx = deep ? DEEP_START : 0; this.levelIdx = 0; this.gold = deep ? BALANCE.deepStart.gold : 0; this.kills = 0;
@@ -847,13 +888,13 @@ class Game {
     }
     if (partyLaunch) this.coopHostStart();
   }
-  resumeCoopRun(run, key, members) {
+  resumeCoopRun(run, key, members, memberIds = this.coopPartyIds()) {
     this.mode = 'dungeon'; this.trialW = null; this.areaId = null; this.zoneField = 0; this.zoneRights = 0; this.babylonCp = null; this.runDeep = false;
-    this.coopRunKey = key; this.coopPartyMembersList = this.coopPartyMembers(members); this.coopRunData = run;
+    this.coopRunKey = key; this.coopPartyMembersList = this.coopPartyMembers(members); this.coopPartyIdsList = this.coopPartyIds(memberIds); this.coopRunData = run;
     this.coopReviveUsed = !!run.reviveUsed;
     this.worldIdx = run.worldIdx; this.levelIdx = run.levelIdx; this.gold = Math.max(0, Number(run.gold) || 0); this.kills = Math.max(0, Number(run.kills) || 0);
     this.runStart = run.start && Number.isInteger(run.start.stage) ? run.start : { stage: this.worldIdx * STAGES_PER_WORLD, world: this.worldIdx };
-    const me = (run.members || []).find((m) => m.name === this.netName()), hero = me && this.data.heroes.get(me.hero);
+    const me = (run.members || []).find((m) => m.uid === Net.identity()), hero = me && this.data.heroes.get(me.hero);
     this.player = hero && me.p ? this.playerFromSnapshot(hero, me.p) : this.makePlayer(0, 0);
     this.loadStage(); this.coopHostStart();
     this.showBanner('파티 탐험 이어하기', `${this.stageName()}부터 같은 파티의 진행을 이어갑니다`, '#7affc0');
@@ -1050,6 +1091,7 @@ class Game {
     this.effects.burst(p.x, p.y, '#ffffff', 18);
     SFX.play('heal');
     this.showBanner('부활!', `결정석 ${COST}개 사용 · 이번 탐험의 부활 기회 소진`, '#7ad0ff');
+    if (coopRun && this.coop && this.coop.host) this.coopSaveRun();
     return true;
   }
   endRun(victory) {
@@ -1060,6 +1102,11 @@ class Game {
     if (!coopRun) this.submitRunScore(victory);
     this.guildEvent('runs');
     if (this.coop && this.coop.host) this.coopHostEnd(victory);
+    else if (coopRun) {
+      const key = this.coopRunKey; this.updateCoopRecord(!!victory);
+      if (key && this.save.coopRuns) delete this.save.coopRuns[key];
+      this.coopRunKey = null; this.coopPartyMembersList = null; this.coopPartyIdsList = null; this.coopRunData = null; this.coopReviveUsed = false; writeSave(this.save);
+    }
     SFX.stopMusic();
     if (!coopRun) { this.save.run = null; this.save.runReviveUsed = false; writeSave(this.save); }
     if (this.areaId) this.restoreStashRun(); /* 바빌로니아 귀환길이 끝나면 그 전 탐험 기록을 되돌림 */

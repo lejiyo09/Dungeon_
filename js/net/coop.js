@@ -113,7 +113,7 @@ Object.assign(Game.prototype, {
   coopOnNet(m) {
     if (!this.coop) {
       if (m.t === 'relay' && m.data && m.data.k === 'gather' && !Net.isHost) { const d = m.data; this.gather = { label: d.label, n: d.n, total: d.total, t: d.t }; if (d.t) SFX.play('ui', 0.2); return; } // 단체 입장 상태 (방장이 보냄)
-      if (m.t === 'relay' && m.data && m.data.k === 'start' && this.mode === 'lobby' && !this.transition && !(this.overlay && this.overlay.type === 'result')) { this.gather = {}; this.coopGuestStart(m.from, false, m.data.partyKey, m.data.partyMembers); if (m.data.late) this.showBanner('진행 중인 탐험에 합류했습니다', null, '#7affc0'); } // 멀티는 파티별 진행 기록 사용
+      if (m.t === 'relay' && m.data && m.data.k === 'start' && this.mode === 'lobby' && !this.transition && !(this.overlay && this.overlay.type === 'result')) { this.gather = {}; this.coopGuestStart(m.from, false, m.data.partyKey, m.data.partyMembers, m.data.partyIds); if (m.data.late) this.showBanner('진행 중인 탐험에 합류했습니다', null, '#7affc0'); } // 멀티는 파티별 진행 기록 사용
       return; }
     if (m.t === 'dropped' || m.t === 'rejoined' || m.t === 'lost') { this.coopNetEvent(m.t); return; } // 내 연결이 끊김 / 다시 연결됨 / 포기
     if (m.t === 'players') {
@@ -143,55 +143,68 @@ Object.assign(Game.prototype, {
       else if (d.k === 'gev') { for (const [st, a, t] of d.e || []) { this.guildEvent(st, a, t); if (st === 'bosses') this.coopGuestMerlinBoss(t); } } // 함께 한 일 → 내 퀘스트·기록
       else if (d.k === 'sanctum') this.coopGuestSanctum(d);
       else if (d.k === 'runSave') this.coopReceiveRunSave(d);
+      else if (d.k === 'runClear' && d.key === this.coopRunKey) { if (this.save.coopRuns) delete this.save.coopRuns[d.key]; this.coopRunData = null; writeSave(this.save); }
       else if (d.k === 'herodrop' && Math.random() < (d.p || 0)) { const left = DATA_TREASURES.filter((t) => t.heroDrop && !this.save.treasures.includes(t.id)); if (left.length) { const T = pick(left); this.save.treasures.push(T.id); writeSave(this.save); this.treasureToast = { T, start: performance.now() }; } }
     }
   },
 
   // ── 방장
   coopHostStart() {
-    const partyMembers = this.coopPartyMembersList || this.coopPartyMembers(Net.players), partyKey = this.coopRunKey || this.coopPartyKey(partyMembers);
-    this.coopRunKey = partyKey; this.coopPartyMembersList = partyMembers;
-    this.coop = { host: true, me: this.player, aim: null, snapT: 0, nid: 0, fx: [], lastTiles: null, partyKey, partyMembers, reviveUsed: !!this.coopReviveUsed };
+    const partyMembers = this.coopPartyMembersList || this.coopPartyMembers(Net.players);
+    const partyIds = this.coopPartyIdsList || this.coopPartyIds(Net.players);
+    const partyKey = this.coopRunKey || this.coopPartyKey(partyIds);
+    this.coopRunKey = partyKey; this.coopPartyMembersList = partyMembers; this.coopPartyIdsList = partyIds;
+    this.coop = { host: true, me: this.player, aim: null, snapT: 0, nid: 0, fx: [], lastTiles: null, partyKey, partyMembers, partyIds, reviveUsed: !!this.coopReviveUsed };
     this.remotes = new Map();
-    Net.raw({ t: 'start', on: true }); Net.relay({ k: 'start', deep: false, partyKey, partyMembers });
+    Net.raw({ t: 'start', on: true }); Net.relay({ k: 'start', deep: false, partyKey, partyMembers, partyIds });
     const E = this.effects, fx = this.coop.fx; this.coop.fxOrig = {};
     const cnt = this.coop.fxCount = {}, CAP = { part: 16, status: 8, dust: 6, afterimage: 6 }; let depth = 0;
     for (const name of COOP.fx) { const orig = E[name]; this.coop.fxOrig[name] = orig; E[name] = function (...a) {
       if (depth === 0 && fx.length < 120 && (!CAP[name] || (cnt[name] = (cnt[name] || 0) + 1) <= CAP[name])) fx.push([name, ...a.map((v) => (typeof v === 'number' ? r1(v) : v))]);
-      depth++; try { return orig.apply(this, a); } finally { depth--; } }; }
+      depth++; try { return orig.apply(this, a); } finally { depth--; } };
+    }
     this.coopSaveRun();
     if (this.cutscene) { const c = this.cutscene; Net.relay({ k: 'cut', lines: c.lines, focus: c.focus ? { x: Math.round(c.focus.x), y: Math.round(c.focus.y) } : null }); }
     this.showBanner('함께 출발!', `${partyMembers.length}명 협동 · 몬스터가 인원만큼 많고 단단해집니다`, '#7affc0');
   },
   coopAddRemote(id, d) {
     if (this.remotes.has(id)) return;
-    const name = Net.nameOf(id), saved = this.coopRunData && (this.coopRunData.members || []).find((m) => m.name === name);
-    const hero = this.data.heroes.get(d.hero) || DATA_HEROES[0], me = this.coop.me, c = { x: me.x, y: me.y };
+    const uid = this.coopPlayerUid(id), name = Net.nameOf(id);
+    const saved = this.coopRunData && (this.coopRunData.members || []).find((m) => m.uid === uid);
+    const hero = this.data.heroes.get(saved && saved.hero) || this.data.heroes.get(d.hero) || DATA_HEROES[0];
+    const me = this.coop.me, c = { x: me.x, y: me.y };
     let px = c.x + (this.remotes.size + 1) * 14, py = c.y + 10; if (overlapsSolid(px, py, 5, this.map)) { px = c.x; py = c.y; }
-    const J = BALANCE.jobLevel, lv = Math.min(J.max, d.jobLv | 0), savedHero = saved && this.data.heroes.get(saved.hero), actualHero = savedHero || hero;
-    const p = new Player(px, py, actualHero, this.data.base); p.jobMaster = lv >= J.max; this.applyJobMaster(p, actualHero.id, d.line); p.remoteSkin = skinSpriteOk(d.skin); p.lineChoice = jobLines(actualHero.id).some((l) => l.id === d.line) ? d.line : null;
+    const J = BALANCE.jobLevel, lv = Math.min(J.max, d.jobLv | 0);
+    const p = new Player(px, py, hero, this.data.base); p.jobMaster = lv >= J.max;
+    this.applyJobMaster(p, hero.id, d.line); p.remoteSkin = skinSpriteOk(d.skin);
+    p.lineChoice = jobLines(hero.id).some((l) => l.id === d.line) ? d.line : null;
     if (lv) { p.maxHp += J.hp * lv; p.hp = p.maxHp; p.maxEnergy += J.energy * lv; p.energy = p.maxEnergy; p.stats.attackBonus += J.atk * lv; }
-    p.weapons.push(new WeaponInstance(this.weaponDef(actualHero.startWeapon)));
-    if (d.loadout && d.loadout !== actualHero.startWeapon && this.data.weapons.get(d.loadout)) p.weapons.push(new WeaponInstance(this.weaponDef(d.loadout)));
+    p.weapons.push(new WeaponInstance(this.weaponDef(hero.startWeapon)));
+    if (d.loadout && d.loadout !== hero.startWeapon && this.data.weapons.get(d.loadout)) p.weapons.push(new WeaponInstance(this.weaponDef(d.loadout)));
     const tr = DATA_TREASURES.find((t) => t.id === d.treasure); if (tr) { p.treasure = tr; if (tr.apply) tr.apply(p); }
-    const L0 = jobLines(actualHero.id)[0]; if (L0) this.withPlayer(p, () => this.setJob(p, L0, 0));
-    if (saved && saved.p) this.playerFromSnapshot(actualHero, saved.p, p);
-    else if (d.cp && typeof d.cp === 'object') this.playerFromSnapshot(actualHero, d.cp, p);
+    const L0 = jobLines(hero.id)[0]; if (L0) this.withPlayer(p, () => this.setJob(p, L0, 0));
+    if (saved && saved.p) this.playerFromSnapshot(hero, saved.p, p);
+    else if (d.cp && typeof d.cp === 'object') this.playerFromSnapshot(hero, d.cp, p);
     else if (this.runDeep) this.withPlayer(p, () => this.applyDeepKit(p));
-    this.remotes.set(id, { id, p, vin: new VirtualInput(), aim: { x: p.x + 20, y: p.y }, warp: 0, name });
-    this.coopSaveRun();
-    this.coopSendMap(id);
+    this.remotes.set(id, { id, uid, p, vin: new VirtualInput(), aim: { x: p.x + 20, y: p.y }, warp: 0, name });
+    this.coopSaveRun(); this.coopSendMap(id);
   },
-  coopRemoteGone(id) { // 참가자 연결이 끊김: 캐릭터를 2분 동안 보관 → 같은 이름으로 다시 들어오면 그대로 이어서
+  coopRemoteGone(id) {
     const R = this.remotes.get(id); if (!R) return; this.remotes.delete(id);
-    const C = this.coop; C.ghosts = C.ghosts || new Map(); C.ghosts.set(R.name, { p: R.p, at: performance.now() });
+    const C = this.coop; C.ghosts = C.ghosts || new Map();
+    C.ghosts.set(R.uid || ('session:' + id), { p: R.p, at: performance.now(), name: R.name, uid: R.uid });
+    this.coopSaveRun();
     this.showBanner(`${R.name} 연결 끊김`, '다시 연결되면 그대로 이어서 합니다', '#ffb070');
   },
   coopRestoreRemote(id, d) {
-    const C = this.coop, name = Net.nameOf(id), g = C.ghosts && C.ghosts.get(name); if (!d.rejoin || !g || performance.now() - g.at > 120000 || this.remotes.has(id)) return false;
-    C.ghosts.delete(name); const p = g.p, me = C.me; p.x = me.x + 14; p.y = me.y + 10; p.hurtInvuln = 2;
-    this.remotes.set(id, { id, p, vin: new VirtualInput(), aim: { x: p.x + 20, y: p.y }, warp: 1, name });
-    this.coop.snapN = 0; this.coopSendMap(id); this.showBanner(`${name} 다시 연결됨`, null, '#7affc0'); return true;
+    const C = this.coop, uid = this.coopPlayerUid(id), name = Net.nameOf(id);
+    const g = C.ghosts && C.ghosts.get(uid);
+    if (!d.rejoin || !g || performance.now() - g.at > 120000 || this.remotes.has(id)) return false;
+    C.ghosts.delete(uid);
+    const p = g.p, me = C.me; p.x = me.x + 14; p.y = me.y + 10; p.hurtInvuln = 2;
+    this.remotes.set(id, { id, uid, p, vin: new VirtualInput(), aim: { x: p.x + 20, y: p.y }, warp: 1, name });
+    this.coop.snapN = 0; this.coopSaveRun(); this.coopSendMap(id);
+    this.showBanner(`${name} 다시 연결됨`, null, '#7affc0'); return true;
   },
   coopNetEvent(t) { // 내 연결 상태 변화
     const C = this.coop; if (!C) return;
@@ -242,26 +255,30 @@ Object.assign(Game.prototype, {
     const C = this.coop, key = C && C.partyKey || this.coopRunKey;
     if (!C || !C.host || !key || !this.player || this.trialW) return false;
     const party = (C.partyMembers || this.coopPartyMembersList || []).slice();
+    const partyIds = (C.partyIds || this.coopPartyIdsList || this.coopPartyIds()).slice();
+    const allowed = new Set(partyIds);
     const prev = this.save.coopRuns && this.save.coopRuns[key] || this.coopRunData || {};
-    const members = Array.isArray(prev.members) ? prev.members.slice() : [];
-    const put = (name, p) => {
-      if (!name || !p || !p.hero) return;
-      const entry = { name, hero: p.hero.id, p: this.withPlayer(p, () => this.snapshotRun().p) };
-      const i = members.findIndex((m) => m.name === name); if (i >= 0) members[i] = entry; else members.push(entry);
+    const members = (Array.isArray(prev.members) ? prev.members : []).filter((m) => m && allowed.has(m.uid));
+    const put = (uid, name, p) => {
+      if (!uid || !allowed.has(uid) || !p || !p.hero) return;
+      const entry = { uid, name: name || uid, hero: p.hero.id, p: this.withPlayer(p, () => this.snapshotRun().p) };
+      const i = members.findIndex((m) => m.uid === uid); if (i >= 0) members[i] = entry; else members.push(entry);
     };
-    put(this.netName(), this.player);
-    for (const R of this.remotes.values()) put(R.name || Net.nameOf(R.id), R.p);
+    put(Net.identity(), this.netName(), this.player);
+    for (const R of this.remotes.values()) put(R.uid || this.coopPlayerUid(R.id), R.name || Net.nameOf(R.id), R.p);
+    if (C.ghosts) for (const [uid, ghost] of C.ghosts) if (ghost && ghost.p) put(uid, ghost.name || uid, ghost.p);
     const record = this.updateCoopRecord(false) || {};
-    const run = { v: 1, key, party, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills,
+    const run = { v: 1, key, party, partyIds, worldIdx: this.worldIdx, levelIdx: this.levelIdx, gold: this.gold, kills: this.kills,
       start: Object.assign({}, this.runStart || { stage: this.stageIndex, world: this.worldIdx }), members,
       record: Object.assign({}, record), reviveUsed: !!(C.reviveUsed || this.coopReviveUsed), updatedAt: Date.now() };
+    if (!this.validCoopRun(run, key, partyIds)) return false;
     this.save.coopRuns = this.save.coopRuns || {}; this.save.coopRuns[key] = run; this.coopRunData = run; writeSave(this.save);
     Net.relay({ k: 'runSave', key, run }); return true;
   },
   coopReceiveRunSave(d) {
     if (!this.coop || !this.coop.guest || !d || !d.run || !d.key) return false;
-    const members = d.run.party;
-    if (!this.validCoopRun(d.run, d.key, members) || !members.includes(this.netName())) return false;
+    const ids = d.run.partyIds;
+    if (!this.validCoopRun(d.run, d.key, ids) || !ids.includes(Net.identity())) return false;
     this.save.coopRuns = this.save.coopRuns || {}; this.save.coopRuns[d.key] = d.run; this.coopRunData = d.run;
     this.coopReviveUsed = !!d.run.reviveUsed; this.coop.reviveUsed = this.coopReviveUsed;
     if (d.run.record) {
@@ -269,7 +286,7 @@ Object.assign(Game.prototype, {
       all[d.key] = Object.assign({}, d.run.record, { bestStage: Math.max(old.bestStage || 0, d.run.record.bestStage || 0), bestKills: Math.max(old.bestKills || 0, d.run.record.bestKills || 0), clears: Math.max(old.clears || 0, d.run.record.clears || 0), bestDeep: Math.max(old.bestDeep || 0, d.run.record.bestDeep || 0) });
     }
     if (this.coop.loading) {
-      const own = (d.run.members || []).find((m) => m.name === this.netName()), hero = own && this.data.heroes.get(own.hero);
+      const own = (d.run.members || []).find((m) => m.uid === Net.identity()), hero = own && this.data.heroes.get(own.hero);
       if (own && own.p && hero) this.player = this.playerFromSnapshot(hero, own.p);
     }
     writeSave(this.save); return true;
@@ -367,7 +384,7 @@ Object.assign(Game.prototype, {
   },
   coopInviteMissing(dt) { // 방에는 있는데 탐험에 안 들어온 사람(결과 화면·화면 전환 중이던 사람, 나중에 들어온 사람)을 3초마다 다시 부름
     const C = this.coop; C.inviteT = (C.inviteT || 0) - dt; if (C.inviteT > 0) return; C.inviteT = 3;
-    for (const P of Net.players) if (P.id !== Net.id && !this.remotes.has(P.id)) Net.relay({ k: 'start', deep: false, partyKey: this.coop && this.coop.partyKey, partyMembers: this.coop && this.coop.partyMembers, late: true }, P.id);
+    for (const P of Net.players) if (P.id !== Net.id && !this.remotes.has(P.id)) Net.relay({ k: 'start', deep: false, partyKey: this.coop && this.coop.partyKey, partyMembers: this.coop && this.coop.partyMembers, partyIds: this.coop && this.coop.partyIds, late: true }, P.id);
   },
   coopHostSendGev() { for (const R of this.remotes.values()) if (R.gev && R.gev.length) { Net.relay({ k: 'gev', e: R.gev.splice(0, 200) }, R.id); } },
   coopHostEnd(victory) {
@@ -377,20 +394,21 @@ Object.assign(Game.prototype, {
     this.coopHostSendGev(); Net.relay({ k: 'end', completed: true, partyKey: key, victory, stages, bosses, deep: this.W && this.W.deep ? this.W.depth : 0, row: this.runScoreRow(victory) }); Net.raw({ t: 'start', on: false });
     if (key && this.save.coopRuns) delete this.save.coopRuns[key]; writeSave(this.save);
     for (const [name, orig] of Object.entries(C.fxOrig || {})) this.effects[name] = orig;
-    this.player = C.me; this.coop = null; this.remotes = new Map(); this.coopRunKey = null; this.coopPartyMembersList = null; this.coopRunData = null; this.coopReviveUsed = false;
+    this.player = C.me; this.coop = null; this.remotes = new Map(); this.coopRunKey = null; this.coopPartyMembersList = null; this.coopPartyIdsList = null; this.coopRunData = null; this.coopReviveUsed = false;
   },
 
   // ── 참가자
-  coopGuestStart(hostId, deep = false, partyKey = null, partyMembers = null) {
+  coopGuestStart(hostId, deep = false, partyKey = null, partyMembers = null, partyIds = null) {
     SFX.stopMusic(); this.overlay = null; this.cutscene = null; this.cinematic = null; this.slowMo = null; this.trialW = null;
-    const members = this.coopPartyMembers(Array.isArray(partyMembers) ? partyMembers : Net.players), key = partyKey || this.coopPartyKey(members);
-    this.coopRunKey = key; this.coopPartyMembersList = members;
+    const members = this.coopPartyMembers(Array.isArray(partyMembers) ? partyMembers : Net.players);
+    const ids = this.coopPartyIds(Array.isArray(partyIds) ? partyIds : Net.players), key = partyKey || this.coopPartyKey(ids);
+    this.coopRunKey = key; this.coopPartyMembersList = members; this.coopPartyIdsList = ids;
     const prior = key && this.save.coopRuns && this.save.coopRuns[key];
-    this.coopRunData = this.validCoopRun(prior, key, members) ? prior : null;
+    this.coopRunData = this.validCoopRun(prior, key, ids) ? prior : null;
     this.coopReviveUsed = !!(this.coopRunData && this.coopRunData.reviveUsed);
-    this.coop = { guest: true, hostId, loading: true, others: new Map(), enemies: new Map(), inT: 0, ev: [], warp: -1, partyKey: key, partyMembers: members, reviveUsed: this.coopReviveUsed };
+    this.coop = { guest: true, hostId, loading: true, others: new Map(), enemies: new Map(), inT: 0, ev: [], warp: -1, partyKey: key, partyMembers: members, partyIds: ids, reviveUsed: this.coopReviveUsed };
     this.mode = 'dungeon'; this.gold = 0; this.kills = 0;
-    const own = this.coopRunData && (this.coopRunData.members || []).find((m) => m.name === this.netName());
+    const own = ids.includes(Net.identity()) && this.coopRunData && (this.coopRunData.members || []).find((m) => m.uid === Net.identity());
     const hero = own && this.data.heroes.get(own.hero) || this.data.heroes.get(this.save.selected) || DATA_HEROES[0];
     this.player = own && own.p ? this.playerFromSnapshot(hero, own.p) : this.makePlayer(0, 0);
     const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); if (!own && tr) { this.player.treasure = tr; if (tr.apply) tr.apply(this.player); }
@@ -586,7 +604,7 @@ Object.assign(Game.prototype, {
     this.overlay = { type: 'result', victory: !!d.victory, stages, bosses, reward, coop: true, after: d.disconnected ? '연결이 끊겨 탐험이 끝났습니다' : d.hostLeft ? '방장이 나가서 탐험이 끝났습니다' : d.quit ? '탐험에서 나왔습니다' : '함께한 탐험이 끝났습니다' };
     writeSave(this.save);
     if (d.row && this.profile && !this.admin) Net.submitScore(Object.assign({}, d.row, { name: this.profile.name, hero: this.player && this.player.hero ? this.player.hero.id : this.save.selected }));
-    this.coopRunKey = null; this.coopPartyMembersList = null; this.coopRunData = null; this.coopReviveUsed = false;
+    this.coopRunKey = null; this.coopPartyMembersList = null; this.coopPartyIdsList = null; this.coopRunData = null; this.coopReviveUsed = false;
   }
 });
 Net.on((m) => { if (window.__game) window.__game.coopOnNet(m); });

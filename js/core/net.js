@@ -29,6 +29,18 @@ const Net = {
     fetch(b + '/health', { cache: 'no-store' }).catch(() => { this.wokeAt = 0; });
   },
   get inRoom() { return !!this.code; },
+  identity() {
+    if (typeof Auth !== 'undefined' && Auth.current && Auth.current.id) return 'acct:' + String(Auth.current.id).slice(0, 56);
+    const key = 'project_dungeon_party_identity_v1';
+    try {
+      let id = localStorage.getItem(key);
+      if (!id) { id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12); localStorage.setItem(key, id); }
+      return 'guest:' + id;
+    } catch (e) {
+      if (!this.identityFallback) this.identityFallback = 'guest-session:' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+      return this.identityFallback;
+    }
+  },
   get isHost() { const me = this.players.find((p) => p.id === this.id); return !!(me && me.host); },
   connect(then) {
     if (this.status === 'online') { if (then) then(); return; }
@@ -45,7 +57,7 @@ const Net = {
     ws.onclose = () => { if (this.ws !== ws) return; /* 예전 연결이 늦게 닫힘 → 무시 */ clearInterval(this.pingT); clearTimeout(this.connT); const was = this.status, code = this.code; this.reset();
       if (was === 'connecting' && !this.rejoin) { this.connectFailed(then); return; } /* 처음 연결 실패 → 자동으로 다시 시도 */
       if (this.rejoin) { this.status = 'reconnecting'; setTimeout(() => this.tryRejoin(), 1500); return; } // 다시 연결하는 중에 또 끊김 → 계속 시도
-      if (was === 'online' && code && this.wantRejoin && this.wantRejoin()) { this.rejoin = { code, name: this.myName, hero: this.myHero, since: performance.now(), tries: 0 }; this.status = 'reconnecting'; this.emit({ t: 'dropped' }); setTimeout(() => this.tryRejoin(), 800); return; } // 탐험 중 끊김 → 자동으로 다시 연결
+      if (was === 'online' && code && this.wantRejoin && this.wantRejoin()) { this.rejoin = { code, name: this.myName, hero: this.myHero, uid: this.identity(), since: performance.now(), tries: 0 }; this.status = 'reconnecting'; this.emit({ t: 'dropped' }); setTimeout(() => this.tryRejoin(), 800); return; } // 탐험 중 끊김 → 자동으로 다시 연결
       if (was === 'connecting') this.error = '서버에 연결하지 못했습니다 (Render 무료 서버는 처음 깨어나는 데 30초~1분 걸릴 수 있어요)'; else if (was === 'online') this.error = '서버와 연결이 끊어졌습니다'; };
     ws.onerror = () => {};
     ws.onmessage = (ev) => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } this.onMessage(m); };
@@ -61,15 +73,15 @@ const Net = {
   },
   reset() { this.ws = null; this.status = 'off'; this.id = null; this.code = null; this.players = []; this.peers.clear(); this.ping = null; },
   raw(m) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(m)); },
-  create(name, hero) { this.myName = name; this.myHero = hero; this.connect(() => this.raw({ t: 'create', name, hero })); },
-  join(code, name, hero) { this.myName = name; this.myHero = hero; this.connect(() => this.raw({ t: 'join', code, name, hero })); },
+  create(name, hero) { this.myName = name; this.myHero = hero; const uid = this.identity(); this.connect(() => this.raw({ t: 'create', name, hero, uid })); },
+  join(code, name, hero) { this.myName = name; this.myHero = hero; const uid = this.identity(); this.connect(() => this.raw({ t: 'join', code, name, hero, uid })); },
   // 다시 연결: 탐험 중 끊기면 25초 동안 같은 방에 다시 들어가 봄 (실패하면 'lost'를 알림)
   REJOIN_MS: 25000,
   tryRejoin() {
     const R = this.rejoin; if (!R) return;
     if (performance.now() - R.since > this.REJOIN_MS) { this.rejoin = null; this.status = 'off'; this.emit({ t: 'lost' }); return; }
     R.tries++; this.status = 'off';
-    this.connect(() => this.raw({ t: 'join', code: R.code, name: R.name, hero: R.hero, rejoin: true }));
+    this.connect(() => this.raw({ t: 'join', code: R.code, name: R.name, hero: R.hero, uid: R.uid || this.identity(), rejoin: true }));
     setTimeout(() => { if (this.rejoin === R && this.status !== 'online') this.tryRejoin(); }, Math.min(5000, 1000 + R.tries * 800));
   },
   emit(m) { for (const fn of this.handlers) fn(m); },

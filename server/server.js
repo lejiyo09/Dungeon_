@@ -187,7 +187,7 @@ let nextId = 1;
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // 헷갈리는 I·O 제외
 function newCode() { for (;;) { let c = ''; for (let i = 0; i < 4; i++) c += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]; if (!rooms.has(c)) return c; } }
 const send = (ws, msg) => { if (ws.readyState === 1) ws.send(JSON.stringify(msg)); };
-const info = (ws) => ({ id: ws.id, name: ws.name, hero: ws.hero, host: ws.room && ws.room.players[0] === ws });
+const info = (ws) => ({ id: ws.id, uid: ws.uid, name: ws.name, hero: ws.hero, host: ws.room && ws.room.players[0] === ws });
 function broadcastPlayers(room) { const list = room.players.map(info); for (const p of room.players) send(p, { t: 'players', code: room.code, you: p.id, players: list }); }
 function leave(ws) {
   const room = ws.room; if (!room) return;
@@ -211,7 +211,7 @@ wss.on('connection', (ws) => {
     if (ws.room && m.t !== 'ping') ws.room.last = now;
     if (m.t === 'create' || m.t === 'join') {
       leave(ws);
-      ws.name = clean(m.name, 12) || '모험가'; ws.hero = clean(m.hero, 32);
+      ws.name = clean(m.name, 12) || '모험가'; ws.hero = clean(m.hero, 32); ws.uid = clean(m.uid, 64) || ('session:' + ws.id);
       let room;
       if (m.t === 'create') { if (rooms.size >= LIMIT.maxRooms) { send(ws, { t: 'error', msg: '지금은 방이 너무 많습니다. 잠시 뒤 다시 시도해 주세요' }); return; } room = { code: newCode(), players: [], last: Date.now() }; rooms.set(room.code, room); }
       else {
