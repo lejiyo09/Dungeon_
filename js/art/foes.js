@@ -700,5 +700,47 @@ Object.assign(PIX, {
     P.rect(4, 8, 8, 7, 'b'); P.tri(4, 8, 8, 1, 12, 8, 'a'); P.rect(6, 5, 4, 4, 'm');
     P.px(7, 7, 'e'); P.px(9, 7, 'e'); P.line(2, 7, 1, 2, 'y'); P.line(14, 7, 15, 2, 'y');
     P.rect(5, 14, 6, 1, 'y');
+  } },
+  // ── 심층 27: 망각의 기계열차
+  ticketwarden: { tint: '#806653', w: 16, h: 16, pal: { m: '#c3a58a', y: '#e0a66f', e: '#fff0d6' }, proc: (P) => {
+    P.rect(4, 12, 3, 4, 'b'); P.rect(9, 12, 3, 4, 'b'); P.rect(3, 7, 10, 6, 'm'); P.rect(5, 8, 6, 4, 'a');
+    P.rect(4, 2, 8, 2, 'b'); P.rect(5, 3, 6, 3, 'a'); P.px(6, 5, 'e'); P.px(9, 5, 'e');
+    P.rect(2, 8, 2, 5, 'm'); P.line(13, 8, 15, 2, 'y'); P.px(14, 2, 'e');
+  } },
+  steamstalker: { tint: '#96745c', w: 16, h: 16, pal: { y: '#e0a66f', e: '#fff0d6' }, proc: (P) => {
+    P.ell(7, 10, 5, 3, 'a'); P.rect(3, 10, 9, 4, 'b'); P.tri(10, 8, 15, 5, 13, 12, 'a');
+    P.tri(10, 6, 10, 1, 13, 5, 'y'); P.tri(13, 7, 15, 2, 15, 8, 'y'); P.px(13, 8, 'e');
+    P.line(4, 12, 1, 15, 'y'); P.line(8, 12, 7, 16, 'y'); P.line(11, 12, 14, 15, 'y');
+    P.px(3, 4, 'e'); P.px(1, 2, 'y');
+  } },
+  phantomconductor: { tint: '#7b7181', w: 16, h: 16, pal: { w: '#e8ddce', y: '#e0a66f', e: '#fff0d6' }, proc: (P) => {
+    P.ell(8, 6, 4, 4, 'a'); P.tri(3, 7, 13, 7, 8, 15, 'a'); P.rect(5, 3, 6, 2, 'b');
+    P.rect(5, 2, 6, 1, 'y'); P.px(6, 6, 'e'); P.px(9, 6, 'e'); P.rect(6, 11, 4, 2, 'w');
+    P.line(12, 5, 15, 1, 'y'); P.px(15, 0, 'e'); P.px(4, 13, 'w');
+  } },
+  cannoncar: { tint: '#66545a', w: 16, h: 16, pal: { y: '#e0a66f', e: '#fff0d6', m: '#a58a78' }, proc: (P) => {
+    P.rect(2, 8, 12, 6, 'b'); P.rect(4, 9, 8, 4, 'a'); P.rect(4, 5, 2, 4, 'm'); P.rect(7, 3, 2, 6, 'm'); P.rect(10, 5, 2, 4, 'm');
+    P.ell(4, 14, 2, 2, 'y'); P.ell(12, 14, 2, 2, 'y'); P.px(8, 10, 'e'); P.rect(6, 0, 4, 3, 'y');
+  } },
+  // ── 심층 28: 태초룡의 왕좌
+  wyrmguard: { tint: '#874b3b', w: 16, h: 16, pal: { m: '#c27a50', y: '#ff9a56', e: '#ffe0b8' }, proc: (P) => {
+    P.rect(4, 12, 3, 4, 'b'); P.rect(9, 12, 3, 4, 'b'); P.rect(3, 7, 10, 6, 'm'); P.rect(5, 8, 6, 4, 'a');
+    P.ell(8, 4, 4, 3, 'a'); P.tri(4, 4, 1, 0, 7, 2, 'y'); P.tri(12, 4, 15, 0, 9, 2, 'y');
+    P.px(6, 5, 'e'); P.px(9, 5, 'e'); P.line(2, 8, 0, 3, 'y'); P.line(13, 8, 15, 3, 'y');
+  } },
+  obsidiandrake: { tint: '#5a3734', w: 16, h: 16, pal: { y: '#ff9a56', e: '#ffe0b8', r: '#c85038' }, proc: (P) => {
+    P.ell(7, 10, 5, 3, 'a'); P.rect(3, 10, 9, 4, 'b'); P.tri(10, 8, 15, 4, 13, 12, 'a');
+    P.tri(6, 8, 2, 2, 8, 5, 'y'); P.tri(10, 8, 14, 1, 12, 6, 'y'); P.px(13, 8, 'e');
+    P.line(3, 11, 0, 7, 'r'); P.line(10, 12, 14, 15, 'r'); P.px(7, 7, 'e');
+  } },
+  cinderoracle: { tint: '#a65c43', w: 16, h: 16, pal: { y: '#ff9a56', e: '#ffe0b8', w: '#fff4dc' }, proc: (P) => {
+    P.tri(8, 1, 3, 8, 8, 14, 'c'); P.tri(8, 1, 13, 8, 8, 14, 'c'); P.rect(5, 8, 6, 6, 'a');
+    P.rect(4, 4, 8, 2, 'b'); P.px(6, 9, 'e'); P.px(9, 9, 'e'); P.px(8, 5, 'w');
+    P.line(13, 4, 15, 14, 'y'); P.px(14, 3, 'w'); P.px(2, 5, 'y');
+  } },
+  magmaheart: { tint: '#773d32', w: 16, h: 16, pal: { y: '#ff9a56', e: '#fff0c0', r: '#c85038' }, proc: (P) => {
+    P.tri(8, 0, 14, 8, 8, 15, 'a'); P.tri(8, 0, 2, 8, 8, 15, 'b'); P.rect(6, 5, 4, 6, 'c');
+    P.ell(8, 8, 3, 3, 'r'); P.px(8, 8, 'e'); P.line(2, 4, 5, 6, 'y'); P.line(14, 4, 11, 6, 'y');
+    P.rect(5, 14, 6, 1, 'y'); P.px(8, 2, 'e');
   } }
 });

@@ -167,6 +167,19 @@ const DEEP_WORLDS = [
     palette: { style: 'sunken', accent: '#62d9d0', floor: ['#142f3c', '#173541'], corridor: ['#0c222d', '#0f2632'], wall: '#1c4654', wallTop: '#285c69',
       wallFace: '#438493', faceLine: '#326d7b', deco: 'rgba(98,217,208,0.38)' } }
 
+
+,
+  // ── 심층 27: 망각의 기계열차
+  { id: 'deep_lostlocomotive', name: '망각의 기계열차', boss: 'boss_last_conductor', waves: 2, deep: true,
+    enemies: [['enemy_ticketwarden_001', 3], ['enemy_steamstalker_001', 3], ['enemy_phantomconductor_001', 2], ['enemy_cannoncar_001', 2]],
+    palette: { style: 'metal', accent: '#e0a66f', floor: ['#393137', '#3e353b'], corridor: ['#252027', '#29232a'], wall: '#51414a', wallTop: '#68515a',
+      wallFace: '#98766c', faceLine: '#7b605a', deco: 'rgba(224,166,111,0.38)' } },
+  // ── 심층 28: 태초룡의 왕좌
+  { id: 'deep_primordialthrone', name: '태초룡의 왕좌', boss: 'boss_primordial_dragon', waves: 2, deep: true,
+    enemies: [['enemy_wyrmguard_001', 3], ['enemy_obsidiandrake_001', 3], ['enemy_cinderoracle_001', 2], ['enemy_magmaheart_001', 2]],
+    palette: { style: 'basalt', accent: '#ff9a56', floor: ['#352522', '#3a2925'], corridor: ['#241918', '#281c1a'], wall: '#4d2d27', wallTop: '#63392e',
+      wallFace: '#92513a', faceLine: '#79412f', deco: 'rgba(255,154,86,0.4)' } }
+
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {
