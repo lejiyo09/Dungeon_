@@ -727,20 +727,41 @@ class Game {
     this.snapCamera();
     this.showBanner('로비', '캐릭터를 고르고 포탈로 들어가세요');
   }
-  selectHero(hero) {
+  openHeroSelection(hero) { // 로비 단상에서 직업을 고르면 해당 직업의 세부 계열부터 선택
+    const s = this.save, unlocked = s.unlocked.includes(hero.id);
+    if (!unlocked && s.bank < hero.price) {
+      this.effects.text(this.player.x, this.player.y - 18, `${CUR.name}이 부족합니다`, '#ff7070');
+      SFX.play('deny'); return;
+    }
+    const lines = jobLines(hero.id);
+    if (lines.length <= 1) { this.selectHero(hero, lines[0] || null); return; }
+    this.overlay = {
+      type: 'variant', title: (JOB_LINES[hero.id] && JOB_LINES[hero.id].title) || '직업 계열 선택',
+      hero, heroId: hero.id, lines, branch: true, currentLineId: this.chosenLine(hero.id).id,
+      onPick: (line) => this.selectHero(hero, line)
+    };
+    this.input.mouse.down = false; SFX.play('ui');
+  }
+  selectHero(hero, line) {
     const s = this.save;
     if (!s.unlocked.includes(hero.id)) {
-      if (s.bank < hero.price) { this.effects.text(this.player.x, this.player.y - 18, `${CUR.name}이 부족합니다`, '#ff7070'); return; }
+      if (s.bank < hero.price) { this.effects.text(this.player.x, this.player.y - 18, `${CUR.name}이 부족합니다`, '#ff7070'); SFX.play('deny'); return; }
       s.bank -= hero.price; s.unlocked.push(hero.id);
       this.effects.burst(this.player.x, this.player.y, '#ffd84a', 14);
     }
-    s.selected = hero.id; writeSave(s);
+    const chosen = line || this.chosenLine(hero.id) || jobLines(hero.id)[0];
+    s.selected = hero.id;
+    if (chosen) { s.lineChoice = s.lineChoice || {}; s.lineChoice[hero.id] = chosen.id; }
+    writeSave(s);
     const { x, y } = this.player;
     this.player = this.makePlayer(x, y);
+    if (chosen) { this.applyVariant(chosen); this.player.lineChoice = chosen.id; }
     this.discover(hero.startWeapon);
-    this.banner = null; // 캐릭터 교체 시 안내 배너는 생략하고, 선택한 단상에서 E로 상세 정보 확인
+    if (chosen && chosen.startWeapon) this.discover(chosen.startWeapon);
+    this.overlay = null;
+    this.banner = null;
+    SFX.play('ui');
   }
-
   // ── 런 진행
   startRun(deep = false) {
     this.mode = 'dungeon'; this.trialW = null; this.areaId = null; this.runDeep = !!deep;

@@ -414,15 +414,15 @@ class HUD {
       });
       hudText(ctx, '클릭 또는 1 / 2 / 3', VIEW_W / 2, 200, '#888', 'center', 9);
     } else if (o.type === 'variant') {
-      hudText(ctx, `${game.player.hero.name} — ${o.title}`, VIEW_W / 2, 28, '#ffd84a', 'center', 14);
-      hudText(ctx, o.trialRank != null ? `${game.trialDef.title} — 고른 갈래의 ${o.trialRank === 2 ? '최종 진화(3진)' : (o.trialRank + 1) + '진'}으로 싸웁니다` : o.branch ? '진화할 갈래를 고르세요. 고른 갈래로 두 번 진화하며 스킬이 바뀝니다.' : '이번 탐험의 갈래를 고르세요. 전직의 방에서 두 번 진화하며 스킬이 바뀝니다.', VIEW_W / 2, 48, '#bbb', 'center', 8);
-      o.lines.forEach((L, i) => { const r = HUD.variantRect(i, o.lines.length), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
-        ctx.fillStyle = on ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = L.color || '#ffd84a'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
-        hudText(ctx, `${i + 1}  ${o.trialRank != null ? L.ranks[o.trialRank] + (o.trialRank === 2 ? ' (최종 진화)' : ` (${o.trialRank + 1}진)`) : L.name}`, r.x + 6, r.y + 5, L.color || '#ffd84a', 'left', 11); // 시련: 최종 진화 이름
+      const variantHero = o.hero || game.player.hero;
+      hudText(ctx, `${variantHero.name} — ${o.title}`, VIEW_W / 2, 28, '#ffd84a', 'center', 14);
+      hudText(ctx, o.trialRank != null ? `${game.trialDef.title} — 고른 갈래의 ${o.trialRank === 2 ? '최종 진화(3진)' : (o.trialRank + 1) + '진'}으로 싸웁니다` : o.branch ? '플레이할 계열을 선택하세요. 선택한 계열의 무기와 기본 스킬이 적용됩니다.' : '이번 탐험의 갈래를 고르세요. 전직의 방에서 두 번 진화하며 스킬이 바뀝니다.', VIEW_W / 2, 48, '#bbb', 'center', 8);
+      o.lines.forEach((L, i) => { const r = HUD.variantRect(i, o.lines.length), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h, current = o.branch && L.id === o.currentLineId;
+        ctx.fillStyle = current ? 'rgba(255,216,74,0.13)' : on ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = L.color || '#ffd84a'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        hudText(ctx, `${i + 1}  ${o.trialRank != null ? L.ranks[o.trialRank] + (o.trialRank === 2 ? ' (최종 진화)' : ` (${o.trialRank + 1}진)`) : L.name + (current ? '  ★ 현재' : '')}`, r.x + 6, r.y + 5, L.color || '#ffd84a', 'left', 11); // 선택 계열은 ★로 표시
         hudText(ctx, L.desc, r.x + 6, r.y + 21, '#ccc', 'left', 7);
         hudText(ctx, o.trialRank != null ? `스킬: ${L.skills[o.trialRank].name}` : L.skills.map((s) => s.name).join(' → '), r.x + 6, r.y + 34, '#ffe9a0', 'left', 7);
         hudText(ctx, L.ranks.join(' → '), r.x + 6, r.y + 46, '#8a8a9a', 'left', 7); });
-      hudText(ctx, o.branch ? '숫자 키 / 클릭: 선택   ·   E / Esc: 닫기' : '숫자 키 / 클릭: 선택', VIEW_W / 2, VIEW_H - 16, '#888', 'center', 8);
     } else if (o.type === 'evolve') {
       const p = game.player, L = o.npc.branch || p.line, n = p.rank + 1, hy = o.npc.hybrid, sk = hy ? hy.H.skill : L.skills[n];
       hudText(ctx, `${L.ranks[p.rank]}  →  ${hy ? game.hybridTitle(o.npc) : L.ranks[n]}`, VIEW_W / 2, 56, hy ? (hy.el.color || '#ffd84a') : '#ffd84a', 'center', 15);

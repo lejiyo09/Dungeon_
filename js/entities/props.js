@@ -245,8 +245,8 @@ class Pedestal {
   }
   get labelColor() { return '#ffffff'; }
   interact(game) {
-    if (game.save.selected === this.hero.id) game.overlay = { type: 'hero_info', heroId: this.hero.id, branchIndex: Math.max(0, jobLines(this.hero.id).indexOf(game.chosenLine(this.hero.id))) }; /* 고른 진화 루트를 먼저 보여 줌 */
-    else game.selectHero(this.hero);
+    if (game.save.selected === this.hero.id) game.overlay = { type: 'hero_info', heroId: this.hero.id, branchIndex: Math.max(0, jobLines(this.hero.id).indexOf(game.chosenLine(this.hero.id))) }; /* 현재 직업은 상세 정보 열기 */
+    else game.openHeroSelection(this.hero); /* 다른 직업은 계열 선택창부터 */
   }
   render(ctx, game) {
     const x = Math.round(this.x), y = Math.round(this.y), s = game.save;
