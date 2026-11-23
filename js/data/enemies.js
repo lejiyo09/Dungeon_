@@ -1280,18 +1280,18 @@ const DATA_ENEMIES = [
   { id: 'enemy_cannoncar_001', name: '기관포 객차', sprite: 'cannoncar', color: '#66545a', aiType: 'turret', traits: ['turretSweep'],
     health: 390, damage: 32, moveSpeed: 0, hitboxHalf: 9, attackRange: 350, telegraphTime: 0.94, attackCooldown: 2.35, recoveryTime: 0.32,
     bulletSpeed: 265, bulletCount: 12, bulletColor: '#e0a66f', knockbackResist: 1, rewardGold: 11 },
-  // ── 심층 28: 태초룡의 왕좌
-  { id: 'enemy_wyrmguard_001', name: '용혈 수호병', sprite: 'wyrmguard', color: '#874b3b', aiType: 'melee_chase', traits: ['shockwave'],
-    health: 900, damage: 33, moveSpeed: 42, hitboxHalf: 10, attackRange: 31, telegraphTime: 0.68, attackCooldown: 1.54, recoveryTime: 0.54, knockbackResist: 0.96, rewardGold: 12 },
-  { id: 'enemy_obsidiandrake_001', name: '흑요석 새끼룡', sprite: 'obsidiandrake', color: '#5a3734', aiType: 'charger', traits: ['redash', 'dashTrail'],
-    health: 370, damage: 33, moveSpeed: 100, hitboxHalf: 8, attackRange: 195, telegraphTime: 0.44, dashSpeed: 455, dashDuration: 0.48,
-    attackCooldown: 1.66, recoveryTime: 0.32, stunTime: 0.52, knockbackResist: 0.58, rewardGold: 11 },
-  { id: 'enemy_cinderoracle_001', name: '잿불 예언자', sprite: 'cinderoracle', color: '#a65c43', aiType: 'caster', traits: ['castMix'],
-    health: 310, damage: 33, moveSpeed: 28, hitboxHalf: 7, attackRange: 315, telegraphTime: 0.7, attackCooldown: 2.16, recoveryTime: 0.38,
-    bulletSpeed: 155, bulletCount: 20, bulletColor: '#ffc078', rewardGold: 11 },
-  { id: 'enemy_magmaheart_001', name: '마그마 심장탑', sprite: 'magmaheart', color: '#773d32', aiType: 'turret', traits: ['turretRing'],
-    health: 420, damage: 33, moveSpeed: 0, hitboxHalf: 9, attackRange: 360, telegraphTime: 0.96, attackCooldown: 2.4, recoveryTime: 0.34,
-    bulletSpeed: 270, bulletCount: 13, bulletColor: '#ff9a56', knockbackResist: 1, rewardGold: 12 },
+  // ── 심층 28: 달빛 유원지
+  { id: 'enemy_carouselknight_001', name: '회전목마 기사', sprite: 'carouselknight', color: '#80628f', aiType: 'melee_chase', traits: ['shockwave'],
+    health: 930, damage: 34, moveSpeed: 43, hitboxHalf: 10, attackRange: 33, telegraphTime: 0.7, attackCooldown: 1.58, recoveryTime: 0.55, knockbackResist: 0.96, rewardGold: 12 },
+  { id: 'enemy_balloonmimic_001', name: '풍선 사냥꾼', sprite: 'balloonmimic', color: '#bd638f', aiType: 'charger', traits: ['redash', 'dashTrail'],
+    health: 380, damage: 34, moveSpeed: 104, hitboxHalf: 8, attackRange: 200, telegraphTime: 0.44, dashSpeed: 460, dashDuration: 0.48,
+    attackCooldown: 1.66, recoveryTime: 0.33, stunTime: 0.52, knockbackResist: 0.58, rewardGold: 11 },
+  { id: 'enemy_ticketjester_001', name: '티켓 광대', sprite: 'ticketjester', color: '#4d9e9a', aiType: 'caster', traits: ['castMix'],
+    health: 330, damage: 34, moveSpeed: 28, hitboxHalf: 7, attackRange: 320, telegraphTime: 0.72, attackCooldown: 2.16, recoveryTime: 0.39,
+    bulletSpeed: 165, bulletCount: 18, bulletColor: '#8ef5e9', rewardGold: 11 },
+  { id: 'enemy_ferriswheel_001', name: '관람차 감시기', sprite: 'ferriswheel', color: '#6a5684', aiType: 'turret', traits: ['turretRing'],
+    health: 445, damage: 34, moveSpeed: 0, hitboxHalf: 10, attackRange: 370, telegraphTime: 1.0, attackCooldown: 2.42, recoveryTime: 0.35,
+    bulletSpeed: 275, bulletCount: 14, bulletColor: '#ffd27c', knockbackResist: 1, rewardGold: 12 },
   // ── 심층 27 보스: 마지막 차장
   { id: 'boss_last_conductor', name: '마지막 차장', title: '종착역을 지키는 망각의 안내자', sprite: 'boss_lastconductor', color: '#51434a', phaseColors: ['#51434a', '#806653', '#b58a68'],
     boss: true, aiType: 'boss', health: 3860, damage: 32, moveSpeed: 42, hitboxHalf: 16, knockbackResist: 1, attackCooldown: 0.98, bulletSpeed: 165,
@@ -1307,20 +1307,18 @@ const DATA_ENEMIES = [
     finalPatterns: [
       { type: 'grid', name: '영원한 종착표', spacing: 3, delay: 0.95, radius: 26, bullets: 4, color: '#f0c99e' },
       { type: 'vortex', name: '마지막 출발 안내', duration: 4.5, pull: 54, arms: 6, interval: 0.08, spin: -2.8, color: '#e0a66f' }] },
-  // ── 심층 28 보스: 태초의 흑룡
-  { id: 'boss_primordial_dragon', name: '태초의 흑룡', title: '세계가 태어나기 전의 불꽃', sprite: 'boss_primordialdragon', color: '#4b2926', phaseColors: ['#4b2926', '#813d2d', '#d46a39'], float: true,
-    boss: true, aiType: 'boss', health: 4240, damage: 33, moveSpeed: 40, hitboxHalf: 17, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 168,
+  // ── 심층 28 보스: 최후의 단장
+  { id: 'boss_last_showman', name: '최후의 단장', title: '막이 내리지 않는 달빛 유원지의 주인', sprite: 'boss_lastshowman', color: '#49365a', phaseColors: ['#49365a', '#80527c', '#d76aab'],
+    boss: true, aiType: 'boss', health: 4300, damage: 34, moveSpeed: 42, hitboxHalf: 16, knockbackResist: 1, attackCooldown: 0.98, bulletSpeed: 170,
     rewardGold: 620, patterns: [
-      { type: 'slam', radius: 74, color: '#ff9a56' },
-      { type: 'laser', beams: 3, spreadAng: Math.PI * 2 / 3, sweep: -1.0, duration: 2.25, width: 9, telegraph: 0.95, color: '#ffc078' },
-      { type: 'meteor', count: 10, delay: 0.76, stagger: 0.19, radius: 34, bullets: 7, color: '#ff9a56' },
-      { type: 'summon', enemyId: 'enemy_obsidiandrake_001', count: 3 }],
+      { type: 'aimed', volleys: 4, count: 10, spread: 0.13, color: '#8ef5e9' },
+      { type: 'ringOut', rings: 3, count: 44, gap: 5, speed: 145, interval: 0.46, color: '#ff83c8' },
+      { type: 'summon', enemyId: 'enemy_balloonmimic_001', count: 3 }],
     phase2Patterns: [
-      { type: 'cross', waves: 5, len: 11, step: 22, radius: 16, delay: 0.72, interval: 0.43, bullets: 0, color: '#ffc078' },
-      { type: 'spiral', duration: 3.3, arms: 8, interval: 0.062, spin: -2.7, color: '#ff9a56' },
-      { type: 'lances', count: 22, delay: 0.58, speed: 325, color: '#ffc078' }],
+      { type: 'spiral', duration: 3.4, arms: 8, interval: 0.062, spin: 2.8, color: '#ffd27c' },
+      { type: 'split', volleys: 4, count: 4, spread: 0.31, speed: 180, splitAfter: 0.58, splitN: 8, color: '#8ef5e9' }],
     finalPatterns: [
-      { type: 'vortex', name: '태초의 화염폭풍', duration: 4.5, pull: 56, arms: 6, interval: 0.078, spin: 3.0, color: '#ff9a56' },
-      { type: 'ringIn', name: '용왕의 심판', rings: 5, count: 52, gap: 5, speed: 96, interval: 0.8, color: '#ffc078' }] }
+      { type: 'grid', name: '마지막 불꽃놀이', spacing: 3, delay: 0.9, radius: 27, bullets: 4, color: '#ff83c8' },
+      { type: 'vortex', name: '끝나지 않는 축제', duration: 4.6, pull: 58, arms: 7, interval: 0.076, spin: -3.0, color: '#ffd27c' }] }
 
 ];

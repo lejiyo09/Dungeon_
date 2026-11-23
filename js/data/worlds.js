@@ -174,11 +174,11 @@ const DEEP_WORLDS = [
     enemies: [['enemy_ticketwarden_001', 3], ['enemy_steamstalker_001', 3], ['enemy_phantomconductor_001', 2], ['enemy_cannoncar_001', 2]],
     palette: { style: 'metal', accent: '#e0a66f', floor: ['#393137', '#3e353b'], corridor: ['#252027', '#29232a'], wall: '#51414a', wallTop: '#68515a',
       wallFace: '#98766c', faceLine: '#7b605a', deco: 'rgba(224,166,111,0.38)' } },
-  // ── 심층 28: 태초룡의 왕좌
-  { id: 'deep_primordialthrone', name: '태초룡의 왕좌', boss: 'boss_primordial_dragon', waves: 2, deep: true,
-    enemies: [['enemy_wyrmguard_001', 3], ['enemy_obsidiandrake_001', 3], ['enemy_cinderoracle_001', 2], ['enemy_magmaheart_001', 2]],
-    palette: { style: 'basalt', accent: '#ff9a56', floor: ['#352522', '#3a2925'], corridor: ['#241918', '#281c1a'], wall: '#4d2d27', wallTop: '#63392e',
-      wallFace: '#92513a', faceLine: '#79412f', deco: 'rgba(255,154,86,0.4)' } }
+  // ── 심층 28: 달빛 유원지
+  { id: 'deep_moonfair', name: '달빛 유원지', boss: 'boss_last_showman', waves: 2, deep: true,
+    enemies: [['enemy_carouselknight_001', 3], ['enemy_balloonmimic_001', 3], ['enemy_ticketjester_001', 2], ['enemy_ferriswheel_001', 2]],
+    palette: { style: 'theater', accent: '#79eee2', floor: ['#30263e', '#352a43'], corridor: ['#211a30', '#241d34'], wall: '#49365a', wallTop: '#60466d',
+      wallFace: '#87627f', faceLine: '#704f70', deco: 'rgba(121,238,226,0.38)' } }
 
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층

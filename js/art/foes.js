@@ -722,25 +722,26 @@ Object.assign(PIX, {
     P.rect(2, 8, 12, 6, 'b'); P.rect(4, 9, 8, 4, 'a'); P.rect(4, 5, 2, 4, 'm'); P.rect(7, 3, 2, 6, 'm'); P.rect(10, 5, 2, 4, 'm');
     P.ell(4, 14, 2, 2, 'y'); P.ell(12, 14, 2, 2, 'y'); P.px(8, 10, 'e'); P.rect(6, 0, 4, 3, 'y');
   } },
-  // ── 심층 28: 태초룡의 왕좌
-  wyrmguard: { tint: '#874b3b', w: 16, h: 16, pal: { m: '#c27a50', y: '#ff9a56', e: '#ffe0b8' }, proc: (P) => {
-    P.rect(4, 12, 3, 4, 'b'); P.rect(9, 12, 3, 4, 'b'); P.rect(3, 7, 10, 6, 'm'); P.rect(5, 8, 6, 4, 'a');
-    P.ell(8, 4, 4, 3, 'a'); P.tri(4, 4, 1, 0, 7, 2, 'y'); P.tri(12, 4, 15, 0, 9, 2, 'y');
-    P.px(6, 5, 'e'); P.px(9, 5, 'e'); P.line(2, 8, 0, 3, 'y'); P.line(13, 8, 15, 3, 'y');
+  // ── 심층 28: 달빛 유원지
+  carouselknight: { tint: '#80628f', w: 16, h: 16, pal: { y: '#ffd27c', e: '#fff1d2', r: '#c778a8' }, proc: (P) => {
+    P.rect(4, 11, 3, 5, 'b'); P.rect(9, 11, 3, 5, 'b'); P.rect(3, 7, 10, 5, 'a'); P.rect(5, 8, 6, 3, 'c');
+    P.ell(8, 4, 4, 3, 'a'); P.tri(4, 4, 2, 0, 7, 2, 'y'); P.tri(12, 4, 14, 0, 9, 2, 'y');
+    P.rect(5, 2, 6, 2, 'r'); P.px(6, 5, 'e'); P.px(9, 5, 'e'); P.line(3, 8, 0, 4, 'y'); P.line(12, 8, 15, 4, 'y');
   } },
-  obsidiandrake: { tint: '#5a3734', w: 16, h: 16, pal: { y: '#ff9a56', e: '#ffe0b8', r: '#c85038' }, proc: (P) => {
-    P.ell(7, 10, 5, 3, 'a'); P.rect(3, 10, 9, 4, 'b'); P.tri(10, 8, 15, 4, 13, 12, 'a');
-    P.tri(6, 8, 2, 2, 8, 5, 'y'); P.tri(10, 8, 14, 1, 12, 6, 'y'); P.px(13, 8, 'e');
-    P.line(3, 11, 0, 7, 'r'); P.line(10, 12, 14, 15, 'r'); P.px(7, 7, 'e');
+  balloonmimic: { tint: '#bd638f', w: 16, h: 16, pal: { y: '#ffd27c', e: '#fff1d2', r: '#ff83c8' }, proc: (P) => {
+    P.ell(5, 4, 3, 4, 'a'); P.ell(11, 3, 3, 4, 'c'); P.ell(8, 8, 4, 4, 'b');
+    P.px(7, 7, 'e'); P.px(10, 7, 'e'); P.line(5, 8, 7, 13, 'y'); P.line(11, 7, 9, 13, 'y');
+    P.tri(5, 12, 11, 12, 8, 16, 'r'); P.px(3, 1, 'e'); P.px(13, 0, 'e'); P.px(8, 11, 'y');
   } },
-  cinderoracle: { tint: '#a65c43', w: 16, h: 16, pal: { y: '#ff9a56', e: '#ffe0b8', w: '#fff4dc' }, proc: (P) => {
-    P.tri(8, 1, 3, 8, 8, 14, 'c'); P.tri(8, 1, 13, 8, 8, 14, 'c'); P.rect(5, 8, 6, 6, 'a');
-    P.rect(4, 4, 8, 2, 'b'); P.px(6, 9, 'e'); P.px(9, 9, 'e'); P.px(8, 5, 'w');
-    P.line(13, 4, 15, 14, 'y'); P.px(14, 3, 'w'); P.px(2, 5, 'y');
+  ticketjester: { tint: '#4d9e9a', w: 16, h: 16, pal: { y: '#ffd27c', e: '#fff1d2', r: '#ff83c8' }, proc: (P) => {
+    P.tri(8, 1, 3, 6, 8, 9, 'r'); P.tri(8, 1, 13, 6, 8, 9, 'c'); P.rect(5, 7, 6, 7, 'a');
+    P.rect(3, 5, 10, 2, 'b'); P.px(6, 9, 'e'); P.px(9, 9, 'e'); P.rect(6, 12, 4, 2, 'y');
+    P.line(3, 7, 1, 12, 'r'); P.line(13, 7, 15, 12, 'c'); P.px(2, 13, 'y'); P.px(14, 13, 'y');
   } },
-  magmaheart: { tint: '#773d32', w: 16, h: 16, pal: { y: '#ff9a56', e: '#fff0c0', r: '#c85038' }, proc: (P) => {
-    P.tri(8, 0, 14, 8, 8, 15, 'a'); P.tri(8, 0, 2, 8, 8, 15, 'b'); P.rect(6, 5, 4, 6, 'c');
-    P.ell(8, 8, 3, 3, 'r'); P.px(8, 8, 'e'); P.line(2, 4, 5, 6, 'y'); P.line(14, 4, 11, 6, 'y');
-    P.rect(5, 14, 6, 1, 'y'); P.px(8, 2, 'e');
+  ferriswheel: { tint: '#6a5684', w: 16, h: 16, pal: { y: '#ffd27c', e: '#fff1d2', r: '#8ef5e9' }, proc: (P) => {
+    P.ell(8, 7, 6, 6, 'a'); P.ell(8, 7, 4, 4, 'b'); P.ell(8, 7, 2, 2, 'r');
+    P.line(8, 1, 8, 13, 'y'); P.line(2, 7, 14, 7, 'y'); P.line(4, 3, 12, 11, 'y'); P.line(12, 3, 4, 11, 'y');
+    P.rect(7, 13, 2, 2, 'c'); P.line(8, 14, 4, 16, 'b'); P.line(8, 14, 12, 16, 'b');
+    P.px(8, 7, 'e'); P.px(2, 1, 'r'); P.px(14, 1, 'r');
   } }
 });
