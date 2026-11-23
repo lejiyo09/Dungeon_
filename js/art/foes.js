@@ -616,5 +616,47 @@ Object.assign(PIX, {
     P.tri(8, 0, 13, 8, 8, 15, 'a'); P.tri(8, 0, 3, 8, 8, 15, 'b'); P.rect(6, 5, 4, 6, 'c');
     P.ell(8, 8, 2, 2, 'e'); P.px(8, 8, 'w'); P.line(2, 4, 5, 6, 'y'); P.line(14, 4, 11, 6, 'y');
     P.rect(5, 14, 6, 1, 'y');
+  } },
+  // ── 심층 23: 거신의 정원
+  stonegardener: { tint: '#547b69', w: 16, h: 16, pal: { m: '#9bb9a4', e: '#aaffcf', y: '#6d9b72' }, proc: (P) => {
+    P.rect(4, 12, 3, 4, 'b'); P.rect(9, 12, 3, 4, 'b'); P.rect(3, 7, 10, 6, 'm'); P.rect(5, 8, 6, 4, 'a');
+    P.ell(8, 4, 4, 3, 'a'); P.rect(4, 2, 3, 2, 'y'); P.rect(9, 1, 3, 3, 'y'); P.px(6, 5, 'e'); P.px(9, 5, 'e');
+    P.line(3, 8, 1, 3, 'y'); P.line(12, 8, 15, 3, 'y'); P.px(2, 2, 'e'); P.px(14, 2, 'e');
+  } },
+  rootstalker: { tint: '#527a55', w: 16, h: 16, pal: { y: '#9bdc82', e: '#d6ffd0' }, proc: (P) => {
+    P.ell(7, 10, 5, 3, 'a'); P.rect(3, 10, 9, 4, 'b'); P.tri(10, 8, 15, 6, 13, 12, 'a');
+    P.line(4, 12, 1, 15, 'y'); P.line(7, 12, 6, 16, 'y'); P.line(11, 12, 14, 15, 'y');
+    P.tri(5, 8, 2, 4, 7, 6, 'y'); P.tri(10, 8, 13, 3, 12, 7, 'y'); P.px(13, 8, 'e');
+  } },
+  prismbloom: { tint: '#6d9c88', w: 16, h: 16, pal: { y: '#aaffcf', e: '#f0fff7', p: '#c6ffe0' }, proc: (P) => {
+    P.tri(8, 8, 2, 2, 6, 10, 'c'); P.tri(8, 8, 14, 2, 10, 10, 'c'); P.tri(8, 8, 1, 11, 6, 12, 'y'); P.tri(8, 8, 15, 11, 10, 12, 'y');
+    P.ell(8, 9, 4, 4, 'a'); P.ell(8, 9, 2, 2, 'p'); P.px(7, 8, 'e'); P.px(9, 8, 'e'); P.rect(7, 12, 2, 4, 'b');
+    P.line(7, 14, 3, 12, 'y'); P.line(9, 14, 13, 12, 'y');
+  } },
+  groveheart: { tint: '#3d6655', w: 16, h: 16, pal: { y: '#8df0b5', e: '#d6ffd0' }, proc: (P) => {
+    P.rect(6, 8, 4, 8, 'b'); P.rect(3, 6, 10, 7, 'a'); P.ell(8, 5, 5, 4, 'a');
+    P.tri(4, 7, 1, 2, 6, 4, 'y'); P.tri(10, 5, 15, 1, 13, 7, 'y'); P.px(7, 8, 'e'); P.px(9, 8, 'e');
+    P.ell(8, 10, 2, 2, 'y'); P.px(8, 10, 'e'); P.line(5, 14, 2, 15, 'y'); P.line(11, 14, 14, 15, 'y');
+  } },
+  // ── 심층 24: 종말의 대종루
+  bellwarden: { tint: '#92734b', w: 16, h: 16, pal: { m: '#d7bc84', y: '#f0cc7a', e: '#fff0bd' }, proc: (P) => {
+    P.rect(4, 12, 3, 4, 'b'); P.rect(9, 12, 3, 4, 'b'); P.rect(3, 7, 10, 6, 'm'); P.rect(5, 8, 6, 4, 'a');
+    P.ell(8, 4, 4, 3, 'a'); P.rect(5, 1, 6, 3, 'y'); P.rect(6, 2, 4, 2, 'm'); P.px(6, 5, 'e'); P.px(9, 5, 'e');
+    P.line(13, 8, 15, 2, 'y'); P.ell(14, 1, 1.5, 1.5, 'y');
+  } },
+  chimewisp: { tint: '#b49a70', w: 16, h: 16, pal: { w: '#fff4d0', e: '#f5d995', y: '#d8b77a' }, proc: (P) => {
+    P.ell(8, 7, 4, 5, 'a'); P.tri(4, 9, 12, 9, 8, 15, 'a'); P.ell(8, 6, 2, 2, 'w');
+    P.px(6, 7, 'e'); P.px(10, 7, 'e'); P.rect(7, 0, 2, 2, 'y'); P.ell(8, 2, 2, 1, 'y');
+    P.line(4, 12, 1, 15, 'y'); P.line(12, 12, 15, 15, 'y');
+  } },
+  resonantknight: { tint: '#78636b', w: 16, h: 16, pal: { m: '#c8b5a0', y: '#e8c77a', e: '#fff0c0' }, proc: (P) => {
+    P.rect(4, 12, 3, 4, 'b'); P.rect(9, 12, 3, 4, 'b'); P.rect(3, 7, 10, 6, 'a'); P.rect(5, 8, 6, 4, 'm');
+    P.rect(5, 3, 6, 5, 'b'); P.rect(6, 4, 4, 3, 'a'); P.px(6, 5, 'e'); P.px(9, 5, 'e');
+    P.tri(3, 4, 1, 0, 5, 2, 'y'); P.tri(12, 4, 15, 0, 11, 2, 'y'); P.line(13, 8, 15, 3, 'y');
+  } },
+  pipeorgan: { tint: '#65535d', w: 16, h: 16, pal: { y: '#f0cc7a', e: '#fff0bd', m: '#9b8284' }, proc: (P) => {
+    P.rect(3, 7, 10, 8, 'b'); P.rect(5, 9, 6, 5, 'a'); P.rect(4, 2, 2, 7, 'm'); P.rect(7, 0, 2, 9, 'm'); P.rect(10, 3, 2, 6, 'm');
+    P.rect(5, 9, 1, 3, 'y'); P.rect(8, 9, 1, 3, 'y'); P.rect(11, 9, 1, 3, 'y'); P.px(8, 11, 'e');
   } }
+
 });

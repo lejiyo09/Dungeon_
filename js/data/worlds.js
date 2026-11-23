@@ -141,6 +141,19 @@ const DEEP_WORLDS = [
     enemies: [['enemy_eclipsehound_001', 3], ['enemy_stardrifter_001', 3], ['enemy_oraclescribe_001', 2], ['enemy_gravitypylon_001', 2]],
     palette: { style: 'starfall', accent: '#8c9dff', floor: ['#171b32', '#1b2039'], corridor: ['#101426', '#13182c'], wall: '#282d50', wallTop: '#363c68',
       wallFace: '#555d8e', faceLine: '#424970', deco: 'rgba(140,157,255,0.38)' } }
+
+,
+  // ── 심층 23: 거신의 정원
+  { id: 'deep_giantgarden', name: '거신의 정원', boss: 'boss_sleeping_colossus', waves: 2, deep: true,
+    enemies: [['enemy_stonegardener_001', 3], ['enemy_rootstalker_001', 3], ['enemy_prismbloom_001', 2], ['enemy_groveheart_001', 2]],
+    palette: { style: 'moss', accent: '#8df0b5', floor: ['#263b35', '#2a4039'], corridor: ['#172a26', '#192d28'], wall: '#36534a', wallTop: '#45685c',
+      wallFace: '#658b78', faceLine: '#527565', deco: 'rgba(141,240,181,0.36)' } },
+  // ── 심층 24: 종말의 대종루
+  { id: 'deep_lastbell', name: '종말의 대종루', boss: 'boss_silent_conductor', waves: 2, deep: true,
+    enemies: [['enemy_bellwarden_001', 3], ['enemy_chimewisp_001', 3], ['enemy_resonantknight_001', 2], ['enemy_pipeorgan_001', 2]],
+    palette: { style: 'metal', accent: '#f0cc7a', floor: ['#39343a', '#3d373e'], corridor: ['#242128', '#27232b'], wall: '#51434a', wallTop: '#67525a',
+      wallFace: '#96766b', faceLine: '#7b625c', deco: 'rgba(240,204,122,0.38)' } }
+
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {

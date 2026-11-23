@@ -1154,4 +1154,61 @@ const DATA_ENEMIES = [
     finalPatterns: [
       { type: 'vortex', name: '완전 개기일식', duration: 4.0, pull: 50, arms: 5, interval: 0.085, spin: -2.6, color: '#8c9dff' },
       { type: 'grid', name: '별의 봉인', spacing: 3, delay: 1.0, radius: 22, bullets: 4, color: '#d5ddff' }] }
+
+,
+  // ── 심층 23: 거신의 정원
+  { id: 'enemy_stonegardener_001', name: '석화된 정원사', sprite: 'stonegardener', color: '#547b69', aiType: 'melee_chase', traits: ['shockwave'],
+    health: 560, damage: 28, moveSpeed: 43, hitboxHalf: 9, attackRange: 28, telegraphTime: 0.62, attackCooldown: 1.42, recoveryTime: 0.5, knockbackResist: 0.9, rewardGold: 9 },
+  { id: 'enemy_rootstalker_001', name: '뿌리 추적자', sprite: 'rootstalker', color: '#527a55', aiType: 'charger', traits: ['redash', 'dashTrail'],
+    health: 250, damage: 28, moveSpeed: 92, hitboxHalf: 7, attackRange: 175, telegraphTime: 0.4, dashSpeed: 405, dashDuration: 0.44,
+    attackCooldown: 1.58, recoveryTime: 0.3, stunTime: 0.5, knockbackResist: 0.5, rewardGold: 8 },
+  { id: 'enemy_prismbloom_001', name: '수정꽃 포자술사', sprite: 'prismbloom', color: '#6d9c88', aiType: 'caster', traits: ['castMix'],
+    health: 220, damage: 27, moveSpeed: 28, hitboxHalf: 6, attackRange: 290, telegraphTime: 0.64, attackCooldown: 2.05, recoveryTime: 0.36,
+    bulletSpeed: 145, bulletCount: 16, bulletColor: '#9fffd0', rewardGold: 8 },
+  { id: 'enemy_groveheart_001', name: '고목의 심장', sprite: 'groveheart', color: '#3d6655', aiType: 'turret', traits: ['turretRing'],
+    health: 295, damage: 28, moveSpeed: 0, hitboxHalf: 8, attackRange: 320, telegraphTime: 0.86, attackCooldown: 2.25, recoveryTime: 0.3,
+    bulletSpeed: 235, bulletCount: 12, bulletColor: '#8df0b5', knockbackResist: 1, rewardGold: 9 },
+  // ── 심층 24: 종말의 대종루
+  { id: 'enemy_bellwarden_001', name: '황동 종지기', sprite: 'bellwarden', color: '#92734b', aiType: 'melee_chase', traits: ['shockwave'],
+    health: 610, damage: 29, moveSpeed: 42, hitboxHalf: 9, attackRange: 29, telegraphTime: 0.64, attackCooldown: 1.48, recoveryTime: 0.52, knockbackResist: 0.92, rewardGold: 10 },
+  { id: 'enemy_chimewisp_001', name: '유리종 정령', sprite: 'chimewisp', color: '#b49a70', aiType: 'teleporter', traits: ['afterimage'],
+    health: 235, damage: 28, moveSpeed: 58, hitboxHalf: 6, preferredRange: 135, attackRange: 285, telegraphTime: 0.54, attackCooldown: 1.92,
+    recoveryTime: 0.34, bulletSpeed: 195, bulletCount: 8, bulletSpread: 0.17, bulletColor: '#f5d995', rewardGold: 9 },
+  { id: 'enemy_resonantknight_001', name: '공명 갑주병', sprite: 'resonantknight', color: '#78636b', aiType: 'charger', traits: ['dashTrail'],
+    health: 285, damage: 29, moveSpeed: 84, hitboxHalf: 8, attackRange: 180, telegraphTime: 0.44, dashSpeed: 390, dashDuration: 0.46,
+    attackCooldown: 1.62, recoveryTime: 0.32, stunTime: 0.5, knockbackResist: 0.62, rewardGold: 9 },
+  { id: 'enemy_pipeorgan_001', name: '파이프 오르간 포대', sprite: 'pipeorgan', color: '#65535d', aiType: 'turret', traits: ['turretSweep'],
+    health: 310, damage: 29, moveSpeed: 0, hitboxHalf: 8, attackRange: 330, telegraphTime: 0.9, attackCooldown: 2.3, recoveryTime: 0.3,
+    bulletSpeed: 255, bulletCount: 10, bulletColor: '#f0cc7a', knockbackResist: 1, rewardGold: 10 },
+  // ── 심층 23 보스: 잠든 거신
+  { id: 'boss_sleeping_colossus', name: '잠든 거신', title: '대지의 심장에 뿌리내린 자', sprite: 'boss_sleepingcolossus', color: '#456d5b', phaseColors: ['#456d5b', '#638d6e', '#8ac49a'],
+    boss: true, aiType: 'boss', health: 2760, damage: 28, moveSpeed: 35, hitboxHalf: 16, knockbackResist: 1, attackCooldown: 1.02, bulletSpeed: 150,
+    rewardGold: 430, patterns: [
+      { type: 'slam', radius: 66, color: '#8df0b5' },
+      { type: 'charge', dashes: 2, speed: 365, color: '#b4ffd0' },
+      { type: 'ringOut', rings: 3, count: 36, gap: 5, speed: 128, interval: 0.5, color: '#8df0b5' },
+      { type: 'summon', enemyId: 'enemy_rootstalker_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'wall', waves: 5, gap: 4, speed: 128, interval: 0.72, color: '#b4ffd0' },
+      { type: 'meteor', count: 9, delay: 0.78, stagger: 0.2, radius: 30, bullets: 6, color: '#8df0b5' },
+      { type: 'spiral', duration: 3.0, arms: 7, interval: 0.08, spin: 1.9, color: '#b4ffd0' }],
+    finalPatterns: [
+      { type: 'vortex', name: '대지의 맥동', duration: 4.0, pull: 46, arms: 6, interval: 0.09, spin: 2.3, color: '#8df0b5' },
+      { type: 'ringIn', name: '뿌리의 봉인', rings: 4, count: 48, gap: 5, speed: 88, interval: 0.86, color: '#b4ffd0' }] },
+  // ── 심층 24 보스: 침묵의 지휘자
+  { id: 'boss_silent_conductor', name: '침묵의 지휘자', title: '마지막 종을 울리는 자', sprite: 'boss_silentconductor', color: '#51434a', phaseColors: ['#51434a', '#80634f', '#b08c58'],
+    boss: true, aiType: 'boss', health: 3020, damage: 29, moveSpeed: 41, hitboxHalf: 15, knockbackResist: 1, attackCooldown: 0.98, bulletSpeed: 158,
+    rewardGold: 470, patterns: [
+      { type: 'laser', beams: 4, spreadAng: Math.PI / 2, sweep: -0.85, duration: 2.3, width: 8, telegraph: 0.95, color: '#f0cc7a' },
+      { type: 'aimed', volleys: 5, count: 8, spread: 0.14, color: '#f5d995' },
+      { type: 'orbit', count: 20, radius: 66, spinTime: 1.25, spin: 3.0, speed: 165, color: '#d8b77a' },
+      { type: 'summon', enemyId: 'enemy_chimewisp_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'split', volleys: 4, count: 4, spread: 0.28, speed: 170, splitAfter: 0.6, splitN: 7, color: '#f5d995' },
+      { type: 'reverse', rings: 4, count: 38, gap: 5, speed: 148, flip: 0.72, interval: 0.44, color: '#f0cc7a' },
+      { type: 'cross', waves: 4, len: 9, step: 22, radius: 14, delay: 0.72, interval: 0.48, bullets: 0, color: '#d8b77a' }],
+    finalPatterns: [
+      { type: 'grid', name: '무음의 오선보', spacing: 3, delay: 1.0, radius: 24, bullets: 4, color: '#f5d995' },
+      { type: 'vortex', name: '종말의 잔향', duration: 4.2, pull: 48, arms: 5, interval: 0.085, spin: -2.7, color: '#f0cc7a' }] }
+
 ];
