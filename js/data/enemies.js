@@ -1304,6 +1304,18 @@ const DATA_ENEMIES = [
   { id: 'enemy_paperlantern_001', name: '종이등대 포대', sprite: 'paperlantern', color: '#8e7aab', aiType: 'turret', traits: ['turretRing'],
     health: 455, damage: 35, moveSpeed: 0, hitboxHalf: 10, attackRange: 375, telegraphTime: 1.0, attackCooldown: 2.45, recoveryTime: 0.36,
     bulletSpeed: 280, bulletCount: 14, bulletColor: '#e8d9ff', knockbackResist: 1, rewardGold: 12 },
+  // ── 심층 30: 기록의 근원
+  { id: 'enemy_archiveguard_001', name: '봉인된 기록병', sprite: 'archiveguard', color: '#776783', aiType: 'melee_chase', traits: ['shockwave'],
+    health: 1020, damage: 36, moveSpeed: 43, hitboxHalf: 10, attackRange: 34, telegraphTime: 0.72, attackCooldown: 1.62, recoveryTime: 0.56, knockbackResist: 0.97, rewardGold: 13 },
+  { id: 'enemy_inkwraith_001', name: '먹물 망령', sprite: 'inkwraith', color: '#403653', aiType: 'teleporter', traits: ['afterimage'],
+    health: 380, damage: 36, moveSpeed: 63, hitboxHalf: 8, preferredRange: 150, attackRange: 320, telegraphTime: 0.59, attackCooldown: 2.05, recoveryTime: 0.37,
+    bulletSpeed: 215, bulletCount: 10, bulletSpread: 0.18, bulletColor: '#c5a4ff', rewardGold: 12 },
+  { id: 'enemy_livingfolio_001', name: '살아있는 장서', sprite: 'livingfolio', color: '#9b876f', aiType: 'charger', traits: ['redash', 'dashTrail'],
+    health: 430, damage: 36, moveSpeed: 106, hitboxHalf: 8, attackRange: 205, telegraphTime: 0.45, dashSpeed: 468, dashDuration: 0.49,
+    attackCooldown: 1.7, recoveryTime: 0.34, stunTime: 0.54, knockbackResist: 0.6, rewardGold: 12 },
+  { id: 'enemy_archiveobelisk_001', name: '기록 봉인탑', sprite: 'archiveobelisk', color: '#665779', aiType: 'turret', traits: ['turretRing'],
+    health: 470, damage: 36, moveSpeed: 0, hitboxHalf: 10, attackRange: 380, telegraphTime: 1.02, attackCooldown: 2.48, recoveryTime: 0.36,
+    bulletSpeed: 285, bulletCount: 15, bulletColor: '#e8dcc0', knockbackResist: 1, rewardGold: 13 },
   // ── 심층 27 보스: 마지막 차장
   { id: 'boss_last_conductor', name: '마지막 차장', title: '종착역을 지키는 망각의 안내자', sprite: 'boss_lastconductor', color: '#51434a', phaseColors: ['#51434a', '#806653', '#b58a68'],
     boss: true, aiType: 'boss', health: 3860, damage: 32, moveSpeed: 42, hitboxHalf: 16, knockbackResist: 1, attackCooldown: 0.98, bulletSpeed: 165,
@@ -1344,6 +1356,19 @@ const DATA_ENEMIES = [
       { type: 'spiral', duration: 3.5, arms: 8, interval: 0.06, spin: -2.9, color: '#e8d9ff' }],
     finalPatterns: [
       { type: 'grid', name: '마지막 원고', spacing: 3, delay: 0.9, radius: 28, bullets: 4, color: '#d8c2ff' },
-      { type: 'vortex', name: '백지의 폭풍', duration: 4.7, pull: 60, arms: 7, interval: 0.074, spin: 3.1, color: '#c3a8ff' }] }
+      { type: 'vortex', name: '백지의 폭풍', duration: 4.7, pull: 60, arms: 7, interval: 0.074, spin: 3.1, color: '#c3a8ff' }] },
+  // ── 심층 30 보스: 무명의 기록관
+  { id: 'boss_nameless_archivist', name: '무명의 기록관', title: '지나간 모든 발자국을 보관하는 자', sprite: 'boss_namelessarchivist', color: '#51465f', phaseColors: ['#51465f', '#82709d', '#c5a4ff'],
+    boss: true, aiType: 'boss', health: 4720, damage: 36, moveSpeed: 39, hitboxHalf: 17, knockbackResist: 1, attackCooldown: 0.98, bulletSpeed: 174,
+    rewardGold: 680, patterns: [
+      { type: 'aimed', volleys: 5, count: 10, spread: 0.13, color: '#c5a4ff' },
+      { type: 'ringOut', rings: 3, count: 48, gap: 5, speed: 150, interval: 0.44, color: '#e8dcc0' },
+      { type: 'summon', enemyId: 'enemy_inkwraith_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'cross', waves: 5, len: 12, step: 22, radius: 16, delay: 0.7, interval: 0.4, bullets: 0, color: '#b28be8' },
+      { type: 'spiral', duration: 3.5, arms: 9, interval: 0.058, spin: 3.0, color: '#e8dcc0' }],
+    finalPatterns: [
+      { type: 'grid', name: '지워진 이름', spacing: 3, delay: 0.86, radius: 28, bullets: 4, color: '#c5a4ff' },
+      { type: 'vortex', name: '기록의 소용돌이', duration: 4.8, pull: 62, arms: 8, interval: 0.07, spin: -3.2, color: '#b28be8' }] }
 
 ];

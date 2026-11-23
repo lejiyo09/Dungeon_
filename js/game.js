@@ -872,6 +872,7 @@ class Game {
     if (W.ziggurat && this.levelIdx === 0) this.playCutscene(BABYLON_ZIGGURAT_LINES, { id: 'babylon_ziggurat', focus: null }); /* 지구라트 첫 단 */
     if (W.finalField && this.isBossStage) this.playCutscene(GILGAMESH_UNDER_INTRO_LINES, { id: 'gilgamesh_under', always: true, focus: null }); /* 지구라트 4-4 왕좌의 방: 영웅왕 길가메시 */
     if (W.deep && !W.trial && W.depth === 1 && this.levelIdx === 0) this.playCutscene(DEEP_ARRIVAL_LINES, { id: 'deep_arrival', focus: null }); // 심층에 처음 들어설 때 (한 번만)
+    if (W.deep && !W.trial && W.depth === 30 && this.levelIdx === 0) this.playCutscene(DEEP30_ARRIVAL_LINES, { id: 'deep30_arrival', focus: null }); // 기록의 근원에 처음 도착
     if (this.coop && this.coop.host) this.coopOnStage(); // 멀티: 동료 배치·부활 + 새 맵 보내기
     if (W.trial) { this.showBanner(W.name, this.trialDef.intro, this.trialDef.color); return; }
     this.showBanner(`${this.stageName()}  ${W.name}`, this.isBossStage ? '보스가 기다리고 있습니다' : W.deep && this.levelIdx === 0 ? `심층 ${W.depth}번째 필드 — 던전은 더 깊은 곳으로 이어진다` : '출구 포탈을 찾으세요', W.deep ? '#9ad8ff' : undefined);
@@ -1988,6 +1989,7 @@ class Game {
       if (this.W.trial && this.W.rooms) for (const q of this.allPlayers()) if (q.state !== 'DEAD') { q.hp = q.maxHp; q.shield = q.maxShield; q.energy = q.maxEnergy; this.effects.heal(q.x, q.y); } /* 카멜롯: 성문 앞에서 체력·에너지 모두 회복 (보스전은 가득 찬 상태로) */
       if (this.W.zone && !this.W.finalField && BABYLON_BOSS_INTROS[id]) this.cinematic.intro = id; /* 귀환길 네임드 보스: 착지한 뒤 보스를 비추며 이야기 (처음 한 번) */
       if (this.W.sanctum && this.sanctumGate) this.playCutscene(GATEKEEPER_INTRO_LINES, { id: 'gatekeeper_intro', focus: { x: this.sanctumGate.x, y: this.sanctumGate.y - 20 } });
+      if (this.W.deep && !this.W.trial && this.W.depth === 30 && id === 'boss_nameless_archivist') this.playCutscene(ARCHIVIST_INTRO_LINES, { id: 'archivist_intro', focus: { x: boss.x, y: boss.y } });
       this.banner = null; this.input.mouse.down = false;
       SFX.play('door');
     } else this.spawnWave(r);
@@ -2085,6 +2087,15 @@ class Game {
       const W = this.W, next = worldDef(this.worldIdx + 1);
       this.portalSpot = c;
       const after = () => {
+        if (W.deep && !W.trial && W.depth === 30) {
+          this.playCutscene(ARCHIVIST_CLEAR_LINES, { id: 'archivist_clear', focus: { x: c.x, y: c.y }, done: () => {
+            this.props.push(new Chest(c.x, c.y - 24, 'weapon'));
+            this.portals.push(new Portal(c.x + 26, c.y + 24, () => this.advanceStage(), `${stageLabel(this.worldIdx + 1, 0)} ${next.name}`, next.deep ? [120, 200, 255] : undefined));
+            this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90]));
+            this.showBanner('기록의 다음 장', '무명의 기록관이 아래로 이어지는 통로를 열었다', '#c5a4ff');
+          }});
+          return;
+        }
         if (W.sanctum) { // 문지기를 쓰러뜨림: 거대한 문이 열리고, 그 앞에 성역 깊은 곳으로 가는 포탈
           const G = this.sanctumGate, gx = G ? G.x : c.x, gy = G ? G.y + 22 : c.y + 24;
           if (G) { G.opening = true; this.effects.rays(G.x, G.y - 30, '#ffe9a0', 20, 120, 1.2); for (let i = 0; i < 6; i++) this.effects.skyBeam(G.x - 30 + i * 12, G.y - 4, '#fff4c0', 0.3 + i * 0.12, 4); SFX.play('solomon', 0.6); }

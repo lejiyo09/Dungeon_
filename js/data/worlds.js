@@ -183,7 +183,12 @@ const DEEP_WORLDS = [
   { id: 'deep_foldedcity', name: '접혀버린 종이도시', boss: 'boss_blank_emperor', waves: 2, deep: true,
     enemies: [['enemy_paperknight_001', 3], ['enemy_foldcrow_001', 3], ['enemy_inkscribe_001', 2], ['enemy_paperlantern_001', 2]],
     palette: { style: 'sanctum', accent: '#d8c2ff', floor: ['#b7a9a0', '#bdb0a7'], corridor: ['#756b78', '#7a7080'], wall: '#4a405c', wallTop: '#5e5274',
-      wallFace: '#897c99', faceLine: '#716481', deco: 'rgba(216,194,255,0.38)' } }
+      wallFace: '#897c99', faceLine: '#716481', deco: 'rgba(216,194,255,0.38)' } },
+  // ── 심층 30: 기록의 근원
+  { id: 'deep_recordsource', name: '기록의 근원', boss: 'boss_nameless_archivist', waves: 2, deep: true,
+    enemies: [['enemy_archiveguard_001', 3], ['enemy_inkwraith_001', 3], ['enemy_livingfolio_001', 2], ['enemy_archiveobelisk_001', 2]],
+    palette: { style: 'library', accent: '#c5a4ff', floor: ['#37313f', '#3c3545'], corridor: ['#241e2c', '#28212f'], wall: '#40364a', wallTop: '#554765',
+      wallFace: '#7a6c83', faceLine: '#65596f', deco: 'rgba(197,164,255,0.36)' } }
 
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층

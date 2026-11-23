@@ -764,5 +764,27 @@ Object.assign(PIX, {
     P.rect(4, 5, 8, 9, 'a'); P.rect(6, 6, 4, 7, 'c'); P.tri(4, 5, 8, 1, 12, 5, 'b');
     P.line(4, 5, 4, 14, 'y'); P.line(12, 5, 12, 14, 'y'); P.rect(5, 14, 6, 1, 'r');
     P.ell(8, 9, 2, 3, 'e'); P.px(8, 2, 'y'); P.line(8, 1, 8, 0, 'e');
+  } },
+  // ── 심층 30: 기록의 근원
+  archiveguard: { tint: '#776783', w: 16, h: 16, pal: { y: '#c5a4ff', e: '#fff7e8', r: '#b49acb' }, proc: (P) => {
+    P.rect(4, 12, 3, 4, 'b'); P.rect(9, 12, 3, 4, 'b'); P.rect(3, 7, 10, 6, 'a'); P.rect(5, 8, 6, 3, 'c');
+    P.tri(4, 7, 8, 1, 12, 7, 'a'); P.rect(6, 3, 4, 5, 'b'); P.px(6, 5, 'e'); P.px(9, 5, 'e');
+    P.rect(2, 9, 2, 4, 'c'); P.line(12, 8, 15, 3, 'y'); P.px(14, 3, 'e'); P.px(8, 1, 'y');
+  } },
+  inkwraith: { tint: '#403653', w: 16, h: 16, pal: { y: '#c5a4ff', e: '#e8dcc0', r: '#82709d' }, proc: (P) => {
+    P.ell(8, 6, 5, 5, 'a'); P.tri(3, 7, 13, 7, 8, 15, 'b'); P.rect(5, 3, 6, 3, 'c');
+    P.px(6, 6, 'e'); P.px(10, 6, 'e'); P.line(4, 10, 1, 14, 'y'); P.line(12, 10, 15, 14, 'y');
+    P.px(2, 4, 'r'); P.px(14, 3, 'r'); P.px(8, 1, 'e');
+  } },
+  livingfolio: { tint: '#9b876f', w: 16, h: 16, pal: { y: '#e8dcc0', e: '#fff7e8', r: '#c5a4ff' }, proc: (P) => {
+    P.tri(2, 4, 8, 1, 8, 14, 'b'); P.tri(14, 4, 8, 1, 8, 14, 'a');
+    P.rect(3, 5, 5, 8, 'c'); P.rect(8, 5, 5, 8, 'a'); P.line(8, 3, 8, 14, 'y');
+    P.px(5, 8, 'e'); P.px(11, 8, 'e'); P.rect(4, 11, 8, 1, 'r'); P.px(8, 2, 'y');
+    P.line(2, 5, 0, 2, 'e'); P.line(14, 5, 16, 2, 'e');
+  } },
+  archiveobelisk: { tint: '#665779', w: 16, h: 16, pal: { y: '#c5a4ff', e: '#fff7e8', r: '#e8dcc0' }, proc: (P) => {
+    P.rect(5, 5, 6, 9, 'b'); P.tri(5, 5, 8, 0, 11, 5, 'a'); P.rect(6, 6, 4, 7, 'c');
+    P.ell(8, 8, 2, 2, 'r'); P.px(8, 8, 'e'); P.line(5, 5, 2, 2, 'y'); P.line(11, 5, 14, 2, 'y');
+    P.rect(4, 14, 8, 1, 'y'); P.px(8, 2, 'e'); P.px(3, 9, 'r'); P.px(13, 9, 'r');
   } }
 });

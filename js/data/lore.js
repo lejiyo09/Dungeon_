@@ -522,6 +522,33 @@ const DEEP_ARRIVAL_LINES = [
   '길은 보이지 않을 만큼 깊이 이어져 있다. 내려갈수록 돌아오는 길은 멀어질 것이다.'
 ];
 // 탐험가 길드 '이야기 기록' 책장: 지금까지 본 이야기를 다시 보기 (unlocked: 볼 수 있는 조건)
+// 심층 30: 기록의 근원 — 기록관은 탐험가가 아닌 기록의 관리자다.
+const DEEP30_ARRIVAL_LINES = [
+  '돌바닥이 끝나고, 끝없이 이어지는 책장이 모습을 드러낸다.',
+  '벽에는 수많은 탐험 기록이 꽂혀 있다. 완성된 기록도, 중간에 끊긴 기록도 있다.',
+  '낡은 차표 한 장. 빛바랜 입장권. 접힌 종이 지도.',
+  '27층부터 29층까지 이어진 흔적들이 이곳에서 하나의 서고로 모인다.',
+  '이곳은 기록의 근원. 심층을 지나간 이들의 흔적을 보관하는 장소다.',
+  '책장 사이 어딘가에서, 누군가가 책장을 넘기는 소리가 들린다.'
+];
+const ARCHIVIST_INTRO_LINES = [
+  '책장이 저절로 열리며, 낡은 책 한 권이 허공에 펼쳐진다.',
+  '그 뒤에서 후드를 쓴 존재가 걸어 나온다.',
+  '「나는 무명의 기록관. 이곳을 지나간 자들의 흔적을 정리하고 보관한다.」',
+  '「나는 탐험가가 아니다. 이 심층을 가장 깊이 내려간 자도 아니다.」',
+  '「나보다 앞서 이곳을 지난 자도, 훨씬 아래까지 내려간 자도 있었다.」',
+  '「하지만 그들의 기록은 어느 순간부터 비어 있다. 이름도, 마지막 행선지도.」',
+  '「네 기록을 그 빈칸에 이어 써도 될지, 직접 보여라.」'
+];
+const ARCHIVIST_CLEAR_LINES = [
+  '책장이 천천히 닫히고, 기록관은 쓰러진 자리에서 고개를 든다.',
+  '「나는 기록을 지키는 자일 뿐. 이곳의 끝을 아는 존재는 아니다.」',
+  '「내가 보관한 기록 중에는 너보다 더 깊은 곳까지 내려간 이들의 흔적도 있다.」',
+  '「그들이 어디까지 갔는지는 나도 모른다. 기록이 끊겨 있기 때문이다.」',
+  '「너의 기록은 여기서 끝나지 않는군. 다음 장을 남겨라.」',
+  '책장 뒤편의 봉인이 풀리고, 더 아래로 이어지는 계단이 모습을 드러낸다.'
+];
+
 const STORY_ARCHIVE = [
   { id: 'prologue', name: '프롤로그', kind: 'story', lines: () => PROLOGUE_LINES, unlocked: () => true },
   { id: 'origin_arrival', name: '기원의 성역 도착', kind: 'cut', lines: () => ORIGIN_ARRIVAL_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('origin_arrival') },
@@ -529,6 +556,9 @@ const STORY_ARCHIVE = [
   { id: 'gatekeeper_fall', name: '열리는 문', kind: 'cut', lines: () => GATEKEEPER_FALL_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('gatekeeper_fall') },
   { id: 'sanctum', name: '성역 깊은 곳', kind: 'sanctum', lines: () => SANCTUM_LINES, unlocked: (sv) => !!sv.sanctumReached },
   { id: 'deep_arrival', name: '심층으로', kind: 'cut', lines: () => DEEP_ARRIVAL_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('deep_arrival') },
+  { id: 'deep30_arrival', name: '기록의 근원', kind: 'cut', lines: () => DEEP30_ARRIVAL_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('deep30_arrival') },
+  { id: 'archivist_intro', name: '무명의 기록관', kind: 'cut', lines: () => ARCHIVIST_INTRO_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('archivist_intro') },
+  { id: 'archivist_clear', name: '기록의 다음 장', kind: 'cut', lines: () => ARCHIVIST_CLEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('archivist_clear') },
   { id: 'merlin', name: '후드를 쓴 마법사', kind: 'cut', lines: () => MERLIN_REVEAL_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.revealed) },
   { id: 'avalon', name: '아발론의 정원', kind: 'cut', lines: () => MERLIN_REWARD_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 2) },
   { id: 'spear_trial', name: '왕의 창', kind: 'cut', lines: () => MERLIN_SPEAR_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 3) },
