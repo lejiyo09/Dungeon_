@@ -768,18 +768,20 @@ class Game {
     writeSave(sv); SFX.play('victory'); if (this.profile == null) return [`스킨 '${K.name}' 획득! (게스트는 저장되지 않아요)`, '#ffd84a'];
     return [`스킨 '${K ? K.name : '?'}' 획득! — ${K ? this.data.heroes.get(K.hero).name : ''} 외형이 바뀝니다 (Esc → K로 켜기/끄기)`, '#ffd84a'];
   }
-  // ── 스킨 뽑기: 배너(전설 스킨 1종)를 골라 1연/5연. 당첨(1%)이면 그 스킨, 중복이면 마일리지, 꽝이면 마일리지
+  // ── 스킨 뽑기: 배너를 골라 1뽑/5뽑. 5%로 배너 스킨 "전설 조각" → 20개 모으면 스킨 완성. 나머지는 마일리지. 보유 스킨 배너에서 조각이 뜨면 마일리지로 전환
   gachaPull(bannerSkinId, n) {
     const sv = this.save, cost = n === 5 ? GACHA.cost5 : GACHA.costSingle;
     if ((sv.bank || 0) < cost) return { error: '결정석이 부족합니다' };
     const K = gachaPool().find((k) => k.id === bannerSkinId); if (!K) return { error: '배너를 찾을 수 없습니다' };
-    sv.bank -= cost; sv.skins = sv.skins || []; sv.mileage = sv.mileage || 0; sv.skinOn = sv.skinOn || {};
+    sv.bank -= cost; sv.skins = sv.skins || []; sv.mileage = sv.mileage || 0; sv.skinOn = sv.skinOn || {}; sv.shards = sv.shards || {};
     const results = []; let gotSkin = false;
     for (let i = 0; i < n; i++) {
-      if (Math.random() < GACHA.legendRate) { // 당첨
-        if (!sv.skins.includes(K.id)) { sv.skins.push(K.id); this.skinOnMap()[skinKey(K)] = K.id; results.push({ type: 'skin', id: K.id }); gotSkin = true; }
-        else { sv.mileage += GACHA.dupeMileage; results.push({ type: 'dupe', id: K.id, mileage: GACHA.dupeMileage }); }
-      } else { sv.mileage += GACHA.missMileage; results.push({ type: 'mileage', mileage: GACHA.missMileage }); } // 꽝
+      if (Math.random() < GACHA.shardRate) { // 전설 조각
+        if (sv.skins.includes(K.id)) { sv.mileage += GACHA.dupeMileage; results.push({ type: 'dupe', id: K.id, mileage: GACHA.dupeMileage }); } // 이미 보유 → 마일리지
+        else { sv.shards[K.id] = (sv.shards[K.id] || 0) + 1;
+          if (sv.shards[K.id] >= GACHA.shardsNeeded) { sv.shards[K.id] -= GACHA.shardsNeeded; sv.skins.push(K.id); this.skinOnMap()[skinKey(K)] = K.id; results.push({ type: 'skin', id: K.id }); gotSkin = true; } // 20개 완성
+          else results.push({ type: 'shard', id: K.id, count: sv.shards[K.id] }); }
+      } else { sv.mileage += GACHA.missMileage; results.push({ type: 'mileage', mileage: GACHA.missMileage }); }
     }
     writeSave(sv); SFX.play(gotSkin ? 'victory' : 'coin');
     return { results };
@@ -1448,12 +1450,14 @@ class Game {
       if (o.msg) o.msg.t -= STEP;
       const pool = gachaPool(), n = pool.length, m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
       if (o.results) { if (input.wasPressed('Mouse0') || input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('Escape')) { o.results = null; this.input.mouse.down = false; } return; } // 결과 보는 중엔 아무 클릭으로 닫기
+      if (o.rates) { if (input.wasPressed('Mouse0') || input.wasPressed('Enter') || input.wasPressed('Escape')) { o.rates = false; this.input.mouse.down = false; } return; } // 확률표 보는 중
       if (input.wasPressed('Escape') || input.wasPressed('KeyJ') || input.wasPressed('KeyE')) { this.overlay = { type: 'pause' }; return; }
       if (input.wasPressed('ArrowUp')) { o.tab = 0; o.banner = (o.banner + n - 1) % n; }
       else if (input.wasPressed('ArrowDown')) { o.tab = 0; o.banner = (o.banner + 1) % n; }
       if (input.wasPressed('Mouse0')) {
         let used = false;
-        pool.forEach((K, i) => { if (hit(HUD.gachaBanner(i))) { o.tab = 0; o.banner = i; used = true; } }); // 사이드바 배너 선택
+        if (hit(HUD.gachaRatesBtn())) { o.rates = true; used = true; } // 좌측 하단 확률 보기
+        pool.forEach((K, i) => { if (!used && hit(HUD.gachaBanner(i))) { o.tab = 0; o.banner = i; used = true; } }); // 사이드바 배너 선택
         if (!used && hit(HUD.gachaShopTab())) { o.tab = 1; used = true; } // 마일리지 상점
         if (!used && o.tab === 0) for (const b of [0, 1]) if (hit(HUD.gachaPullBtn(b))) { const r = this.gachaPull(pool[o.banner].id, b ? 5 : 1); if (r.error) o.msg = { text: r.error, color: '#ff9a9a', t: 2.5 }; else o.results = r.results; used = true; } // 1뽑/5뽑
         if (!used && o.tab === 1) pool.forEach((K, i) => { if (hit(HUD.gachaShopBuy(i))) { const r = this.buyMileageSkin(K.id); o.msg = { text: r.error || `'${r.name}' 구매 완료!`, color: r.error ? '#ff9a9a' : '#ffd84a', t: 2.5 }; used = true; } });

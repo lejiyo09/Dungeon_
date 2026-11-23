@@ -80,13 +80,13 @@ const GIFT_CODES = [
 ];
 function giftHash(code) { let h = 0x811c9dc5; for (const ch of 'pd_gift:' + String(code).toUpperCase()) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); }
 function skinsForMenu(save) { const owned = save && Array.isArray(save.skins) ? save.skins : []; return SKINS.filter((k) => k.source !== 'code' || owned.includes(k.id)); }
-// ── 스킨 뽑기 [사용자 결정] 재화=결정석, 1연/5연, 전설 1%, 꽝은 스킨 마일리지, 중복 전설도 마일리지, 마일리지 상점에서 직접 구매
+// ── 스킨 뽑기 [사용자 결정] 재화=결정석, 1뽑/5뽑. 5%로 배너 스킨 "전설 조각" → 20개 모으면 스킨 완성. 나머지는 스킨 마일리지. 마일리지 상점 별도
 const GACHA = {
   costSingle: 300, cost5: 1500,           // 결정석 비용 (1뽑 300, 5뽑 1500)
-  legendRate: 0.01,                        // 배너 전설 스킨 1%
-  missMileage: 12, dupeMileage: 250,       // 꽝 / 전설 중복 시 마일리지
+  shardRate: 0.05, shardsNeeded: 20,       // 전설 조각 5%, 20개 = 스킨 완성
+  missMileage: 12, dupeMileage: 250,       // 조각 외(마일리지) / 이미 보유한 배너에서 조각이 뜨면 마일리지
   shopPrice: 400,                          // 마일리지 상점 스킨 1개 가격
-  mileageName: '스킨 마일리지', mileageColor: '#ffb0d8',
+  mileageName: '스킨 마일리지', mileageColor: '#ffb0d8', shardName: '전설 조각', shardColor: '#ffe9a0',
   banners: { skin_leg_abyss: 'abyss', skin_leg_crimson: 'crimson', skin_leg_void: 'void', skin_leg_star: 'star' } // 스킨별 배너 이미지 키 (assets/banners/<key>.jpg)
 };
 function gachaPool() { return SKINS.filter((k) => k.source === 'gacha'); } // 뽑기 대상 = 전설 뽑기 스킨

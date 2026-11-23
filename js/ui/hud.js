@@ -262,15 +262,22 @@ class HUD {
         if (bg) ctx.drawImage(bg, 48, 0, 416, 288, 0, 0, MW, VIEW_H); // 가운데를 메인 영역에 맞춰 크롭
         else { ctx.fillStyle = '#1a1626'; ctx.fillRect(0, 0, MW, VIEW_H); hudText(ctx, '배너 불러오는 중…', MW / 2, VIEW_H / 2, '#889', 'center', 9); }
         const g = ctx.createLinearGradient(0, 0, 0, VIEW_H); g.addColorStop(0, 'rgba(10,8,18,0.5)'); g.addColorStop(0.4, 'rgba(10,8,18,0.05)'); g.addColorStop(1, 'rgba(10,8,18,0.92)'); ctx.fillStyle = g; ctx.fillRect(0, 0, MW, VIEW_H);
-        hudText(ctx, '✦ 전설 배너 ✦', MW / 2, 150, '#ffe9a0', 'center', 9);
-        hudText(ctx, K.name, MW / 2, 162, '#fff', 'center', 16);
-        hudText(ctx, `${game.data.heroes.get(K.hero).name} 전용   ·   전설 확률 ${Math.round(GACHA.legendRate * 100)}%`, MW / 2, 184, '#bfe6ff', 'center', 8);
-        if ((sv.skins || []).includes(K.id)) hudText(ctx, '이미 보유 — 중복은 마일리지로 전환', MW / 2, 200, '#ffb0d8', 'center', 7);
+        hudText(ctx, '✦ 전설 배너 ✦', MW / 2, 152, '#ffe9a0', 'center', 9);
+        hudText(ctx, K.name, MW / 2, 164, '#fff', 'center', 16);
+        hudText(ctx, `${game.data.heroes.get(K.hero).name} 전용`, MW / 2, 186, '#bfe6ff', 'center', 8);
+        const owned = (sv.skins || []).includes(K.id), sh = (sv.shards && sv.shards[K.id]) || 0;
+        if (owned) hudText(ctx, '보유 완료 — 조각은 마일리지로 전환', MW / 2, 200, '#ffb0d8', 'center', 7);
+        else { // 조각 진행도 게이지
+          const bw = 200, bx = MW / 2 - bw / 2, by = 202, p = sh / GACHA.shardsNeeded;
+          ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(bx, by, bw, 8); ctx.fillStyle = GACHA.shardColor; ctx.fillRect(bx, by, Math.round(bw * p), 8);
+          ctx.strokeStyle = '#8a7a40'; ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, 7);
+          hudText(ctx, `${GACHA.shardName} ${sh} / ${GACHA.shardsNeeded}`, MW / 2, by + 11, GACHA.shardColor, 'center', 8); }
         for (const b of [0, 1]) { const r = HUD.gachaPullBtn(b), cost = b ? GACHA.cost5 : GACHA.costSingle, can = (sv.bank || 0) >= cost, on = hit(r);
           ctx.fillStyle = can ? (on ? 'rgba(255,216,74,0.36)' : 'rgba(120,150,210,0.3)') : 'rgba(90,90,90,0.2)'; ctx.fillRect(r.x, r.y, r.w, r.h);
           ctx.strokeStyle = can ? '#ffd84a' : '#555'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
           hudText(ctx, b ? '5뽑' : '1뽑', r.x + r.w / 2, r.y + 5, can ? '#fff' : '#888', 'center', 12);
           hudText(ctx, `${CUR.name} ${cost}`, r.x + r.w / 2, r.y + 20, can ? CUR.color : '#888', 'center', 8); }
+        { const r = HUD.gachaRatesBtn(), on = hit(r); ctx.fillStyle = on ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.45)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = '#9ad8ff'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); hudText(ctx, '📊 확률 보기', r.x + r.w / 2, r.y + 4, '#9ad8ff', 'center', 7); } // 좌측 하단
       }
       // ── 오른쪽 사이드바
       ctx.fillStyle = 'rgba(14,11,22,0.96)'; ctx.fillRect(sx, 0, SBW, VIEW_H); ctx.strokeStyle = '#3a3448'; ctx.beginPath(); ctx.moveTo(sx + 0.5, 0); ctx.lineTo(sx + 0.5, VIEW_H); ctx.stroke();
@@ -293,14 +300,27 @@ class HUD {
         hudText(ctx, got ? '✦ 전설 스킨 획득! ✦' : '뽑기 결과', VIEW_W / 2, 40, got ? '#ffd84a' : '#ddd', 'center', 15);
         const n = o.results.length, cw = 86, gap = 8, x0 = (VIEW_W - (n * cw + (n - 1) * gap)) / 2;
         o.results.forEach((res, i) => { const x = x0 + i * (cw + gap), y = 80, h = 120;
-          const isSkin = res.type === 'skin', isDupe = res.type === 'dupe';
-          ctx.fillStyle = isSkin ? 'rgba(255,216,74,0.14)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(x, y, cw, h);
-          ctx.strokeStyle = isSkin ? '#ffd84a' : isDupe ? '#ffb0d8' : '#51475f'; ctx.strokeRect(x + 0.5, y + 0.5, cw - 1, h - 1);
-          if (isSkin || isDupe) { const Kk = pool.find((p) => p.id === res.id), th = bannerImg(GACHA.banners[res.id]); if (th) ctx.drawImage(th, 0, 0, 512, 288, x + 4, y + 4, cw - 8, 60); hudText(ctx, Kk ? Kk.name : '', x + cw / 2, y + 70, '#fff', 'center', 8); }
-          if (isSkin) hudText(ctx, '획득!', x + cw / 2, y + 92, '#ffd84a', 'center', 10);
-          else if (isDupe) { hudText(ctx, '중복', x + cw / 2, y + 88, '#ffb0d8', 'center', 9); hudText(ctx, `+${res.mileage} M`, x + cw / 2, y + 102, GACHA.mileageColor, 'center', 8); }
+          const isSkin = res.type === 'skin', isShard = res.type === 'shard', isDupe = res.type === 'dupe', hasImg = isSkin || isShard || isDupe;
+          ctx.fillStyle = isSkin ? 'rgba(255,216,74,0.14)' : isShard ? 'rgba(255,233,160,0.1)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(x, y, cw, h);
+          ctx.strokeStyle = isSkin ? '#ffd84a' : isShard ? GACHA.shardColor : isDupe ? '#ffb0d8' : '#51475f'; ctx.strokeRect(x + 0.5, y + 0.5, cw - 1, h - 1);
+          if (hasImg) { const Kk = pool.find((p) => p.id === res.id), th = bannerImg(GACHA.banners[res.id]); if (th) ctx.drawImage(th, 96, 0, 320, 288, x + 4, y + 4, cw - 8, 60); hudText(ctx, Kk ? Kk.name : '', x + cw / 2, y + 70, '#fff', 'center', 8); }
+          if (isSkin) hudText(ctx, '완성 획득!', x + cw / 2, y + 92, '#ffd84a', 'center', 9);
+          else if (isShard) { hudText(ctx, `${GACHA.shardName}`, x + cw / 2, y + 88, GACHA.shardColor, 'center', 8); hudText(ctx, `${res.count} / ${GACHA.shardsNeeded}`, x + cw / 2, y + 102, '#fff', 'center', 9); }
+          else if (isDupe) { hudText(ctx, '보유', x + cw / 2, y + 88, '#ffb0d8', 'center', 9); hudText(ctx, `+${res.mileage} M`, x + cw / 2, y + 102, GACHA.mileageColor, 'center', 8); }
           else { hudText(ctx, `+${res.mileage}`, x + cw / 2, y + 48, GACHA.mileageColor, 'center', 13); hudText(ctx, GACHA.mileageName, x + cw / 2, y + 68, '#bbb', 'center', 7); } });
         hudText(ctx, '아무 곳이나 클릭 / Enter — 닫기', VIEW_W / 2, VIEW_H - 30, '#999', 'center', 9);
+      }
+      // 확률표 팝업
+      if (o.rates) {
+        ctx.fillStyle = 'rgba(6,5,12,0.92)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+        const pw = 300, ph = 150, px = VIEW_W / 2 - pw / 2, py = VIEW_H / 2 - ph / 2;
+        ctx.fillStyle = 'rgba(20,16,30,0.98)'; ctx.fillRect(px, py, pw, ph); ctx.strokeStyle = '#ffd84a'; ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
+        hudText(ctx, '뽑기 확률', VIEW_W / 2, py + 12, '#ffd84a', 'center', 12);
+        const rows = [[`${GACHA.shardName} (배너 스킨)`, `${Math.round(GACHA.shardRate * 100)}%`, GACHA.shardColor], [`${GACHA.mileageName} +${GACHA.missMileage}`, `${Math.round((1 - GACHA.shardRate) * 100)}%`, GACHA.mileageColor]];
+        rows.forEach(([n2, p2, c], i) => { const ry = py + 40 + i * 22; hudText(ctx, n2, px + 20, ry, '#eee', 'left', 9); hudText(ctx, p2, px + pw - 20, ry, c, 'right', 10); });
+        hudText(ctx, `· ${GACHA.shardName} ${GACHA.shardsNeeded}개를 모으면 그 배너 스킨 완성`, VIEW_W / 2, py + 92, '#bfe6ff', 'center', 8);
+        hudText(ctx, '· 이미 보유한 배너에서 조각이 뜨면 마일리지로 전환', VIEW_W / 2, py + 108, '#ffb0d8', 'center', 8);
+        hudText(ctx, '클릭 / Esc — 닫기', VIEW_W / 2, py + ph - 16, '#999', 'center', 8);
       }
     } else if (o.type === 'codex' || o.type === 'armory' || o.type === 'trial_weapons') {
       const sv = game.save, disc = new Set(sv.discovered), armory = o.type === 'armory', tw = o.type === 'trial_weapons';
@@ -716,6 +736,7 @@ class HUD {
   static gachaPullBtn(i) { const mw = HUD.gachaMainW(), w = 150, g = 14, x0 = (mw - (w * 2 + g)) / 2; return { x: x0 + i * (w + g), y: VIEW_H - 46, w, h: 32 }; } // 1뽑/5뽑 (메인 하단)
   static gachaShopRow(i) { const mw = HUD.gachaMainW(), h = 48, y0 = 52; return { x: 10, y: y0 + i * (h + 6), w: mw - 20, h }; } // 상점: 메인 영역 세로 리스트
   static gachaShopBuy(i) { const r = HUD.gachaShopRow(i); return { x: r.x + r.w - 78, y: r.y + r.h / 2 - 9, w: 72, h: 18 }; }
+  static gachaRatesBtn() { return { x: 8, y: VIEW_H - 22, w: 72, h: 16 }; } // 좌측 하단 확률 보기
   static trialBtn(i) { return { x: VIEW_W / 2 - 214 + i * 108, y: 142, w: 100, h: 26 }; }
   static guildTab(i) { return { x: 60 + i * 134, y: 22, w: 126, h: 16 }; }
   static adminRow(i) { return { x: 60, y: 32 + i * 24, w: VIEW_W - 120, h: 21 }; }
