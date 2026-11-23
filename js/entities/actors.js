@@ -160,14 +160,25 @@ class Player extends Entity {
   renderBody(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y);
     const face = this.faceVis;
+    const sk = this.skinShown !== undefined ? this.skinShown /* 멀티 참가자 화면: 방장이 이미 갈래까지 확인해 보낸 값 */ : this.remoteSkin !== undefined ? (this.remoteSkin && skinAllowed(this.remoteSkin, this.hero.id, this.line && this.line.id) ? this.remoteSkin : null) /* 방장 쪽 동료: 갈래 확인 */ : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id, game.playerLineId(this)) : null); /* 내 캐릭터 */
     if (this.state === 'DEAD') {
-      const spr = heroSprite(this.hero, 0);
+      const deadHero = sk ? heroWithLook(this.hero, { sprite: sk }) : this.hero;
+      let spr = null;
+      if (sk === 'druid_bandi' && typeof druidSprite === 'function') {
+        const md = this.lastMoveDir || { x: 1, y: 0 };
+        let key, flip = false;
+        if (this.transformT > 0) { key = this.swing && this.swing.t < this.swing.dur ? 'sam_atk' : 'sam_idle'; flip = md.x < 0; }
+        else if (Math.abs(md.y) > Math.abs(md.x)) key = md.y >= 0 ? 'bandi_down' : 'bandi_up';
+        else { key = 'bandi_side'; flip = md.x > 0; }
+        const custom = druidSprite(key);
+        if (custom) spr = { w: custom.w, h: custom.h, n: flip ? custom.f : custom.n };
+      }
+      if (!spr) spr = heroSprite(deadHero, 0);
       ctx.save(); ctx.translate(x, y + 3); ctx.rotate(face * Math.PI / 2); ctx.globalAlpha = 0.85;
       ctx.drawImage(spr.n, -spr.w / 2, -spr.h / 2); ctx.restore(); ctx.globalAlpha = 1; return;
     }
     if (this.hurtInvuln > 0 && Math.floor(this.time * 20) % 2 === 0) return;
     const frame = this.moving && this.state !== 'DASH' ? Math.floor(this.time * 8) % 2 : 0;
-    const sk = this.skinShown !== undefined ? this.skinShown /* 멀티 참가자 화면: 방장이 이미 갈래까지 확인해 보낸 값 */ : this.remoteSkin !== undefined ? (this.remoteSkin && skinAllowed(this.remoteSkin, this.hero.id, this.line && this.line.id) ? this.remoteSkin : null) /* 방장 쪽 동료: 갈래 확인 */ : (typeof game !== 'undefined' && game.player === this && game.skinSprite ? game.skinSprite(this.hero.id, game.playerLineId(this)) : null); /* 내 캐릭터 */
     if (this.buffT > 0) { const col = this.transformT > 0 && sk === 'druid_bandi' ? '#5ef4ff' : this.buffKillHeal ? '#c02a3a' : this.buffGuard >= 0.4 ? '#c8a070' : '#ffd8a0', a = 0.25 + 0.15 * Math.sin(performance.now() / 120); // 축복·변신·서약 기운
       ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = col; ctx.beginPath(); ctx.ellipse(Math.round(this.x), Math.round(this.y) + 6, 11, 4, 0, 0, TAU); ctx.stroke(); ctx.restore(); }
     if (this.solomon > 0) { // 솔로몬의 반지: 보랏빛·금빛 고리
