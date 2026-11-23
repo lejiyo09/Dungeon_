@@ -1444,24 +1444,20 @@ class Game {
         else { const M = this.skinOnMap(), key = skinKey(K), on = M[key] === K.id; M[key] = on ? null : K.id; writeSave(sv); SFX.play('ui');
           const L = jobLines(K.hero).find((l) => l.id === K.line); o.msg = { text: on ? `'${K.name}' 해제 — 기본 외형` : `'${K.name}' 장착${L ? ` — ${this.data.heroes.get(K.hero).name} ${L.name} 계열일 때 보임` : ''}`, color: '#ffd84a', t: 2.5 }; } }
       return;
-    } else if (o.type === 'gacha') { // 스킨 뽑기: 배너 선택 → 1연/5연, 마일리지 상점 탭
+    } else if (o.type === 'gacha') { // 스킨 뽑기: 왼쪽=선택 배너 + 1뽑/5뽑, 오른쪽 사이드바=배너 선택 + 마일리지 상점
       if (o.msg) o.msg.t -= STEP;
-      const pool = gachaPool(), m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
+      const pool = gachaPool(), n = pool.length, m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
       if (o.results) { if (input.wasPressed('Mouse0') || input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('Escape')) { o.results = null; this.input.mouse.down = false; } return; } // 결과 보는 중엔 아무 클릭으로 닫기
       if (input.wasPressed('Escape') || input.wasPressed('KeyJ') || input.wasPressed('KeyE')) { this.overlay = { type: 'pause' }; return; }
-      if (input.wasPressed('Digit1')) o.tab = 0; else if (input.wasPressed('Digit2')) o.tab = 1;
-      if (input.wasPressed('Mouse0')) for (let i = 0; i < 2; i++) if (hit(HUD.gachaTab(i))) { o.tab = i; this.input.mouse.down = false; }
-      if (o.tab === 0) { // 뽑기 탭
-        const n = pool.length;
-        if (input.wasPressed('ArrowLeft')) o.banner = (o.banner + n - 1) % n;
-        else if (input.wasPressed('ArrowRight')) o.banner = (o.banner + 1) % n;
-        if (input.wasPressed('Mouse0')) {
-          if (hit(HUD.gachaArrow(0))) { o.banner = (o.banner + n - 1) % n; this.input.mouse.down = false; }
-          else if (hit(HUD.gachaArrow(1))) { o.banner = (o.banner + 1) % n; this.input.mouse.down = false; }
-          else for (const b of [0, 1]) if (hit(HUD.gachaPullBtn(b))) { const r = this.gachaPull(pool[o.banner].id, b ? 5 : 1); if (r.error) o.msg = { text: r.error, color: '#ff9a9a', t: 2.5 }; else o.results = r.results; this.input.mouse.down = false; }
-        }
-      } else { // 마일리지 상점 탭
-        if (input.wasPressed('Mouse0')) pool.forEach((K, i) => { if (hit(HUD.gachaShopBuy(i))) { const r = this.buyMileageSkin(K.id); o.msg = { text: r.error || `'${r.name}' 구매 완료!`, color: r.error ? '#ff9a9a' : '#ffd84a', t: 2.5 }; this.input.mouse.down = false; } });
+      if (input.wasPressed('ArrowUp')) { o.tab = 0; o.banner = (o.banner + n - 1) % n; }
+      else if (input.wasPressed('ArrowDown')) { o.tab = 0; o.banner = (o.banner + 1) % n; }
+      if (input.wasPressed('Mouse0')) {
+        let used = false;
+        pool.forEach((K, i) => { if (hit(HUD.gachaBanner(i))) { o.tab = 0; o.banner = i; used = true; } }); // 사이드바 배너 선택
+        if (!used && hit(HUD.gachaShopTab())) { o.tab = 1; used = true; } // 마일리지 상점
+        if (!used && o.tab === 0) for (const b of [0, 1]) if (hit(HUD.gachaPullBtn(b))) { const r = this.gachaPull(pool[o.banner].id, b ? 5 : 1); if (r.error) o.msg = { text: r.error, color: '#ff9a9a', t: 2.5 }; else o.results = r.results; used = true; } // 1뽑/5뽑
+        if (!used && o.tab === 1) pool.forEach((K, i) => { if (hit(HUD.gachaShopBuy(i))) { const r = this.buyMileageSkin(K.id); o.msg = { text: r.error || `'${r.name}' 구매 완료!`, color: r.error ? '#ff9a9a' : '#ffd84a', t: 2.5 }; used = true; } });
+        if (used) this.input.mouse.down = false;
       }
       return;
     } else if (o.type === 'gift') { // 선물 코드 입력 (영문·숫자 최대 16자)

@@ -82,7 +82,7 @@ function giftHash(code) { let h = 0x811c9dc5; for (const ch of 'pd_gift:' + Stri
 function skinsForMenu(save) { const owned = save && Array.isArray(save.skins) ? save.skins : []; return SKINS.filter((k) => k.source !== 'code' || owned.includes(k.id)); }
 // ── 스킨 뽑기 [사용자 결정] 재화=결정석, 1연/5연, 전설 1%, 꽝은 스킨 마일리지, 중복 전설도 마일리지, 마일리지 상점에서 직접 구매
 const GACHA = {
-  costSingle: 150, cost5: 650,            // 결정석 비용 (5연 약간 할인)
+  costSingle: 300, cost5: 1500,           // 결정석 비용 (1뽑 300, 5뽑 1500)
   legendRate: 0.01,                        // 배너 전설 스킨 1%
   missMileage: 12, dupeMileage: 250,       // 꽝 / 전설 중복 시 마일리지
   shopPrice: 400,                          // 마일리지 상점 스킨 1개 가격
