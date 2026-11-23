@@ -41,6 +41,7 @@ const SCORE_KEEP = 30;
 const GH = { token: process.env.GH_TOKEN || '', repo: process.env.GH_REPO || '', branch: process.env.GH_BRANCH || 'scores', file: 'scores.json', sha: null };
 let scores = { stage: [], kills: [], deep: [], coop: [] }, scoresDirty = false;
 try { scores = Object.assign(scores, JSON.parse(fs.readFileSync(SCORE_FILE, 'utf8'))); } catch (e) { /* 처음 */ }
+for (const cat of ['stage', 'kills', 'deep']) { const before = scores[cat] || []; scores[cat] = before.filter((r) => (Number(r.party) || 1) <= 1); if (scores[cat].length !== before.length) scoresDirty = true; }
 const ghApi = async (p, opt = {}) => { const r = await fetch('https://api.github.com/repos/' + GH.repo + p, Object.assign({}, opt, { headers: { Authorization: 'Bearer ' + GH.token, Accept: 'application/vnd.github+json', 'User-Agent': 'project-dungeon-server' } })); return r; };
 async function ghLoad() {
   if (!GH.token || !GH.repo) return;
@@ -70,6 +71,7 @@ function setTitle(name, title) { /* 그 이름의 기록(파티 제외)에 지�
 }
 const titleIpAt = new Map();
 function addScoreRow(cat, row, quiet) {
+  if (cat !== 'coop' && (Number(row.party) || 1) > 1) return false;
   const list = scores[cat], key = cat === 'coop' ? row.party : row.name, i = list.findIndex((x) => (cat === 'coop' ? x.party : x.name) === key);
   if (i >= 0) { if (SCORE_SORT[cat](row, list[i]) >= 0) return false; list.splice(i, 1); } // 같은 이름(파티)은 최고 기록만
   list.push(row); list.sort(SCORE_SORT[cat]); list.length = Math.min(list.length, SCORE_KEEP);
@@ -83,9 +85,13 @@ function submitScore(ip, b) {
   const n = (v, max) => Math.max(0, Math.min(max, Math.floor(Number(v) || 0)));
   const row = { name, hero: String(b.hero || '').slice(0, 32), stage: n(b.stage, 400), label: String(b.label || '').slice(0, 16), deep: n(b.deep, 300), kills: n(b.kills, 50000), party: n(b.partySize, 4) || 1, victory: !!b.victory, at: now, title: cleanTitle(b.title) };
   scoreIpAt.set(key, now);
-  if (row.stage > 0) addScoreRow('stage', row); if (row.kills > 0) addScoreRow('kills', row); if (row.deep > 0) addScoreRow('deep', row); // 지난 기록 올리기는 처치 수가 없을 수 있음
-  setTitle(name, row.title); /* 예전 최고 기록에도 지금 칭호 */
-  if (row.party > 1 && Array.isArray(b.partyNames)) { const names = b.partyNames.map((x) => String(x).replace(/[\u0000-\u001f<>]/g, '').slice(0, 12)).filter(Boolean).slice(0, 4); if (names.length > 1) addScoreRow('coop', Object.assign({}, row, { party: names.join(' · ') })); }
+  if (row.party <= 1) {
+    if (row.stage > 0) addScoreRow('stage', row); if (row.kills > 0) addScoreRow('kills', row); if (row.deep > 0) addScoreRow('deep', row);
+    setTitle(name, row.title);
+  } else if (Array.isArray(b.partyNames)) {
+    const names = b.partyNames.map((x) => String(x).replace(/[\u0000-\u001f<>]/g, '').slice(0, 12)).filter(Boolean).slice(0, 4);
+    if (names.length > 1) addScoreRow('coop', Object.assign({}, row, { party: names.join(' · ') }));
+  }
   return null;
 }
 // 복구: 서버가 다시 시작돼 기록이 비었을 때, 랭킹을 본 적 있는 브라우저가 가진 사본으로 다시 채움

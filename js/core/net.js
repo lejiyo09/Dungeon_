@@ -111,6 +111,7 @@ const Net = {
   async syncScores() {
     const b = this.httpBase(); if (!b) throw new Error('랭킹판은 서버 주소(Render)에서 열었을 때만 볼 수 있어요');
     const d = await this.fetchScores(); let cache = {}; try { cache = JSON.parse(localStorage.getItem('pd_scores_cache') || '{}'); } catch (e) { cache = {}; }
+    for (const cat of ['stage', 'kills', 'deep']) cache[cat] = (cache[cat] || []).filter((r) => (Number(r.party) || 1) <= 1);
     const missing = {}; let need = false;
     for (const cat of ['stage', 'kills', 'deep', 'coop']) { const have = new Map((d[cat] || []).map((r) => [this.scoreKey(cat, r), r]));
       missing[cat] = (cache[cat] || []).filter((r) => { const s = have.get(this.scoreKey(cat, r)); return !s || (cat === 'kills' ? r.kills > s.kills : cat === 'deep' ? r.deep > s.deep : r.stage > s.stage); });
@@ -128,7 +129,8 @@ const Net = {
     return fetch(b + '/api/title', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, title: title || '' }) }).then((r) => r.ok).catch(() => false); },
   async flushScores() { // 보내지 못한 기록 다시 보내기 (같은 이름은 서버가 15초에 한 번만 받으므로 이름마다 가장 좋은 기록 하나씩)
     let q = []; try { q = JSON.parse(localStorage.getItem('pd_score_queue') || '[]'); localStorage.removeItem('pd_score_queue'); } catch (e) { return; }
-    const best = new Map(); for (const r of q) { const o = best.get(r.name); if (!o) best.set(r.name, r); else best.set(r.name, Object.assign({}, r, { stage: Math.max(o.stage, r.stage), kills: Math.max(o.kills, r.kills), deep: Math.max(o.deep || 0, r.deep || 0), label: r.stage >= o.stage ? r.label : o.label, victory: o.victory || r.victory })); }
+    const scoreKey = (r) => (Number(r.partySize) || 1) > 1 ? 'coop|' + (Array.isArray(r.partyNames) ? r.partyNames.slice().sort().join(' · ') : String(r.partySize) + '|' + (r.name || '')) : 'solo|' + r.name;
+    const best = new Map(); for (const r of q) { const key = scoreKey(r), o = best.get(key); if (!o) best.set(key, r); else best.set(key, Object.assign({}, r, { stage: Math.max(o.stage, r.stage), kills: Math.max(o.kills, r.kills), deep: Math.max(o.deep || 0, r.deep || 0), label: r.stage >= o.stage ? r.label : o.label, victory: o.victory || r.victory })); }
     for (const r of best.values()) await this.submitScore(r);
   },
   scoreErr(e) { // 연결 실패를 알아보기 쉬운 말로

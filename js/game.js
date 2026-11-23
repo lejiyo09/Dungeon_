@@ -145,7 +145,8 @@ class Game {
       if (['kills', 'bosses', 'elites', 'stages', 'reactions', 'gold'].includes(stat)) for (const Q of this.remotes.values()) (Q.gev = Q.gev || []).push([stat, amt, target]);
     }
     const sv = this.save; if (!sv) return;
-    sv.stats = sv.stats || {}; sv.stats[stat] = (sv.stats[stat] || 0) + amt;
+    const personalStats = this.coopRunKey || this.coop ? (sv.coopStats = sv.coopStats || {}) : (sv.stats = sv.stats || {});
+    personalStats[stat] = (personalStats[stat] || 0) + amt;
     const G = sv.guild; if (!G) return;
     for (const q of (G.daily || []).concat(G.weekly || [])) if (q.stat === stat && !q.claimed) q.prog = Math.min(q.n, q.prog + amt);
     if (target) for (const h of G.active || []) if (!h.done && ((h.kind === 'boss' && stat === 'bosses') || (h.kind === 'mob' && stat === 'kills')) && h.target === target) { h.prog = Math.min(h.n, (h.prog || 0) + 1); if (h.prog >= h.n) { h.done = true; if (this.mode === 'dungeon') this.effects.text(this.player.x, this.player.y - 28, `토벌 완료: ${h.name}`, '#ffd84a', true); } }
@@ -459,7 +460,7 @@ class Game {
     if (!Net.isHost) return; // 참가자: 방장이 보내 준 상태를 그리기만
     let best = null, bn = 0; for (const po of this.portals) if (po.group) { const n = this.gatherMembers(po); if (n > bn) { bn = n; best = po; } }
     const G = this.gather, meOn = best && Math.hypot(this.player.x - best.x, this.player.y - best.y) < 22;
-    const go = () => { const po = G.po; this.gather = {}; Net.relay({ k: 'gather', label: null }); if (this.save.run && po.group === 'run') { this.overlay = { type: 'resume' }; this.player.y += 22; } else this.transition = { t: 0, swapped: false, action: po.onEnter }; };
+    const go = () => { const po = G.po; this.gather = {}; Net.relay({ k: 'gather', label: null }); const partyRun = Net.inRoom && Net.isHost && Net.players.length > 1; if (!partyRun && this.save.run && po.group === 'run') { this.overlay = { type: 'resume' }; this.player.y += 22; } else this.transition = { t: 0, swapped: false, action: po.onEnter }; };
     if (best && bn >= total) { if (G.po !== best || G.t === undefined) { G.po = best; G.t = 3; SFX.play('ui'); } G.t -= dt; if (G.t <= 0) { go(); return; } }
     else { G.po = bn ? best : null; G.t = undefined; }
     if (meOn && input.wasPressed('KeyE') && bn >= 1) { G.po = best; go(); return; } // 방장: 다 안 모여도 바로 출발 (방 사람 모두 함께)
@@ -498,13 +499,41 @@ class Game {
         drawSprite(ctx, spr, P.x, P.y + 7, { flip: P.face < 0 }); hudText(ctx, name, Math.round(P.x), Math.round(P.y) - 20, '#7affc0', 'center', 7); } }); }
     return out;
   }
+  coopPartyMembers(players = Net.players) {
+    return (players || []).map((p) => String(typeof p === 'string' ? p : (p && (p.name || (p.id != null ? '#' + p.id : ''))) || '').trim().slice(0, 12)).filter(Boolean).sort((a, b) => a.localeCompare(b, 'ko'));
+  }
+  coopPartyKey(players = Net.players) {
+    const names = this.coopPartyMembers(players);
+    return names.length > 1 ? 'party:' + names.map((n) => encodeURIComponent(n)).join('|') : null;
+  }
+  validCoopRun(run, key, members) {
+    if (!run || run.v !== 1 || run.key !== key || !Array.isArray(run.party) || !Array.isArray(run.members)) return false;
+    const expected = this.coopPartyMembers(members || []);
+    if (expected.length < 2 || this.coopPartyKey(run.party) !== key || JSON.stringify(expected) !== JSON.stringify(this.coopPartyMembers(run.party))) return false;
+    return Number.isInteger(run.worldIdx) && run.worldIdx >= 0 && run.worldIdx < DEEP_START
+      && Number.isInteger(run.levelIdx) && run.levelIdx >= 0 && run.levelIdx < STAGES_PER_WORLD
+      && run.members.every((m) => m && expected.includes(m.name) && DATA_HEROES.some((h) => h.id === m.hero) && m.p && typeof m.p === 'object' && Array.isArray(m.p.weapons));
+  }
+  updateCoopRecord(victory = false) {
+    const key = this.coopRunKey; if (!key || !this.save) return null;
+    const all = this.save.coopRecords = this.save.coopRecords || {};
+    const R = all[key] = all[key] || { bestStage: 0, bestKills: 0, clears: 0, bestDeep: 0 };
+    const reached = Math.max(1, this.stageIndex + 1);
+    R.bestStage = Math.max(R.bestStage || 0, reached);
+    R.bestKills = Math.max(R.bestKills || 0, this.kills || 0);
+    if (this.W && this.W.deep) R.bestDeep = Math.max(R.bestDeep || 0, this.W.depth || 0);
+    if (victory) R.clears = (R.clears || 0) + 1;
+    R.lastStage = reached; R.lastKills = this.kills || 0; R.lastPlayedAt = Date.now();
+    writeSave(this.save); return R;
+  }
   // ── 랭킹판: 탐험이 끝나면 기록을 보냄 (계정이 있을 때만, 관리자 계정·시련 제외)
   runScoreRow(victory, o = {}) {
     const W = this.W, stage = o.stage ?? this.stageIndex + 1;
-    return { name: this.profile ? this.profile.name : '', hero: this.save.selected, stage, label: o.label || stageLabel(this.worldIdx, this.levelIdx), deep: o.deep ?? (W && W.deep ? W.depth : 0), kills: o.kills ?? this.kills, victory: !!victory,
-      partySize: o.partySize || (this.coop && this.coop.host ? this.partyCount() : 1), partyNames: o.partyNames || (this.coop && this.coop.host ? Net.players.map((p) => p.name) : null), title: this.myTitleId() };
+    const party = this.coop && this.coop.host ? (this.coop.partyMembers || this.coopPartyMembers()) : this.coopPartyMembersList;
+    return { name: this.profile ? this.profile.name : '', hero: this.player && this.player.hero ? this.player.hero.id : this.save.selected, stage, label: o.label || stageLabel(this.worldIdx, this.levelIdx), deep: o.deep ?? (W && W.deep ? W.depth : 0), kills: o.kills ?? this.kills, victory: !!victory,
+      partySize: o.partySize || (this.coopRunKey ? (party && party.length || this.partyCount()) : 1), partyNames: o.partyNames || (this.coopRunKey ? (party || null) : null), title: this.myTitleId() };
   }
-  submitRunScore(victory, o) { if (!this.profile || this.admin || this.trialW || (this.areaId && !o)) return; /* 바빌로니아 지하는 랭킹 도달 기록에 넣지 않음 */ if (!o) { this.save.bestKills = Math.max(this.save.bestKills || 0, this.kills); writeSave(this.save); } Net.submitScore(this.runScoreRow(victory, o)); }
+  submitRunScore(victory, o) { if (this.coopRunKey || this.coop || !this.profile || this.admin || this.trialW || (this.areaId && !o)) return; if (!o) { this.save.bestKills = Math.max(this.save.bestKills || 0, this.kills); writeSave(this.save); } Net.submitScore(this.runScoreRow(victory, o)); }
   backfillScore() { // 지금까지의 최고 도달·심층·한 판 처치 (계정마다 한 번)
     const s = this.save; if (!this.profile || this.admin || s.scoreBackfill || !Net.httpBase() || !(s.bestStage > 0)) return;
     const n = s.bestStage; s.scoreBackfill = 1; writeSave(s);
@@ -786,23 +815,48 @@ class Game {
   }
   // ── 런 진행
   startRun(deep = false) {
+    const partyLaunch = Net.inRoom && Net.isHost && Net.players.length > 1;
+    if (partyLaunch) {
+      const members = this.coopPartyMembers(), key = this.coopPartyKey(members);
+      this.coopRunKey = key; this.coopPartyMembersList = members;
+      const prior = this.save.coopRuns && this.save.coopRuns[key];
+      this.coopRunData = this.validCoopRun(prior, key, members) ? prior : null;
+      if (this.coopRunData) { this.resumeCoopRun(this.coopRunData, key, members); return; }
+      this.coopReviveUsed = false; deep = false;
+    } else {
+      this.coopRunKey = null; this.coopPartyMembersList = null; this.coopRunData = null; this.coopReviveUsed = false;
+    }
     this.mode = 'dungeon'; this.trialW = null; this.areaId = null; this.runDeep = !!deep;
-    this.worldIdx = deep ? DEEP_START : 0; this.levelIdx = 0; this.gold = deep ? BALANCE.deepStart.gold : 0; this.kills = 0; // 심층 입장: 심층 1번째 필드부터
-    this.runStart = { stage: this.stageIndex, world: this.worldIdx }; // 이번 탐험을 시작한 곳 (결정석은 실제로 깬 스테이지·보스만)
-    this.save.runReviveUsed = false; // 새 탐험마다 부활 기회 초기화
-    const switched = deep ? this.deepEntryHero() : null; // 이 직업으로 10-4를 깬 적이 없으면 가장 최근에 깬 직업으로
+    this.worldIdx = deep ? DEEP_START : 0; this.levelIdx = 0; this.gold = deep ? BALANCE.deepStart.gold : 0; this.kills = 0;
+    this.runStart = { stage: this.stageIndex, world: this.worldIdx };
+    if (!partyLaunch) this.save.runReviveUsed = false;
+    const switched = deep ? this.deepEntryHero() : null;
     this.player = this.makePlayer(0, 0);
-    const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped); // 로비에서 고른 보구 (사망해도 영구 보유)
+    const tr = DATA_TREASURES.find((t) => t.id === this.save.treasureEquipped);
     const cp = deep && this.deepCheckpoint(this.save.selected);
-    if (cp) { this.player = this.playerFromSnapshot(this.player.hero, cp); this.gold = cp.gold || 0; this.useCheckpoint(this.player, cp, tr); } // 심층 입장: 10-4를 깬 그대로 (보구는 지금 장착한 것)
+    if (cp) { this.player = this.playerFromSnapshot(this.player.hero, cp); this.gold = cp.gold || 0; this.useCheckpoint(this.player, cp, tr); }
     else if (tr) { this.player.treasure = tr; if (tr.apply) tr.apply(this.player); }
-    this.guild(); this.applySupplies(); // 길드 퀘스트 준비 · 거래상에서 산 보급품
+    this.guild(); this.applySupplies();
     this.loadStage();
     if (cp) {
-      this.showBanner(switched ? `심층 입장 — ${this.player.hero.name}(으)로 바꿈` : '심층 입장', `${switched ? '이 직업·진화 루트로 10-4를 깬 기록이 없어 가장 최근에 10-4를 깬 캐릭터로 · ' : `${this.player.line ? this.player.line.name + ' 계열 · ' : ''}10-4를 깬 그대로 · `}${this.player.weapons.map((w) => w.def.name).join(' + ')} · 축복 ${this.player.buffs.length}개`, '#9ad8ff'); if (switched && Net.inRoom) Net.profile(this.netName(), switched); }
-    else { const after = deep ? () => this.applyDeepKit(this.player) : null; // 이 직업의 10-4 기록이 없으면 기본 심층 장비
-      if (!this.save.prologueSeen) this.showPrologue(() => this.askVariant(after)); else this.askVariant(after); }
-    if (Net.inRoom && Net.isHost && Net.players.length > 1) this.coopHostStart(); // 멀티: 방 사람들과 함께 출발
+      this.showBanner(switched ? `심층 입장 — ${this.player.hero.name}(으)로 바꿈` : '심층 입장', `${switched ? '이 직업·진화 루트로 10-4를 깬 기록이 없어 가장 최근 10-4를 깬 캐릭터로 · ' : `${this.player.line ? this.player.line.name + ' 계열 · ' : ''}10-4를 깬 그대로 · `}${this.player.weapons.map((w) => w.def.name).join(' + ')} · 축복 ${this.player.buffs.length}개`, '#9ad8ff');
+      if (switched && Net.inRoom) Net.profile(this.netName(), switched);
+    } else {
+      const after = deep ? () => this.applyDeepKit(this.player) : null;
+      if (!this.save.prologueSeen) this.showPrologue(() => this.askVariant(after)); else this.askVariant(after);
+    }
+    if (partyLaunch) this.coopHostStart();
+  }
+  resumeCoopRun(run, key, members) {
+    this.mode = 'dungeon'; this.trialW = null; this.areaId = null; this.zoneField = 0; this.zoneRights = 0; this.babylonCp = null; this.runDeep = false;
+    this.coopRunKey = key; this.coopPartyMembersList = this.coopPartyMembers(members); this.coopRunData = run;
+    this.coopReviveUsed = !!run.reviveUsed;
+    this.worldIdx = run.worldIdx; this.levelIdx = run.levelIdx; this.gold = Math.max(0, Number(run.gold) || 0); this.kills = Math.max(0, Number(run.kills) || 0);
+    this.runStart = run.start && Number.isInteger(run.start.stage) ? run.start : { stage: this.worldIdx * STAGES_PER_WORLD, world: this.worldIdx };
+    const me = (run.members || []).find((m) => m.name === this.netName()), hero = me && this.data.heroes.get(me.hero);
+    this.player = hero && me.p ? this.playerFromSnapshot(hero, me.p) : this.makePlayer(0, 0);
+    this.loadStage(); this.coopHostStart();
+    this.showBanner('파티 탐험 이어하기', `${this.stageName()}부터 같은 파티의 진행을 이어갑니다`, '#7affc0');
   }
   // ── 이어하기: 스테이지 시작 시점의 런 상태 (맵은 그 스테이지를 새로 생성)
   snapshotRun() {
@@ -848,17 +902,18 @@ class Game {
   showPrologue(then) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => { this.save.prologueSeen = true; writeSave(this.save); if (then) then(); } }; }
   // 기원의 성역 깊은 곳: 전설의 존재와 마주함 → 소원이 드러남 → 보구 선택
   enterSanctum() {
-    this.save.sanctumReached = true;
-    if (!this.trialW && this.player) {
-      const c = this.deepCps(), key = this.deepKey(this.player.hero.id, this.player.line && this.player.line.id);
-      const cp = Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() });
-      c[key] = cp;
-      const archive = this.save.deepCheckpointArchive = this.save.deepCheckpointArchive || {};
-      archive[key] = JSON.parse(JSON.stringify(cp)); // 무기 ID·강화 단계·축복 ID까지 계정별로 별도 보관
-    } /* 직업·계열마다 따로 */ // 10-4를 깬 캐릭터와 정확한 장비 구성을 저장
-    writeSave(this.save);
-    if (this.coop && this.coop.host) for (const R of this.remotes.values()) { // 멀티: 동료도 성역 도달·10-4 캐릭터 저장·보구 선택
-      const cp = this.withPlayer(R.p, () => Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() })); Net.relay({ k: 'sanctum', cp }, R.id); }
+    if (!this.coopRunKey) {
+      this.save.sanctumReached = true;
+      if (!this.trialW && this.player) {
+        const c = this.deepCps(), key = this.deepKey(this.player.hero.id, this.player.line && this.player.line.id);
+        const cp = Object.assign(this.snapshotRun().p, { gold: this.gold, t: Date.now() });
+        c[key] = cp;
+        const archive = this.save.deepCheckpointArchive = this.save.deepCheckpointArchive || {};
+        archive[key] = JSON.parse(JSON.stringify(cp));
+      }
+      writeSave(this.save);
+    } else this.updateCoopRecord(false);
+    if (this.coop && this.coop.host) for (const R of this.remotes.values()) Net.relay({ k: 'sanctum' }, R.id);
     SFX.stopMusic();
     this.overlay = { type: 'story', sanctum: true, lines: SANCTUM_LINES, i: 0, t: 0, done: () => { this.overlay = { type: 'treasure_pick', msg: null }; } };
   }
@@ -890,7 +945,7 @@ class Game {
   get scale() { const S = BALANCE.stageScale, k = this.mode === 'lobby' ? 0 : this.stageIndex, i = k > S.taperFrom ? S.taperFrom + (k - S.taperFrom) * S.taper : k; return { hp: 1 + BALANCE.stageScale.hp * i, dmg: 1 + BALANCE.stageScale.dmg * i, deep: this.mode !== 'lobby' && !!this.W.deep }; }
   loadStage() {
     const W = this.W;
-    if (W.deep && !W.trial) this.save.bestDeep = Math.max(this.save.bestDeep || 0, W.depth); // 가장 깊이 내려간 심층
+    if (W.deep && !W.trial && !this.coopRunKey) this.save.bestDeep = Math.max(this.save.bestDeep || 0, W.depth); // 솔로 심층 기록만 갱신
     const map = W.trial ? generateDungeon({ roomCount: W.rooms || 2, specials: ['boss'], waves: W.waves || 0, palette: W.palette, bossSize: W.bossRoom }) // 시련: 시작 방 + 보스 방 (카멜롯은 전투 방도)
       : this.isBossStage
       ? generateDungeon({ roomCount: 4, specials: ['boss'], waves: W.waves, palette: W.palette, bossSize: W.bossRoom })
@@ -905,8 +960,11 @@ class Game {
     this.stockSpecialRooms(map);
     const ex = map.roomOf('exit');
     if (ex) { const c = map.tileCenter(ex.cx, ex.cy); this.portals.push(new Portal(c.x, c.y, () => this.advanceStage(), '다음 스테이지')); }
-    if (!W.trial) { if (!this.areaId) this.save.bestStage = Math.max(this.save.bestStage, this.stageIndex + 1);
-      this.save.run = this.snapshotRun(); writeSave(this.save); } // 시련은 이어하기·기록에 남기지 않음 // 이어하기용: 이 스테이지 시작 지점을 저장
+    if (!W.trial) {
+      if (this.coopRunKey) this.updateCoopRecord(false);
+      else { if (!this.areaId) this.save.bestStage = Math.max(this.save.bestStage, this.stageIndex + 1);
+        this.save.run = this.snapshotRun(); writeSave(this.save); }
+    } // 솔로 이어하기와 파티별 멀티 이어하기·기록 분리
     if (W.sanctum) this.decorateSanctum(map);
     this.snapCamera();
     if (W.sanctum && this.levelIdx === 0) this.playCutscene(ORIGIN_ARRIVAL_LINES, { id: 'origin_arrival', focus: null });
@@ -916,7 +974,7 @@ class Game {
     if (W.finalField && this.isBossStage) this.playCutscene(GILGAMESH_UNDER_INTRO_LINES, { id: 'gilgamesh_under', always: true, focus: null }); /* 지구라트 4-4 왕좌의 방: 영웅왕 길가메시 */
     if (W.deep && !W.trial && W.depth === 1 && this.levelIdx === 0) this.playCutscene(DEEP_ARRIVAL_LINES, { id: 'deep_arrival', focus: null }); // 심층에 처음 들어설 때 (한 번만)
     if (W.deep && !W.trial && W.depth === 30 && this.levelIdx === 0) this.playCutscene(DEEP30_ARRIVAL_LINES, { id: 'deep30_arrival', focus: null }); // 기록의 근원에 처음 도착
-    if (this.coop && this.coop.host) this.coopOnStage(); // 멀티: 동료 배치·부활 + 새 맵 보내기
+    if (this.coop && this.coop.host) { this.coopOnStage(); this.coopSaveRun(); } // 멀티: 동료 배치·부활 + 파티 진행 저장·새 맵 보내기
     if (W.trial) { this.showBanner(W.name, this.trialDef.intro, this.trialDef.color); return; }
     this.showBanner(`${this.stageName()}  ${W.name}`, this.isBossStage ? '보스가 기다리고 있습니다' : W.deep && this.levelIdx === 0 ? `심층 ${W.depth}번째 필드 — 던전은 더 깊은 곳으로 이어진다` : '출구 포탈을 찾으세요', W.deep ? '#9ad8ff' : undefined);
   }
@@ -976,11 +1034,12 @@ class Game {
     });
   }
   reviveRun() {
-    const COST = 200, p = this.player;
-    if (this.mode !== 'dungeon' || this.trialW || !p || p.state !== 'DEAD' || this.save.runReviveUsed || this.save.bank < COST) return false;
+    const COST = 200, p = this.player, coopRun = !!this.coopRunKey, used = coopRun ? !!(this.coopReviveUsed || (this.coop && this.coop.reviveUsed)) : !!this.save.runReviveUsed;
+    if (this.mode !== 'dungeon' || this.trialW || !p || p.state !== 'DEAD' || used || this.save.bank < COST) return false;
     this.save.bank -= COST;
-    this.save.runReviveUsed = true;
-    writeSave(this.save); // 재접속으로 부활 횟수를 초기화할 수 없도록 즉시 저장
+    if (coopRun) { this.coopReviveUsed = true; if (this.coop) this.coop.reviveUsed = true; }
+    else this.save.runReviveUsed = true;
+    writeSave(this.save);
     p.state = 'NORMAL'; p.deathTimer = 0;
     p.hp = Math.max(1, Math.ceil(p.maxHp * 0.5));
     p.shield = Math.ceil(p.maxShield * 0.5);
@@ -997,16 +1056,18 @@ class Game {
     if (this.trialW && this.trialId === 'babylon') { SFX.stopMusic(); this.finishBabylon(true); return; } /* 길가메시에게 쓰러짐 */
     if (this.trialW) { this.endTrial(victory); return; }
     if (this.coop && this.coop.guest) { this.coopGuestEnd({ victory: false, quit: true }); return; }
-    this.submitRunScore(victory); // 랭킹판에 기록
-    if (this.coop && this.coop.host) this.coopHostEnd(victory);
+    const coopRun = !!(this.coopRunKey || this.coop);
+    if (!coopRun) this.submitRunScore(victory);
     this.guildEvent('runs');
-    SFX.stopMusic(); this.save.run = null; this.save.runReviveUsed = false; writeSave(this.save);
+    if (this.coop && this.coop.host) this.coopHostEnd(victory);
+    SFX.stopMusic();
+    if (!coopRun) { this.save.run = null; this.save.runReviveUsed = false; writeSave(this.save); }
     if (this.areaId) this.restoreStashRun(); /* 바빌로니아 귀환길이 끝나면 그 전 탐험 기록을 되돌림 */
     SFX.play(victory ? 'victory' : 'hurt');
     // 로비 재화: 클리어한 스테이지 수 · 쓰러뜨린 필드 보스 수 · 승리 보너스 (던전 골드는 런과 함께 사라짐)
     const { stages, bosses, reward } = this.runReward(victory);
     this.overlay = { type: 'result', victory, stages, bosses, reward };
-    if (victory) { this.save.clears++; writeSave(this.save); }
+    if (victory && !coopRun) { this.save.clears++; writeSave(this.save); }
   }
   runReward(victory) { // 로비 재화: 이번 탐험에서 실제로 깬 스테이지·필드 보스 수 (로비에서 바로 심층에 들어간 탐험도 일반과 같은 기준)
     if (this.areaId) { const S = this.runStart || {}, f = this.zoneField || 0, stages = Math.max(0, f * STAGES_PER_WORLD + this.levelIdx - (S.zs || 0) + (victory ? 1 : 0)), bosses = Math.max(0, f - (S.zf || 0) + (victory ? 1 : 0)); /* 지하: 필드 번호로 셈 */
@@ -1581,7 +1642,7 @@ class Game {
       const appliedPenalty = this.applyFeastStartPenalty(this.player);
       if (appliedPenalty) this.showBanner('소울 이터', '시작 기본 능력치 -40% · 포식 500 도달 시 해제', '#a2426e');
       // 직업 갈래·심층 시작 장비·시작 페널티까지 이어하기 저장에 반영
-      if (this.mode === 'dungeon' && !this.trialW && this.player) { this.save.run = this.snapshotRun(); writeSave(this.save); }
+      if (this.mode === 'dungeon' && !this.trialW && this.player && !this.coopRunKey) { this.save.run = this.snapshotRun(); writeSave(this.save); }
     };
     if (lines.length === 1 || branchesAtEvolve(this.player.hero.id)) { this.setJob(this.player, lines[0], 0); finish(); return; }
     if (window.__toolMode) { this.applyVariant(lines[0]); finish(); return; }
