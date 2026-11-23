@@ -658,5 +658,47 @@ Object.assign(PIX, {
     P.rect(3, 7, 10, 8, 'b'); P.rect(5, 9, 6, 5, 'a'); P.rect(4, 2, 2, 7, 'm'); P.rect(7, 0, 2, 9, 'm'); P.rect(10, 3, 2, 6, 'm');
     P.rect(5, 9, 1, 3, 'y'); P.rect(8, 9, 1, 3, 'y'); P.rect(11, 9, 1, 3, 'y'); P.px(8, 11, 'e');
   } }
-
+,
+  // ── 심층 25: 깨진 거울 사막
+  glasssentinel: { tint: '#a77bb5', w: 16, h: 16, pal: { m: '#dfc1e8', y: '#edc7ff', e: '#fff0ff' }, proc: (P) => {
+    P.rect(4, 12, 3, 4, 'b'); P.rect(9, 12, 3, 4, 'b'); P.rect(3, 7, 10, 6, 'm'); P.rect(5, 8, 6, 4, 'a');
+    P.ell(8, 4, 4, 3, 'a'); P.tri(4, 4, 3, 0, 7, 2, 'y'); P.tri(12, 4, 13, 0, 9, 2, 'y');
+    P.px(6, 5, 'e'); P.px(9, 5, 'e'); P.line(3, 9, 1, 3, 'y'); P.line(12, 9, 15, 3, 'y');
+  } },
+  miragejackal: { tint: '#bd8eae', w: 16, h: 16, pal: { y: '#edc7ff', e: '#fff0ff' }, proc: (P) => {
+    P.ell(7, 10, 5, 3, 'a'); P.rect(3, 10, 9, 4, 'b'); P.tri(10, 8, 15, 5, 13, 12, 'a');
+    P.tri(10, 6, 10, 1, 13, 5, 'y'); P.tri(13, 7, 15, 2, 15, 8, 'y'); P.px(13, 8, 'e');
+    P.line(4, 12, 1, 15, 'y'); P.line(8, 12, 7, 16, 'y'); P.line(11, 12, 14, 15, 'y');
+  } },
+  shardcantor: { tint: '#9673b2', w: 16, h: 16, pal: { y: '#edc7ff', e: '#fff0ff', w: '#ffffff' }, proc: (P) => {
+    P.tri(8, 1, 3, 8, 8, 14, 'c'); P.tri(8, 1, 13, 8, 8, 14, 'c'); P.rect(5, 8, 6, 6, 'a');
+    P.rect(4, 4, 8, 2, 'b'); P.px(6, 9, 'e'); P.px(9, 9, 'e'); P.px(8, 5, 'w');
+    P.line(13, 4, 15, 14, 'y'); P.px(14, 3, 'w');
+  } },
+  refractionobelisk: { tint: '#765b91', w: 16, h: 16, pal: { y: '#f0b6ff', e: '#fff0ff', w: '#ffffff' }, proc: (P) => {
+    P.tri(8, 0, 14, 8, 8, 15, 'a'); P.tri(8, 0, 2, 8, 8, 15, 'b'); P.rect(6, 5, 4, 6, 'c');
+    P.ell(8, 8, 2, 2, 'e'); P.px(8, 8, 'w'); P.line(2, 3, 5, 6, 'y'); P.line(14, 3, 11, 6, 'y');
+    P.rect(5, 14, 6, 1, 'y');
+  } },
+  // ── 심층 26: 심해의 압력궁
+  trenchmauler: { tint: '#286477', w: 16, h: 16, pal: { m: '#5fb1b5', y: '#62d9d0', e: '#cafff6' }, proc: (P) => {
+    P.ell(8, 9, 6, 4, 'a'); P.rect(2, 9, 12, 5, 'b'); P.rect(4, 13, 2, 3, 'b'); P.rect(10, 13, 2, 3, 'b');
+    P.tri(4, 8, 1, 3, 6, 5, 'y'); P.tri(11, 8, 15, 3, 13, 9, 'y'); P.px(6, 8, 'e'); P.px(10, 8, 'e');
+    P.line(3, 12, 0, 15, 'm'); P.line(13, 12, 15, 15, 'm');
+  } },
+  inkstalker: { tint: '#244b63', w: 16, h: 16, pal: { y: '#62d9d0', e: '#aafff7', w: '#d6fffa' }, proc: (P) => {
+    P.ell(8, 7, 5, 4, 'a'); P.tri(3, 8, 13, 8, 8, 15, 'a'); P.rect(5, 4, 6, 2, 'b');
+    P.line(4, 10, 1, 14, 'y'); P.line(12, 10, 15, 14, 'y'); P.px(6, 7, 'e'); P.px(10, 7, 'e');
+    P.px(8, 2, 'w'); P.px(3, 5, 'y'); P.px(13, 5, 'y');
+  } },
+  pressurechoir: { tint: '#397d86', w: 16, h: 16, pal: { y: '#80eee1', e: '#e0fffa', w: '#ffffff' }, proc: (P) => {
+    P.ell(8, 8, 5, 5, 'a'); P.tri(3, 8, 8, 1, 13, 8, 'c'); P.tri(4, 10, 8, 15, 12, 10, 'b');
+    P.px(6, 7, 'e'); P.px(10, 7, 'e'); P.rect(7, 10, 2, 2, 'y');
+    P.line(3, 3, 1, 0, 'y'); P.line(8, 2, 8, 0, 'y'); P.line(13, 3, 15, 0, 'y');
+  } },
+  ventspire: { tint: '#24596a', w: 16, h: 16, pal: { y: '#62d9d0', e: '#cafff6', m: '#4a9aa3' }, proc: (P) => {
+    P.rect(4, 8, 8, 7, 'b'); P.tri(4, 8, 8, 1, 12, 8, 'a'); P.rect(6, 5, 4, 4, 'm');
+    P.px(7, 7, 'e'); P.px(9, 7, 'e'); P.line(2, 7, 1, 2, 'y'); P.line(14, 7, 15, 2, 'y');
+    P.rect(5, 14, 6, 1, 'y');
+  } }
 });

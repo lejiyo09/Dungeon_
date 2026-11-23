@@ -154,6 +154,19 @@ const DEEP_WORLDS = [
     palette: { style: 'metal', accent: '#f0cc7a', floor: ['#39343a', '#3d373e'], corridor: ['#242128', '#27232b'], wall: '#51434a', wallTop: '#67525a',
       wallFace: '#96766b', faceLine: '#7b625c', deco: 'rgba(240,204,122,0.38)' } }
 
+
+,
+  // ── 심층 25: 깨진 거울 사막
+  { id: 'deep_shatteredglass', name: '깨진 거울 사막', boss: 'boss_mirage_sovereign', waves: 2, deep: true,
+    enemies: [['enemy_glasssentinel_001', 3], ['enemy_miragejackal_001', 3], ['enemy_shardcantor_001', 2], ['enemy_refractionobelisk_001', 2]],
+    palette: { style: 'mirror', accent: '#f0b6ff', floor: ['#403044', '#453449'], corridor: ['#2a2031', '#2d2335'], wall: '#59415f', wallTop: '#705178',
+      wallFace: '#a17bad', faceLine: '#896794', deco: 'rgba(240,182,255,0.38)' } },
+  // ── 심층 26: 심해의 압력궁
+  { id: 'deep_pressurepalace', name: '심해의 압력궁', boss: 'boss_abyssal_pressure', waves: 2, deep: true,
+    enemies: [['enemy_trenchmauler_001', 3], ['enemy_inkstalker_001', 3], ['enemy_pressurechoir_001', 2], ['enemy_ventspire_001', 2]],
+    palette: { style: 'sunken', accent: '#62d9d0', floor: ['#142f3c', '#173541'], corridor: ['#0c222d', '#0f2632'], wall: '#1c4654', wallTop: '#285c69',
+      wallFace: '#438493', faceLine: '#326d7b', deco: 'rgba(98,217,208,0.38)' } }
+
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
 function worldDef(i) {

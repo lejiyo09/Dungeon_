@@ -1211,4 +1211,60 @@ const DATA_ENEMIES = [
       { type: 'grid', name: '무음의 오선보', spacing: 3, delay: 1.0, radius: 24, bullets: 4, color: '#f5d995' },
       { type: 'vortex', name: '종말의 잔향', duration: 4.2, pull: 48, arms: 5, interval: 0.085, spin: -2.7, color: '#f0cc7a' }] }
 
+,
+  // ── 심층 25: 깨진 거울 사막
+  { id: 'enemy_glasssentinel_001', name: '유리 수호병', sprite: 'glasssentinel', color: '#a77bb5', aiType: 'melee_chase', traits: ['shockwave'],
+    health: 680, damage: 30, moveSpeed: 45, hitboxHalf: 9, attackRange: 29, telegraphTime: 0.64, attackCooldown: 1.48, recoveryTime: 0.5, knockbackResist: 0.92, rewardGold: 10 },
+  { id: 'enemy_miragejackal_001', name: '신기루 들개', sprite: 'miragejackal', color: '#bd8eae', aiType: 'charger', traits: ['redash', 'dashTrail'],
+    health: 290, damage: 30, moveSpeed: 98, hitboxHalf: 7, attackRange: 185, telegraphTime: 0.42, dashSpeed: 430, dashDuration: 0.46,
+    attackCooldown: 1.58, recoveryTime: 0.3, stunTime: 0.5, knockbackResist: 0.5, rewardGold: 9 },
+  { id: 'enemy_shardcantor_001', name: '파편의 예언자', sprite: 'shardcantor', color: '#9673b2', aiType: 'caster', traits: ['castMix'],
+    health: 245, damage: 30, moveSpeed: 29, hitboxHalf: 6, attackRange: 300, telegraphTime: 0.66, attackCooldown: 2.08, recoveryTime: 0.36,
+    bulletSpeed: 152, bulletCount: 18, bulletColor: '#edc7ff', rewardGold: 9 },
+  { id: 'enemy_refractionobelisk_001', name: '굴절의 오벨리스크', sprite: 'refractionobelisk', color: '#765b91', aiType: 'turret', traits: ['turretRing'],
+    health: 330, damage: 30, moveSpeed: 0, hitboxHalf: 8, attackRange: 330, telegraphTime: 0.88, attackCooldown: 2.28, recoveryTime: 0.3,
+    bulletSpeed: 250, bulletCount: 12, bulletColor: '#f0b6ff', knockbackResist: 1, rewardGold: 10 },
+  // ── 심층 26: 심해의 압력궁
+  { id: 'enemy_trenchmauler_001', name: '해구 분쇄자', sprite: 'trenchmauler', color: '#286477', aiType: 'melee_chase', traits: ['shockwave'],
+    health: 760, damage: 31, moveSpeed: 40, hitboxHalf: 10, attackRange: 31, telegraphTime: 0.68, attackCooldown: 1.52, recoveryTime: 0.54, knockbackResist: 0.95, rewardGold: 11 },
+  { id: 'enemy_inkstalker_001', name: '먹물 잠복자', sprite: 'inkstalker', color: '#244b63', aiType: 'teleporter', traits: ['afterimage'],
+    health: 270, damage: 31, moveSpeed: 60, hitboxHalf: 7, preferredRange: 140, attackRange: 295, telegraphTime: 0.56, attackCooldown: 1.96,
+    recoveryTime: 0.34, bulletSpeed: 202, bulletCount: 9, bulletSpread: 0.17, bulletColor: '#78e5df', rewardGold: 10 },
+  { id: 'enemy_pressurechoir_001', name: '수압의 합창체', sprite: 'pressurechoir', color: '#397d86', aiType: 'caster', traits: ['castMix'],
+    health: 265, damage: 31, moveSpeed: 26, hitboxHalf: 7, attackRange: 305, telegraphTime: 0.68, attackCooldown: 2.12, recoveryTime: 0.38,
+    bulletSpeed: 146, bulletCount: 20, bulletColor: '#80eee1', rewardGold: 10 },
+  { id: 'enemy_ventspire_001', name: '열수 분출탑', sprite: 'ventspire', color: '#24596a', aiType: 'turret', traits: ['turretSweep'],
+    health: 360, damage: 31, moveSpeed: 0, hitboxHalf: 8, attackRange: 345, telegraphTime: 0.92, attackCooldown: 2.34, recoveryTime: 0.32,
+    bulletSpeed: 260, bulletCount: 11, bulletColor: '#62d9d0', knockbackResist: 1, rewardGold: 11 },
+  // ── 심층 25 보스: 신기루의 군주
+  { id: 'boss_mirage_sovereign', name: '신기루의 군주', title: '천 개의 반영을 지배하는 자', sprite: 'boss_miragesovereign', color: '#76527f', phaseColors: ['#76527f', '#a16aae', '#d49ad8'],
+    boss: true, aiType: 'boss', health: 3260, damage: 30, moveSpeed: 43, hitboxHalf: 16, knockbackResist: 1, attackCooldown: 0.98, bulletSpeed: 160,
+    rewardGold: 500, patterns: [
+      { type: 'split', volleys: 4, count: 4, spread: 0.3, speed: 175, splitAfter: 0.58, splitN: 8, color: '#edc7ff' },
+      { type: 'orbit', count: 22, radius: 70, spinTime: 1.25, spin: -3.0, speed: 175, color: '#dba8ff' },
+      { type: 'charge', dashes: 3, speed: 430, color: '#f0d6ff' },
+      { type: 'summon', enemyId: 'enemy_miragejackal_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'reverse', rings: 4, count: 40, gap: 5, speed: 155, flip: 0.74, interval: 0.42, color: '#edc7ff' },
+      { type: 'wall', waves: 5, gap: 4, speed: 138, interval: 0.7, color: '#dba8ff' },
+      { type: 'spiral', duration: 3.0, arms: 8, interval: 0.07, spin: -2.5, color: '#f0d6ff' }],
+    finalPatterns: [
+      { type: 'grid', name: '거울의 감옥', spacing: 3, delay: 0.95, radius: 25, bullets: 4, color: '#edc7ff' },
+      { type: 'vortex', name: '끝없는 반영', duration: 4.3, pull: 52, arms: 6, interval: 0.08, spin: 2.8, color: '#dba8ff' }] },
+  // ── 심층 26 보스: 심연의 압력핵
+  { id: 'boss_abyssal_pressure', name: '심연의 압력핵', title: '바다 밑바닥의 맥동하는 심장', sprite: 'boss_abyssalpressure', color: '#174b61', phaseColors: ['#174b61', '#247989', '#53b9b0'], float: true,
+    boss: true, aiType: 'boss', health: 3540, damage: 31, moveSpeed: 38, hitboxHalf: 17, knockbackResist: 1, attackCooldown: 1.0, bulletSpeed: 165,
+    rewardGold: 540, patterns: [
+      { type: 'laser', beams: 4, spreadAng: Math.PI / 2, sweep: 0.9, duration: 2.35, width: 9, telegraph: 1.0, color: '#62d9d0' },
+      { type: 'floodGate', waves: 4, gap: 5, speed: 150, interval: 0.48, color: '#80eee1' },
+      { type: 'meteor', count: 9, delay: 0.78, stagger: 0.2, radius: 32, bullets: 7, color: '#78e5df' },
+      { type: 'summon', enemyId: 'enemy_inkstalker_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'cross', waves: 5, len: 10, step: 22, radius: 15, delay: 0.7, interval: 0.44, bullets: 0, color: '#62d9d0' },
+      { type: 'spiral', duration: 3.2, arms: 8, interval: 0.065, spin: 2.6, color: '#80eee1' },
+      { type: 'zones', count: 9, radius: 30, delay: 0.82, bullets: 7, spreadAround: 130, stagger: 0.07, color: '#78e5df' }],
+    finalPatterns: [
+      { type: 'vortex', name: '해구의 압착', duration: 4.4, pull: 55, arms: 6, interval: 0.08, spin: -2.9, color: '#62d9d0' },
+      { type: 'ringIn', name: '무저갱의 파도', rings: 5, count: 48, gap: 5, speed: 92, interval: 0.82, color: '#80eee1' }] }
+
 ];
