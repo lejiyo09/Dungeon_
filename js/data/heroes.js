@@ -97,7 +97,7 @@ const BANDI_WALK = { bandi_down: [[81, 13, 32, 27], [114, 13, 32, 27]], bandi_up
 // 전설 스킨 시트 매핑: sprite 이름 → 스킨 번호. assets/legskins.png = 3열(걷기 프레임) × (스킨×3방향)행
 //  행 = 스킨*3 + 방향(0=앞/아래, 1=뒤/위, 2=옆) · 셀은 이미 인게임 크기로 구워둠(저해상도 청키) → 런타임은 1:1 drawImage
 const LEG_SKINS = { leg_abyss: 0, leg_crimson: 1, leg_void: 2, leg_star: 3 };
-const LEG_SHEET = { cellW: 22, cellH: 27, frames: 3, dirs: 3 };
+const LEG_SHEET = { cellW: 22, cellH: 27, frames: 4, dirs: 3 }; // 열 0~2: 걷기, 열 3: 정지(옆은 다리 모음)
 // 선물 코드: 글자 그대로 두지 않고 해시로만 보관 (giftHash) — 코드 하나에 보상 하나, 계정마다 한 번
 const GIFT_CODES = [
   { hash: 'd6b73fd4', skin: 'skin_flamewitch' },

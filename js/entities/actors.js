@@ -209,7 +209,7 @@ class Player extends Entity {
       const md = this.moveFaceDir(), ax = md.x, ay = md.y; // 바라보는 방향 = 이동 방향 (정지 시 마지막 방향)
       if (Math.abs(ay) > Math.abs(ax)) { legDir = ay >= 0 ? 0 : 1; drawFace = 1; } // 아래(앞)/위(뒤): 뒤집지 않음
       else { legDir = 2; drawFace = ax < 0 ? 1 : -1; } // 옆: 원본이 왼쪽을 보므로, 오른쪽으로 갈 때 뒤집음
-      drawFrame = (this.moving && this.state !== 'DASH') ? Math.floor(this.time * 9) % 3 : 1; // 정지 시 가운데 프레임
+      drawFrame = (this.moving && this.state !== 'DASH') ? Math.floor(this.time * 9) % 3 : 3; // 정지: 다리 모은 서기 프레임(열 3)
     }
     const w = this.weapon, behind = Math.sin(this.aimVis) < -0.4;
     const drawW = () => {
