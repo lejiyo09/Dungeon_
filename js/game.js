@@ -768,7 +768,7 @@ class Game {
     if (sv.giftsUsed.includes(G.hash)) return ['이미 받은 선물입니다', '#ffb07a'];
     sv.giftsUsed.push(G.hash); const K = SKINS.find((k) => k.id === G.skin);
     if (K && !sv.skins.includes(K.id)) sv.skins.push(K.id); if (K) this.skinOnMap()[skinKey(K)] = K.id; /* 받자마자 켬 */
-    writeSave(sv); SFX.play('victory'); if (this.profile == null) return [`스킨 '${K.name}' 획득! (게스트는 저장되지 않아요)`, '#ffd84a'];
+    writeSave(sv); SFX.play('victory'); if (K) this.legendIntroCheck([K.id]); if (this.profile == null) return [`스킨 '${K.name}' 획득! (게스트는 저장되지 않아요)`, '#ffd84a'];
     return [`스킨 '${K ? K.name : '?'}' 획득! — ${K ? this.data.heroes.get(K.hero).name : ''} 외형이 바뀝니다 (Esc → K로 켜기/끄기)`, '#ffd84a'];
   }
   // ── 스킨 뽑기: 배너를 골라 1뽑/5뽑. 5%로 배너 스킨 "전설 조각" → 20개 모으면 스킨 완성. 나머지는 마일리지. 보유 스킨 배너에서 조각이 뜨면 마일리지로 전환
@@ -801,14 +801,22 @@ class Game {
       }
     }
     writeSave(sv); SFX.play(gotSkin ? 'victory' : 'coin');
+    this.legendIntroCheck(results.filter((r) => r.type === 'skin').map((r) => r.id)); // 전설 완성품·조각 20개 완성: 첫 획득 컷신
     return { results };
   }
+  legendIntroCheck(ids) { // [전설 스킨 획득 컷신] 스킨마다 처음 얻을 때 한 번씩
+    const sv = this.save; sv.legIntroSeen = sv.legIntroSeen || []; let add = false;
+    for (const id of ids) { const K = SKINS.find((k) => k.id === id); if (!K || K.rarity !== 'legendary' || sv.legIntroSeen.includes(id) || !(sv.skins || []).includes(id)) continue;
+      sv.legIntroSeen.push(id); (this.legendIntro = this.legendIntro || { queue: [], start: 0 }).queue.push(K); add = true; }
+    if (add) { if (this.legendIntro.queue.length && !this.legendIntro.K) this.legendIntroNext(); writeSave(sv); }
+  }
+  legendIntroNext() { const L = this.legendIntro; if (!L || !L.queue.length) { this.legendIntro = null; return; } L.K = L.queue.shift(); L.start = performance.now(); L.flashed = false; this.input.mouse.down = false; }
   buyMileageSkin(id) {
     const sv = this.save, K = gachaPool().find((k) => k.id === id); if (!K) return { error: '스킨을 찾을 수 없습니다' };
     if ((sv.skins || []).includes(id)) return { error: '이미 보유한 스킨입니다' };
     if ((sv.mileage || 0) < GACHA.shopPrice) return { error: '마일리지가 부족합니다' };
     sv.mileage -= GACHA.shopPrice; sv.skins = sv.skins || []; sv.skins.push(id); this.skinOnMap()[skinKey(K)] = id;
-    writeSave(sv); SFX.play('victory'); return { ok: true, name: K.name };
+    writeSave(sv); SFX.play('victory'); this.legendIntroCheck([id]); return { ok: true, name: K.name };
   }
   myTitleId() { const T = this.save.title && GUILD_TITLES.find((t) => t.id === this.save.title); return T && this.titleUnlocked(T) && !this.admin ? T.id : ''; } /* 랭킹에 보낼 장착 칭호 (얻은 것만) */
   titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
@@ -1249,6 +1257,10 @@ class Game {
     let input = this.input;
     this.time += dt;
     if (this.locked) { input.remap = false; input.endStep(); return; } // 로그인 화면
+    if (this.legendIntro && this.legendIntro.K) { // 전설 스킨 획득 컷신: 1.3초 뒤부터 클릭/Enter/Esc — 연출 중이면 끝 장면으로, 끝 장면이면 다음/닫기
+      const L = this.legendIntro, t = (performance.now() - L.start) / 1000;
+      if (t > 1.3 && (input.wasPressed('Mouse0') || input.wasPressed('Enter') || input.wasPressed('Escape') || input.wasPressed('Space'))) { if (t < HUD.LEG_INTRO_END) L.start = performance.now() - HUD.LEG_INTRO_END * 1000; else this.legendIntroNext(); }
+      input.remap = false; this.input.mouse.down = false; input.endStep(); return; }
     input.remap = !this.overlay && !this.cutscene && !this.transition && (this.mode === 'dungeon' || this.mode === 'lobby'); /* 조작키 변경은 직접 조작할 때만 (메뉴·대사에서는 원래 키) */
     if (this.coop && this.coop.guest) { this.coopGuestUpdate(dt, input); return; } // 멀티 참가자: 방장 화면을 받아 그림
     if (this.banner) this.banner.t += dt;
@@ -3069,6 +3081,7 @@ class Game {
     if (this.coop) this.coopStatusDraw(ctx); // 멀티 연결 상태 (끊김·다시 연결·방장 기다림)
     if (this.cutin && !this.overlay) HUD.cutin(ctx, this); else if (this.overlay) this.cutin = null; // 최종 스킬·보구 컷인
     if (this.treasureToast) HUD.treasureToast(ctx, this); // 보구 획득 알림 (결과 화면 위에도 보임)
+    if (this.legendIntro && this.legendIntro.K) HUD.legendIntro(ctx, this); // 전설 스킨 첫 획득 컷신 (맨 위)
 
     /* 조준선은 진짜 마우스 커서로 그림 (InputManager.setupCursor) — 늦게 따라오지 않게 */
 
