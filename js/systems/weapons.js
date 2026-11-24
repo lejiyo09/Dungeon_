@@ -35,8 +35,10 @@ class WeaponSystem {
   update(player, dt, input) {
     this.noEnergyMsgT = Math.max(0, this.noEnergyMsgT - dt);
     const w = player.weapon;
-    for (const o of player.weapons) if (o !== w) { o.cooldown = Math.max(0, o.cooldown - dt); o.charge = 0; o.beamActive = false; o.burstLeft = 0; }
+    for (const o of player.weapons) if (o !== w) { o.cooldown = Math.max(0, o.cooldown - dt); o.charge = 0; o.beamActive = false; o.burstLeft = 0; o.mpx = null; }
+    for (const o of player.weapons) if (o.def.heat) { if (o.overheat > 0) o.overheat = Math.max(0, o.overheat - dt); else if (!(o === w && input.mouse.down)) o.heat = Math.max(0, (o.heat || 0) - o.def.heat.cool * dt); } // 과열: 쉬면 식음 (과열 중엔 잠김)
     if (!w) return;
+    if (w.def.momentum) { if (w.mpx != null) w.run = Math.min(w.def.momentum.per * (w.def.momentum.max - 1), (w.run || 0) + Math.hypot(player.x - w.mpx, player.y - w.mpy)); w.mpx = player.x; w.mpy = player.y; } // 질주: 움직인 거리 쌓기
     w.cooldown = Math.max(w.cooldown - dt, -STEP);
     if (player.state === 'DEAD' || player.castLock > 0 || player.denyT > 0) { w.beamActive = false; w.charge = 0; return; } // 시전 중엔 공격 불가 (가레스의 부정 장판 안도)
     if (player.transformT > 0) { w.beamActive = false; w.charge = 0; w.burstLeft = 0; this.transformMelee(player, dt, input); return; } // [변신] 변신 중엔 무기 불가 → 강력한 근접 베기
@@ -108,6 +110,13 @@ class WeaponSystem {
     while (same.length >= w.def.sentry.max) { const old = same.shift(); old.alive = false; this.world.effects.burst(old.x, old.y, '#8a94a4', 6); }
   }
   fireGun(player, w) {
+    if (w.def.heat) { // 과열 개틀링: 에너지 대신 열 — 가득 차면 잠기며 주변에 열기 방출
+      const H = w.def.heat; if (w.overheat > 0) return;
+      w.cooldown += 1 / this.getFireRate(player, w); this.shootGun(player, w); w.heat = (w.heat || 0) + H.per;
+      if (w.heat >= 100) { w.heat = 100; w.overheat = H.lock; const V = H.vent;
+        this.world.explodeAt(player.x, player.y, V.r, { color: '#ff7a2a', hurtEnemies: true, src: { damage: V.damage, mods: weaponMods(player, w), knockback: 8, status: { type: 'burn', chance: 1, duration: 2, dps: 10 }, weaponId: w.def.id } });
+        this.world.effects.text(player.x, player.y - 22, '과열!', '#ff7a2a'); SFX.play('explode', 0.1); }
+      return; }
     if (!this.canPay(player, w.def.energyCost)) { this.weakAttack(player, w); return; }
     if (!this.spend(player, w.def.energyCost)) return;
     w.cooldown += 1 / this.getFireRate(player, w);
@@ -166,8 +175,15 @@ class WeaponSystem {
     const pow = def.nth && w.shots % def.nth.every === 0; // N번째 사격 강화
     if (pow) { override = Object.assign({}, override, { damage: (override.damage ?? def.damage) * def.nth.mult, size: (override.size || def.bulletSize || 1) + 1 });
       this.world.effects.ring(player.x + player.aim.x * 12, player.y + player.aim.y * 12, 10, '#ffffff'); SFX.play('crit', 0.05); }
+    if (def.dice && !override.echo) { // 운명의 주사위: 1~6
+      const roll = 1 + Math.floor(Math.random() * 6), D = def.dice, k = roll === 1 ? D.lo : roll === 6 ? D.hi : 1;
+      override = Object.assign({}, override, { damage: (override.damage ?? def.damage) * k }, roll === 6 ? { explodeRadius: D.r, size: 3, color: '#fff4a0' } : roll === 1 ? { size: 1, color: '#9a9aaa' } : {});
+      this.world.effects.text(player.x + 8, player.y - 20, String(roll), roll === 6 ? '#ffd84a' : roll === 1 ? '#9a9aaa' : '#ffffff'); if (roll === 6) SFX.play('crit', 0.06); }
+    if (def.cycle && !override.echo) { // 사계: 여름(화상) → 겨울(빙결) → 가을(중독) → 봄(전격)
+      const C = [{ c: '#ff7a3a', s: { type: 'burn', chance: 1, duration: 2, dps: 12 } }, { c: '#8ad8ff', s: { type: 'freeze', chance: 1, duration: 1.2, slow: 0.5 } }, { c: '#c0e04a', s: { type: 'poison', chance: 1, duration: 3, dps: 10 } }, { c: '#ffe36b', s: { type: 'shock', chance: 1, duration: 2 } }][(w.cyc = ((w.cyc || 0) % 4) + 1) - 1];
+      override = Object.assign({}, override, { status: C.s, color: C.c }); }
     const base = Math.atan2(player.aim.y, player.aim.x);
-    const spread = (def.spreadDeg || 0) * Math.PI / 180;
+    const spread = (def.spreadDeg || 0) * Math.PI / 180; const fired = []; // 메아리: 이번에 쏜 탄 설정
     const n = def.projectileCount || 1;
     if (def.orbit) { // 궤도 구슬: 플레이어 주위를 돌며 닿는 적을 공격
       const mine = this.world.projectiles.filter((p) => p.orbit && p.srcId === def.id && p.alive);
@@ -203,8 +219,12 @@ class WeaponSystem {
         this.world.projectiles.push(new Projectile(Object.assign({}, opt, { x: opt.x + px, y: opt.y + py })));
         opt.x -= px; opt.y -= py;
       }
-      this.world.projectiles.push(new Projectile(opt));
+      this.world.projectiles.push(new Projectile(opt)); fired.push(opt);
     }
+    if (def.echo && !override.echo && fired.length) { // 메아리: 쏜 자리에 남아 잠시 뒤 같은 탄을 한 번 더
+      const E = def.echo, ox = player.x, oy = player.y, col = def.bulletColor;
+      this.world.zones.push({ x: ox, y: oy, t: 0, alive: true, update(dt, world) { this.t += dt; if (this.t >= E.delay) { this.alive = false; for (const o of fired) world.projectiles.push(new Projectile(Object.assign({}, o, { damage: o.damage * E.mult, color: '#e0f0ff', echo: true }))); world.effects.ring(ox, oy, 8, col); } },
+        render(ctx) { const k = this.t / E.delay; ctx.save(); ctx.globalAlpha = 0.5 * (1 - k * 0.5); ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(Math.round(ox), Math.round(oy) - 1, 3 + k * 5, 0, TAU); ctx.stroke(); ctx.restore(); } }); }
     const L = weaponLength(def) + 4; // 총구 위치에 섬광
     if (!def.flame) this.world.effects.muzzle(player.x + player.aim.x * L, player.y + 2 + player.aim.y * L * 0.75, base, def.bulletColor);
     player.recoil = Math.min(1, player.recoil + (def.damage * (def.projectileCount || 1) >= 40 ? 1 : def.fireRate > 8 ? 0.35 : 0.6));
@@ -235,9 +255,13 @@ class WeaponSystem {
       }
       moveAndCollide(player, player.aim.x * L, player.aim.y * L, world.map);
     }
+    let bonusK = 1, tint = null;
+    if (def.blood) { const B = def.blood, pay = Math.min(B.hp, Math.max(0, player.hp - 1)); bonusK = 1 + B.bonus * (1 - player.hp / player.maxHp); player.hp -= pay; tint = '#ff3a4a'; // 피의 계약: 먼저 잃은 체력만큼 강화 → 그다음 지불
+      if (pay > 0) world.effects.text(player.x, player.y - 18, '-' + pay, '#ff5a6a'); }
+    if (def.momentum) { const M = def.momentum, r = w.run || 0; bonusK = 1 + Math.min(M.max - 1, r / M.per); w.run = 0; if (bonusK >= 2) { tint = '#ffe36b'; world.effects.text(player.x, player.y - 20, '질주 ×' + bonusK.toFixed(1), '#ffe36b'); world.addShake(0.08, 2); } } // 질주
     w.shots = (w.shots || 0) + 1;
     const pow = def.nth && w.shots % def.nth.every === 0; // N번째 휘두르기 강화
-    const src = { damage: def.damage * (pow ? def.nth.mult : 1), knockback: def.knockback * (pow ? 1.5 : 1), status: def.status || (player.hybrid && Math.random() < player.hybrid.passiveChance ? player.hybrid.status : null), // 마검사: 근접 공격에 속성
+    const src = { damage: def.damage * (pow ? def.nth.mult : 1) * bonusK, knockback: def.knockback * (pow ? 1.5 : 1), status: def.status || (player.hybrid && Math.random() < player.hybrid.passiveChance ? player.hybrid.status : null), // 마검사: 근접 공격에 속성
       mods: weaponMods(player, w),
       execute: def.execute || 0, mark: def.mark || null, killEnergy: def.killEnergy || 0, weaponId: def.id };
     if (pow) { world.addShake(0.12, 3); SFX.play('crit', 0.05); }
@@ -277,7 +301,7 @@ class WeaponSystem {
     const thrust = def.arcDeg < 40;
     player.swing = { t: 0, dur: thrust ? 0.15 : 0.16, ang, arc, thrust };
     SFX.play('melee');
-    world.effects.slash(player.x, player.y - 1, ang, def.range * (pow ? 1.15 : 1), arc, pow ? '#ffd84a' : thrust ? '#e0f0ff' : 'rgba(230,240,255,0.9)');
+    world.effects.slash(player.x, player.y - 1, ang, def.range * (pow ? 1.15 : 1), arc, tint || (pow ? '#ffd84a' : thrust ? '#e0f0ff' : 'rgba(230,240,255,0.9)'));
     if (def.shake) world.addShake(0.1, 3);
   }
   updateBeam(player, w, dt, down) {

@@ -7,6 +7,13 @@
 //        y 금색, r 빨강, s 시위, w 흰색, .=투명
 // ════════════════════════════════════════════
 Object.assign(WPIX, {
+  // ── 새 메커니즘 6종
+  heatgatling: { auto: true, p: [2, 4], rows: ['.....mmmmmmmmm..', '..nnmccccccccco.', '.naaaammmmmmmmo.', 'naaarrrnnnnnn...', '.gg.rr..........', '.gg.............'] },
+  bloodpact: { auto: true, p: [1, 1], rows: ['....y...............', 'eeeyaaaaaaaaaaaaarr.', 'eeeyccccccccccccrrr.', '....y.....r.....r...'] },
+  dicegun: { auto: true, p: [7, 4], rows: ['..wwww.......', '.wwrwww.mmmmm', '.wrwrwnaaaaao', '.wwrwwnbbbbb.', '..wwww.gg....', '.......gg....'] },
+  seasonstaff: { auto: true, p: [2, 2], rows: ['..............r..', '.............yoy.', 'dddddddddddddnwon', '.............ycy.', '..............c..'] },
+  echopistol: { auto: true, p: [2, 3], rows: ['..ccccccc...', '.caaaaaaaao.', '.nbbbbbbb...', '.gg..cc.....', '.gg.........'] },
+  sprintspear: { auto: true, p: [2, 1], rows: ['..................yy.c..', 'ddddddddddddddddddyymaac', '..................yy.c..'] },
   // ── 소환 무기 (영웅)
   beasthorn: { auto: true, p: [1, 4], rows: ['..........ccc.', '.......ccaaaac', '....yyaaaabbb.', '.ddyaaabbb....', 'dddyabb.......', '.d..b.........'] },
   wisplantern: { auto: true, p: [2, 2], rows: ['...............nnn.', '..............nooon', 'ddddddddddddddnowon', '..............nooon', '...............nnn.'] },
@@ -144,6 +151,7 @@ Object.assign(WPIX, {
 });
 
 Object.assign(WEAPON_SPRITE, {
+  weapon_heatgatling_001: 'heatgatling', weapon_bloodpact_001: 'bloodpact', weapon_dicegun_001: 'dicegun', weapon_seasonstaff_001: 'seasonstaff', weapon_echopistol_001: 'echopistol', weapon_sprintspear_001: 'sprintspear', // 새 메커니즘
   weapon_beasthorn_001: 'beasthorn', weapon_wisplantern_001: 'wisplantern', weapon_golemcore_001: 'golemcore', // 소환 무기
   weapon_friendchain_001: 'friendchain',
   weapon_pistol_001: 'pistol2', weapon_revolver_001: 'revolver', weapon_flintlock_001: 'flintlock', weapon_watergun_001: 'watergun',

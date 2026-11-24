@@ -641,7 +641,32 @@ const DATA_WEAPONS = [
   { id: 'weapon_golemcore_001', name: '바위 골렘 핵', rarity: 'epic', type: 'gun', shape: 'gun',
     damage: 58, fireRate: 0.35, energyCost: 8, range: 220, projectileSpeed: 0, projectileCount: 1,
     familiar: { kind: 'golem', name: '바위 골렘', max: 1, life: 16, rate: 1.3, speed: 70, reach: 14, radius: 30 }, knockback: 9, color: '#8a8478', len: 9, bulletColor: '#7ae8d8',
-    desc: '바위 골렘(1기)이 느리게 다가가 주먹으로 내려쳐 주변 적을 함께 날려 버린다.' }
+    desc: '바위 골렘(1기)이 느리게 다가가 주먹으로 내려쳐 주변 적을 함께 날려 버린다.' },
+  // ── 새 메커니즘 6종
+  { id: 'weapon_heatgatling_001', name: '과열 개틀링', rarity: 'epic', type: 'gun', shape: 'gun', // 과열: 에너지 대신 열, 꽉 차면 멈추며 열을 터뜨림
+    damage: 9, fireRate: 11, energyCost: 0, range: 300, projectileSpeed: 520, projectileCount: 1, spreadDeg: 6,
+    heat: { per: 6, cool: 45, lock: 1.6, vent: { r: 64, damage: 90 } }, pierce: 0, knockback: 1, color: '#5a5a66', len: 14, bulletColor: '#ffb04a',
+    desc: '에너지를 쓰지 않는 대신 쏠수록 달아오른다. 열이 가득 차면 잠시 멈추며 주변에 열기를 터뜨린다.' },
+  { id: 'weapon_bloodpact_001', name: '피의 계약검', rarity: 'epic', type: 'melee', shape: 'sword', // 혈계: 휘두를 때 체력 지불, 잃은 체력만큼 강해짐
+    damage: 46, fireRate: 2.2, energyCost: 0, range: 40, arcDeg: 110, knockback: 4,
+    blood: { hp: 2, bonus: 1.2 }, color: '#a02838', len: 18,
+    desc: '휘두를 때마다 체력 2를 바친다(1 아래로는 내려가지 않음). 체력이 적을수록 최대 2.2배까지 강해진다.' },
+  { id: 'weapon_dicegun_001', name: '운명의 주사위총', rarity: 'rare', type: 'gun', shape: 'gun', // 주사위: 쏠 때마다 1~6
+    damage: 22, fireRate: 2.4, energyCost: 1, range: 340, projectileSpeed: 460, projectileCount: 1,
+    dice: { lo: 0.5, hi: 3, r: 40 }, pierce: 0, knockback: 2, color: '#e8e8f0', len: 11, bulletColor: '#ffd84a',
+    desc: '쏠 때마다 주사위를 굴린다. 1은 절반 피해, 6은 3배 피해에 폭발까지.' },
+  { id: 'weapon_seasonstaff_001', name: '사계의 지팡이', rarity: 'epic', type: 'gun', shape: 'staff', // 순환: 화상 → 빙결 → 중독 → 전격
+    damage: 20, fireRate: 2.6, energyCost: 2, range: 330, projectileSpeed: 380, projectileCount: 1, bulletSize: 2,
+    cycle: true, pierce: 0, knockback: 2, color: '#7a5a3a', len: 16, bulletColor: '#ffffff',
+    desc: '쏠 때마다 계절이 바뀐다: 여름(화상) → 겨울(빙결) → 가을(중독) → 봄(전격). 원소 반응을 일으키기 좋다.' },
+  { id: 'weapon_echopistol_001', name: '메아리 권총', rarity: 'rare', type: 'gun', shape: 'gun', // 메아리: 쏜 자리에서 잠시 뒤 같은 탄을 한 번 더
+    damage: 16, fireRate: 3, energyCost: 1, range: 320, projectileSpeed: 480, projectileCount: 1,
+    echo: { delay: 0.35, mult: 0.7 }, pierce: 0, knockback: 2, color: '#7a8ab0', len: 10, bulletColor: '#b0d8ff',
+    desc: '총을 쏜 자리에 메아리가 남아 0.35초 뒤 같은 방향으로 한 번 더 쏜다 (피해 70%).' },
+  { id: 'weapon_sprintspear_001', name: '질주의 창', rarity: 'epic', type: 'melee', shape: 'spear', // 질주: 공격 사이 움직인 거리만큼 강해짐
+    damage: 40, fireRate: 1.6, energyCost: 0.5, range: 52, arcDeg: 30, knockback: 6,
+    momentum: { per: 180, max: 3 }, color: '#c0c8d8', len: 22,
+    desc: '공격 사이에 움직인 거리만큼 다음 찌르기가 강해진다 (최대 3배). 달려들며 찔러라.' }
 ];
 
 // [사용자 결정] 기본 무기(직업·갈래 시작 무기) +10강 각성: 이름에 '· 각성'이 붙고 아래 능력이 더해짐 (수치는 Claude가 정한 [제안])

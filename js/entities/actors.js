@@ -255,6 +255,9 @@ class Player extends Entity {
       ctx.beginPath(); ctx.arc(x, y - 1, 30, a + Math.PI, a + Math.PI + 2.2); ctx.stroke();
       ctx.lineWidth = 1;
     }
+    if (w && w.def.heat && ((w.heat || 0) > 0 || w.overheat > 0)) { // 과열 게이지: 노랑 → 빨강, 과열 중엔 깜박임
+      const k = (w.heat || 0) / 100, ov = w.overheat > 0; ctx.fillStyle = '#111'; ctx.fillRect(x - 8, y + 10, 16, 3);
+      if (!ov || Math.floor(this.time * 10) % 2) { ctx.fillStyle = ov ? '#ff3a2a' : k > 0.75 ? '#ff7a2a' : '#ffd84a'; ctx.fillRect(x - 8, y + 10, Math.round(16 * (ov ? 1 : k)), 3); } }
     if (w && w.charge > 0) {
       const k = Math.min(1, w.charge / w.def.chargeTime);
       ctx.fillStyle = '#111'; ctx.fillRect(x - 8, y + 10, 16, 3);
