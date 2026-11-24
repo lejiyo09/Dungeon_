@@ -3,27 +3,14 @@
 // HUD / 오버레이
 // ════════════════════════════════════════════
 const HUD_FONTS = {}; // 글꼴 문자열은 크기마다 한 번만 만듦 (같은 문자열을 다시 지정하면 브라우저가 빠르게 처리)
-const _bannerImgs = {}; // 뽑기 배너 이미지 (assets/banners/<key>.jpg) — 쓸 때 지연 로드
+const _bannerImgs = {}; // 빌드 단계에서 생성한 1024×576 고화질 배너
 function bannerImg(key) {
   let im = _bannerImgs[key];
   if (im === undefined) {
     im = new Image();
-    im.onload = () => {
-      if (_bannerImgs[key] !== im) return;
-      const up = document.createElement('canvas');
-      up.width = im.naturalWidth * 2;
-      up.height = im.naturalHeight * 2;
-      const upCtx = up.getContext('2d');
-      if (!upCtx) { _bannerImgs[key] = im; return; }
-      upCtx.imageSmoothingEnabled = true;
-      upCtx.imageSmoothingQuality = 'high';
-      upCtx.drawImage(im, 0, 0, up.width, up.height);
-      _bannerImgs[key] = up;
-    };
-    im.src = 'assets/banners/' + key + '.jpg';
+    im.src = 'assets/banners/' + key + '.webp';
     _bannerImgs[key] = im;
   }
-  if (im && im.tagName === 'CANVAS') return im;
   return (im.complete && im.naturalWidth) ? im : null;
 }
 // 배너 원본 비율을 유지하며 대상 상자에 맞춰 자른다.

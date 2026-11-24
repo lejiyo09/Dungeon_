@@ -18,7 +18,7 @@ process.on('unhandledRejection', (e) => { console.error('unhandled', e && e.stac
 const ROOT = path.resolve(__dirname, '..');
 const PORT = process.env.PORT || 8080;
 const MAX_PLAYERS = 4;
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json',
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.png': 'image/png', '.webp': 'image/webp', '.json': 'application/json',
   '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.md': 'text/plain; charset=utf-8' };
 const BLOCK = ['server', 'tools', 'node_modules', '.git', 'versions', 'dist']; // 밖으로 내보내지 않는 폴더 (dist는 /js 경유로만 서빙)
 // [사용자 결정] 배포본 난독화: dist/ 가 있으면 js·index.html·sw.js 를 dist(난독화본)에서 서빙 (없으면 원본 — 로컬 개발)

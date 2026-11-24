@@ -116,7 +116,7 @@ const GACHA = {
   dupeMileage: 250, commonDupeMileage: 15, // [사용자 결정] 마일리지는 스킨 중복일 때만: 전설 조각(보유 스킨) 250 · 일반 스킨 중복 15
   shopPrice: 400,                          // 마일리지 상점 스킨 1개 가격
   mileageName: '스킨 마일리지', mileageColor: '#ffb0d8', shardName: '전설 조각', shardColor: '#ffe9a0',
-  banners: { skin_leg_abyss: 'abyss', skin_leg_crimson: 'crimson', skin_leg_void: 'void', skin_leg_star: 'star' } // 스킨별 배너 이미지 키 (assets/banners/<key>.jpg)
+  banners: { skin_leg_abyss: 'abyss', skin_leg_crimson: 'crimson', skin_leg_void: 'void', skin_leg_star: 'star' } // 스킨별 배너 이미지 키 (assets/banners/<key>.webp)
 };
 function gachaPool() { return SKINS.filter((k) => k.source === 'gacha'); } // 전설 배너 뽑기 대상
 function commonPool() { return SKINS.filter((k) => k.source === 'common'); } // 일반 뽑기 풀
