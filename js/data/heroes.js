@@ -138,8 +138,8 @@ function skinsForMenu(save) { const owned = save && Array.isArray(save.skins) ? 
 const GACHA = {
   costSingle: 300, cost5: 1500,           // 결정석 비용 (1뽑 300, 5뽑 1500)
   legendRate: 0.01,                        // 전설 스킨 완성품 1% (보유 중이면 마일리지)
-  shardRate: 0.03, shardsNeeded: 20,       // 전설 조각 3%, 20개 = 스킨 완성
-  epicRate: 0.03, rareRate: 0.10, commonRate: 0.23, // [사용자 결정] 퀄리티별 등급: 에픽 3%(기존 3단계) · 레어 10%(기존 1·2단계) · 일반 23%(새 22종) · 나머지 60% = 탐험 보급품
+  shardRate: 0.04, shardsNeeded: 20,       // [사용자 결정] 전설 조각 4%, 20개 = 스킨 완성
+  epicRate: 0.05, rareRate: 0.15, commonRate: 0.35, // [사용자 결정] 에픽 5%(기존 3단계) · 레어 15%(기존 1·2단계) · 일반 35%(새 22종) · 나머지 40% = 탐험 보급품
   dupeMileage: 250, shardDupeMileage: 12, commonDupeMileage: 15, rareDupeMileage: 30, epicDupeMileage: 60, // [사용자 결정] 마일리지는 스킨 중복일 때만: 완성품 중복 250 · 보유 스킨 조각 12 · 일반 스킨 중복 15
   shopPrice: 400,                          // 마일리지 상점 스킨 1개 가격
   mileageName: '스킨 마일리지', mileageColor: '#ffb0d8', shardName: '전설 조각', shardColor: '#ffe9a0',
