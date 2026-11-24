@@ -61,7 +61,7 @@ const SKINS = [
   { id: 'skin_leg_void', name: '공허의 마도사', hero: 'hero_mage', sprite: 'leg_void', rarity: 'legendary', source: 'gacha', intro: '공허는 비어 있지 않아. 모든 것을 삼킬 뿐이지.', desc: '마법사 전설 외형 — 어둠을 휘감은 공허의 현자 (전직: 어둠)' },
   { id: 'skin_leg_star', name: '성역의 성자', hero: 'hero_priest', sprite: 'leg_star', rarity: 'legendary', source: 'gacha', intro: '별빛이 머무는 곳, 그곳이 저의 성역입니다.', desc: '사제 전설 외형 — 별빛 성역의 성자 (전직: 성역)' },
   // ── 변신 드루이드 스킨: 평소 반디(앞/옆/뒤) ↔ 변신 시 샘(대기=22·공격=21, 좌우 반전만)
-  { id: 'skin_bandi', name: '반디', hero: 'hero_druid', sprite: 'druid_bandi', rarity: 'legendary', source: 'code', druid: true, intro: '반디예요, 잘 부탁해요! 위험해지면… 샘이 나설 거예요.', desc: '드루이드 변신 스킨 — 평소엔 반디, 변신하면 날개 돋친 샘으로 (선물 코드)' },
+  { id: 'skin_bandi', name: '반디', hero: 'hero_druid', sprite: 'druid_bandi', rarity: 'legendary', source: 'code', druid: true, intro: '난 싸울 거야. 모든 것이 불타 버릴 때까지.', desc: '드루이드 변신 스킨 — 평소엔 반디, 변신하면 날개 돋친 샘으로 (선물 코드)' },
   // ── 일반·레어·에픽 스킨 (앞모습, 좌우 반전) — assets/commonskins.png · 퀄리티별 등급: 기존 1·2단계=레어, 3단계=에픽, 새 22종=일반
   { id: 'skin_c_sw_1', name: '핏빛 강철 기사', hero: 'hero_swordsman', sprite: 'c_swordsman_1', rarity: 'rare', source: 'common', desc: '검사 레어 외형 — 핏빛 강철 갑옷' },
   { id: 'skin_c_sw_2', name: '백금 성기사', hero: 'hero_swordsman', sprite: 'c_swordsman_2', rarity: 'rare', source: 'common', desc: '검사 레어 외형 — 백금빛 성기사' },
