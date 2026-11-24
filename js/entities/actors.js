@@ -173,7 +173,7 @@ class Player extends Entity {
       if (sk === 'druid_bandi' && typeof druidSprite === 'function') {
         const md = this.lastMoveDir || { x: 1, y: 0 };
         let key, flip = false;
-        if (this.transformT > 0) { key = this.swing && this.swing.t < this.swing.dur ? 'sam_atk' : 'sam_idle'; flip = md.x < 0; }
+        if (this.transformT > 0) { const atk = this.swing && this.swing.t < this.swing.dur; if (!atk && Math.abs(md.y) > Math.abs(md.x) && DRUID_SKIN.sam_down) key = md.y >= 0 ? 'sam_down' : 'sam_up'; else { key = atk ? 'sam_atk' : 'sam_idle'; flip = md.x < 0; } }
         else if (Math.abs(md.y) > Math.abs(md.x)) key = md.y >= 0 ? 'bandi_down' : 'bandi_up';
         else { key = 'bandi_side'; flip = md.x > 0; }
         const custom = druidSprite(key);
@@ -226,7 +226,7 @@ class Player extends Entity {
     let drew = false;
     if (sk === 'druid_bandi' && typeof druidSprite === 'function') { // [변신 드루이드 스킨] 평소 반디(방향별) ↔ 변신 샘(대기/공격, 좌우 반전)
       const md = this.moveFaceDir(), ax = md.x, ay = md.y; let key, flip = false; // [변신 스킨] 바라보는 방향 = 이동 방향(정지 시 마지막 방향, 멀티 동료는 위치 변화)
-      if (this.transformT > 0) { const atk = this.swing && this.swing.t < this.swing.dur; key = atk ? 'sam_atk' : 'sam_idle'; flip = ax < 0; } // 샘: 기본 오른쪽, 왼쪽 이동이면 반전
+      if (this.transformT > 0) { const atk = this.swing && this.swing.t < this.swing.dur; if (!atk && Math.abs(ay) > Math.abs(ax) && DRUID_SKIN.sam_down) key = ay >= 0 ? 'sam_down' : 'sam_up'; else { key = atk ? 'sam_atk' : 'sam_idle'; flip = ax < 0; } } // 샘: 위/아래 이동이면 정면·후면, 그 외 옆모습(기본 오른쪽, 왼쪽이면 반전)
       else if (Math.abs(ay) > Math.abs(ax)) key = ay >= 0 ? 'bandi_down' : 'bandi_up'; // 앞/뒤
       else { key = 'bandi_side'; flip = ax > 0; } // 옆: 원본이 왼쪽 → 오른쪽이면 반전
       const spr = druidSprite(key);
