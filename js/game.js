@@ -833,6 +833,7 @@ class Game {
     const cb = this.map.tileCenter(5, 12); this.props.push(new CodexBoard(cb.x, cb.y));
     { const ms = this.map.tileCenter(28, 16); this.props.push(new MultiStone(ms.x, ms.y)); } // 멀티 플레이 석판
     { const rb = this.map.tileCenter(5, 16); this.props.push(new RankBoard(rb.x, rb.y)); } // 명예의 전당
+    { const gs = this.map.tileCenter(24, 12); this.props.push(new GachaShrine(gs.x, gs.y)); } // 스킨 소환 제단 (스킨 뽑기)
     const ar = this.map.tileCenter(9, 16); this.props.push(new Armory(ar.x, ar.y));
     if (this.save.sanctumReached) { const tv = this.map.tileCenter(25, 16); this.props.push(new TreasureVault(tv.x, tv.y)); }
     const dm = this.map.tileCenter(28, 12);

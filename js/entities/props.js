@@ -284,6 +284,37 @@ class MultiStone {
     ctx.fillRect(x - 1, y - 7, 2, 2); ctx.globalAlpha = 1;
   }
 }
+// 로비: 스킨 소환 제단 — [E] 로 스킨 뽑기 창 (J 키와 같음)
+class GachaShrine {
+  constructor(x, y) { this.x = x; this.y = y; this.radius = 24; }
+  label() { return '[E] 스킨 뽑기 (소환 제단)'; }
+  get labelColor() { return '#e0a8ff'; }
+  interact(game) { game.overlay = { type: 'gacha', tab: 0, banner: 0, results: null, msg: null }; game.input.mouse.down = false; }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0;
+    const hue = ['#c58aff', '#ff7a9a', '#7ad0ff', '#ffd84a'][Math.floor(t * 0.8) % 4]; // 전설 스킨 색이 돌아가며 빛남
+    // 바닥 소환진 (천천히 도는 점선 고리)
+    ctx.save(); ctx.globalAlpha = 0.35 + 0.15 * Math.sin(t * 2); ctx.strokeStyle = hue; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(x, y + 5, 22, 8, 0, 0, TAU); ctx.stroke();
+    ctx.setLineDash([3, 3]); ctx.lineDashOffset = -t * 8; ctx.beginPath(); ctx.ellipse(x, y + 5, 17, 6, 0, 0, TAU); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 14, y + 7, 28, 3);
+    // 받침 (두 단 석재 + 금 테)
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 14, y, 28, 8); ctx.fillRect(x - 10, y - 5, 20, 6);
+    ctx.fillStyle = '#4a3a66'; ctx.fillRect(x - 13, y + 1, 26, 6); ctx.fillStyle = '#5e4a80'; ctx.fillRect(x - 13, y + 1, 26, 2);
+    ctx.fillStyle = '#5e4a80'; ctx.fillRect(x - 9, y - 4, 18, 4); ctx.fillStyle = '#c89a40'; ctx.fillRect(x - 13, y + 4, 26, 1); ctx.fillRect(x - 9, y - 1, 18, 1);
+    // 바닥 마법진 빛
+    ctx.globalAlpha = 0.25 + 0.15 * Math.sin(t * 3); ctx.fillStyle = hue; ctx.fillRect(x - 12, y + 2, 24, 1); ctx.globalAlpha = 1;
+    // 떠 있는 수정 (마름모)
+    const fy = Math.round(y - 16 + Math.sin(t * 2) * 2);
+    ctx.fillStyle = OUTLINE; for (let i = -6; i <= 6; i++) { const w = 6 - Math.abs(i); ctx.fillRect(x - w - 1, fy + i, w * 2 + 2, 1); }
+    ctx.fillStyle = hue; for (let i = -5; i <= 5; i++) { const w = 5 - Math.abs(i); ctx.fillRect(x - w, fy + i, w * 2, 1); }
+    ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.fillRect(x - 2, fy - 3, 1, 3); ctx.fillRect(x - 1, fy - 4, 1, 1);
+    // 수정 주위를 도는 반짝이 3개
+    ctx.fillStyle = '#fff4c0';
+    for (let i = 0; i < 3; i++) { const a = t * 2.2 + i * TAU / 3, px = Math.round(x + Math.cos(a) * 10), py = Math.round(fy + Math.sin(a) * 4); ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 5 + i); ctx.fillRect(px, py, 1, 1); }
+    ctx.globalAlpha = 1;
+  }
+}
 // 로비: 명예의 전당 (성적 랭킹판)
 class RankBoard {
   constructor(x, y) { this.x = x; this.y = y; this.radius = 22; }
