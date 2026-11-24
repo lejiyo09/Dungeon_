@@ -231,7 +231,7 @@ class Player extends Entity {
       else { key = 'bandi_side'; flip = ax > 0; } // 옆: 원본이 왼쪽 → 오른쪽이면 반전
       const spr = druidSprite(key);
       if (spr) { ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - 5, y + 6, 10, 2);
-        if (spr.steps && key === 'bandi_side' && this.moving && this.state !== 'DASH') { const ph = Math.floor(this.time * 8) % 4, S = flip ? spr.steps.f : spr.steps.n, img = ph === 0 ? S[0] : ph === 2 ? S[1] : (flip ? spr.f : spr.n); // 이동 중: 걷기1 → 서기 → 걷기2 → 서기 (옆만, 앞뒤는 서기 고정)
+        if (spr.steps && key.indexOf('bandi') === 0 && this.moving && this.state !== 'DASH') { const ph = Math.floor(this.time * 8) % 4, S = flip ? spr.steps.f : spr.steps.n, img = ph === 0 ? S[0] : ph === 2 ? S[1] : (flip ? spr.f : spr.n); // 이동 중: 걷기1 → 서기 → 걷기2 → 서기 (4방향, 앞뒤는 발을 위아래로)
           ctx.drawImage(img, Math.round(x - spr.w / 2), Math.round(y + 7 - spr.h), spr.w, spr.h); }
         else drawSprite(ctx, spr, x, y + 7, { flip });
         drew = true; }
