@@ -225,13 +225,13 @@ class Player extends Entity {
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
     let drew = false;
     if (sk === 'druid_bandi' && typeof druidSprite === 'function') { // [변신 드루이드 스킨] 평소 반디(방향별) ↔ 변신 샘(대기/공격, 좌우 반전)
-      const md = this.lastMoveDir || { x: 1, y: 0 }, ax = md.x, ay = md.y; let key, flip = false; // [변신 스킨] 바라보는 방향 = 키보드 이동 방향(정지 시 마지막 방향)
+      const md = this.moveFaceDir(), ax = md.x, ay = md.y; let key, flip = false; // [변신 스킨] 바라보는 방향 = 이동 방향(정지 시 마지막 방향, 멀티 동료는 위치 변화)
       if (this.transformT > 0) { const atk = this.swing && this.swing.t < this.swing.dur; key = atk ? 'sam_atk' : 'sam_idle'; flip = ax < 0; } // 샘: 기본 오른쪽, 왼쪽 이동이면 반전
       else if (Math.abs(ay) > Math.abs(ax)) key = ay >= 0 ? 'bandi_down' : 'bandi_up'; // 앞/뒤
       else { key = 'bandi_side'; flip = ax > 0; } // 옆: 원본이 왼쪽 → 오른쪽이면 반전
       const spr = druidSprite(key);
       if (spr) { ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - 5, y + 6, 10, 2);
-        if (spr.steps && key === 'bandi_side' && this.moving && this.state !== 'DASH') { const ph = Math.floor(this.time * 7) % 2, img = (flip ? spr.steps.f : spr.steps.n)[ph]; // 이동 중: 다리 걷기 2프레임 (옆 방향만)
+        if (spr.steps && key.indexOf('bandi') === 0 && this.moving && this.state !== 'DASH') { const ph = Math.floor(this.time * 8) % 4, S = flip ? spr.steps.f : spr.steps.n, img = ph === 0 ? S[0] : ph === 2 ? S[1] : (flip ? spr.f : spr.n); // 이동 중: 걷기1 → 서기 → 걷기2 → 서기 (4방향)
           ctx.drawImage(img, Math.round(x - spr.w / 2), Math.round(y + 7 - spr.h), spr.w, spr.h); }
         else drawSprite(ctx, spr, x, y + 7, { flip });
         drew = true; }
