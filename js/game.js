@@ -782,9 +782,10 @@ class Game {
       const roll = Math.random();
       if (roll < GACHA.legendRate) { // 전설 완성품
         if (sv.skins.includes(K.id)) { sv.mileage += GACHA.dupeMileage; results.push({ type: 'dupe', id: K.id, mileage: GACHA.dupeMileage }); }
-        else { sv.skins.push(K.id); this.skinOnMap()[skinKey(K)] = K.id; results.push({ type: 'skin', id: K.id, direct: true }); gotSkin = true; }
+        else { sv.skins.push(K.id); this.skinOnMap()[skinKey(K)] = K.id; const left = sv.shards[K.id] || 0; if (left) { sv.mileage += left * GACHA.shardDupeMileage; delete sv.shards[K.id]; } // 모아 둔 조각은 마일리지로
+          results.push({ type: 'skin', id: K.id, direct: true, refund: left * GACHA.shardDupeMileage }); gotSkin = true; }
       } else if (roll < GACHA.legendRate + GACHA.shardRate) { // 전설 조각
-        if (sv.skins.includes(K.id)) { sv.mileage += GACHA.dupeMileage; results.push({ type: 'dupe', id: K.id, mileage: GACHA.dupeMileage }); } // 이미 보유 → 마일리지
+        if (sv.skins.includes(K.id)) { sv.mileage += GACHA.shardDupeMileage; results.push({ type: 'shardDupe', id: K.id, mileage: GACHA.shardDupeMileage }); } // 보유 스킨의 조각 → 조각 몫 마일리지 (완성품 아님)
         else { sv.shards[K.id] = (sv.shards[K.id] || 0) + 1;
           if (sv.shards[K.id] >= GACHA.shardsNeeded) { sv.shards[K.id] -= GACHA.shardsNeeded; sv.skins.push(K.id); this.skinOnMap()[skinKey(K)] = K.id; results.push({ type: 'skin', id: K.id }); gotSkin = true; } // 20개 완성
           else results.push({ type: 'shard', id: K.id, count: sv.shards[K.id] }); }
@@ -1452,12 +1453,19 @@ class Game {
       if (o.msg) o.msg.t -= STEP;
       if (input.wasPressed('Escape') || input.wasPressed('KeyK') || input.wasPressed('KeyE')) { this.overlay = o.back === 'hero_info' ? { type: 'hero_info', heroId: this.save.selected, branchIndex: o.backIndex || 0 } : o.back === 'pause' ? { type: 'pause' } : null; return; }
       if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; }
-      const skins = skinsForMenu(this.save);
+      const HIDS = DATA_HEROES.map((h) => h.id); if (!HIDS.includes(o.hero)) o.hero = (this.player && this.player.hero && this.player.hero.id) || this.save.selected; // 직업별로 보기 (기본: 지금 직업)
+      const m0 = input.mouse, inR = (r) => m0.x >= r.x && m0.x <= r.x + r.w && m0.y >= r.y && m0.y <= r.y + r.h;
+      let dh = input.wasPressed('ArrowLeft') ? -1 : input.wasPressed('ArrowRight') ? 1 : 0;
+      if (input.wasPressed('Mouse0')) { if (inR(HUD.skinHeroArrow(0))) dh = -1; else if (inR(HUD.skinHeroArrow(1))) dh = 1; }
+      if (dh) { o.hero = HIDS[(HIDS.indexOf(o.hero) + dh + HIDS.length) % HIDS.length]; this.input.mouse.down = false; SFX.play('ui'); return; }
+      const skins = skinsForHero(this.save, o.hero);
       let ch = -1; skins.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) ch = i; });
-      if (input.wasPressed('Mouse0')) { const m = input.mouse; skins.forEach((_, i) => { const r = HUD.skinRect(i); if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) ch = i; }); this.input.mouse.down = false; }
+      if (input.wasPressed('Mouse0')) { skins.forEach((_, i) => { if (inR(HUD.skinRect(i))) ch = i; }); this.input.mouse.down = false; }
       if (ch >= 0) { const K = skins[ch], sv = this.save; sv.skinOn = sv.skinOn || {};
         if (!(sv.skins || []).includes(K.id)) o.msg = { text: K.source === 'gacha' ? `아직 없는 스킨입니다 — 스킨 뽑기로 얻을 수 있어요 (J)` : `아직 없는 스킨입니다 — 선물 코드로 얻을 수 있어요 (G)`, color: '#ff9a9a', t: 2.5 };
-        else { const M = this.skinOnMap(), key = skinKey(K), on = M[key] === K.id; M[key] = on ? null : K.id; writeSave(sv); SFX.play('ui');
+        else { const M = this.skinOnMap(), key = skinKey(K), on = M[key] === K.id; M[key] = on ? null : K.id;
+          if (!on) for (const k2 of SKINS) if (k2.hero === K.hero && skinKey(k2) !== key && (!k2.line || !K.line)) M[skinKey(k2)] = null; // 공용 스킨 ↔ 계열 스킨이 겹치면 방금 고른 것만 남김
+          writeSave(sv); SFX.play('ui');
           const L = jobLines(K.hero).find((l) => l.id === K.line); o.msg = { text: on ? `'${K.name}' 해제 — 기본 외형` : `'${K.name}' 장착${L ? ` — ${this.data.heroes.get(K.hero).name} ${L.name} 계열일 때 보임` : ''}`, color: '#ffd84a', t: 2.5 }; } }
       return;
     } else if (o.type === 'gacha') { // 스킨 뽑기: 왼쪽=선택 배너 + 1뽑/5뽑, 오른쪽 사이드바=배너 선택 + 마일리지 상점

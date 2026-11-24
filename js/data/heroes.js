@@ -111,15 +111,16 @@ function skinsForMenu(save) { const owned = save && Array.isArray(save.skins) ? 
 const GACHA = {
   costSingle: 300, cost5: 1500,           // 결정석 비용 (1뽑 300, 5뽑 1500)
   legendRate: 0.01,                        // 전설 스킨 완성품 1% (보유 중이면 마일리지)
-  shardRate: 0.05, shardsNeeded: 20,       // 전설 조각 5%, 20개 = 스킨 완성
-  commonRate: 0.25,                        // 일반 스킨 25% · 나머지 69% = 탐험 보급품(보관함에 쌓임)
-  dupeMileage: 250, commonDupeMileage: 15, // [사용자 결정] 마일리지는 스킨 중복일 때만: 전설 조각(보유 스킨) 250 · 일반 스킨 중복 15
+  shardRate: 0.03, shardsNeeded: 20,       // 전설 조각 3%, 20개 = 스킨 완성
+  commonRate: 0.25,                        // 일반 스킨 25% · 나머지 71% = 탐험 보급품(보관함에 쌓임)
+  dupeMileage: 250, shardDupeMileage: 12, commonDupeMileage: 15, // [사용자 결정] 마일리지는 스킨 중복일 때만: 완성품 중복 250 · 보유 스킨 조각 12 · 일반 스킨 중복 15
   shopPrice: 400,                          // 마일리지 상점 스킨 1개 가격
   mileageName: '스킨 마일리지', mileageColor: '#ffb0d8', shardName: '전설 조각', shardColor: '#ffe9a0',
   banners: { skin_leg_abyss: 'abyss', skin_leg_crimson: 'crimson', skin_leg_void: 'void', skin_leg_star: 'star' } // 스킨별 배너 이미지 키 (assets/banners/<key>.webp)
 };
 function gachaPool() { return SKINS.filter((k) => k.source === 'gacha'); } // 전설 배너 뽑기 대상
 function commonPool() { return SKINS.filter((k) => k.source === 'common'); } // 일반 뽑기 풀
+function skinsForHero(save, heroId) { return skinsForMenu(save).filter((k) => k.hero === heroId); } // 스킨창: 직업별 페이지
 function skinKey(K) { return K.line ? K.hero + '|' + K.line : K.hero; } /* 장착 칸: 직업·계열마다 하나 (마도사 불·빛 스킨을 따로 켜 둘 수 있게) */
 function skinAllowed(sp, heroId, lineId) { return SKINS.some((k) => k.sprite === sp && k.hero === heroId && (!k.line || k.line === lineId)); } /* [사용자 결정] 스킨은 정해진 갈래일 때만 (불꽃 마녀 = 불 마도사 · 붉은 머리 총잡이 = 속사 사수) */
 function skinSpriteOk(sp) { return SKINS.some((k) => k.sprite === sp) ? sp : null; } /* 멀티로 받은 외형 이름은 아는 스킨만 */

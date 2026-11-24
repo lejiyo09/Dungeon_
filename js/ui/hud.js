@@ -235,22 +235,25 @@ class HUD {
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 30, o.msg.color, 'center', 8);
       hudText(ctx, `번호 키 / 클릭: 선택   ·   Esc / +: ${cam ? '뒤로' : '닫기'}`, VIEW_W / 2, VIEW_H - 14, '#888', 'center', 7);
     } else if (o.type === 'skins') { /* 스킨 고르기 */
-      const sv = game.save, m = game.input.mouse, skins = skinsForMenu(sv);
-      hudText(ctx, `스킨  ·  보유 ${skins.filter((k) => (sv.skins || []).includes(k.id)).length}/${skins.length}`, VIEW_W / 2, 10, '#ffb0d8', 'center', 12);
-      hudText(ctx, '외형만 바뀌고 능력은 그대로 · 정해진 직업·계열일 때만 보임', VIEW_W / 2, 26, '#aaa', 'center', 7);
+      const sv = game.save, m = game.input.mouse, heroId = o.hero || game.player.hero.id, skins = skinsForHero(sv, heroId), HH = game.data.heroes.get(heroId);
+      hudText(ctx, `${HH ? HH.name : ''} 스킨  ·  보유 ${skins.filter((k) => (sv.skins || []).includes(k.id)).length}/${skins.length}`, VIEW_W / 2, 10, '#ffb0d8', 'center', 12);
+      hudText(ctx, '외형만 바뀌고 능력은 그대로 · ←→ 직업 바꾸기', VIEW_W / 2, 26, '#aaa', 'center', 7);
+      for (const d of [0, 1]) { const r = HUD.skinHeroArrow(d), hv = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h; ctx.fillStyle = hv ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)'; ctx.fillRect(r.x, r.y, r.w, r.h); hudText(ctx, d ? '▶' : '◀', r.x + r.w / 2, r.y + r.h / 2 - 6, '#ffb0d8', 'center', 11); }
+      if (!skins.length) hudText(ctx, '아직 이 직업의 스킨이 없어요 — 로비 Esc → J 스킨 뽑기', VIEW_W / 2, 120, '#888', 'center', 9);
       skins.forEach((K, i) => {
         const r = HUD.skinRect(i), owned = (sv.skins || []).includes(K.id), on = owned && game.skinOnMap()[skinKey(K)] === K.id, hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
         const hero = game.data.heroes.get(K.hero), L = jobLines(K.hero).find((l) => l.id === K.line), leg = K.rarity === 'legendary';
         ctx.fillStyle = on ? 'rgba(255,176,216,0.18)' : leg ? 'rgba(255,216,74,0.08)' : hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
         if (leg) { const gl = 0.5 + 0.3 * Math.sin(game.time * 3); ctx.strokeStyle = on ? '#ffb0d8' : `rgba(255,216,74,${gl})`; ctx.lineWidth = 1.5; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); ctx.lineWidth = 1; }
         else { ctx.strokeStyle = on ? '#ffb0d8' : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); }
-        const spr = heroSprite(heroWithLook(hero, { sprite: K.sprite }), leg ? Math.floor(game.time * 6) % 3 : Math.floor(game.time * 3) % 2); /* 미리보기 (전설 3프레임 / 그 외 2프레임) */
-        if (!owned) ctx.globalAlpha = 0.28; drawSprite(ctx, spr, r.x + r.w / 2, r.y + 50, { scale: leg ? 1.5 : 2 }); ctx.globalAlpha = 1;
+        const isC = K.sprite.indexOf('c_') === 0, isD = K.sprite === 'druid_bandi'; /* 미리보기: 실제 스킨 그림 (일반=시트, 반디=드루이드 시트, 그 외=도트 생성) */
+        const spr = isC ? (typeof commonSprite === 'function' && commonSprite(K.sprite)) : isD ? (typeof druidSprite === 'function' && druidSprite('bandi_down')) : heroSprite(heroWithLook(hero, { sprite: K.sprite }), leg ? Math.floor(game.time * 6) % 3 : Math.floor(game.time * 3) % 2);
+        if (!owned) ctx.globalAlpha = 0.28; if (spr) drawSprite(ctx, spr, r.x + r.w / 2, r.y + 50, { scale: isC ? 2 : leg || isD ? 1.5 : 2 }); ctx.globalAlpha = 1;
         if (leg) hudText(ctx, '★ 전설', r.x + 5, r.y + 4, '#ffd84a', 'left', 6);
         if (!owned) hudText(ctx, '🔒', r.x + r.w / 2, r.y + 22, '#fff', 'center', 10);
         hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + 54, owned ? (leg ? '#ffe9a0' : '#fff') : '#888', 'center', 8);
         hudText(ctx, `${hero ? hero.name.split(' ')[0] : ''}${L ? ' · ' + L.name + ' 계열' : leg ? ' · 전 계열' : ''}`, r.x + r.w / 2, r.y + 66, '#c8c0d8', 'center', 6);
-        hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : K.source === 'gacha' ? '뽑기로 획득 (준비 중)' : '선물 코드로 획득', r.x + r.w / 2, r.y + 78, on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
+        hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : K.source === 'gacha' || K.source === 'common' ? '스킨 뽑기로 획득 (J)' : '선물 코드로 획득', r.x + r.w / 2, r.y + 78, on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
       });
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 26, o.msg.color, 'center', 8);
       hudText(ctx, '번호 키 / 클릭: 장착·해제   ·   G: 선물 코드   ·   Esc: 돌아가기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
@@ -325,18 +328,19 @@ class HUD {
         hudText(ctx, got ? '✦ 전설 스킨 획득! ✦' : '뽑기 결과', VIEW_W / 2, 40, got ? '#ffd84a' : '#ddd', 'center', 15);
         const n = o.results.length, cw = 86, gap = 8, x0 = (VIEW_W - (n * cw + (n - 1) * gap)) / 2;
         o.results.forEach((res, i) => { const x = x0 + i * (cw + gap), y = 80, h = 120;
-          const isSkin = res.type === 'skin', isShard = res.type === 'shard', isDupe = res.type === 'dupe', isCommon = res.type === 'common', isSupply = res.type === 'supply';
+          const isSkin = res.type === 'skin', isShard = res.type === 'shard' || res.type === 'shardDupe', isDupe = res.type === 'dupe', isCommon = res.type === 'common', isSupply = res.type === 'supply';
           const Ks = SKINS.find((p) => p.id === res.id), dupeCommon = isDupe && Ks && Ks.source === 'common';
           ctx.fillStyle = isSkin ? 'rgba(255,216,74,0.14)' : isShard ? 'rgba(255,233,160,0.1)' : isCommon ? 'rgba(150,216,255,0.1)' : isSupply ? 'rgba(159,232,159,0.08)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(x, y, cw, h);
           ctx.strokeStyle = isSkin ? '#ffd84a' : isShard ? GACHA.shardColor : isCommon ? '#9ad8ff' : isSupply ? '#9fe89f' : isDupe ? '#ffb0d8' : '#51475f'; ctx.strokeRect(x + 0.5, y + 0.5, cw - 1, h - 1);
           if (isSkin || (isDupe && !dupeCommon)) { const th = bannerImg(GACHA.banners[res.id]); if (th) drawBannerCover(ctx, th, x + 4, y + 4, cw - 8, 60); hudText(ctx, Ks ? Ks.name : '', x + cw / 2, y + 70, '#fff', 'center', 8); }
           if (dupeCommon) { const spr = typeof commonSprite === 'function' && commonSprite(Ks.sprite); if (spr) { const dw = spr.w * 2, dh = spr.h * 2; ctx.drawImage(spr.n, x + cw / 2 - dw / 2, y + 56 - dh, dw, dh); } hudText(ctx, Ks.name, x + cw / 2, y + 66, '#fff', 'center', 8); }
           if (isSupply) { const S = GUILD_SUPPLIES.find((q) => q.id === res.id); HUD.drawSupply(ctx, x + cw / 2, y + 36, res.id); hudText(ctx, S ? S.name : '보급품', x + cw / 2, y + 66, '#e8ffe8', 'center', 8); hudText(ctx, '탐험 보급품', x + cw / 2, y + 88, '#9fe89f', 'center', 8); hudText(ctx, '보관함 +1', x + cw / 2, y + 102, '#bbb', 'center', 7); }
-          if (isShard) { HUD.drawShard(ctx, x + cw / 2, y + 36, 16); hudText(ctx, GACHA.shardName, x + cw / 2, y + 70, GACHA.shardColor, 'center', 8); hudText(ctx, `${res.count} / ${GACHA.shardsNeeded}`, x + cw / 2, y + 96, '#fff', 'center', 10); } // 조각: 전용 아이콘(배경 없음)
+          if (res.type === 'shardDupe') { HUD.drawShard(ctx, x + cw / 2, y + 36, 16); hudText(ctx, GACHA.shardName, x + cw / 2, y + 66, GACHA.shardColor, 'center', 8); hudText(ctx, '보유 스킨', x + cw / 2, y + 86, '#ffb0d8', 'center', 8); hudText(ctx, `+${res.mileage} M`, x + cw / 2, y + 100, GACHA.mileageColor, 'center', 8); }
+          if (res.type === 'shard') { HUD.drawShard(ctx, x + cw / 2, y + 36, 16); hudText(ctx, GACHA.shardName, x + cw / 2, y + 70, GACHA.shardColor, 'center', 8); hudText(ctx, `${res.count} / ${GACHA.shardsNeeded}`, x + cw / 2, y + 96, '#fff', 'center', 10); } // 조각: 전용 아이콘(배경 없음)
           else if (isCommon) { const Cs = SKINS.find((p) => p.id === res.id), spr = typeof commonSprite === 'function' && commonSprite(Cs && Cs.sprite); if (spr) { const sc = 2, dw = spr.w * sc, dh = spr.h * sc; ctx.drawImage(spr.n, x + cw / 2 - dw / 2, y + 56 - dh, dw, dh); } hudText(ctx, Cs ? Cs.name : '', x + cw / 2, y + 66, '#fff', 'center', 8); hudText(ctx, '일반 획득', x + cw / 2, y + 92, '#9ad8ff', 'center', 9); }
-          else if (isSkin) hudText(ctx, '완성 획득!', x + cw / 2, y + 92, '#ffd84a', 'center', 9);
+          else if (isSkin) { hudText(ctx, '완성 획득!', x + cw / 2, y + 88, '#ffd84a', 'center', 9); if (res.refund) hudText(ctx, `모은 조각 +${res.refund} M`, x + cw / 2, y + 102, GACHA.mileageColor, 'center', 6); }
           else if (isDupe) { hudText(ctx, '보유', x + cw / 2, y + 88, '#ffb0d8', 'center', 9); hudText(ctx, `+${res.mileage} M`, x + cw / 2, y + 102, GACHA.mileageColor, 'center', 8); }
-          else if (!isSupply && res.mileage) { hudText(ctx, `+${res.mileage}`, x + cw / 2, y + 48, GACHA.mileageColor, 'center', 13); hudText(ctx, GACHA.mileageName, x + cw / 2, y + 68, '#bbb', 'center', 7); } });
+          else if (!isSupply && res.type !== 'shardDupe' && res.mileage) { hudText(ctx, `+${res.mileage}`, x + cw / 2, y + 48, GACHA.mileageColor, 'center', 13); hudText(ctx, GACHA.mileageName, x + cw / 2, y + 68, '#bbb', 'center', 7); } });
         hudText(ctx, '아무 곳이나 클릭 / Enter — 닫기', VIEW_W / 2, VIEW_H - 30, '#999', 'center', 9);
       }
       // 확률표 팝업
@@ -348,7 +352,7 @@ class HUD {
         const rows = [['전설 스킨 완성품 (배너)', `${Math.round(GACHA.legendRate * 100)}%`, '#ffd84a'], [`${GACHA.shardName} (배너 스킨)`, `${Math.round(GACHA.shardRate * 100)}%`, GACHA.shardColor], ['일반 스킨', `${Math.round(GACHA.commonRate * 100)}%`, '#9ad8ff'], ['탐험 보급품', `${Math.round((1 - GACHA.legendRate - GACHA.shardRate - GACHA.commonRate) * 100)}%`, '#9fe89f']];
         rows.forEach(([n2, p2, c], i) => { const ry = py + 38 + i * 20; hudText(ctx, n2, px + 20, ry, '#eee', 'left', 9); hudText(ctx, p2, px + pw - 20, ry, c, 'right', 10); });
         hudText(ctx, `· ${GACHA.shardName} ${GACHA.shardsNeeded}개를 모으면 그 배너 스킨 완성`, VIEW_W / 2, py + 118, '#bfe6ff', 'center', 8);
-        hudText(ctx, `· 가진 스킨이 또 나오면 ${GACHA.mileageName} (전설 ${GACHA.dupeMileage} · 일반 ${GACHA.commonDupeMileage})`, VIEW_W / 2, py + 132, '#ffb0d8', 'center', 8);
+        hudText(ctx, `· 가진 스킨이면 ${GACHA.mileageName}: 완성품 ${GACHA.dupeMileage} · 조각 ${GACHA.shardDupeMileage} · 일반 ${GACHA.commonDupeMileage}`, VIEW_W / 2, py + 132, '#ffb0d8', 'center', 8);
         hudText(ctx, '· 보급품은 보관함에 쌓이고 탐험마다 종류별 1개씩 사용', VIEW_W / 2, py + 146, '#9fe89f', 'center', 8);
         hudText(ctx, '클릭 / Esc — 닫기', VIEW_W / 2, py + ph - 16, '#999', 'center', 8);
       }
@@ -798,6 +802,7 @@ class HUD {
   static jobLineRowRect(i) { return { x: 12 + (i % 2) * 246, y: 47 + Math.floor(i / 2) * 25, w: 240, h: 23 }; }
   static jobLinePageRect(i, n) { const w = 58, gap = 8, total = n * w + (n - 1) * gap; return { x: (VIEW_W - total) / 2 + i * (w + gap), y: 250, w, h: 13 }; }
   static travelRect(i, n) { const w = 300, h = 30, x = (VIEW_W - w) / 2, y0 = 70; return { x, y: y0 + i * (h + 6), w, h }; }
+  static skinHeroArrow(d) { return { x: d ? VIEW_W - 34 : 10, y: 6, w: 24, h: 20 }; } // 스킨창 직업 바꾸기
   static skinRect(i) { const cols = 4, w = 112, h = 92, gap = 8, x0 = (VIEW_W - (cols * w + (cols - 1) * gap)) / 2; return { x: x0 + (i % cols) * (w + gap), y: 40 + Math.floor(i / cols) * (h + gap), w, h }; }
   static heroBranchRect(i, n) { return { x: 18 + (i % 2) * 240, y: 85 + Math.floor(i / 2) * 29, w: 236, h: 26 }; }
   static variantRect(i, n) { const cols = Math.min(3, n), w = 156, h = 58, gap = 8, rows = Math.ceil(n / cols), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % cols) * (w + gap), y: 66 + Math.floor(i / cols) * (h + gap) + (rows === 1 ? 30 : 0), w, h }; }
