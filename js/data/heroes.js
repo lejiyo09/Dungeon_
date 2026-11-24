@@ -62,29 +62,29 @@ const SKINS = [
   { id: 'skin_leg_star', name: '성역의 성자', hero: 'hero_priest', sprite: 'leg_star', rarity: 'legendary', source: 'gacha', desc: '사제 전설 외형 — 별빛 성역의 성자 (전직: 성역)' },
   // ── 변신 드루이드 스킨: 평소 반디(앞/옆/뒤) ↔ 변신 시 샘(대기=22·공격=21, 좌우 반전만)
   { id: 'skin_bandi', name: '반디', hero: 'hero_druid', sprite: 'druid_bandi', rarity: 'legendary', source: 'code', druid: true, desc: '드루이드 변신 스킨 — 평소엔 반디, 변신하면 날개 돋친 샘으로 (선물 코드)' },
-  // ── 일반·레어·에픽 스킨 (앞모습, 좌우 반전) — assets/commonskins.png · 퀄리티별 등급: 1단계=일반, 2단계=레어, 3단계=에픽
-  { id: 'skin_c_sw_1', name: '붉은 기사', hero: 'hero_swordsman', sprite: 'c_swordsman_1', rarity: 'common', source: 'common', desc: '검사 일반 외형 — 핏빛 강철 갑옷' },
+  // ── 일반·레어·에픽 스킨 (앞모습, 좌우 반전) — assets/commonskins.png · 퀄리티별 등급: 기존 1·2단계=레어, 3단계=에픽, 새 22종=일반
+  { id: 'skin_c_sw_1', name: '붉은 기사', hero: 'hero_swordsman', sprite: 'c_swordsman_1', rarity: 'rare', source: 'common', desc: '검사 레어 외형 — 핏빛 강철 갑옷' },
   { id: 'skin_c_sw_2', name: '황금 성기사', hero: 'hero_swordsman', sprite: 'c_swordsman_2', rarity: 'rare', source: 'common', desc: '검사 레어 외형 — 백금빛 성기사' },
   { id: 'skin_c_sw_3', name: '자수정 기사', hero: 'hero_swordsman', sprite: 'c_swordsman_3', rarity: 'epic', source: 'common', desc: '검사 에픽 외형 — 보랏빛 뿔투구' },
-  { id: 'skin_c_gn_1', name: '진홍 보안관', hero: 'hero_gunner', sprite: 'c_gunner_1', rarity: 'common', source: 'common', desc: '사수 일반 외형 — 붉은 외투의 보안관' },
+  { id: 'skin_c_gn_1', name: '진홍 보안관', hero: 'hero_gunner', sprite: 'c_gunner_1', rarity: 'rare', source: 'common', desc: '사수 레어 외형 — 붉은 외투의 보안관' },
   { id: 'skin_c_gn_2', name: '금장 총사', hero: 'hero_gunner', sprite: 'c_gunner_2', rarity: 'rare', source: 'common', desc: '사수 레어 외형 — 남색·금장 제복' },
   { id: 'skin_c_gn_3', name: '청록 총잡이', hero: 'hero_gunner', sprite: 'c_gunner_3', rarity: 'epic', source: 'common', desc: '사수 에픽 외형 — 청록빛 코트' },
-  { id: 'skin_c_mg_1', name: '서리 마법사', hero: 'hero_mage', sprite: 'c_mage_1', rarity: 'common', source: 'common', desc: '마도사 일반 외형 — 푸른 서리 로브' },
+  { id: 'skin_c_mg_1', name: '서리 마법사', hero: 'hero_mage', sprite: 'c_mage_1', rarity: 'rare', source: 'common', desc: '마도사 레어 외형 — 푸른 서리 로브' },
   { id: 'skin_c_mg_2', name: '보라 현자', hero: 'hero_mage', sprite: 'c_mage_2', rarity: 'rare', source: 'common', desc: '마도사 레어 외형 — 보랏빛 현자 복장' },
   { id: 'skin_c_mg_3', name: '황혼 마도사', hero: 'hero_mage', sprite: 'c_mage_3', rarity: 'epic', source: 'common', desc: '마도사 에픽 외형 — 자금빛 황혼 예복' },
-  { id: 'skin_c_en_1', name: '고글 기술자', hero: 'hero_engineer', sprite: 'c_engineer_1', rarity: 'common', source: 'common', desc: '기술자 일반 외형 — 고글 쓴 정비사' },
+  { id: 'skin_c_en_1', name: '고글 기술자', hero: 'hero_engineer', sprite: 'c_engineer_1', rarity: 'rare', source: 'common', desc: '기술자 레어 외형 — 고글 쓴 정비사' },
   { id: 'skin_c_en_2', name: '두건 정비공', hero: 'hero_engineer', sprite: 'c_engineer_2', rarity: 'rare', source: 'common', desc: '기술자 레어 외형 — 갈색 두건 작업복' },
   { id: 'skin_c_en_3', name: '황금 기공사', hero: 'hero_engineer', sprite: 'c_engineer_3', rarity: 'epic', source: 'common', desc: '기술자 에픽 외형 — 금빛 기공 장비' },
-  { id: 'skin_c_as_1', name: '핏빛 자객', hero: 'hero_assassin', sprite: 'c_assassin_1', rarity: 'common', source: 'common', desc: '암살자 일반 외형 — 붉은 두건의 자객' },
+  { id: 'skin_c_as_1', name: '핏빛 자객', hero: 'hero_assassin', sprite: 'c_assassin_1', rarity: 'rare', source: 'common', desc: '암살자 레어 외형 — 붉은 두건의 자객' },
   { id: 'skin_c_as_2', name: '서리 그림자', hero: 'hero_assassin', sprite: 'c_assassin_2', rarity: 'rare', source: 'common', desc: '암살자 레어 외형 — 푸른 서리 장막' },
   { id: 'skin_c_as_3', name: '보랏빛 자객', hero: 'hero_assassin', sprite: 'c_assassin_3', rarity: 'epic', source: 'common', desc: '암살자 에픽 외형 — 자줏빛 암영' },
-  { id: 'skin_c_pr_1', name: '홍련 사제', hero: 'hero_priest', sprite: 'c_priest_1', rarity: 'common', source: 'common', desc: '사제 일반 외형 — 홍련빛 사제복' },
+  { id: 'skin_c_pr_1', name: '홍련 사제', hero: 'hero_priest', sprite: 'c_priest_1', rarity: 'rare', source: 'common', desc: '사제 레어 외형 — 홍련빛 사제복' },
   { id: 'skin_c_pr_2', name: '백색 천사', hero: 'hero_priest', sprite: 'c_priest_2', rarity: 'rare', source: 'common', desc: '사제 레어 외형 — 흰 날개의 천사' },
   { id: 'skin_c_pr_3', name: '황금 세라핌', hero: 'hero_priest', sprite: 'c_priest_3', rarity: 'epic', source: 'common', desc: '사제 에픽 외형 — 금빛 세라핌' },
-  { id: 'skin_c_be_1', name: '서리뿔 전사', hero: 'hero_berserker', sprite: 'c_berserker_1', rarity: 'common', source: 'common', desc: '광전사 일반 외형 — 푸른 뿔 투구' },
+  { id: 'skin_c_be_1', name: '서리뿔 전사', hero: 'hero_berserker', sprite: 'c_berserker_1', rarity: 'rare', source: 'common', desc: '광전사 레어 외형 — 푸른 뿔 투구' },
   { id: 'skin_c_be_2', name: '홍염 광전사', hero: 'hero_berserker', sprite: 'c_berserker_2', rarity: 'rare', source: 'common', desc: '광전사 레어 외형 — 붉은·금빛 뿔갑옷' },
   { id: 'skin_c_be_3', name: '황금 뿔 군주', hero: 'hero_berserker', sprite: 'c_berserker_3', rarity: 'epic', source: 'common', desc: '광전사 에픽 외형 — 금빛 뿔의 군주' },
-  { id: 'skin_c_dr_1', name: '단풍 드루이드', hero: 'hero_druid', sprite: 'c_druid_1', rarity: 'common', source: 'common', desc: '드루이드 일반 외형 — 단풍빛 망토' },
+  { id: 'skin_c_dr_1', name: '단풍 드루이드', hero: 'hero_druid', sprite: 'c_druid_1', rarity: 'rare', source: 'common', desc: '드루이드 레어 외형 — 단풍빛 망토' },
   { id: 'skin_c_dr_2', name: '버섯 드루이드', hero: 'hero_druid', sprite: 'c_druid_2', rarity: 'rare', source: 'common', desc: '드루이드 레어 외형 — 붉은 버섯 모자' },
   { id: 'skin_c_dr_3', name: '큰뿔 드루이드', hero: 'hero_druid', sprite: 'c_druid_3', rarity: 'epic', source: 'common', desc: '드루이드 에픽 외형 — 큰 사슴뿔' },
   // ── 일반 스킨 추가 22종 (앞모습 정지 + 걷기 1장) — commonskins.png 아래쪽
@@ -139,7 +139,7 @@ const GACHA = {
   costSingle: 300, cost5: 1500,           // 결정석 비용 (1뽑 300, 5뽑 1500)
   legendRate: 0.01,                        // 전설 스킨 완성품 1% (보유 중이면 마일리지)
   shardRate: 0.03, shardsNeeded: 20,       // 전설 조각 3%, 20개 = 스킨 완성
-  epicRate: 0.03, rareRate: 0.08, commonRate: 0.25, // 에픽 3% · 레어 8% · 일반 25% · 나머지 60% = 탐험 보급품(보관함에 쌓임)
+  epicRate: 0.03, rareRate: 0.10, commonRate: 0.23, // [사용자 결정] 퀄리티별 등급: 에픽 3%(기존 3단계) · 레어 10%(기존 1·2단계) · 일반 23%(새 22종) · 나머지 60% = 탐험 보급품
   dupeMileage: 250, shardDupeMileage: 12, commonDupeMileage: 15, rareDupeMileage: 30, epicDupeMileage: 60, // [사용자 결정] 마일리지는 스킨 중복일 때만: 완성품 중복 250 · 보유 스킨 조각 12 · 일반 스킨 중복 15
   shopPrice: 400,                          // 마일리지 상점 스킨 1개 가격
   mileageName: '스킨 마일리지', mileageColor: '#ffb0d8', shardName: '전설 조각', shardColor: '#ffe9a0',
