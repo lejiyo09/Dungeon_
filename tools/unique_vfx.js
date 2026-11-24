@@ -46,7 +46,7 @@ let pass = 0, fail = 0; const ok = (c, m) => { console.log((c ? '✓ ' : '✗ ')
     for (const [hero, items] of Object.entries(list)) { T.start(hero);
       for (const [line, k, id] of items) {
         const run = (on, frames) => { T.reset(); T.skin(on, hero); g.setJob(g.player, line, k); g.player.skillId = id; T.seed(1234); T.foes(); g.useSkill(); const kinds = UVFX.list.map((I) => I.kind); T.step(frames); return { s: T.snapState(), kinds }; };
-        run(false, 60); const a = run(false, 240), bOn = run(true, 240), c = run(false, 240); // 처음 한 번은 준비 운동 (첫 실행에만 생기는 초기화 제외)
+        run(false, 240); const a = run(false, 240), bOn = run(true, 240), c = run(false, 240); // 처음 한 번은 준비 운동 (첫 실행에만 생기는 초기화 제외)
         // VFX 수명: 켬 상태로 다시 돌려 시점별 개수
         T.reset(); T.skin(true, hero); g.setJob(g.player, line, k); g.player.skillId = id; T.seed(1234); T.foes(); g.useSkill();
         const t0 = UVFX.list.map((I) => I.kind); const act = () => UVFX.list.filter((I) => /^active:/.test(I.kind)).length;
@@ -63,8 +63,9 @@ let pass = 0, fail = 0; const ok = (c, m) => { console.log((c ? '✓ ' : '✗ ')
 
   // ── 3) 무기 191종 × 각 영웅: 기본 공격 판정 불변 + 무기 외형 피벗 일치
   const W = await pg.evaluate(() => { const g = window.__game, T = window.__T, out = { bad: [], unstable: [], n: 0, pivotBad: 0, newArt: 0 };
-    for (const hero of ['hero_engineer', 'hero_swordsman', 'hero_druid']) { T.start(hero);
+    for (const hero of ['hero_engineer', 'hero_swordsman', 'hero_druid']) { T.start(hero); let warm = true;
       for (const d of DATA_WEAPONS) { const run = (on) => { T.reset(); T.skin(on, hero); g.player.weapons = [new WeaponInstance(d)]; g.player.slot = 0; T.seed(99); T.foes(); g.input.mouse.down = true; T.step(50); g.input.mouse.down = false; T.step(20); return T.snapState(); };
+        if (warm) { run(false); warm = false; } // 직업마다 첫 무기 전에 준비 운동 한 번
         const a = run(false), b2 = run(true), a2 = run(false); out.n++; if (a !== a2) out.unstable.push(hero + ':' + d.id); else if (a !== b2) out.bad.push(hero + ':' + d.id);
         const th = UVFX.themeOf(g, g.player) || T.SK[hero].replace('skin_u_', ''), s0 = weaponSprite(d), s1 = weaponSprite(d, th === 'first_explorer' ? 'first_explorer' : th);
         if (!WEAPON_SPRITE[d.id]) { out.newArt++; continue; } // 원래 전용 그림이 없던 23종: 팩이 새로 그린 실루엣 (원래는 기본 권총 그림)
@@ -75,14 +76,14 @@ let pass = 0, fail = 0; const ok = (c, m) => { console.log((c ? '✓ ' : '✗ ')
 
   // ── 4) 공통 효과: 발자국(이동 중에만 · 좌우 교대) · 대시 · 무기 · 피격 · 회복 · 사망 · 획득 · 사용 · 오라/대기
   const C = await pg.evaluate(() => { const g = window.__game, T = window.__T, out = {};
-    T.start('hero_druid'); T.reset(); T.skin(true, 'hero_druid'); const p = g.player;
+    T.start('hero_druid'); T.reset(); T.skin(true, 'hero_druid'); let p = g.player;
     const cnt = (k) => UVFX.list.filter((I) => I.kind === k).length;
     T.step(60); out.stillSteps = cnt('move');
     g.input.down.add('KeyD'); const xs = []; for (let i = 0; i < 90; i++) { const before = UVFX.list.filter((I) => I.kind === 'move').length; g.update(1 / 60); const ms = UVFX.list.filter((I) => I.kind === 'move'); if (ms.length > before) xs.push(Math.round(ms[ms.length - 1].y - p.y)); }
     g.input.down.clear(); out.walkSteps = xs.length; out.alternate = xs.length > 2 && xs.every((v, i) => i === 0 || v !== xs[i - 1]);
     UVFX.clear(); T.step(30); out.afterStop = cnt('move');
     T.reset(); T.skin(true, 'hero_druid'); T.step(10); UVFX.clear(); g.input.down.add('KeyD'); g.update(1 / 60); g.input.pressed.add('Space'); g.update(1 / 60); g.input.down.clear(); out.dash = cnt('dash'); T.step(30);
-    UVFX.clear(); T.foes(); g.input.mouse.down = true; T.step(40); g.input.mouse.down = false; out.weapon = cnt('weapon');
+    p = g.player; UVFX.clear(); T.foes(); g.input.mouse.down = true; T.step(40); g.input.mouse.down = false; out.weapon = cnt('weapon');
     UVFX.clear(); p.hp -= 5; T.step(2); out.hit = cnt('hit');
     UVFX.clear(); T.step(30); p.hp = Math.min(p.maxHp, p.hp + 3); T.step(2); out.heal = cnt('heal');
     UVFX.clear(); g.collect({ kind: 'coin', value: 1, x: p.x, y: p.y }); out.pickup = cnt('pickup');
