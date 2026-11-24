@@ -91,7 +91,7 @@ const SKINS = [
 // 일반 스킨 시트(assets/commonskins.png) 좌표 [x,y,w,h] — 앞모습 1포즈 (좌우 반전만)
 const COMMON_SKIN = { c_swordsman_1: [2, 0, 22, 22], c_gunner_1: [30, 0, 18, 22], c_mage_1: [56, 0, 18, 22], c_engineer_1: [82, 0, 18, 22], c_assassin_1: [107, 0, 20, 22], c_priest_1: [133, 0, 20, 22], c_berserker_1: [158, 0, 22, 22], c_druid_1: [184, 0, 22, 22], c_swordsman_2: [3, 22, 20, 22], c_gunner_2: [29, 22, 20, 22], c_mage_2: [54, 22, 22, 22], c_engineer_2: [82, 22, 18, 22], c_assassin_2: [106, 22, 22, 22], c_priest_2: [132, 22, 22, 22], c_berserker_2: [157, 22, 24, 22], c_druid_2: [184, 22, 22, 22], c_swordsman_3: [2, 44, 22, 22], c_gunner_3: [28, 44, 22, 22], c_mage_3: [54, 44, 22, 22], c_engineer_3: [81, 44, 20, 22], c_assassin_3: [105, 44, 24, 22], c_priest_3: [132, 44, 22, 22], c_berserker_3: [156, 44, 26, 22], c_druid_3: [183, 44, 24, 22] };
 // 드루이드 스킨 시트(assets/druidskin.png) 스프라이트 좌표 [x,y,w,h] — 이미 인게임 크기로 구움
-const DRUID_SKIN = { bandi_down: [0, 13, 32, 27], bandi_up: [33, 14, 22, 26], bandi_side: [56, 14, 24, 26], sam_idle: [243, 0, 62, 40], sam_atk: [306, 14, 49, 26] };
+const DRUID_SKIN = { bandi_down: [0, 13, 32, 27], bandi_up: [33, 14, 22, 26], bandi_side: [56, 14, 24, 26], sam_idle: [243, 0, 62, 40], sam_atk: [306, 14, 49, 26], sam_down: [356, 3, 53, 37], sam_up: [410, 0, 52, 40] };
 // 반디 걷기: 방향별 걷기 2프레임 — 이동 중 [걷기1, 서기, 걷기2, 서기] 순환 (앞뒤는 발을 위아래로 드는 방식)
 const BANDI_WALK = { bandi_down: [[81, 13, 32, 27], [114, 13, 32, 27]], bandi_up: [[147, 14, 22, 26], [170, 14, 22, 26]], bandi_side: [[193, 14, 24, 26], [218, 14, 24, 26]] };
 // 전설 스킨 시트 매핑: sprite 이름 → 스킨 번호. assets/legskins.png = 3열(걷기 프레임) × (스킨×3방향)행
