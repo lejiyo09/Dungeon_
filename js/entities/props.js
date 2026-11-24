@@ -34,7 +34,7 @@ class Pickup {
       case 'weapon':
         ctx.fillStyle = RARITY_COLOR[this.def.rarity]; ctx.globalAlpha = 0.25 + 0.15 * Math.sin(this.t * 3);
         ctx.beginPath(); ctx.arc(x, y + 3, 9, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
-        drawWeaponCentered(ctx, this.def, x, y + bob); break;
+        drawWeaponCentered(ctx, this.def, x, y + bob, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined)); break;
     }
   }
 }
@@ -229,7 +229,7 @@ class ShopItem {
     ctx.fillStyle = '#5e4a72'; ctx.fillRect(x - 8, y + 2, 16, 2);
     if (this.sold) return;
     const bob = Math.round(Math.sin(this.t * 3));
-    if (this.kind === 'weapon') drawWeaponCentered(ctx, this.def, x, y - 4 + bob);
+    if (this.kind === 'weapon') drawWeaponCentered(ctx, this.def, x, y - 4 + bob, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));
     else drawPotion(ctx, x, y - 2 + bob, this.kind === 'hp' ? '#e04848' : '#4a8cff');
     hudText(ctx, String(this.price), x, y + 9, '#ffd84a', 'center', 8);
   }
@@ -356,7 +356,7 @@ class WeaponDisplay {
     ctx.fillStyle = col; ctx.fillRect(x - 6, y + 4, 12, 1); // 등급 색 띠
     if (this.found(game)) {
       if (d.rarity === 'legendary' || d.rarity === 'unique') { ctx.globalAlpha = 0.18 + 0.1 * Math.sin(t * 3 + x); ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y - 4, 10, 7, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; }
-      drawWeaponCentered(ctx, d, x, y - 4);
+      drawWeaponCentered(ctx, d, x, y - 4, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));
     } else { // 천으로 덮인 모양
       ctx.fillStyle = OUTLINE; ctx.fillRect(x - 6, y - 9, 12, 10); ctx.fillStyle = '#5c5468'; ctx.fillRect(x - 5, y - 8, 10, 9);
       ctx.fillStyle = '#6e6680'; ctx.fillRect(x - 5, y - 8, 10, 2); ctx.fillStyle = '#9a92aa'; ctx.fillRect(x - 1, y - 6, 2, 1); ctx.fillRect(x, y - 5, 1, 2); ctx.fillRect(x, y - 2, 1, 1); // ?
@@ -416,7 +416,7 @@ class TreasureVault {
     ctx.fillStyle = '#6a6474'; ctx.fillRect(x - 10, y - 7, 20, 13); ctx.fillStyle = '#8a8496'; ctx.fillRect(x - 10, y - 7, 20, 2);
     ctx.fillStyle = '#c8a050'; ctx.fillRect(x - 10, y - 1, 20, 1);
     const eq = game && DATA_TREASURES.find((t) => t.id === game.save.treasureEquipped); // 장착한 보구를 보관대 위에 띄움
-    if (eq) drawTreasureIcon(ctx, eq, x, y - 16 + Math.sin((game ? game.time : 0) * 2) * 1.5, 1);
+    if (eq) drawTreasureIcon(ctx, eq, x, y - 16 + Math.sin((game ? game.time : 0) * 2) * 1.5, 1, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));
     ctx.globalAlpha = 0.4 + 0.4 * k; ctx.fillStyle = '#ffe9a0'; ctx.fillRect(x - 2, y - 5, 4, 3); ctx.globalAlpha = 1;
   }
 }
@@ -435,7 +435,7 @@ class Armory {
     ctx.fillStyle = '#4a2c14'; ctx.fillRect(x - 12, y - 13, 24, 18);
     ctx.fillStyle = '#9a6a3a'; ctx.fillRect(x - 14, y - 15, 28, 2); ctx.fillRect(x - 14, y - 4, 28, 2);
     ['weapon_sword_001', 'weapon_rifle_001', 'weapon_staff_001'].forEach((id, i) => {
-      drawWeapon(ctx, GAME_DATA.weapons.get(id), x - 8 + i * 8, y + 3, -Math.PI / 2);
+      drawWeapon(ctx, GAME_DATA.weapons.get(id), x - 8 + i * 8, y + 3, -Math.PI / 2, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));
     });
   }
 }

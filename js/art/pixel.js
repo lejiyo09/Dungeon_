@@ -388,11 +388,14 @@ function heroSprite(hero, frame, dir) {
   s = T.frames ? bakeSprite(T.frames[frame % T.frames.length], pal) /* 통째로 그린 프레임 (스킨) */ : P2 ? bakeSprite(procGrid(HERO_W, HERO_H, (P) => P2.proc(P, frame)), pal) : bakeSprite(T.rows.concat(T.legs[frame]), pal);
   spriteCache.set(key, s); return s;
 }
-function weaponSprite(def) {
-  const key = 'wpn|' + def.id;
+let _uEquip = null; // 고유 스킨 장비 외형 팩 (js/art/unique_equipment_pixel_skins.js) — 처음 쓸 때 만듦, 원본 WPIX·수치는 그대로
+function uniqueEquip() { if (_uEquip === null) _uEquip = typeof createUniqueEquipmentPixelSkins === 'function' ? createUniqueEquipmentPixelSkins({ WPIX, WEAPON_SPRITE, DATA_WEAPONS, TREASURE_ICONS: typeof TREASURE_ICONS !== 'undefined' ? TREASURE_ICONS : {} }) : false; return _uEquip || null; }
+function weaponSprite(def, themeKey) { // themeKey: 고유 스킨 테마 (있으면 그 테마로 칠한 그림, 피벗·크기 동일)
+  const TT = themeKey && uniqueEquip() ? uniqueEquip().resolveWeapon(def, themeKey) : null;
+  const key = 'wpn|' + def.id + (TT ? '|' + themeKey : '');
   let s = spriteCache.get(key);
   if (s) return s;
-  const t = WPIX[WEAPON_SPRITE[def.id]] || WPIX.pistol;
+  const t = TT || WPIX[WEAPON_SPRITE[def.id]] || WPIX.pistol;
   const pal = { k: OUTLINE, a: def.color, b: shade(def.color, 0.65), c: shade(def.color, 1.4), o: def.bulletColor || '#ffffff',
     w: '#ffffff', d: '#7a5530', e: '#5a3a1e', y: '#d0a040', s: '#dddddd', m: '#a8b0bc', n: '#5a6070', g: '#2a2a34', r: '#d04040' };
   if (t.pal) Object.assign(pal, t.pal); /* 무기 전용 색 (벗의 맹약 등) */
@@ -408,14 +411,14 @@ function drawHero(ctx, hero, x, y, face, frame, dash, dir) {
 }
 
 // 무기 그리기: (x,y)=손 위치. 64방향으로 미리 구운 도트 회전 이미지를 사용
-function drawWeapon(ctx, def, x, y, angle) {
-  const r = rotatedWeapon(def, angle);
+function drawWeapon(ctx, def, x, y, angle, themeKey) {
+  const r = rotatedWeapon(def, angle, themeKey);
   ctx.drawImage(r.c, Math.round(x - r.half), Math.round(y - r.half));
 }
 // 무기를 가운데 정렬로 그리기 (바닥/상점/HUD용)
-function drawWeaponCentered(ctx, def, cx, cy) {
-  const s = weaponSprite(def);
-  drawWeapon(ctx, def, cx - s.w / 2 + s.px, cy - s.h / 2 + s.py, 0);
+function drawWeaponCentered(ctx, def, cx, cy, themeKey) {
+  const s = weaponSprite(def, themeKey);
+  drawWeapon(ctx, def, cx - s.w / 2 + s.px, cy - s.h / 2 + s.py, 0, themeKey);
 }
 
 function drawEnemy(ctx, e, x, y, flash) {

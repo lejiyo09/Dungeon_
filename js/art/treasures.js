@@ -101,8 +101,9 @@ const TREASURE_ICONS = {
     P.px(5, 7, 'o'); P.px(11, 7, 'o'); P.px(6, 4, 'w');
   } }
 };
-function treasureIcon(T, big) {
-  const D = TREASURE_ICONS[T.icon], useBig = big && D && D.big, key = 'trs|' + T.id + (useBig ? '|big' : ''); let s = spriteCache.get(key);
+function treasureIcon(T, big, themeKey) {
+  const DT = themeKey && typeof uniqueEquip === 'function' && uniqueEquip() ? uniqueEquip().resolveTreasure(T.icon, themeKey) : null; // 고유 스킨 테마 보구 외형
+  const D = DT || TREASURE_ICONS[T.icon], useBig = big && D && D.big, key = 'trs|' + T.id + (useBig ? '|big' : '') + (DT ? '|' + themeKey : ''); let s = spriteCache.get(key);
   if (s === undefined) {
     const pal = D ? Object.assign({ k: OUTLINE }, D.pal) : null;
     s = !D ? null : useBig ? bakeProc(D.big.size, D.big.size, D.big.proc, pal) : bakeProc(16, 16, D.proc, pal);
@@ -111,8 +112,8 @@ function treasureIcon(T, big) {
   return s;
 }
 // scale: 16px 기준 배율. 2배 이상이면 고해상도 그림(big)이 있으면 그것을 씀
-function drawTreasureIcon(ctx, T, cx, cy, scale = 1) {
-  const s = treasureIcon(T, scale >= 2); if (!s) return;
+function drawTreasureIcon(ctx, T, cx, cy, scale = 1, themeKey) {
+  const s = treasureIcon(T, scale >= 2, themeKey); if (!s) return;
   const px = 16 * scale, k = px / s.w;
   ctx.drawImage(s.n, Math.round(cx - s.w * k / 2), Math.round(cy - s.h * k / 2), s.w * k, s.h * k);
 }

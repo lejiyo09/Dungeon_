@@ -211,6 +211,7 @@ class Player extends Entity {
       else { legDir = 2; drawFace = ax < 0 ? 1 : -1; } // 옆: 원본이 왼쪽을 보므로, 오른쪽으로 갈 때 뒤집음
       drawFrame = (this.moving && this.state !== 'DASH') ? Math.floor(this.time * 9) % 3 : 3; // 정지: 다리 모은 서기 프레임(열 3)
     }
+    if (typeof UVFX !== 'undefined') UVFX.renderBack(ctx, this, x, y, sk); // [고유 스킨] 발밑 오라 (캐릭터 뒤)
     const w = this.weapon, behind = Math.sin(this.aimVis) < -0.4;
     const drawW = () => {
       if (!w || this.transformT > 0) return; // [변신] 변신 중엔 무기 숨김 (근접 베기)
@@ -219,7 +220,7 @@ class Player extends Entity {
       // 손 위치: 어깨(몸 중앙 약간 아래)를 중심으로 도는 궤도, 반동 시 뒤로 밀림 · 전설 스킨은 버스트형이라 손을 몸통 쪽으로 올림
       const R = 4 + reach - this.recoil * 2.5, hy0 = legAnim ? (legDir === 2 ? 1 : -3) : 2; // 전설: 앞뒤는 가슴(-3), 옆은 손 높이
       const hx = x + Math.cos(ang) * R, hy = y + hy0 + Math.sin(ang) * R * 0.75;
-      drawWeapon(ctx, w.def, hx, hy, ang);
+      drawWeapon(ctx, w.def, hx, hy, ang, typeof UVFX !== 'undefined' ? UVFX.bodyTheme(this, sk) : undefined); // [고유 스킨] 이 플레이어의 테마로 칠한 무기
     };
     if (behind) drawW();
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
@@ -246,6 +247,7 @@ class Player extends Entity {
     if (!drew) drawHero(ctx, (sk && sk !== 'druid_bandi' && sk.indexOf('c_') !== 0) ? this._skinH.h : this.hero, x, y, drawFace, drawFrame, this.state === 'DASH', legDir);
     if (this.fallK > 0) { ctx.restore(); ctx.globalAlpha = 1; }
     if (!behind) drawW();
+    if (typeof UVFX !== 'undefined') UVFX.renderFront(ctx, this, x, y, sk); // [고유 스킨] 대기 반짝임 (캐릭터 앞)
     if (this.whirl > 0) {
       ctx.strokeStyle = 'rgba(220,240,255,0.8)'; ctx.lineWidth = 2;
       const a = this.time * 30;

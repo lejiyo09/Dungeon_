@@ -194,8 +194,8 @@ function outlineRows(rows) {
 
 // ── 도트 회전 캐시: 회전한 무기를 64방향으로 미리 도트 단위로 구움 (화면 픽셀 격자와 일치)
 const ROT_STEPS = 64;
-function rotatedWeapon(def, angle) {
-  const spr = weaponSprite(def);
+function rotatedWeapon(def, angle, themeKey) {
+  const spr = weaponSprite(def, themeKey); // 회전 캐시는 테마별 그림 객체에 따로 붙음
   let a = angle % TAU; if (a < 0) a += TAU;
   const idx = Math.round(a / TAU * ROT_STEPS) % ROT_STEPS;
   const flip = Math.cos(angle) < 0; // 왼쪽을 향하면 위아래 반전 후 회전

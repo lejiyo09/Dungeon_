@@ -97,13 +97,13 @@ class HUD {
       const T = p.treasure, ready = p.treasureCd <= 0, bx = VIEW_W - 172, by = VIEW_H - 54;
       ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(bx, by, 168, 14);
       ctx.fillStyle = ready ? T.color : '#555'; ctx.fillRect(bx, by + 12, Math.round(168 * (ready ? 1 : 1 - p.treasureCd / T.cooldown)), 2);
-      ctx.globalAlpha = ready ? 1 : 0.45; drawTreasureIcon(ctx, T, bx + 8, by + 6, 0.85); ctx.globalAlpha = 1;
+      ctx.globalAlpha = ready ? 1 : 0.45; drawTreasureIcon(ctx, T, bx + 8, by + 6, 0.85, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined)); ctx.globalAlpha = 1;
       hudText(ctx, `[R] ${T.name}`, bx + 17, by + 2, ready ? T.color : '#888', 'left', 8);
       hudText(ctx, ready ? '준비' : `${Math.ceil(p.treasureCd)}초`, bx + 164, by + 2, ready ? '#fff' : '#888', 'right', 8);
     }
     if (w) {
       ctx.strokeStyle = RARITY_COLOR[w.def.rarity]; ctx.strokeRect(VIEW_W - 168.5, VIEW_H - 34.5, 34, 26);
-      drawWeaponCentered(ctx, w.def, VIEW_W - 151, VIEW_H - 21);
+      drawWeaponCentered(ctx, w.def, VIEW_W - 151, VIEW_H - 21, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));
       hudText(ctx, weaponTitle(w), VIEW_W - 128, VIEW_H - 35, RARITY_COLOR[w.def.rarity], 'left', 10);
       const cost = w.def.type === 'beam' ? `${w.def.energyPerSec}/초` : (w.def.energyCost || 0);
       const free = p.overdrive > 0 || !w.def.energyCost && w.def.type !== 'beam';
@@ -120,7 +120,7 @@ class HUD {
     }
     const other = p.weapons.find((x) => x !== w);
     ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(VIEW_W - 40, VIEW_H - 34, 32, 26);
-    if (other) drawWeaponCentered(ctx, other.def, VIEW_W - 24, VIEW_H - 23);
+    if (other) drawWeaponCentered(ctx, other.def, VIEW_W - 24, VIEW_H - 23, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));
     hudText(ctx, 'Q', VIEW_W - 38, VIEW_H - 34, '#888', 'left', 7);
 
     // 대시 / 스킬
@@ -243,19 +243,20 @@ class HUD {
       if (!skins.length) hudText(ctx, '아직 이 직업의 스킨이 없어요 — 로비 Esc → J 스킨 뽑기', VIEW_W / 2, 120, '#888', 'center', 9);
       skins.forEach((K, i) => {
         const r = HUD.skinRect(i, skins.length), owned = (sv.skins || []).includes(K.id), on = owned && game.skinOnMap()[skinKey(K)] === K.id, hov = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
-        const hero = game.data.heroes.get(K.hero), L = jobLines(K.hero).find((l) => l.id === K.line), leg = K.rarity === 'legendary';
+        const hero = game.data.heroes.get(K.hero), L = jobLines(K.hero).find((l) => l.id === K.line), uni = K.rarity === 'unique', leg = K.rarity === 'legendary' || uni; // 고유도 방향 애니메이션 스킨
         ctx.fillStyle = on ? 'rgba(255,176,216,0.18)' : leg ? 'rgba(255,216,74,0.08)' : hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
-        if (leg) { const gl = 0.5 + 0.3 * Math.sin(game.time * 3); ctx.strokeStyle = on ? '#ffb0d8' : `rgba(255,216,74,${gl})`; ctx.lineWidth = 1.5; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); ctx.lineWidth = 1; }
+        if (leg) { const gl = 0.5 + 0.3 * Math.sin(game.time * 3); ctx.strokeStyle = on ? '#ffb0d8' : uni ? `rgba(154,232,216,${gl + 0.2})` : `rgba(255,216,74,${gl})`; ctx.lineWidth = 1.5; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); ctx.lineWidth = 1; }
         else { const RR = SKIN_RARITY[K.rarity]; ctx.strokeStyle = on ? '#ffb0d8' : RR && K.rarity !== 'common' ? RR.color : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); } // 레어·에픽: 등급 색 테두리
         const isC = K.sprite.indexOf('c_') === 0, isD = K.sprite === 'druid_bandi'; /* 미리보기: 실제 스킨 그림 (일반=시트, 반디=드루이드 시트, 그 외=도트 생성) */
         const spr = isC ? (typeof commonSprite === 'function' && commonSprite(K.sprite)) : isD ? (typeof druidSprite === 'function' && druidSprite('bandi_down')) : heroSprite(heroWithLook(hero, { sprite: K.sprite }), leg ? Math.floor(game.time * 6) % 3 : Math.floor(game.time * 3) % 2);
         if (!owned) ctx.globalAlpha = 0.28; if (spr) drawSprite(ctx, spr, r.x + r.w / 2, r.y + (r.small ? 40 : 50), { scale: r.small ? (leg || isD ? 1.2 : 1.6) : isC ? 2 : leg || isD ? 1.5 : 2 }); ctx.globalAlpha = 1;
-        if (leg) hudText(ctx, '★ 전설', r.x + 5, r.y + 4, '#ffd84a', 'left', 6);
+        if (uni) hudText(ctx, '✦ 고유', r.x + 5, r.y + 4, '#9ae8d8', 'left', 6);
+        else if (leg) hudText(ctx, '★ 전설', r.x + 5, r.y + 4, '#ffd84a', 'left', 6);
         else if (SKIN_RARITY[K.rarity] && K.source === 'common') hudText(ctx, (K.rarity === 'common' ? '' : '◆ ') + SKIN_RARITY[K.rarity].name, r.x + 5, r.y + 4, SKIN_RARITY[K.rarity].color, 'left', 6); // 일반·레어·에픽 표시
         if (!owned) hudText(ctx, '🔒', r.x + r.w / 2, r.y + (r.small ? 16 : 22), '#fff', 'center', 10);
         hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + (r.small ? 42 : 54), owned ? (leg ? '#ffe9a0' : '#fff') : '#888', 'center', fitSize(`${i + 1}. ${K.name}`, r.w - 8));
         hudText(ctx, `${hero ? hero.name.split(' ')[0] : ''}${L ? ' · ' + L.name + ' 계열' : leg ? ' · 전 계열' : ''}`, r.x + r.w / 2, r.y + (r.small ? 52 : 66), '#c8c0d8', 'center', 6);
-        hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : K.source === 'gacha' || K.source === 'common' ? '스킨 뽑기로 획득 (J)' : '선물 코드로 획득', r.x + r.w / 2, r.y + (r.small ? 61 : 78), on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
+        hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : K.source === 'gacha' || K.source === 'common' ? '스킨 뽑기로 획득 (J)' : K.source === 'unique' ? '획득 방법 준비 중' : '선물 코드로 획득', r.x + r.w / 2, r.y + (r.small ? 61 : 78), on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
       });
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 26, o.msg.color, 'center', 8);
       hudText(ctx, '번호 키 / 클릭: 장착·해제   ·   G: 선물 코드   ·   Esc: 돌아가기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
@@ -383,7 +384,7 @@ class HUD {
         ctx.fillRect(c.x, c.y, c.w, c.h);
         if (!disc.has(c.d.id)) { hudText(ctx, '???', c.x + 8, c.y + 8, '#555', 'left', 9); continue; }
         ctx.save(); ctx.beginPath(); ctx.rect(c.x, c.y, c.w - 3, c.h); ctx.clip(); // 칸 밖으로 글자가 삐져나오지 않게
-        drawWeaponCentered(ctx, c.d, c.x + 13, c.y + c.h / 2);
+        drawWeaponCentered(ctx, c.d, c.x + 13, c.y + c.h / 2, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));
         hudText(ctx, c.d.name, c.x + 27, c.y + 2, RARITY_COLOR[c.d.rarity], 'left', 8);
         if (tw) hudText(ctx, pk >= 0 ? `${pk + 1}번 무기` : weaponTraits(c.d, 2), c.x + 27, c.y + 13, pk >= 0 ? '#bfe6ff' : '#c8b890', 'left', 7);
         else if (armory) {
@@ -698,7 +699,7 @@ class HUD {
         ctx.fillStyle = eq ? 'rgba(255,233,160,0.2)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h);
         ctx.strokeStyle = '#c8a050'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
         ctx.fillStyle = 'rgba(255,216,74,0.08)'; ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + 24, 18 + Math.sin(game.time * 3 + i) * 1.5, 0, TAU); ctx.fill(); // 아이콘 뒤 빛
-        drawTreasureIcon(ctx, t, r.x + r.w / 2, r.y + 24, 2);
+        drawTreasureIcon(ctx, t, r.x + r.w / 2, r.y + 24, 2, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));
         hudText(ctx, t.name, r.x + r.w / 2, r.y + 44, '#ffe9a0', 'center', 11);
         if (t.origin) hudText(ctx, t.origin, r.x + r.w / 2, r.y + 59, '#a898c0', 'center', 8);
         if (pick) hudText(ctx, '?', r.x + r.w / 2, r.y + 86, '#a898c0', 'center', 16); // [사용자 결정] 성역의 보구 선택에서는 효과를 보여 주지 않음 (보관대에서 확인)
@@ -897,7 +898,7 @@ class HUD {
     for (let i = 0; i < 4; i++) { const yy = cy - h / 2 + 3 + ((i * 37) % (h - 6)), xx = ((t * (500 + i * 90) + i * 140) % (VIEW_W + 120)) - 60; ctx.globalAlpha = k * 0.5; ctx.fillRect(xx, yy, 40 + i * 6, 1); }
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = k;
     const ix = VIEW_W / 2 - (tr ? 78 : 66) + (1 - ease) * -40;
-    if (tr && o.T) drawTreasureIcon(ctx, o.T, ix, cy, 1.25);
+    if (tr && o.T) drawTreasureIcon(ctx, o.T, ix, cy, 1.25, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));
     else if (o.hero) { const portrait = o.skin ? heroWithLook(o.hero, { sprite: o.skin }) : o.hero; drawSprite(ctx, heroSprite(portrait, 0), ix, cy + 10, { scale: 1 }); }
     hudText(ctx, o.name, VIEW_W / 2 + 8 - (1 - ease) * 24, cy - (tr ? 10 : 8), '#ffffff', 'center', tr ? 13 : 10);
     if (o.sub) hudText(ctx, o.sub, VIEW_W / 2 + 8, cy + (tr ? 5 : 3), o.color, 'center', 7);
@@ -913,7 +914,7 @@ class HUD {
     ctx.strokeStyle = '#ffd84a'; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); ctx.strokeStyle = 'rgba(255,216,74,0.35)'; ctx.strokeRect(x + 2.5, y + 2.5, w - 5, h - 5);
     const glow = 0.15 + 0.1 * Math.sin(t * 5);
     ctx.fillStyle = `rgba(255,216,74,${glow})`; ctx.beginPath(); ctx.arc(x + 22, y + h / 2, 17, 0, TAU); ctx.fill();
-    drawTreasureIcon(ctx, o.T, x + 22, y + h / 2, 2);
+    drawTreasureIcon(ctx, o.T, x + 22, y + h / 2, 2, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));
     hudText(ctx, '보구 획득', x + 44, y + 9, '#c8b890', 'left', 8);
     hudText(ctx, o.T.name, x + 44, y + 21, '#ffe9a0', 'left', 12);
     if (t < 0.6) { ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = `rgba(255,240,180,${0.5 * (1 - t / 0.6)})`; ctx.fillRect(x, y, w, h); ctx.globalCompositeOperation = 'source-over'; }

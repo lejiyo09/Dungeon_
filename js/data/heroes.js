@@ -55,6 +55,10 @@ const SKINS = [
   { id: 'skin_flamewitch', name: '불꽃 마녀', hero: 'hero_mage', line: 'fire', sprite: 'flamewitch', source: 'code', desc: '불 마도사 외형: 끝이 꺾인 마녀 모자와 붉은 원피스' },
   { id: 'skin_redgunner', name: '붉은 머리 총잡이', hero: 'hero_gunner', line: 'base', sprite: 'redgunner', source: 'code', desc: '속사 사수 외형: 붉은 머리와 보안관 별을 단 남색 조끼' },
   { id: 'skin_silverelf', name: '은발 엘프 마도사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', source: 'code', desc: '빛 마도사 외형: 은발 트윈테일과 뾰족한 귀, 금테 흰 망토' },
+  // ── 고유 등급 스킨: 직업 전체(모든 계열) · 착용하면 모든 스킬·공통 동작에 전용 VFX (js/systems/unique_vfx.js) · 장비 외형 테마
+  { id: 'skin_u_unrecorded', name: '미기록자', hero: 'hero_engineer', sprite: 'u_unrecorded', rarity: 'unique', source: 'unique', uniqueTheme: 'unrecorded', desc: '기술자 고유 외형 — 기록되지 않은 존재, 청록 글리치와 데이터 파편' },
+  { id: 'skin_u_first_explorer', name: '최초의 탐험가', hero: 'hero_swordsman', sprite: 'u_first_explorer', rarity: 'unique', source: 'unique', uniqueTheme: 'first_explorer', desc: '검사 고유 외형 — 나침반을 새긴 최초의 탐험가, 금빛 바람과 고대 문양' },
+  { id: 'skin_u_primordial', name: '시원체', hero: 'hero_druid', sprite: 'u_primordial', rarity: 'unique', source: 'unique', uniqueTheme: 'primordial', desc: '드루이드 고유 외형 — 모든 생명의 시작, 꽃잎과 생명 핵' },
   // ── 전설 등급 스킨 (애니메이션, 고퀄) — assets/legskins.png (4행 × 3프레임, 셀 106×108)
   { id: 'skin_leg_abyss', name: '심연의 기사', hero: 'hero_swordsman', line: 'sword', sprite: 'leg_abyss', rarity: 'legendary', source: 'gacha', intro: '심연의 바닥에서 돌아왔다. 이번엔 내가 어둠을 벤다.', desc: '검사 전설 외형 — 심연에서 돌아온 뿔투구 기사 (검사 계열 전용)' },
   { id: 'skin_leg_crimson', name: '진홍의 칼날', hero: 'hero_assassin', line: 'blade', sprite: 'leg_crimson', rarity: 'legendary', source: 'gacha', intro: '핏빛 장막이 걷힐 즈음엔… 이미 끝나 있을 거야.', desc: '암살자 전설 외형 — 핏빛 장막 속에서 춤추는 칼날 (칼날 계열 전용)' },
@@ -117,14 +121,14 @@ const COMMON_SKIN = { c_swordsman_1: [2, 0, 22, 22], c_gunner_1: [30, 0, 18, 22]
 // 일반 스킨 걷기 프레임 (있는 스킨만): 이동 중 정지 ↔ 걷기 번갈아
 const COMMON_WALK = { c_n01: [28, 70, 26, 22], c_n02: [82, 70, 26, 22], c_n03: [136, 70, 26, 22], c_n04: [190, 70, 26, 22], c_n05: [28, 94, 26, 22], c_n06: [82, 94, 26, 22], c_n07: [136, 94, 26, 22], c_n08: [190, 94, 26, 22], c_n09: [28, 118, 26, 22], c_n10: [82, 118, 26, 22], c_n11: [136, 118, 26, 22], c_n12: [190, 118, 26, 22], c_n13: [28, 142, 26, 22], c_n14: [82, 142, 26, 22], c_n15: [136, 142, 26, 22], c_n16: [190, 142, 26, 22], c_n17: [28, 166, 26, 22], c_n18: [82, 166, 26, 22], c_n19: [136, 166, 26, 22], c_n20: [190, 166, 26, 22], c_n21: [28, 190, 26, 22], c_n22: [82, 190, 26, 22] };
 // 스킨 등급 표시 (스킨창·뽑기 결과)
-const SKIN_RARITY = { common: { name: '일반', color: '#a8bccf' }, rare: { name: '레어', color: '#5aa8ff' }, epic: { name: '에픽', color: '#c58aff' }, legendary: { name: '전설', color: '#ffd84a' } };
+const SKIN_RARITY = { common: { name: '일반', color: '#a8bccf' }, rare: { name: '레어', color: '#5aa8ff' }, epic: { name: '에픽', color: '#c58aff' }, legendary: { name: '전설', color: '#ffd84a' }, unique: { name: '고유', color: '#9ae8d8' } };
 const DRUID_SKIN = { bandi_down: [0, 13, 32, 27], bandi_up: [33, 14, 22, 26], bandi_side: [56, 14, 24, 26], sam_idle: [243, 0, 62, 40], sam_atk: [306, 14, 49, 26], sam_down: [356, 0, 61, 47], sam_down_a1: [418, 0, 61, 47], sam_down_a2: [480, 0, 61, 47], sam_down_a3: [542, 0, 61, 47], sam_up: [604, 2, 63, 45], sam_up_a1: [668, 2, 63, 45], sam_up_a2: [732, 2, 63, 45], sam_up_a3: [796, 2, 63, 45] };
 // 반디 걷기: 방향별 걷기 2프레임 — 이동 중 [걷기1, 서기, 걷기2, 서기] 순환 (앞뒤는 발을 위아래로 드는 방식)
 const BANDI_WALK = { bandi_down: [[81, 13, 32, 27], [114, 13, 32, 27]], bandi_up: [[147, 14, 22, 26], [170, 14, 22, 26]], bandi_side: [[193, 14, 24, 26], [218, 14, 24, 26]] };
 // 전설 스킨 시트 매핑: sprite 이름 → 스킨 번호. assets/legskins.png = 3열(걷기 프레임) × (스킨×3방향)행
 //  행 = 스킨*3 + 방향(0=앞/아래, 1=뒤/위, 2=옆) · 셀은 이미 인게임 크기로 구워둠(저해상도 청키) → 런타임은 1:1 drawImage
-const LEG_SKINS = { leg_abyss: 0, leg_crimson: 1, leg_void: 2, leg_star: 3 };
-const LEG_SHEET = { cellW: 22, cellH: 27, frames: 4, dirs: 3 }; // 열 0~2: 걷기, 열 3: 정지(옆은 다리 모음)
+const LEG_SKINS = { leg_abyss: 0, leg_crimson: 1, leg_void: 2, leg_star: 3, u_unrecorded: 4, u_first_explorer: 5, u_primordial: 6 }; // 4~6: 고유 스킨 (셀 32×36, 전설 22×27은 가운데·아래 맞춤)
+const LEG_SHEET = { cellW: 32, cellH: 36, frames: 4, dirs: 3 }; // 열 0~2: 걷기, 열 3: 정지(옆은 다리 모음)
 // 선물 코드: 글자 그대로 두지 않고 해시로만 보관 (giftHash) — 코드 하나에 보상 하나, 계정마다 한 번
 const GIFT_CODES = [
   { hash: 'd6b73fd4', skin: 'skin_flamewitch' },

@@ -1215,6 +1215,7 @@ class Game {
     this.save = loadSave(); SFX.setMuted(!!this.save.muted);
     this.jobResetRefund(); // [사용자 결정] 직업 레벨 초기화 + 결정석 환불 (1회)
     this.admin = profile && profile.admin ? { god: false, nocd: false } : null; if (this.admin) this.applyAdmin();
+    if (this.admin) { const sv = this.save; sv.skins = sv.skins || []; for (const K of SKINS) if (K.rarity === 'unique' && !sv.skins.includes(K.id)) sv.skins.push(K.id); } // 관리자: 고유 스킨 시험용 지급 (일반 획득 방법은 미정)
     this.locked = false; this.recoverDeepCheckpoints(); this.enterLobby();
     if (this.save.run) this.overlay = { type: 'resume' };
     this.backfillScore(); // 랭킹판이 생기기 전의 내 최고 기록도 한 번 올림
@@ -1504,7 +1505,7 @@ class Game {
       let ch = -1; skins.forEach((_, i) => { if (input.wasPressed(i === 9 ? 'Digit0' : 'Digit' + (i + 1))) ch = i; }); /* 10번째는 0 키 */
       if (input.wasPressed('Mouse0')) { skins.forEach((_, i) => { if (inR(HUD.skinRect(i, skins.length))) ch = i; }); this.input.mouse.down = false; }
       if (ch >= 0) { const K = skins[ch], sv = this.save; sv.skinOn = sv.skinOn || {};
-        if (!(sv.skins || []).includes(K.id)) o.msg = { text: K.source === 'gacha' ? `아직 없는 스킨입니다 — 스킨 뽑기로 얻을 수 있어요 (J)` : `아직 없는 스킨입니다 — 선물 코드로 얻을 수 있어요 (G)`, color: '#ff9a9a', t: 2.5 };
+        if (!(sv.skins || []).includes(K.id)) o.msg = { text: K.source === 'gacha' ? `아직 없는 스킨입니다 — 스킨 뽑기로 얻을 수 있어요 (J)` : K.source === 'unique' ? '고유 스킨 — 획득 방법은 준비 중이에요' : `아직 없는 스킨입니다 — 선물 코드로 얻을 수 있어요 (G)`, color: '#ff9a9a', t: 2.5 };
         else { const M = this.skinOnMap(), key = skinKey(K), on = M[key] === K.id; M[key] = on ? null : K.id;
           if (!on) for (const k2 of SKINS) if (k2.hero === K.hero && skinKey(k2) !== key && (!k2.line || !K.line)) M[skinKey(k2)] = null; // 공용 스킨 ↔ 계열 스킨이 겹치면 방금 고른 것만 남김
           writeSave(sv); SFX.play('ui');
@@ -3035,6 +3036,7 @@ class Game {
     for (const pk of this.pickups) pk.render(ctx);
     for (const e of this.enemies) e.renderTelegraph(ctx);
     const actors = [...(this.cutscene ? this.enemies.filter((e) => e.state !== 'INTRO' || (this.cinematic && this.cinematic.landed && this.cinematic.boss === e)) : this.enemies), ...this.allies, this.player, ...this.peerActors(), ...this.coopActors()].sort((a, b) => a.y - b.y); // 등장 전 보스는 컷신 동안 숨김
+    if (typeof UVFX !== 'undefined') UVFX.render(ctx, 'floor'); // [고유 스킨] 바닥 층: 장판·지속 고리·발자국
     for (const a of actors) a.render(ctx);
     for (const pr of this.projectiles) pr.render(ctx);
     for (const z of this.zones) if (z.renderTop) z.renderTop(ctx);
@@ -3050,6 +3052,7 @@ class Game {
     }
     for (const b of this.enemyBullets) b.render(ctx);
     this.effects.render(ctx);
+    if (typeof UVFX !== 'undefined') UVFX.render(ctx, 'top', this); // [고유 스킨] 시전·타격·투사체 꼬리 (겹친 캐릭터는 위에 반투명으로 다시)
 
     if (this.mode === 'lobby') {
       const dummy = this.enemies.find((e) => e.def.dummy);
