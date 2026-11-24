@@ -339,12 +339,15 @@ class VaultStairs {
 class WeaponDisplay {
   constructor(x, y, def) { this.x = x; this.y = y; this.def = def; this.radius = 13; }
   found(game) { return game && game.save.discovered.includes(this.def.id); }
-  label(game) { return this.found(game) ? `[E] ${this.def.name} · ${RARITY_NAME[this.def.rarity]}` : '??? (미발견 무기)'; }
+  held(game) { const p = game && game.player; return !!(p && p.weapons.some((w) => w.def.id === this.def.id)); }
+  label(game) { return !this.found(game) ? '??? (미발견 무기)' : this.held(game) ? `${this.def.name} · 들고 있음` : `[E] 들기: ${this.def.name} · ${RARITY_NAME[this.def.rarity]}`; }
   get labelColor() { return '#ffd84a'; }
   interact(game) {
     const d = this.def;
-    if (this.found(game)) game.showBanner(d.name, `${RARITY_NAME[d.rarity]} · ${weaponStatLine(d)} · ${weaponTraits(d)}`, RARITY_COLOR[d.rarity]);
-    else game.showBanner('미발견 무기', '던전에서 발견하면 이 자리에 진열됩니다', '#999');
+    if (!this.found(game)) { game.showBanner('미발견 무기', '던전에서 발견하면 이 자리에 진열됩니다', '#999'); return; }
+    if (this.held(game)) return;
+    game.vaultEquip(d); // 지금 든 무기와 바꿔 듦 (로비·무기고 체험용, 던전은 원래 시작 무기)
+    game.showBanner(d.name, `${RARITY_NAME[d.rarity]} · ${weaponStatLine(d)} · ${weaponTraits(d)}`, RARITY_COLOR[d.rarity]);
   }
   render(ctx, game) {
     const x = Math.round(this.x), y = Math.round(this.y), d = this.def, col = RARITY_COLOR[d.rarity], t = game ? game.time : 0;

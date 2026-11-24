@@ -822,13 +822,14 @@ class Game {
 
   // ── 로비
   enterLobby(fromVault) {
+    if (fromVault) this.keepLobbyWeapons();
     Net.wake(); // 로비에 오면 서버를 미리 깨움 (10분에 한 번까지)
     SFX.stopMusic(); this.cinematic = null; this.slowMo = null; this.trialW = null; this.areaId = null;
     this.mode = 'lobby'; this.overlay = null;
     this.worldIdx = 0; this.levelIdx = 0;
     this.resetWorldLists(buildLobby());
     const sp = fromVault ? this.map.tileCenter(29, 7) : this.map.tileCenter(17, 14); this.lobbyArea = null;
-    this.player = this.makePlayer(sp.x, sp.y);
+    this.player = this.makePlayer(sp.x, sp.y); if (fromVault) this.restoreLobbyWeapons(); else this.lobbyWeapons = null; // 무기고에서 든 무기는 로비까지 (던전 입장 시 원래대로)
     DATA_HEROES.forEach((h, i) => { const c = this.map.tileCenter(6 + i * 3, 8); this.props.push(new Pedestal(c.x, c.y, h, i % 2)); });
     const cb = this.map.tileCenter(5, 12); this.props.push(new CodexBoard(cb.x, cb.y));
     { const ms = this.map.tileCenter(28, 16); this.props.push(new MultiStone(ms.x, ms.y)); } // 멀티 플레이 석판
@@ -859,15 +860,28 @@ class Game {
     if (!fromVault) this.showBanner('로비', '캐릭터를 고르고 포탈로 들어가세요');
   }
   // ── 지하 무기고: 시작 무기 선택 + 스킨 뽑기 + 도감 무기 전부 진열 (모드는 로비 그대로 — 안전 구역)
+  keepLobbyWeapons() { const p = this.player; this.lobbyWeapons = p ? { hero: p.hero.id, slot: p.slot, list: p.weapons.map((w) => [w.def.id, w.lv || 0]) } : null; }
+  restoreLobbyWeapons() {
+    const K = this.lobbyWeapons, p = this.player; if (!K || !p || K.hero !== p.hero.id) return; // 직업을 바꿨으면 그 직업 기본 무기
+    const list = K.list.filter(([id]) => this.data.weapons.get(id)).map(([id, lv]) => new WeaponInstance(this.weaponDef(id), lv));
+    if (list.length) { p.weapons = list; p.slot = Math.min(K.slot, list.length - 1); }
+  }
+  vaultEquip(def) { // 지하 무기고: 진열 무기를 손에 듦 — 빈 칸이 있으면 추가, 꽉 찼으면 지금 든 칸과 교체 (바닥에 떨구지 않음)
+    const p = this.player; if (!p) return;
+    const inst = new WeaponInstance(this.weaponDef(def.id));
+    if (p.weapons.length < this.data.base.weaponSlots) { p.weapons.push(inst); p.slot = p.weapons.length - 1; } else p.weapons[p.slot] = inst;
+    SFX.play('buy'); this.effects.sparkle(p.x, p.y - 6, RARITY_COLOR[def.rarity]);
+  }
   enterVault() {
-    this.overlay = null;
+    this.overlay = null; this.keepLobbyWeapons();
     this.resetWorldLists(buildVault()); this.lobbyArea = 'vault';
     const L = this.map.vault, tc = (x, y) => this.map.tileCenter(x, y);
     { const c = tc(20, 3); this.props.push(new VaultStairs(c.x + 8, c.y + 4, false)); } // 위로 올라가는 계단
     { const c = tc(12, 6); this.props.push(new GachaShrine(c.x, c.y)); } // 스킨 소환 제단
     { const c = tc(29, 6); this.props.push(new Armory(c.x, c.y)); } // 무기고 (시작 무기 선택)
     for (const S of L.secs) { const c = tc(20, S.y); this.props.push(new VaultSign(c.x + 8, c.y + 8, S.ti)); for (const it of S.items) { const p = tc(it.tx, it.ty); this.props.push(new WeaponDisplay(p.x, p.y, it.d)); } }
-    const sp = tc(20, 6); this.player = this.makePlayer(sp.x + 8, sp.y + 8);
+    { const c = tc(35, 6); this.enemies.push(new Enemy(c.x, c.y, this.data.enemies.get('dummy_001'), { hp: 1, dmg: 1 }, this.map.startRoom)); } // 시험용 허수아비
+    const sp = tc(20, 6); this.player = this.makePlayer(sp.x + 8, sp.y + 8); this.restoreLobbyWeapons();
     this.snapCamera();
     const disc = new Set(this.save.discovered);
     this.showBanner('지하 무기고', `진열된 무기 ${DATA_WEAPONS.filter((d) => disc.has(d.id)).length} / ${DATA_WEAPONS.length}`, '#ffd8a0');
