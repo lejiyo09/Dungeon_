@@ -878,5 +878,73 @@ Object.assign(PIX, {
   arterypylon: { tint: '#7a3040', w: 16, h: 16, pal: { y: '#ff4a6a', e: '#ffe0e4', r: '#ff9aaa' }, proc: (P) => {
     P.rect(5, 3, 6, 12, 'b'); P.rect(6, 4, 4, 10, 'a'); P.ell(8, 7, 2, 2, 'y'); P.px(8, 7, 'e');
     P.line(5, 6, 1, 3, 'r'); P.line(11, 6, 15, 3, 'r'); P.line(5, 11, 1, 13, 'r'); P.line(11, 11, 15, 13, 'r'); P.rect(4, 14, 8, 1, 'y');
+  } },
+  // ── 심층 36: 폭풍의 등대섬
+  wavecharger: { tint: '#3a6a80', w: 16, h: 16, pal: { y: '#7ae0ff', e: '#ffffff', r: '#cfefff' }, proc: (P) => {
+    P.tri(1, 14, 15, 14, 8, 3, 'a'); P.ell(8, 8, 4, 4, 'b'); P.rect(5, 6, 6, 3, 'c'); P.px(6, 7, 'e'); P.px(10, 7, 'e');
+    P.line(0, 14, 4, 10, 'y'); P.line(4, 10, 7, 13, 'y'); P.line(9, 13, 12, 10, 'r'); P.line(12, 10, 16, 14, 'r'); P.tri(6, 3, 8, 0, 10, 3, 'y');
+  } },
+  gullwraith: { tint: '#8aa0b0', w: 16, h: 16, pal: { y: '#cfefff', e: '#1a2a3a', r: '#ffe36b' }, proc: (P) => {
+    P.ell(8, 8, 3, 3, 'c'); P.tri(8, 7, 0, 4, 3, 9, 'a'); P.tri(8, 7, 16, 4, 13, 9, 'b'); P.px(7, 7, 'e'); P.px(9, 7, 'e');
+    P.tri(7, 9, 9, 9, 8, 11, 'r'); P.tri(6, 11, 10, 11, 8, 15, 'y');
+  } },
+  fogkeeper: { tint: '#5a7080', w: 16, h: 16, pal: { y: '#ffe36b', e: '#ffffff', r: '#bfe8ff' }, proc: (P) => {
+    P.ell(8, 5, 3, 3, 'c'); P.tri(8, 4, 3, 15, 13, 15, 'a'); P.ell(8, 3, 4, 1, 'b'); P.px(7, 5, 'e'); P.px(9, 5, 'e');
+    P.line(12, 6, 12, 14, 'b'); P.rect(11, 3, 3, 3, 'y'); P.px(12, 4, 'e'); P.ell(4, 13, 3, 1, 'r'); P.ell(12, 15, 3, 1, 'r');
+  } },
+  beaconcannon: { tint: '#6a7a6a', w: 16, h: 16, pal: { y: '#ffe36b', e: '#ffffff', r: '#c84a4a' }, proc: (P) => {
+    P.rect(5, 6, 6, 9, 'b'); P.rect(5, 9, 6, 2, 'r'); P.rect(4, 3, 8, 3, 'a'); P.ell(8, 4, 2, 1, 'y'); P.px(8, 4, 'e');
+    P.tri(4, 3, 8, 0, 12, 3, 'c'); P.line(11, 4, 16, 2, 'y'); P.rect(3, 14, 10, 1, 'c');
+  } },
+  // ── 심층 37: 가면 무도회장
+  waltzblade: { tint: '#8a3a4a', w: 16, h: 16, pal: { y: '#ffd84a', e: '#ffffff', r: '#ffb0c0' }, proc: (P) => {
+    P.ell(8, 4, 3, 3, 'c'); P.rect(5, 3, 6, 2, 'y'); P.tri(8, 6, 3, 15, 13, 15, 'a'); P.tri(8, 8, 5, 15, 11, 15, 'b');
+    P.line(12, 6, 16, 0, 'e'); P.line(4, 8, 1, 11, 'r'); P.px(6, 4, 'd'); P.px(10, 4, 'd');
+  } },
+  maskjester: { tint: '#a07a3a', w: 16, h: 16, pal: { y: '#ffd84a', e: '#ffffff', r: '#c83a5a' }, proc: (P) => {
+    P.ell(8, 7, 4, 4, 'e'); P.rect(8, 3, 4, 8, 'r'); P.px(6, 6, 'd'); P.px(10, 6, 'd'); P.line(6, 9, 10, 9, 'd');
+    P.tri(4, 4, 1, 0, 7, 3, 'y'); P.tri(12, 4, 15, 0, 9, 3, 'a'); P.px(1, 0, 'y'); P.px(15, 0, 'y'); P.tri(5, 11, 11, 11, 8, 15, 'b');
+  } },
+  candledancer: { tint: '#7a4a5a', w: 16, h: 16, pal: { y: '#ffd84a', e: '#ffffff', r: '#ff8a3a' }, proc: (P) => {
+    P.ell(8, 6, 3, 3, 'c'); P.tri(8, 7, 2, 15, 14, 15, 'a'); P.tri(8, 9, 4, 15, 12, 15, 'b'); P.px(7, 6, 'e'); P.px(9, 6, 'e');
+    P.rect(7, 0, 2, 3, 'e'); P.px(8, 0, 'r'); P.line(3, 9, 1, 5, 'b'); P.px(1, 4, 'y'); P.line(13, 9, 15, 5, 'b'); P.px(15, 4, 'y');
+  } },
+  musicbox: { tint: '#8a6a4a', w: 16, h: 16, pal: { y: '#ffe9a0', e: '#ffffff', r: '#ffb0c0' }, proc: (P) => {
+    P.rect(3, 8, 10, 7, 'b'); P.rect(4, 9, 8, 5, 'a'); P.rect(3, 6, 10, 2, 'y'); P.ell(8, 4, 2, 2, 'r'); P.line(8, 2, 8, 0, 'c');
+    P.line(13, 11, 16, 11, 'y'); P.px(16, 10, 'y'); P.px(6, 11, 'e'); P.px(10, 11, 'e');
+  } },
+  // ── 심층 38: 별의 대장간
+  anvilgolem: { tint: '#5a4a44', w: 16, h: 16, pal: { y: '#ffb04a', e: '#ffe0b0', r: '#ff6a2a' }, proc: (P) => {
+    P.rect(2, 4, 12, 4, 'c'); P.rect(0, 4, 3, 2, 'c'); P.rect(5, 8, 6, 5, 'a'); P.rect(3, 13, 10, 2, 'b');
+    P.px(6, 6, 'y'); P.px(10, 6, 'y'); P.line(4, 10, 12, 10, 'r'); P.rect(1, 9, 2, 4, 'b'); P.rect(13, 9, 2, 4, 'b');
+  } },
+  sparkwisp: { tint: '#c06a2a', w: 16, h: 16, pal: { y: '#ffb04a', e: '#ffffff', r: '#ffe36b' }, proc: (P) => {
+    P.ell(8, 9, 4, 4, 'a'); P.ell(8, 9, 2, 2, 'r'); P.px(8, 9, 'e'); P.tri(5, 7, 8, 0, 11, 7, 'y');
+    P.px(2, 4, 'r'); P.px(14, 5, 'y'); P.px(3, 13, 'y'); P.px(13, 14, 'r'); P.px(7, 6, 'e');
+  } },
+  quenchsmith: { tint: '#6a4a3a', w: 16, h: 16, pal: { y: '#ff8a3a', e: '#ffffff', r: '#7ac8ff' }, proc: (P) => {
+    P.ell(8, 4, 3, 3, 'c'); P.rect(4, 7, 8, 8, 'a'); P.rect(5, 8, 6, 6, 'b'); P.px(7, 4, 'e'); P.px(9, 4, 'e');
+    P.line(12, 8, 15, 3, 'd'); P.rect(14, 1, 2, 3, 'y'); P.ell(3, 13, 2, 2, 'r'); P.px(3, 11, 'e');
+  } },
+  bellowsturret: { tint: '#7a5a3a', w: 16, h: 16, pal: { y: '#ffd08a', e: '#ffffff', r: '#ff6a2a' }, proc: (P) => {
+    P.tri(2, 4, 2, 13, 11, 9, 'b'); P.tri(3, 5, 3, 12, 10, 9, 'a'); P.rect(10, 8, 5, 3, 'c'); P.ell(15, 9, 1, 1, 'r');
+    P.line(2, 4, 0, 2, 'd'); P.line(2, 13, 0, 15, 'd'); P.px(6, 9, 'y'); P.rect(1, 14, 12, 1, 'y');
+  } },
+  // ── 심층 39: 잿눈 내리는 대성당
+  ashpaladin: { tint: '#7a7a88', w: 16, h: 16, pal: { y: '#e0e8ff', e: '#ffffff', r: '#c8a060' }, proc: (P) => {
+    P.rect(5, 2, 6, 5, 'c'); P.rect(6, 4, 4, 1, 'd'); P.rect(4, 7, 8, 6, 'a'); P.rect(7, 7, 2, 6, 'y');
+    P.rect(1, 6, 3, 7, 'b'); P.px(2, 9, 'r'); P.line(13, 4, 13, 15, 'e'); P.rect(12, 6, 3, 1, 'r'); P.rect(5, 13, 2, 3, 'b'); P.rect(9, 13, 2, 3, 'b');
+  } },
+  choirghost: { tint: '#9a9ab0', w: 16, h: 16, pal: { y: '#e0e8ff', e: '#1a1a2a', r: '#fff4d0' }, proc: (P) => {
+    P.ell(8, 6, 4, 4, 'c'); P.tri(4, 7, 12, 7, 8, 15, 'a'); P.ell(7, 6, 1, 1, 'e'); P.ell(10, 6, 1, 1, 'e'); P.ell(8, 9, 1, 1, 'e');
+    P.ell(8, 1, 3, 1, 'r'); P.px(3, 12, 'y'); P.px(13, 11, 'y');
+  } },
+  silentmonk: { tint: '#5a5a6a', w: 16, h: 16, pal: { y: '#c8d0ff', e: '#ffffff', r: '#e0e8ff' }, proc: (P) => {
+    P.tri(8, 1, 3, 8, 13, 8, 'b'); P.ell(8, 6, 2, 2, 'd'); P.tri(8, 7, 3, 15, 13, 15, 'a'); P.rect(7, 9, 2, 6, 'b');
+    P.line(6, 6, 10, 6, 'c'); P.ell(8, 11, 1, 1, 'y'); P.line(2, 8, 2, 15, 'r'); P.px(2, 7, 'y');
+  } },
+  relicbell: { tint: '#8a8070', w: 16, h: 16, pal: { y: '#fff4d0', e: '#ffffff', r: '#c8a060' }, proc: (P) => {
+    P.rect(7, 0, 2, 2, 'r'); P.tri(8, 2, 3, 12, 13, 12, 'a'); P.tri(8, 4, 5, 12, 11, 12, 'b'); P.rect(2, 12, 12, 2, 'r');
+    P.ell(8, 14, 1, 1, 'y'); P.line(4, 8, 1, 6, 'y'); P.line(12, 8, 15, 6, 'y'); P.px(8, 7, 'e');
   } }
 });

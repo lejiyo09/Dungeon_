@@ -1499,6 +1499,111 @@ const DATA_ENEMIES = [
       { type: 'teleport', bullets: 24, color: '#ff9aaa' }],
     finalPatterns: [
       { type: 'ringIn', name: '마지막 고동', rings: 5, count: 50, gap: 5, speed: 94, interval: 0.8, color: '#ff4a6a' },
-      { type: 'vortex', name: '심연의 맥동', duration: 5.2, pull: 70, arms: 10, interval: 0.062, spin: -3.45, color: '#ff9aaa' }] }
+      { type: 'vortex', name: '심연의 맥동', duration: 5.2, pull: 70, arms: 10, interval: 0.062, spin: -3.45, color: '#ff9aaa' }] },
+  // ── 심층 36: 폭풍의 등대섬
+  { id: 'enemy_wavecharger_001', name: '파도 돌격병', sprite: 'wavecharger', color: '#3a6a80', aiType: 'charger', traits: ['redash', 'dashTrail'],
+    health: 340, damage: 28, moveSpeed: 108, hitboxHalf: 8, attackRange: 218, telegraphTime: 0.42, dashSpeed: 500, dashDuration: 0.5,
+    attackCooldown: 1.58, recoveryTime: 0.32, stunTime: 0.5, knockbackResist: 0.6, rewardGold: 15 },
+  { id: 'enemy_gullwraith_001', name: '갈매기 망령', sprite: 'gullwraith', color: '#8aa0b0', aiType: 'teleporter', traits: ['afterimage'],
+    health: 300, damage: 28, moveSpeed: 65, hitboxHalf: 8, preferredRange: 160, attackRange: 335, telegraphTime: 0.58, attackCooldown: 1.98, recoveryTime: 0.36,
+    bulletSpeed: 218, bulletCount: 11, bulletSpread: 0.18, bulletColor: '#cfefff', rewardGold: 15 },
+  { id: 'enemy_fogkeeper_001', name: '안개 등불지기', sprite: 'fogkeeper', color: '#5a7080', aiType: 'caster', traits: ['zoneCast'],
+    health: 285, damage: 28, moveSpeed: 32, hitboxHalf: 7, attackRange: 345, telegraphTime: 0.66, attackCooldown: 2.04, recoveryTime: 0.38,
+    bulletSpeed: 158, bulletCount: 23, bulletColor: '#bfe8ff', rewardGold: 15 },
+  { id: 'enemy_beaconcannon_001', name: '등대 포대', sprite: 'beaconcannon', color: '#6a7a6a', aiType: 'turret', traits: ['turretSweep'],
+    health: 375, damage: 28, moveSpeed: 0, hitboxHalf: 10, attackRange: 400, telegraphTime: 0.98, attackCooldown: 2.4, recoveryTime: 0.36,
+    bulletSpeed: 256, bulletCount: 18, bulletColor: '#ffe36b', knockbackResist: 1, rewardGold: 15 },
+  // ── 심층 37: 가면 무도회장
+  { id: 'enemy_waltzblade_001', name: '왈츠 검객', sprite: 'waltzblade', color: '#8a3a4a', aiType: 'melee_chase', traits: ['pounce', 'deathBurst'],
+    health: 320, damage: 29, moveSpeed: 130, hitboxHalf: 7, attackRange: 20, telegraphTime: 0.3,
+    attackCooldown: 0.9, recoveryTime: 0.3, rewardGold: 15 },
+  { id: 'enemy_maskjester_001', name: '가면 광대', sprite: 'maskjester', color: '#a07a3a', aiType: 'teleporter', traits: ['afterimage'],
+    health: 305, damage: 29, moveSpeed: 65, hitboxHalf: 8, preferredRange: 160, attackRange: 335, telegraphTime: 0.58, attackCooldown: 1.98, recoveryTime: 0.36,
+    bulletSpeed: 218, bulletCount: 11, bulletSpread: 0.18, bulletColor: '#ffd84a', rewardGold: 15 },
+  { id: 'enemy_candledancer_001', name: '촛대 무희', sprite: 'candledancer', color: '#7a4a5a', aiType: 'caster', traits: ['castMix'],
+    health: 290, damage: 29, moveSpeed: 32, hitboxHalf: 7, attackRange: 345, telegraphTime: 0.66, attackCooldown: 2.04, recoveryTime: 0.38,
+    bulletSpeed: 158, bulletCount: 23, bulletColor: '#ffb0c0', rewardGold: 15 },
+  { id: 'enemy_musicbox_001', name: '태엽 오르골', sprite: 'musicbox', color: '#8a6a4a', aiType: 'turret', traits: ['turretRing'],
+    health: 380, damage: 29, moveSpeed: 0, hitboxHalf: 10, attackRange: 400, telegraphTime: 0.98, attackCooldown: 2.4, recoveryTime: 0.36,
+    bulletSpeed: 256, bulletCount: 18, bulletColor: '#ffe9a0', knockbackResist: 1, rewardGold: 15 },
+  // ── 심층 38: 별의 대장간
+  { id: 'enemy_anvilgolem_001', name: '모루 골렘', sprite: 'anvilgolem', color: '#5a4a44', aiType: 'melee_chase', traits: ['shockwave', 'deathBurst'],
+    health: 390, damage: 29, moveSpeed: 56, hitboxHalf: 9, attackRange: 26, telegraphTime: 0.55,
+    attackCooldown: 1.34, recoveryTime: 0.48, knockbackResist: 0.85, rewardGold: 16 },
+  { id: 'enemy_sparkwisp_001', name: '불티 정령', sprite: 'sparkwisp', color: '#c06a2a', aiType: 'ranged_kite',
+    health: 310, damage: 29, moveSpeed: 52, hitboxHalf: 8, preferredRange: 200, attackRange: 370, telegraphTime: 0.63, attackCooldown: 1.9, recoveryTime: 0.37,
+    bulletSpeed: 202, bulletCount: 6, bulletSpread: 0.22, bulletColor: '#ffb04a', rewardGold: 16 },
+  { id: 'enemy_quenchsmith_001', name: '담금질 장인', sprite: 'quenchsmith', color: '#6a4a3a', aiType: 'caster', traits: ['zoneCast'],
+    health: 295, damage: 29, moveSpeed: 32, hitboxHalf: 7, attackRange: 345, telegraphTime: 0.66, attackCooldown: 2.04, recoveryTime: 0.38,
+    bulletSpeed: 158, bulletCount: 23, bulletColor: '#ff8a3a', rewardGold: 16 },
+  { id: 'enemy_bellowsturret_001', name: '풀무 포대', sprite: 'bellowsturret', color: '#7a5a3a', aiType: 'turret', traits: ['turretSweep'],
+    health: 390, damage: 29, moveSpeed: 0, hitboxHalf: 10, attackRange: 400, telegraphTime: 0.98, attackCooldown: 2.4, recoveryTime: 0.36,
+    bulletSpeed: 256, bulletCount: 18, bulletColor: '#ffd08a', knockbackResist: 1, rewardGold: 16 },
+  // ── 심층 39: 잿눈 내리는 대성당
+  { id: 'enemy_ashpaladin_001', name: '잿빛 성기사', sprite: 'ashpaladin', color: '#7a7a88', aiType: 'charger', traits: ['redash', 'dashTrail'],
+    health: 360, damage: 30, moveSpeed: 108, hitboxHalf: 8, attackRange: 218, telegraphTime: 0.42, dashSpeed: 500, dashDuration: 0.5,
+    attackCooldown: 1.58, recoveryTime: 0.32, stunTime: 0.5, knockbackResist: 0.6, rewardGold: 16 },
+  { id: 'enemy_choirghost_001', name: '성가대 망령', sprite: 'choirghost', color: '#9a9ab0', aiType: 'ranged_kite',
+    health: 320, damage: 30, moveSpeed: 52, hitboxHalf: 8, preferredRange: 200, attackRange: 370, telegraphTime: 0.63, attackCooldown: 1.9, recoveryTime: 0.37,
+    bulletSpeed: 202, bulletCount: 6, bulletSpread: 0.22, bulletColor: '#e0e8ff', rewardGold: 16 },
+  { id: 'enemy_silentmonk_001', name: '침묵 수도사', sprite: 'silentmonk', color: '#5a5a6a', aiType: 'caster', traits: ['castMix'],
+    health: 300, damage: 30, moveSpeed: 32, hitboxHalf: 7, attackRange: 345, telegraphTime: 0.66, attackCooldown: 2.04, recoveryTime: 0.38,
+    bulletSpeed: 158, bulletCount: 23, bulletColor: '#c8d0ff', rewardGold: 16 },
+  { id: 'enemy_relicbell_001', name: '종탑 성물', sprite: 'relicbell', color: '#8a8070', aiType: 'turret', traits: ['turretRing'],
+    health: 395, damage: 30, moveSpeed: 0, hitboxHalf: 10, attackRange: 400, telegraphTime: 0.98, attackCooldown: 2.4, recoveryTime: 0.36,
+    bulletSpeed: 256, bulletCount: 18, bulletColor: '#fff4d0', knockbackResist: 1, rewardGold: 16 },
+  // ── 심층 36 보스: 폭풍의 등대지기
+  { id: 'boss_storm_keeper', name: '폭풍의 등대지기', title: '꺼지지 않는 빛으로 폭풍을 부르는 자', sprite: 'boss_stormkeeper', color: '#2a4a5a', phaseColors: ['#2a4a5a', '#3a7a90', '#7ae0ff'],
+    boss: true, aiType: 'boss', health: 2140, damage: 28, moveSpeed: 38, hitboxHalf: 18, knockbackResist: 1, attackCooldown: 0.93, bulletSpeed: 165,
+    rewardGold: 940, patterns: [
+      { type: 'laser', beams: 4, spreadAng: Math.PI / 2, sweep: 1.0, duration: 2.5, width: 8, telegraph: 0.92, color: '#ffe36b' },
+      { type: 'rain', duration: 2.5, interval: 0.043, speed: 208, slant: 0.55, color: '#7ae0ff' },
+      { type: 'summon', enemyId: 'enemy_wavecharger_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'lances', count: 18, delay: 0.58, speed: 318, color: '#cfefff' },
+      { type: 'wall', waves: 5, gap: 4, speed: 142, interval: 0.66, color: '#7ae0ff' }],
+    finalPatterns: [
+      { type: 'grid', name: '천둥의 항로', spacing: 3, delay: 0.8, radius: 30, bullets: 4, color: '#ffe36b' },
+      { type: 'vortex', name: '소용돌이치는 바다', duration: 5.2, pull: 70, arms: 10, interval: 0.062, spin: 3.45, color: '#7ae0ff' }] },
+  // ── 심층 37 보스: 가면의 주인
+  { id: 'boss_mask_host', name: '가면의 주인', title: '천 개의 얼굴로 손님을 맞는 무도회장', sprite: 'boss_maskhost', color: '#5a2030', phaseColors: ['#5a2030', '#a03a50', '#ffd84a'],
+    boss: true, aiType: 'boss', health: 2180, damage: 29, moveSpeed: 44, hitboxHalf: 17, knockbackResist: 1, attackCooldown: 0.92, bulletSpeed: 166,
+    rewardGold: 980, patterns: [
+      { type: 'orbit', count: 24, radius: 72, spinTime: 1.2, spin: 3.0, speed: 180, color: '#ffd84a' },
+      { type: 'split', volleys: 5, count: 5, spread: 0.3, speed: 192, splitAfter: 0.52, splitN: 10, color: '#ffb0c0' },
+      { type: 'summon', enemyId: 'enemy_waltzblade_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'teleport', bullets: 24, color: '#ffd84a' },
+      { type: 'cross', waves: 5, len: 12, step: 22, radius: 16, delay: 0.66, interval: 0.38, bullets: 0, color: '#ffb0c0' }],
+    finalPatterns: [
+      { type: 'reverse', name: '뒤바뀐 가면', rings: 5, count: 44, gap: 5, speed: 160, flip: 0.7, interval: 0.38, color: '#ffd84a' },
+      { type: 'spiral', name: '마지막 왈츠', duration: 4.4, arms: 11, interval: 0.05, spin: -3.4, color: '#ffb0c0' }] },
+  // ── 심층 38 보스: 별을 벼리는 자
+  { id: 'boss_star_smith', name: '별을 벼리는 자', title: '떨어진 별을 망치로 두드려 다시 띄우는 대장장이', sprite: 'boss_starsmith', color: '#4a3020', phaseColors: ['#4a3020', '#9a5a2a', '#ffb04a'],
+    boss: true, aiType: 'boss', health: 2220, damage: 29, moveSpeed: 34, hitboxHalf: 19, knockbackResist: 1, attackCooldown: 0.92, bulletSpeed: 167,
+    rewardGold: 1020, patterns: [
+      { type: 'slam', radius: 72, color: '#ffb04a' },
+      { type: 'meteor', count: 10, delay: 0.75, stagger: 0.19, radius: 32, bullets: 7, color: '#ff8a3a' },
+      { type: 'summon', enemyId: 'enemy_anvilgolem_001', count: 2 }],
+    phase2Patterns: [
+      { type: 'charge', dashes: 3, speed: 455, color: '#ffb04a' },
+      { type: 'ringOut', rings: 4, count: 52, gap: 5, speed: 158, interval: 0.4, color: '#ffd08a' }],
+    finalPatterns: [
+      { type: 'grid', name: '담금질', spacing: 3, delay: 0.78, radius: 31, bullets: 4, color: '#ff8a3a' },
+      { type: 'vortex', name: '별의 용광로', duration: 5.3, pull: 72, arms: 10, interval: 0.06, spin: -3.5, color: '#ffb04a' }] },
+  // ── 심층 39 보스: 침묵의 대주교
+  { id: 'boss_silent_archbishop', name: '침묵의 대주교', title: '마지막 기도마저 잿빛 눈 속에 묻은 자', sprite: 'boss_silentarchbishop', color: '#3a3a4a', phaseColors: ['#3a3a4a', '#6a6a88', '#e0e8ff'],
+    boss: true, aiType: 'boss', health: 2260, damage: 30, moveSpeed: 36, hitboxHalf: 18, knockbackResist: 1, attackCooldown: 0.91, bulletSpeed: 168,
+    rewardGold: 1060, patterns: [
+      { type: 'aimed', volleys: 5, count: 13, spread: 0.15, color: '#e0e8ff' },
+      { type: 'zones', count: 10, radius: 30, delay: 0.78, bullets: 7, spreadAround: 135, stagger: 0.07, color: '#c8d0ff' },
+      { type: 'summon', enemyId: 'enemy_ashpaladin_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'reverse', rings: 4, count: 44, gap: 5, speed: 160, flip: 0.7, interval: 0.4, color: '#e0e8ff' },
+      { type: 'lances', count: 20, delay: 0.56, speed: 320, color: '#c8d0ff' },
+      { type: 'teleport', bullets: 24, color: '#fff4d0' }],
+    finalPatterns: [
+      { type: 'ringIn', name: '마지막 성가', rings: 5, count: 52, gap: 5, speed: 96, interval: 0.78, color: '#e0e8ff' },
+      { type: 'spiral', name: '잿빛 축복', duration: 4.6, arms: 11, interval: 0.05, spin: 3.5, color: '#c8d0ff' }] }
 
 ];

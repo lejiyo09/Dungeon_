@@ -213,7 +213,27 @@ const DEEP_WORLDS = [
   { id: 'deep_abyssheart', name: '심연의 심장', boss: 'boss_abyss_heart', waves: 2, deep: true,
     enemies: [['enemy_pulsemaw_001', 3], ['enemy_veineye_001', 3], ['enemy_heartpriest_001', 2], ['enemy_arterypylon_001', 2]],
     palette: { style: 'void', accent: '#ff4a6a', floor: ['#2a161c', '#2f1920'], corridor: ['#1c0e13', '#201016'], wall: '#43202a', wallTop: '#5a2a37',
-      wallFace: '#8a3c4e', faceLine: '#6e3040', deco: 'rgba(255,74,106,0.4)' } }
+      wallFace: '#8a3c4e', faceLine: '#6e3040', deco: 'rgba(255,74,106,0.4)' } },
+  // ── 심층 36: 폭풍의 등대섬
+  { id: 'deep_stormlighthouse', name: '폭풍의 등대섬', boss: 'boss_storm_keeper', waves: 2, deep: true,
+    enemies: [['enemy_wavecharger_001', 3], ['enemy_gullwraith_001', 3], ['enemy_fogkeeper_001', 2], ['enemy_beaconcannon_001', 2]],
+    palette: { style: 'wreck', accent: '#7ae0ff', floor: ['#26343c', '#2a3942'], corridor: ['#18232a', '#1b272e'], wall: '#34454e', wallTop: '#455a64',
+      wallFace: '#6a8590', faceLine: '#556e78', deco: 'rgba(122,224,255,0.38)' } },
+  // ── 심층 37: 가면 무도회장
+  { id: 'deep_masquerade', name: '가면 무도회장', boss: 'boss_mask_host', waves: 2, deep: true,
+    enemies: [['enemy_waltzblade_001', 3], ['enemy_maskjester_001', 3], ['enemy_candledancer_001', 2], ['enemy_musicbox_001', 2]],
+    palette: { style: 'theater', accent: '#ffd84a', floor: ['#3a1e26', '#40222b'], corridor: ['#26141a', '#2a161d'], wall: '#55283a', wallTop: '#6e3449',
+      wallFace: '#a05a6a', faceLine: '#844a58', deco: 'rgba(255,216,74,0.38)' } },
+  // ── 심층 38: 별의 대장간
+  { id: 'deep_starforge', name: '별의 대장간', boss: 'boss_star_smith', waves: 2, deep: true,
+    enemies: [['enemy_anvilgolem_001', 3], ['enemy_sparkwisp_001', 3], ['enemy_quenchsmith_001', 2], ['enemy_bellowsturret_001', 2]],
+    palette: { style: 'ember', accent: '#ffb04a', floor: ['#33251e', '#382921'], corridor: ['#221813', '#251a15'], wall: '#4a3226', wallTop: '#614231',
+      wallFace: '#93684c', faceLine: '#79563f', deco: 'rgba(255,176,74,0.4)' } },
+  // ── 심층 39: 잿눈 내리는 대성당
+  { id: 'deep_ashcathedral', name: '잿눈 내리는 대성당', boss: 'boss_silent_archbishop', waves: 2, deep: true,
+    enemies: [['enemy_ashpaladin_001', 3], ['enemy_choirghost_001', 3], ['enemy_silentmonk_001', 2], ['enemy_relicbell_001', 2]],
+    palette: { style: 'frost', accent: '#e0e8ff', floor: ['#34363e', '#393b44'], corridor: ['#22242a', '#25272e'], wall: '#46485a', wallTop: '#5a5c72',
+      wallFace: '#8a8ca4', faceLine: '#72748c', deco: 'rgba(224,232,255,0.38)' } }
 
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층
