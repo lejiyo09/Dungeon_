@@ -1259,7 +1259,7 @@ class Game {
     if (this.locked) { input.remap = false; input.endStep(); return; } // 로그인 화면
     if (this.legendIntro && this.legendIntro.K) { // 전설 스킨 획득 컷신: 1.3초 뒤부터 클릭/Enter/Esc — 연출 중이면 끝 장면으로, 끝 장면이면 다음/닫기
       const L = this.legendIntro, t = (performance.now() - L.start) / 1000;
-      if (t > 1.3 && (input.wasPressed('Mouse0') || input.wasPressed('Enter') || input.wasPressed('Escape') || input.wasPressed('Space'))) { if (t < HUD.LEG_INTRO_END) L.start = performance.now() - HUD.LEG_INTRO_END * 1000; else this.legendIntroNext(); }
+      if (t > 1.3 && (input.wasPressed('Mouse0') || input.wasPressed('Enter') || input.wasPressed('Escape') || input.wasPressed('Space'))) { const E = HUD.legIntroEnd(L.K); if (t < E) L.start = performance.now() - E * 1000; else this.legendIntroNext(); }
       input.remap = false; this.input.mouse.down = false; input.endStep(); return; }
     input.remap = !this.overlay && !this.cutscene && !this.transition && (this.mode === 'dungeon' || this.mode === 'lobby'); /* 조작키 변경은 직접 조작할 때만 (메뉴·대사에서는 원래 키) */
     if (this.coop && this.coop.guest) { this.coopGuestUpdate(dt, input); return; } // 멀티 참가자: 방장 화면을 받아 그림

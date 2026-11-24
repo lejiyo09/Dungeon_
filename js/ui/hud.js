@@ -821,11 +821,11 @@ class HUD {
   }
   // 최종 진화 스킬·보구 사용 컷인: 화면을 가로지르는 띠 + 아이콘/캐릭터 + 이름 (약 1초)
   // ── 전설 스킨 첫 획득 컷신: 빛기둥·입자 모임(0~1.0s) → 섬광(1.0~1.3s) → 배너·이름·캐릭터 공개(1.3s~) → 클릭으로 다음
-  static get LEG_INTRO_END() { return 2.6; }
+  static legIntroEnd(K) { return K && K.intro ? 1.8 + K.intro.length / 16 + 0.4 : 2.6; } // 대사가 다 나올 때까지
   static legendIntro(ctx, game) {
     const L = game.legendIntro, K = L.K, t = (performance.now() - L.start) / 1000, W = VIEW_W, H = VIEW_H, cx = W / 2, cy = H / 2;
     const col = { skin_leg_abyss: '#5ae0ff', skin_leg_crimson: '#ff4a5a', skin_leg_void: '#b07aff', skin_leg_star: '#ffe08a', skin_bandi: '#9ae8ff' }[K.id] || '#ffd84a';
-    const ease = (x) => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3);
+    const ease = (x) => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3); let im = null;
     ctx.save();
     ctx.fillStyle = '#05040a'; ctx.fillRect(0, 0, W, H);
     if (t < 1.3) { // ① 빛기둥 + 가운데로 모이는 빛 입자
@@ -841,18 +841,18 @@ class HUD {
     if (t >= 1.0) { // ② 섬광 이후: 배너 공개
       if (!L.flashed) { L.flashed = true; if (typeof SFX !== 'undefined') SFX.play('excal'); game.addShake && game.addShake(0.25, 3); }
       const rv = ease((t - 1.0) / 1.2), zoom = 1.12 - 0.12 * ease((t - 1.0) / 3);
-      const bk = GACHA.banners[K.id], im = bk ? bannerImg(bk) : null;
+      const bk = GACHA.banners[K.id]; im = bk ? bannerImg(bk) : null;
       ctx.globalAlpha = Math.min(1, (t - 1.0) / 0.3);
       if (im) { const dw = W * zoom, dh = H * zoom; drawBannerCover(ctx, im, cx - dw / 2, cy - dh / 2, dw, dh); }
       else { const g2 = ctx.createRadialGradient(cx + 80, cy, 10, cx + 80, cy, 300); g2.addColorStop(0, col); g2.addColorStop(0.35, '#1c1830'); g2.addColorStop(1, '#05040a'); ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H); }
       // 왼쪽 글자 받침 그림자
       const g3 = ctx.createLinearGradient(0, 0, W * 0.62, 0); g3.addColorStop(0, 'rgba(5,4,10,0.88)'); g3.addColorStop(1, 'rgba(5,4,10,0)'); ctx.fillStyle = g3; ctx.fillRect(0, 0, W, H);
       // 캐릭터 (크게, 앞모습 걷기)
-      const hero = game.data.heroes.get(K.hero), fr = Math.floor(t * 6) % 3, sx = im ? 74 : W - 112, sy = im ? H - 28 : H - 46; // 배너가 있으면 그림 속 인물과 겹치지 않게 글자 아래(왼쪽)
+      const hero = game.data.heroes.get(K.hero), fr = Math.floor(t * 6) % 3, sx = im ? 74 : W - 100, sy = im ? H - 28 : H - 46; // 배너가 있으면 그림 속 인물과 겹치지 않게 글자 아래(왼쪽)
       ctx.globalAlpha = Math.min(1, (t - 1.1) / 0.4);
       ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(sx, sy, im ? 24 : 34, im ? 5 : 7, 0, 0, TAU); ctx.fill();
       if (K.druid) { const b = typeof druidSprite === 'function' && druidSprite('bandi_down'), m = typeof druidSprite === 'function' && druidSprite('sam_down');
-        if (m) drawSprite(ctx, m, sx + 26, sy, { scale: 2.6 }); if (b) drawSprite(ctx, b, sx - 62, sy, { scale: 3 }); }
+        if (m) drawSprite(ctx, m, sx + 26, sy, { scale: 2.4 }); if (b) drawSprite(ctx, b, sx - 62, sy, { scale: 3 }); }
       else if (hero) { const spr = heroSprite(heroWithLook(hero, { sprite: K.sprite }), fr, 0); drawSprite(ctx, spr, sx, sy + Math.round(Math.sin(t * 2) * 1.5), { scale: im ? 3 : 4 }); }
       // 글자: 왼쪽에서 밀려 들어옴
       const tx = 30 - 40 * (1 - rv); ctx.globalAlpha = rv;
@@ -870,7 +870,14 @@ class HUD {
     // 영화 같은 위아래 검은 띠 + 금색 선
     const bar = 22; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, bar); ctx.fillRect(0, H - bar, W, bar);
     ctx.fillStyle = 'rgba(255,216,74,0.6)'; ctx.fillRect(0, bar, W, 1); ctx.fillRect(0, H - bar - 1, W, 1);
-    if (t >= HUD.LEG_INTRO_END) { ctx.globalAlpha = 0.55 + 0.45 * Math.sin(t * 4); hudText(ctx, L.queue.length ? '클릭 — 다음 전설 스킨' : '클릭하여 계속', cx, H - 17, '#ffe9a0', 'center', 8); ctx.globalAlpha = 1; }
+    if (t >= 1.8 && K.intro) { // 대사: 한 글자씩
+      const n = Math.min(K.intro.length, Math.floor((t - 1.8) * 16)), line = '“' + K.intro.slice(0, n) + (n < K.intro.length ? '' : '”');
+      const bx = im ? 130 : 18, by = im ? H - bar - 40 : 168, bw = im ? W - 148 : 282, fs = im ? 10 : 9; // 배너 있음: 오른쪽 아래 / 없음: 설명 아래 (캐릭터와 안 겹치게)
+      ctx.fillStyle = 'rgba(5,4,10,0.72)'; ctx.fillRect(bx, by, bw, 28); ctx.fillStyle = col; ctx.fillRect(bx, by, 2, 28);
+      hudText(ctx, K.druid ? '반디' : K.name, bx + 10, by + 3, col, 'left', 7);
+      hudText(ctx, line, bx + 10, by + 13, '#fff', 'left', fs);
+    }
+    if (t >= HUD.legIntroEnd(K)) { ctx.globalAlpha = 0.55 + 0.45 * Math.sin(t * 4); hudText(ctx, L.queue.length ? '클릭 — 다음 전설 스킨' : '클릭하여 계속', cx, H - 17, '#ffe9a0', 'center', 8); ctx.globalAlpha = 1; }
     else if (t > 1.3) hudText(ctx, '클릭 — 건너뛰기', W - 10, H - 17, '#777', 'right', 7);
     ctx.restore();
   }
