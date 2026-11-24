@@ -166,7 +166,10 @@ class Game {
     sv.bank -= S.price; G.bought.push(id); sv.supplies = (sv.supplies || []).concat([id]); this.guildEvent('trades'); writeSave(sv); SFX.play('buy'); return [`${S.name} 구매 — 다음 탐험에 적용됩니다`, '#9fe89f'];
   }
   applySupplies() {
-    const sv = this.save, list = sv.supplies || [], p = this.player; if (!list.length) return;
+    const sv = this.save, list = (sv.supplies || []).slice(), p = this.player, st = sv.supplyStash || {}, fromStash = [];
+    for (const S of GUILD_SUPPLIES) if ((st[S.id] || 0) > 0 && !list.includes(S.id)) { st[S.id]--; if (!st[S.id]) delete st[S.id]; list.push(S.id); fromStash.push(S.name); } // [뽑기 보급품] 보관함에서 종류별 1개씩만 (나머지는 다음 탐험으로)
+    if (!list.length) return;
+    if (fromStash.length && this.effects) this.effects.text(p.x, p.y - 26, `보급품: ${fromStash.join(' · ')}`, '#9fe89f');
     for (const id of list) {
       if (id === 's_bless') pick(DATA_BUFFS).apply(p);
       else if (id === 's_whet' && p.weapons[0]) p.weapons[0].lv = Math.min(BALANCE.upgrade.maxLevel, (p.weapons[0].lv || 0) + 1);
@@ -784,9 +787,12 @@ class Game {
           else results.push({ type: 'shard', id: K.id, count: sv.shards[K.id] }); }
       } else if (roll < GACHA.shardRate + GACHA.commonRate && commons.length) { // 일반 스킨
         const avail = commons.filter((c) => !sv.skins.includes(c.id)), C = (avail.length ? avail : commons)[randInt(0, (avail.length ? avail : commons).length - 1)];
-        if (sv.skins.includes(C.id)) { sv.mileage += GACHA.missMileage; results.push({ type: 'mileage', mileage: GACHA.missMileage }); } // 이미 보유 → 마일리지
+        if (sv.skins.includes(C.id)) { sv.mileage += GACHA.commonDupeMileage; results.push({ type: 'dupe', id: C.id, mileage: GACHA.commonDupeMileage }); } // 이미 보유 → 마일리지
         else { sv.skins.push(C.id); results.push({ type: 'common', id: C.id }); gotSkin = true; } // 일반 스킨은 자동 장착하지 않음(스킨창 K에서 선택)
-      } else { sv.mileage += GACHA.missMileage; results.push({ type: 'mileage', mileage: GACHA.missMileage }); }
+      } else { // 탐험 보급품 → 보관함 (탐험마다 종류별 1개씩 사용)
+        const S = pick(GUILD_SUPPLIES); sv.supplyStash = sv.supplyStash || {}; sv.supplyStash[S.id] = (sv.supplyStash[S.id] || 0) + 1;
+        results.push({ type: 'supply', id: S.id });
+      }
     }
     writeSave(sv); SFX.play(gotSkin ? 'victory' : 'coin');
     return { results };
