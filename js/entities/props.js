@@ -315,6 +315,60 @@ class GachaShrine {
     ctx.globalAlpha = 1;
   }
 }
+// 로비 ↔ 지하 무기고 계단
+class VaultStairs {
+  constructor(x, y, down) { this.x = x; this.y = y; this.down = down; this.radius = 24; }
+  label() { return this.down ? '[E] 지하 무기고로 내려가기' : '[E] 로비로 올라가기'; }
+  get labelColor() { return '#ffd8a0'; }
+  interact(game) { if (this.down) game.enterVault(); else game.enterLobby(true); }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), t = game ? game.time : 0;
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 15, y - 12, 30, 22);
+    ctx.fillStyle = '#5a5470'; ctx.fillRect(x - 14, y - 11, 28, 20); // 돌 테두리
+    for (let i = 0; i < 5; i++) { // 계단 (내려갈수록 어둡게 / 올라가는 쪽은 밝게)
+      const k = this.down ? i : 4 - i, c = Math.round(70 - k * 13);
+      ctx.fillStyle = `rgb(${c},${c - 6},${c + 10})`; ctx.fillRect(x - 12, y - 9 + i * 4, 24, 4);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(x - 12, y - 9 + i * 4, 24, 1);
+    }
+    const f = 0.55 + 0.25 * Math.sin(t * 6) + 0.1 * Math.sin(t * 13); // 양옆 횃불
+    for (const sx of [-17, 17]) { ctx.fillStyle = '#5a3a20'; ctx.fillRect(x + sx - 1, y - 10, 2, 6);
+      ctx.globalAlpha = f; ctx.fillStyle = '#ffb040'; ctx.fillRect(x + sx - 1, y - 14, 3, 4); ctx.fillStyle = '#fff0a0'; ctx.fillRect(x + sx, y - 13, 1, 2); ctx.globalAlpha = 1; }
+  }
+}
+// 지하 무기고: 무기 하나하나 진열대 (도감에서 발견한 무기는 실물, 못 찾은 무기는 천으로 덮임)
+class WeaponDisplay {
+  constructor(x, y, def) { this.x = x; this.y = y; this.def = def; this.radius = 13; }
+  found(game) { return game && game.save.discovered.includes(this.def.id); }
+  label(game) { return this.found(game) ? `[E] ${this.def.name} · ${RARITY_NAME[this.def.rarity]}` : '??? (미발견 무기)'; }
+  get labelColor() { return '#ffd84a'; }
+  interact(game) {
+    const d = this.def;
+    if (this.found(game)) game.showBanner(d.name, `${RARITY_NAME[d.rarity]} · ${weaponStatLine(d)} · ${weaponTraits(d)}`, RARITY_COLOR[d.rarity]);
+    else game.showBanner('미발견 무기', '던전에서 발견하면 이 자리에 진열됩니다', '#999');
+  }
+  render(ctx, game) {
+    const x = Math.round(this.x), y = Math.round(this.y), d = this.def, col = RARITY_COLOR[d.rarity], t = game ? game.time : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 8, y + 6, 16, 2);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 7, y + 1, 14, 6); ctx.fillStyle = '#4a4458'; ctx.fillRect(x - 6, y + 2, 12, 4); // 받침
+    ctx.fillStyle = col; ctx.fillRect(x - 6, y + 4, 12, 1); // 등급 색 띠
+    if (this.found(game)) {
+      if (d.rarity === 'legendary' || d.rarity === 'unique') { ctx.globalAlpha = 0.18 + 0.1 * Math.sin(t * 3 + x); ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y - 4, 10, 7, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1; }
+      drawWeaponCentered(ctx, d, x, y - 4);
+    } else { // 천으로 덮인 모양
+      ctx.fillStyle = OUTLINE; ctx.fillRect(x - 6, y - 9, 12, 10); ctx.fillStyle = '#5c5468'; ctx.fillRect(x - 5, y - 8, 10, 9);
+      ctx.fillStyle = '#6e6680'; ctx.fillRect(x - 5, y - 8, 10, 2); ctx.fillStyle = '#9a92aa'; ctx.fillRect(x - 1, y - 6, 2, 1); ctx.fillRect(x, y - 5, 1, 2); ctx.fillRect(x, y - 2, 1, 1); // ?
+    }
+  }
+}
+// 지하 무기고 구역 표지 (상호작용 없음)
+class VaultSign {
+  constructor(x, y, ti) { this.x = x; this.y = y; this.ti = ti; this.radius = 0; }
+  label() { return null; }
+  render(ctx, game) {
+    const T = WEAPON_TABS[this.ti], list = tabWeapons(this.ti), disc = game ? new Set(game.save.discovered) : new Set();
+    hudText(ctx, `— ${T.name}  ${list.filter((d) => disc.has(d.id)).length} / ${list.length} —`, Math.round(this.x), Math.round(this.y) - 6, '#ffd84a', 'center', 9);
+  }
+}
 // 로비: 명예의 전당 (성적 랭킹판)
 class RankBoard {
   constructor(x, y) { this.x = x; this.y = y; this.radius = 22; }

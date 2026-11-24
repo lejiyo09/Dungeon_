@@ -290,7 +290,7 @@ function buildLobby() {
   for (let y = 23; y <= 34; y++) for (const x of [27, 28]) map.set(x, y, T_COVER); // 오른쪽 벽을 따라 세로로 긴 접수대
   for (const [x, y] of [[6, 26], [6, 31], [20, 26], [20, 31], [10, 34], [23, 34]]) { map.set(x, y, T_COVER); map.set(x + 1, y, T_COVER); } // 탁자 (마지막은 오른쪽 구석 마법사 자리)
   // 기둥
-  for (const [x, y] of [[4, 5], [29, 5], [6, 16], [27, 16]]) map.set(x, y, T_WALL);
+  for (const [x, y] of [[4, 5], [6, 16], [27, 16]]) map.set(x, y, T_WALL); // (오른쪽 위 [29,5] 기둥 자리는 지하 무기고 계단)
   map.rooms.push(room);
   map.startRoom = room;
   map.decorate = (g) => {
@@ -311,3 +311,39 @@ function buildLobby() {
   return map;
 }
 
+
+// ── 지하 무기고 (로비 오른쪽 위 계단): 도감의 모든 무기를 종류별·등급순으로 하나씩 진열
+const VAULT_COLS = 16;
+function vaultLayout() { // 진열 위치 (타일 좌표) — 맵과 소품 배치가 같이 씀
+  const secs = []; let y = 11;
+  WEAPON_TABS.forEach((T, ti) => {
+    const list = tabWeapons(ti), rows = Math.ceil(list.length / VAULT_COLS);
+    secs.push({ ti, name: T.name, y, rows, items: list.map((d, i) => ({ d, tx: 5 + (i % VAULT_COLS) * 2, ty: y + 2 + Math.floor(i / VAULT_COLS) * 3 })) });
+    y += 2 + rows * 3 + 1;
+  });
+  return { secs, h: y + 2 };
+}
+function buildVault() {
+  const L = vaultLayout(), H = L.h + 2;
+  const map = new DungeonMap(42, H, VAULT_PALETTE);
+  const room = { type: 'lobby', gx: 0, gy: 0, x0: 2, y0: 2, w: 38, h: H - 4, cx: 20, cy: 6, doors: [], state: 'cleared', visited: true, wavesLeft: 0 };
+  map.carveRoom(room.x0, room.y0, room.w, room.h);
+  for (const [x, y] of [[3, 3], [38, 3], [3, H - 4], [38, H - 4]]) map.set(x, y, T_WALL); // 모서리 기둥
+  map.rooms.push(room); map.startRoom = room;
+  map.decorate = (g) => {
+    // 입구 홀 카펫
+    g.fillStyle = '#3a2440'; g.fillRect(8 * TILE, 3 * TILE, 26 * TILE, 6 * TILE);
+    g.fillStyle = '#4a2e52'; g.fillRect(8 * TILE + 3, 3 * TILE + 3, 26 * TILE - 6, 6 * TILE - 6);
+    g.fillStyle = '#c89a40'; g.fillRect(8 * TILE + 5, 3 * TILE + 5, 26 * TILE - 10, 1); g.fillRect(8 * TILE + 5, 9 * TILE - 6, 26 * TILE - 10, 1);
+    for (const S of L.secs) {
+      // 구역 머리 띠 + 진열 줄마다 받침 단
+      g.fillStyle = 'rgba(200,154,64,0.18)'; g.fillRect(4 * TILE, S.y * TILE + 2, 34 * TILE, TILE - 4);
+      g.fillStyle = '#c89a40'; g.fillRect(4 * TILE, S.y * TILE + 2, 34 * TILE, 1); g.fillRect(4 * TILE, (S.y + 1) * TILE - 3, 34 * TILE, 1);
+      for (let r = 0; r < S.rows; r++) { const ry = (S.y + 2 + r * 3) * TILE;
+        g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(4 * TILE, ry - 10, 34 * TILE, 26);
+        g.fillStyle = 'rgba(90,70,120,0.25)'; g.fillRect(4 * TILE, ry - 10, 34 * TILE, 1); }
+    }
+  };
+  map.vault = L;
+  return map;
+}

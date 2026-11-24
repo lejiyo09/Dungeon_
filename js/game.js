@@ -495,7 +495,7 @@ class Game {
     if (!Net.inRoom) return;
     const p = this.player; this.netT = (this.netT || 0) - dt;
     if (this.netT <= 0 && p && !document.hidden) { this.netT = 1 / NET_CONFIG.sendHz; // 탭을 내려 두면 보내지 않음
-      const msg = { k: 'pos', x: Math.round(p.x), y: Math.round(p.y), f: p.faceVis < 0 ? -1 : 1, h: p.hero.id, l: p.line && p.line.look ? p.line.look : null, sk: this.skinSprite(p.hero.id, this.playerLineId(p)), m: this.mode, mv: !!p.moving }, key = JSON.stringify(msg);
+      const msg = { k: 'pos', x: Math.round(p.x), y: Math.round(p.y), f: p.faceVis < 0 ? -1 : 1, h: p.hero.id, l: p.line && p.line.look ? p.line.look : null, sk: this.skinSprite(p.hero.id, this.playerLineId(p)), m: this.lobbyArea === 'vault' ? 'vault' : this.mode, mv: !!p.moving }, key = JSON.stringify(msg);
       this.netIdle = key === this.netLast ? (this.netIdle || 0) + 1 / NET_CONFIG.sendHz : 0;
       if (key !== this.netLast || this.netIdle >= NET_CONFIG.idleSend) { Net.relay(msg); this.netLast = key; this.netIdle = 0; } } // 바뀌었을 때만 (가만히 있으면 가끔)
     for (const P of Net.peers.values()) { const k = Math.min(1, dt * 12); P.x += (P.tx - P.x) * k; P.y += (P.ty - P.y) * k; }
@@ -504,7 +504,7 @@ class Game {
   peerActors() { // 같은 화면(지금은 로비)에 있는 다른 사람들
     if (!Net.inRoom || this.mode !== 'lobby') return [];
     const out = [];
-    for (const P of Net.peers.values()) { if (P.mode !== 'lobby' || performance.now() - P.seen > 8000) continue;
+    const here = this.lobbyArea === 'vault' ? 'vault' : 'lobby'; for (const P of Net.peers.values()) { if (P.mode !== here || performance.now() - P.seen > 8000) continue; /* 로비/지하 무기고 각각 */
       const base = this.data.heroes.get(P.hero) || DATA_HEROES[0], sk = skinSpriteOk(P.sk), hero = P.look || sk ? heroWithLook(base, Object.assign({}, P.look || {}, sk ? { sprite: sk } : {})) : base, name = Net.nameOf(P.id), t = this.time; /* 동료 스킨 */
       out.push({ y: P.y, render: (ctx) => { const spr = heroSprite(hero, P.moving ? Math.floor(t * 8) % 2 : 0); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(Math.round(P.x), Math.round(P.y) + 7, 6, 2, 0, 0, TAU); ctx.fill();
         drawSprite(ctx, spr, P.x, P.y + 7, { flip: P.face < 0 }); hudText(ctx, name, Math.round(P.x), Math.round(P.y) - 20, '#7affc0', 'center', 7); } }); }
@@ -821,20 +821,19 @@ class Game {
   }
 
   // ── 로비
-  enterLobby() {
+  enterLobby(fromVault) {
     Net.wake(); // 로비에 오면 서버를 미리 깨움 (10분에 한 번까지)
     SFX.stopMusic(); this.cinematic = null; this.slowMo = null; this.trialW = null; this.areaId = null;
     this.mode = 'lobby'; this.overlay = null;
     this.worldIdx = 0; this.levelIdx = 0;
     this.resetWorldLists(buildLobby());
-    const sp = this.map.tileCenter(17, 14);
+    const sp = fromVault ? this.map.tileCenter(29, 7) : this.map.tileCenter(17, 14); this.lobbyArea = null;
     this.player = this.makePlayer(sp.x, sp.y);
     DATA_HEROES.forEach((h, i) => { const c = this.map.tileCenter(6 + i * 3, 8); this.props.push(new Pedestal(c.x, c.y, h, i % 2)); });
     const cb = this.map.tileCenter(5, 12); this.props.push(new CodexBoard(cb.x, cb.y));
     { const ms = this.map.tileCenter(28, 16); this.props.push(new MultiStone(ms.x, ms.y)); } // 멀티 플레이 석판
     { const rb = this.map.tileCenter(5, 16); this.props.push(new RankBoard(rb.x, rb.y)); } // 명예의 전당
-    { const gs = this.map.tileCenter(24, 12); this.props.push(new GachaShrine(gs.x, gs.y)); } // 스킨 소환 제단 (스킨 뽑기)
-    const ar = this.map.tileCenter(9, 16); this.props.push(new Armory(ar.x, ar.y));
+    { const st = this.map.tileCenter(29, 5); this.props.push(new VaultStairs(st.x + 8, st.y, true)); } // 오른쪽 위: 지하 무기고 계단 (무기고·스킨 뽑기·무기 진열)
     if (this.save.sanctumReached) { const tv = this.map.tileCenter(25, 16); this.props.push(new TreasureVault(tv.x, tv.y)); }
     const dm = this.map.tileCenter(28, 12);
     this.enemies.push(new Enemy(dm.x, dm.y, this.data.enemies.get('dummy_001'), { hp: 1, dmg: 1 }, this.map.startRoom));
@@ -857,7 +856,21 @@ class Game {
     this.portals.push(new Portal(pc.x, pc.y, () => this.startRun(), '던전 입장')); this.portals[this.portals.length - 1].group = 'run'; // 멀티: 단체 입장
     if (this.save.sanctumReached) { const dc = this.map.tileCenter(21, 18); this.portals.push(new Portal(dc.x, dc.y, () => this.startRun(true), '심층 입장', [120, 200, 255])); this.portals[this.portals.length - 1].group = 'deep'; } // 심층을 열면 로비에서 바로 심층으로
     this.snapCamera();
-    this.showBanner('로비', '캐릭터를 고르고 포탈로 들어가세요');
+    if (!fromVault) this.showBanner('로비', '캐릭터를 고르고 포탈로 들어가세요');
+  }
+  // ── 지하 무기고: 시작 무기 선택 + 스킨 뽑기 + 도감 무기 전부 진열 (모드는 로비 그대로 — 안전 구역)
+  enterVault() {
+    this.overlay = null;
+    this.resetWorldLists(buildVault()); this.lobbyArea = 'vault';
+    const L = this.map.vault, tc = (x, y) => this.map.tileCenter(x, y);
+    { const c = tc(20, 3); this.props.push(new VaultStairs(c.x + 8, c.y + 4, false)); } // 위로 올라가는 계단
+    { const c = tc(12, 6); this.props.push(new GachaShrine(c.x, c.y)); } // 스킨 소환 제단
+    { const c = tc(29, 6); this.props.push(new Armory(c.x, c.y)); } // 무기고 (시작 무기 선택)
+    for (const S of L.secs) { const c = tc(20, S.y); this.props.push(new VaultSign(c.x + 8, c.y + 8, S.ti)); for (const it of S.items) { const p = tc(it.tx, it.ty); this.props.push(new WeaponDisplay(p.x, p.y, it.d)); } }
+    const sp = tc(20, 6); this.player = this.makePlayer(sp.x + 8, sp.y + 8);
+    this.snapCamera();
+    const disc = new Set(this.save.discovered);
+    this.showBanner('지하 무기고', `진열된 무기 ${DATA_WEAPONS.filter((d) => disc.has(d.id)).length} / ${DATA_WEAPONS.length}`, '#ffd8a0');
   }
   openHeroSelection(hero) { // 로비 단상에서 직업을 고르면 해당 직업의 세부 계열부터 선택
     const s = this.save, unlocked = s.unlocked.includes(hero.id);

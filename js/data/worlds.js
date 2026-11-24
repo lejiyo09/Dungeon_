@@ -251,6 +251,8 @@ function runWorld(r) { return r.zone && ZONES[r.zone] ? zoneWorld(r.zone, r.zf |
 function stageLabel(w, l) { return w >= DEEP_START ? `심층 ${w - DEEP_START + 1}-${l + 1}` : `${w + 1}-${l + 1}`; }
 const LOBBY_PALETTE = { style: 'wood', floor: ['#3a2e26', '#3d3129'], corridor: ['#3a2e26', '#3d3129'], wall: '#40354f', wallTop: '#4b3f5c',
   wallFace: '#6a5a82', faceLine: '#5a4c70', deco: null };
+const VAULT_PALETTE = { style: 'metal', floor: ['#2c3038', '#2f333c'], corridor: ['#2c3038', '#2f333c'], wall: '#33303e', wallTop: '#423e50',
+  wallFace: '#5a5470', faceLine: '#4a4560', deco: null }; // 지하 무기고
 const STAGES_PER_WORLD = 4; // x-1 ~ x-3: 일반 / x-4: 보스
 
 const DATA_BUFFS = [
