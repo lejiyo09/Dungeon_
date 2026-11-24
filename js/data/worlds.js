@@ -198,7 +198,22 @@ const DEEP_WORLDS = [
   { id: 'deep_celestial_observatory', name: '별을 잇는 천문원', boss: 'boss_celestial_regent', waves: 2, deep: true,
     enemies: [['enemy_starchaser_001', 3], ['enemy_orbitowl_001', 3], ['enemy_constellation_001', 2], ['enemy_skybeacon_001', 2]],
     palette: { style: 'starfall', accent: '#8fd8ff', floor: ['#202c48', '#263250'], corridor: ['#172139', '#1b2541'], wall: '#303e64', wallTop: '#40527e',
-      wallFace: '#647ba9', faceLine: '#50658e', deco: 'rgba(143,216,255,0.4)' } }
+      wallFace: '#647ba9', faceLine: '#50658e', deco: 'rgba(143,216,255,0.4)' } },
+  // ── 심층 33: 빛바랜 화폭의 회랑
+  { id: 'deep_fadedgallery', name: '빛바랜 화폭의 회랑', boss: 'boss_unfinished_painter', waves: 2, deep: true,
+    enemies: [['enemy_framewarden_001', 3], ['enemy_paintwraith_001', 3], ['enemy_sketchcaster_001', 2], ['enemy_easelcannon_001', 2]],
+    palette: { style: 'theater', accent: '#ff9a6a', floor: ['#3e3430', '#443934'], corridor: ['#2a2220', '#2e2522'], wall: '#56443c', wallTop: '#6e584c',
+      wallFace: '#9c7e66', faceLine: '#806654', deco: 'rgba(255,154,106,0.38)' } },
+  // ── 심층 34: 실을 잣는 둥지
+  { id: 'deep_weavernest', name: '실을 잣는 둥지', boss: 'boss_fate_weaver', waves: 2, deep: true,
+    enemies: [['enemy_threadhunter_001', 3], ['enemy_cocoonarcher_001', 3], ['enemy_webseer_001', 2], ['enemy_spindletower_001', 2]],
+    palette: { style: 'bone', accent: '#e8dcff', floor: ['#2a2632', '#2e2936'], corridor: ['#1c1923', '#1f1c26'], wall: '#3e3848', wallTop: '#524a5e',
+      wallFace: '#7c7290', faceLine: '#645b76', deco: 'rgba(232,220,255,0.36)' } },
+  // ── 심층 35: 심연의 심장
+  { id: 'deep_abyssheart', name: '심연의 심장', boss: 'boss_abyss_heart', waves: 2, deep: true,
+    enemies: [['enemy_pulsemaw_001', 3], ['enemy_veineye_001', 3], ['enemy_heartpriest_001', 2], ['enemy_arterypylon_001', 2]],
+    palette: { style: 'void', accent: '#ff4a6a', floor: ['#2a161c', '#2f1920'], corridor: ['#1c0e13', '#201016'], wall: '#43202a', wallTop: '#5a2a37',
+      wallFace: '#8a3c4e', faceLine: '#6e3040', deco: 'rgba(255,74,106,0.4)' } }
 
 ];
 const DEEP_START = DATA_WORLDS.length; // 이 번호부터 심층

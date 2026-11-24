@@ -1420,6 +1420,85 @@ const DATA_ENEMIES = [
       { type: 'split', volleys: 5, count: 5, spread: 0.3, speed: 190, splitAfter: 0.54, splitN: 10, color: '#d4c8ff' }],
     finalPatterns: [
       { type: 'grid', name: '별자리의 봉인', spacing: 3, delay: 0.82, radius: 30, bullets: 4, color: '#8fd8ff' },
-      { type: 'vortex', name: '천체의 수렴', duration: 5.0, pull: 66, arms: 9, interval: 0.066, spin: -3.35, color: '#d4c8ff' }] }
+      { type: 'vortex', name: '천체의 수렴', duration: 5.0, pull: 66, arms: 9, interval: 0.066, spin: -3.35, color: '#d4c8ff' }] },
+  // ── 심층 33: 빛바랜 화폭의 회랑
+  { id: 'enemy_framewarden_001', name: '액자 파수기사', sprite: 'framewarden', color: '#8a6a4a', aiType: 'charger', traits: ['redash', 'dashTrail'],
+    health: 320, damage: 26, moveSpeed: 108, hitboxHalf: 8, attackRange: 215, telegraphTime: 0.43, dashSpeed: 496, dashDuration: 0.5,
+    attackCooldown: 1.6, recoveryTime: 0.33, stunTime: 0.5, knockbackResist: 0.6, rewardGold: 14 },
+  { id: 'enemy_paintwraith_001', name: '번진 물감 망령', sprite: 'paintwraith', color: '#b06a5a', aiType: 'teleporter', traits: ['afterimage'],
+    health: 280, damage: 26, moveSpeed: 64, hitboxHalf: 8, preferredRange: 160, attackRange: 330, telegraphTime: 0.6, attackCooldown: 2.0, recoveryTime: 0.37,
+    bulletSpeed: 215, bulletCount: 10, bulletSpread: 0.18, bulletColor: '#ff9a6a', rewardGold: 14 },
+  { id: 'enemy_sketchcaster_001', name: '밑그림 소묘가', sprite: 'sketchcaster', color: '#7a6a6a', aiType: 'caster', traits: ['zoneCast'],
+    health: 260, damage: 26, moveSpeed: 30, hitboxHalf: 7, attackRange: 335, telegraphTime: 0.7, attackCooldown: 2.1, recoveryTime: 0.39,
+    bulletSpeed: 150, bulletCount: 20, bulletColor: '#f0e0c8', rewardGold: 14 },
+  { id: 'enemy_easelcannon_001', name: '이젤 물감포', sprite: 'easelcannon', color: '#7a5a3a', aiType: 'turret', traits: ['turretSweep'],
+    health: 340, damage: 26, moveSpeed: 0, hitboxHalf: 10, attackRange: 390, telegraphTime: 1.0, attackCooldown: 2.45, recoveryTime: 0.36,
+    bulletSpeed: 250, bulletCount: 16, bulletColor: '#7ad0ff', knockbackResist: 1, rewardGold: 14 },
+  // ── 심층 34: 실을 잣는 둥지
+  { id: 'enemy_threadhunter_001', name: '실뜨기 사냥거미', sprite: 'threadhunter', color: '#5a5068', aiType: 'melee_chase', traits: ['pounce', 'deathBurst'],
+    health: 300, damage: 27, moveSpeed: 128, hitboxHalf: 7, attackRange: 20, telegraphTime: 0.3,
+    attackCooldown: 0.92, recoveryTime: 0.31, rewardGold: 14 },
+  { id: 'enemy_cocoonarcher_001', name: '고치 궁수', sprite: 'cocoonarcher', color: '#8a8098', aiType: 'ranged_kite',
+    health: 285, damage: 27, moveSpeed: 50, hitboxHalf: 8, preferredRange: 195, attackRange: 365, telegraphTime: 0.66, attackCooldown: 1.95, recoveryTime: 0.38,
+    bulletSpeed: 195, bulletCount: 5, bulletSpread: 0.24, bulletColor: '#e8dcff', rewardGold: 14 },
+  { id: 'enemy_webseer_001', name: '거미줄 무녀', sprite: 'webseer', color: '#6a5a7a', aiType: 'caster', traits: ['castMix'],
+    health: 265, damage: 27, moveSpeed: 31, hitboxHalf: 7, attackRange: 340, telegraphTime: 0.68, attackCooldown: 2.08, recoveryTime: 0.39,
+    bulletSpeed: 155, bulletCount: 22, bulletColor: '#c8b8ff', rewardGold: 14 },
+  { id: 'enemy_spindletower_001', name: '물레 실탑', sprite: 'spindletower', color: '#6a6078', aiType: 'turret', traits: ['turretRing'],
+    health: 350, damage: 27, moveSpeed: 0, hitboxHalf: 10, attackRange: 395, telegraphTime: 1.0, attackCooldown: 2.45, recoveryTime: 0.36,
+    bulletSpeed: 252, bulletCount: 17, bulletColor: '#f0eaff', knockbackResist: 1, rewardGold: 14 },
+  // ── 심층 35: 심연의 심장
+  { id: 'enemy_pulsemaw_001', name: '맥동 포식자', sprite: 'pulsemaw', color: '#7a2a3a', aiType: 'melee_chase', traits: ['shockwave', 'deathBurst'],
+    health: 360, damage: 28, moveSpeed: 58, hitboxHalf: 9, attackRange: 26, telegraphTime: 0.55,
+    attackCooldown: 1.35, recoveryTime: 0.48, knockbackResist: 0.85, rewardGold: 15 },
+  { id: 'enemy_veineye_001', name: '핏줄 눈알', sprite: 'veineye', color: '#8a3a4a', aiType: 'ranged_kite',
+    health: 295, damage: 28, moveSpeed: 52, hitboxHalf: 8, preferredRange: 200, attackRange: 370, telegraphTime: 0.64, attackCooldown: 1.9, recoveryTime: 0.37,
+    bulletSpeed: 200, bulletCount: 6, bulletSpread: 0.22, bulletColor: '#ff6a7a', rewardGold: 15 },
+  { id: 'enemy_heartpriest_001', name: '심장 사제', sprite: 'heartpriest', color: '#6a2a40', aiType: 'caster', traits: ['castMix'],
+    health: 275, damage: 28, moveSpeed: 32, hitboxHalf: 7, attackRange: 345, telegraphTime: 0.66, attackCooldown: 2.05, recoveryTime: 0.38,
+    bulletSpeed: 158, bulletCount: 23, bulletColor: '#ff9aaa', rewardGold: 15 },
+  { id: 'enemy_arterypylon_001', name: '동맥 기둥', sprite: 'arterypylon', color: '#7a3040', aiType: 'turret', traits: ['turretRing'],
+    health: 365, damage: 28, moveSpeed: 0, hitboxHalf: 10, attackRange: 400, telegraphTime: 0.98, attackCooldown: 2.4, recoveryTime: 0.36,
+    bulletSpeed: 255, bulletCount: 18, bulletColor: '#ff4a6a', knockbackResist: 1, rewardGold: 15 },
+  // ── 심층 33 보스: 미완의 화가
+  { id: 'boss_unfinished_painter', name: '미완의 화가', title: '끝내 마지막 붓을 놓지 못한 자', sprite: 'boss_unfinishedpainter', color: '#5a4038', phaseColors: ['#5a4038', '#9a6a4a', '#ff9a6a'],
+    boss: true, aiType: 'boss', health: 2020, damage: 27, moveSpeed: 40, hitboxHalf: 17, knockbackResist: 1, attackCooldown: 0.95, bulletSpeed: 162,
+    rewardGold: 800, patterns: [
+      { type: 'wall', waves: 5, gap: 4, speed: 140, interval: 0.68, color: '#ff9a6a' },
+      { type: 'zones', count: 9, radius: 30, delay: 0.8, bullets: 7, spreadAround: 130, stagger: 0.07, color: '#7ad0ff' },
+      { type: 'summon', enemyId: 'enemy_framewarden_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'rain', duration: 2.5, interval: 0.044, speed: 205, slant: 0.5, color: '#ff9a6a' },
+      { type: 'cross', waves: 5, len: 12, step: 22, radius: 16, delay: 0.68, interval: 0.4, bullets: 0, color: '#ffe36b' }],
+    finalPatterns: [
+      { type: 'grid', name: '덧칠된 캔버스', spacing: 3, delay: 0.82, radius: 30, bullets: 4, color: '#ff9a6a' },
+      { type: 'spiral', name: '마지막 붓질', duration: 4.2, arms: 10, interval: 0.052, spin: 3.3, color: '#7ad0ff' }] },
+  // ── 심층 34 보스: 운명을 잣는 자
+  { id: 'boss_fate_weaver', name: '운명을 잣는 자', title: '모든 실의 끝을 쥔 거미 여왕', sprite: 'boss_fateweaver', color: '#3e3650', phaseColors: ['#3e3650', '#6a5a8a', '#e8dcff'],
+    boss: true, aiType: 'boss', health: 2060, damage: 27, moveSpeed: 42, hitboxHalf: 18, knockbackResist: 1, attackCooldown: 0.94, bulletSpeed: 163,
+    rewardGold: 840, patterns: [
+      { type: 'laser', beams: 4, spreadAng: Math.PI / 2, sweep: 0.95, duration: 2.4, width: 8, telegraph: 0.95, color: '#e8dcff' },
+      { type: 'orbit', count: 22, radius: 70, spinTime: 1.25, spin: -3.0, speed: 178, color: '#c8b8ff' },
+      { type: 'summon', enemyId: 'enemy_threadhunter_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'lances', count: 18, delay: 0.6, speed: 315, color: '#f0eaff' },
+      { type: 'charge', dashes: 3, speed: 450, color: '#c8b8ff' }],
+    finalPatterns: [
+      { type: 'grid', name: '얽혀 든 운명의 실', spacing: 3, delay: 0.8, radius: 30, bullets: 4, color: '#e8dcff' },
+      { type: 'vortex', name: '실타래의 끝', duration: 5.0, pull: 68, arms: 9, interval: 0.064, spin: 3.4, color: '#c8b8ff' }] },
+  // ── 심층 35 보스: 심연의 심장
+  { id: 'boss_abyss_heart', name: '심연의 심장', title: '모든 층 아래에서 뛰는 것', sprite: 'boss_abyssheart', color: '#5a1a2a', phaseColors: ['#5a1a2a', '#9a2a40', '#ff4a6a'],
+    boss: true, aiType: 'boss', health: 2100, damage: 28, moveSpeed: 34, hitboxHalf: 19, knockbackResist: 1, attackCooldown: 0.93, bulletSpeed: 164,
+    rewardGold: 900, patterns: [
+      { type: 'ringOut', rings: 4, count: 50, gap: 5, speed: 156, interval: 0.4, color: '#ff4a6a' },
+      { type: 'meteor', count: 9, delay: 0.76, stagger: 0.2, radius: 32, bullets: 7, color: '#ff9aaa' },
+      { type: 'summon', enemyId: 'enemy_pulsemaw_001', count: 3 }],
+    phase2Patterns: [
+      { type: 'reverse', rings: 4, count: 42, gap: 5, speed: 158, flip: 0.72, interval: 0.4, color: '#ff6a7a' },
+      { type: 'slam', radius: 70, color: '#ff4a6a' },
+      { type: 'teleport', bullets: 24, color: '#ff9aaa' }],
+    finalPatterns: [
+      { type: 'ringIn', name: '마지막 고동', rings: 5, count: 50, gap: 5, speed: 94, interval: 0.8, color: '#ff4a6a' },
+      { type: 'vortex', name: '심연의 맥동', duration: 5.2, pull: 70, arms: 10, interval: 0.062, spin: -3.45, color: '#ff9aaa' }] }
 
 ];

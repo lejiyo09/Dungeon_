@@ -826,5 +826,57 @@ Object.assign(PIX, {
     P.rect(5, 5, 6, 9, 'b'); P.tri(5, 5, 8, 0, 11, 5, 'a'); P.rect(6, 6, 4, 7, 'c');
     P.ell(8, 9, 2, 2, 'y'); P.px(8, 9, 'e'); P.line(5, 5, 2, 1, 'r'); P.line(11, 5, 14, 1, 'r');
     P.px(8, 1, 'w'); P.rect(4, 14, 8, 1, 'y');
+  } },
+  // ── 심층 33: 빛바랜 화폭의 회랑
+  framewarden: { tint: '#8a6a4a', w: 16, h: 16, pal: { y: '#e0b860', e: '#fff4d0', r: '#ff9a6a' }, proc: (P) => {
+    P.rect(2, 2, 12, 12, 'y'); P.rect(3, 3, 10, 10, 'b'); P.rect(4, 4, 8, 8, 'a'); P.ell(8, 7, 2, 2, 'r');
+    P.px(6, 8, 'e'); P.px(10, 8, 'e'); P.rect(5, 14, 2, 2, 'c'); P.rect(9, 14, 2, 2, 'c'); P.line(14, 4, 16, 1, 'e');
+  } },
+  paintwraith: { tint: '#b06a5a', w: 16, h: 16, pal: { y: '#7ad0ff', e: '#ffffff', r: '#ffe36b' }, proc: (P) => {
+    P.ell(8, 6, 5, 5, 'a'); P.tri(3, 7, 13, 7, 8, 15, 'b'); P.ell(5, 12, 2, 2, 'y'); P.ell(11, 13, 2, 2, 'r');
+    P.px(6, 6, 'e'); P.px(10, 6, 'e'); P.line(7, 9, 9, 9, 'c'); P.px(3, 15, 'y'); P.px(13, 15, 'r');
+  } },
+  sketchcaster: { tint: '#7a6a6a', w: 16, h: 16, pal: { y: '#f0e0c8', e: '#ffffff', r: '#ff9a6a' }, proc: (P) => {
+    P.ell(8, 5, 3, 3, 'c'); P.tri(8, 6, 3, 15, 13, 15, 'a'); P.rect(6, 1, 4, 2, 'b');
+    P.line(12, 3, 14, 14, 'y'); P.px(12, 2, 'r'); P.px(7, 5, 'e'); P.px(9, 5, 'e'); P.line(4, 11, 7, 9, 'y');
+  } },
+  easelcannon: { tint: '#7a5a3a', w: 16, h: 16, pal: { y: '#7ad0ff', e: '#ffffff', r: '#ff9a6a' }, proc: (P) => {
+    P.line(3, 15, 8, 2, 'b'); P.line(13, 15, 8, 2, 'b'); P.line(8, 2, 8, 15, 'a'); P.rect(4, 4, 8, 6, 'c');
+    P.ell(6, 7, 1, 1, 'r'); P.ell(10, 6, 1, 1, 'y'); P.px(8, 8, 'e'); P.rect(11, 6, 4, 2, 'a'); P.px(15, 6, 'y');
+  } },
+  // ── 심층 34: 실을 잣는 둥지
+  threadhunter: { tint: '#5a5068', w: 16, h: 16, pal: { y: '#e8dcff', e: '#ff6a8a', r: '#c8b8ff' }, proc: (P) => {
+    P.ell(8, 9, 4, 3, 'a'); P.ell(8, 6, 2, 2, 'b'); P.px(7, 6, 'e'); P.px(9, 6, 'e');
+    for (const [x, y] of [[1, 6], [1, 12], [15, 6], [15, 12], [2, 15], [14, 15]]) P.line(8, 9, x, y, 'c');
+    P.line(8, 0, 8, 4, 'y'); P.px(8, 0, 'w');
+  } },
+  cocoonarcher: { tint: '#8a8098', w: 16, h: 16, pal: { y: '#e8dcff', e: '#ffffff', r: '#c8b8ff' }, proc: (P) => {
+    P.ell(8, 8, 4, 6, 'c'); P.line(5, 4, 11, 6, 'y'); P.line(5, 8, 11, 10, 'y'); P.line(5, 12, 11, 13, 'y');
+    P.px(7, 5, 'e'); P.px(9, 5, 'e'); P.line(13, 2, 13, 14, 'b'); P.line(13, 2, 15, 8, 'r'); P.line(15, 8, 13, 14, 'r');
+  } },
+  webseer: { tint: '#6a5a7a', w: 16, h: 16, pal: { y: '#c8b8ff', e: '#ffffff', r: '#e8dcff' }, proc: (P) => {
+    P.ell(8, 5, 3, 3, 'c'); P.tri(8, 6, 3, 15, 13, 15, 'a'); P.ell(8, 3, 4, 1, 'b');
+    P.line(0, 2, 4, 6, 'r'); P.line(16, 2, 12, 6, 'r'); P.line(2, 0, 3, 7, 'r'); P.px(7, 5, 'e'); P.px(9, 5, 'e'); P.ell(8, 11, 1, 1, 'y');
+  } },
+  spindletower: { tint: '#6a6078', w: 16, h: 16, pal: { y: '#f0eaff', e: '#ffffff', r: '#c8b8ff' }, proc: (P) => {
+    P.rect(6, 4, 4, 11, 'b'); P.ell(8, 8, 5, 2, 'c'); P.ell(8, 8, 3, 1, 'y'); P.tri(6, 4, 8, 0, 10, 4, 'a');
+    P.line(3, 8, 0, 3, 'r'); P.line(13, 8, 16, 3, 'r'); P.rect(4, 14, 8, 1, 'y'); P.px(8, 1, 'w');
+  } },
+  // ── 심층 35: 심연의 심장
+  pulsemaw: { tint: '#7a2a3a', w: 16, h: 16, pal: { y: '#ff9aaa', e: '#ffe0e4', r: '#ff4a6a' }, proc: (P) => {
+    P.ell(8, 8, 7, 6, 'a'); P.ell(8, 9, 5, 3, 'd'); for (let x = 4; x <= 12; x += 2) { P.px(x, 7, 'e'); P.px(x + 1, 11, 'e'); }
+    P.ell(5, 4, 1, 1, 'r'); P.ell(11, 4, 1, 1, 'r'); P.line(1, 8, 0, 12, 'b'); P.line(15, 8, 16, 12, 'b');
+  } },
+  veineye: { tint: '#8a3a4a', w: 16, h: 16, pal: { y: '#ff6a7a', e: '#ffffff', r: '#ffd84a' }, proc: (P) => {
+    P.ell(8, 8, 6, 6, 'e'); P.ell(8, 8, 3, 3, 'r'); P.ell(8, 8, 1, 1, 'd');
+    P.line(2, 6, 5, 7, 'y'); P.line(14, 9, 11, 9, 'y'); P.line(6, 14, 7, 11, 'y'); P.line(9, 2, 9, 5, 'y'); P.line(0, 14, 3, 12, 'a'); P.line(16, 14, 13, 12, 'a');
+  } },
+  heartpriest: { tint: '#6a2a40', w: 16, h: 16, pal: { y: '#ff9aaa', e: '#ffffff', r: '#ff4a6a' }, proc: (P) => {
+    P.ell(8, 5, 3, 3, 'c'); P.tri(8, 6, 3, 15, 13, 15, 'a'); P.tri(4, 4, 8, -1, 12, 4, 'b');
+    P.ell(7, 11, 1, 1, 'r'); P.ell(9, 11, 1, 1, 'r'); P.px(8, 12, 'r'); P.px(7, 5, 'e'); P.px(9, 5, 'e'); P.line(13, 4, 13, 15, 'y');
+  } },
+  arterypylon: { tint: '#7a3040', w: 16, h: 16, pal: { y: '#ff4a6a', e: '#ffe0e4', r: '#ff9aaa' }, proc: (P) => {
+    P.rect(5, 3, 6, 12, 'b'); P.rect(6, 4, 4, 10, 'a'); P.ell(8, 7, 2, 2, 'y'); P.px(8, 7, 'e');
+    P.line(5, 6, 1, 3, 'r'); P.line(11, 6, 15, 3, 'r'); P.line(5, 11, 1, 13, 'r'); P.line(11, 11, 15, 13, 'r'); P.rect(4, 14, 8, 1, 'y');
   } }
 });
