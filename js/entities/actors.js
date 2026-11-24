@@ -157,6 +157,12 @@ class Player extends Entity {
     ctx.globalAlpha = 0.7; ctx.strokeStyle = '#fff4d0'; ctx.lineWidth = 1; for (let i = 0; i < 3; i++) { const a = t * 3 + i * TAU / 3; ctx.beginPath(); ctx.arc(x, y, R - 2.5, a, a + 0.8); ctx.stroke(); }
     ctx.restore(); ctx.lineWidth = 1; ctx.globalAlpha = 1;
   }
+  moveFaceDir() { // [사용자 결정] 스킨 바라보는 방향 = 이동 방향. 내 캐릭터는 키 입력, 다른 플레이어(멀티)는 위치 변화로 판단
+    const dx = this.x - (this._lpx ?? this.x), dy = this.y - (this._lpy ?? this.y); this._lpx = this.x; this._lpy = this.y;
+    if (dx * dx + dy * dy > 0.09) this._mdir = { x: dx, y: dy };
+    const local = typeof game !== 'undefined' && game.player === this;
+    return (local ? this.lastMoveDir : this._mdir) || this.lastMoveDir || { x: 1, y: 0 };
+  }
   renderBody(ctx) {
     const x = Math.round(this.x), y = Math.round(this.y);
     const face = this.faceVis;
@@ -200,9 +206,9 @@ class Player extends Entity {
     const legAnim = sk && typeof LEG_SKINS !== 'undefined' && LEG_SKINS[sk] !== undefined;
     let drawFrame = frame, drawFace = face, legDir;
     if (legAnim) {
-      const ax = Math.cos(this.aimVis), ay = Math.sin(this.aimVis); // aimVis: 로컬·원격 모두 동기화됨
-      if (Math.abs(ay) >= Math.abs(ax)) { legDir = ay >= 0 ? 0 : 1; drawFace = 1; } // 아래(앞)/위(뒤): 뒤집지 않음
-      else { legDir = 2; drawFace = ax < 0 ? 1 : -1; } // 옆: 원본이 왼쪽을 보므로, 오른쪽 조준일 때 뒤집음
+      const md = this.moveFaceDir(), ax = md.x, ay = md.y; // 바라보는 방향 = 이동 방향 (정지 시 마지막 방향)
+      if (Math.abs(ay) > Math.abs(ax)) { legDir = ay >= 0 ? 0 : 1; drawFace = 1; } // 아래(앞)/위(뒤): 뒤집지 않음
+      else { legDir = 2; drawFace = ax < 0 ? 1 : -1; } // 옆: 원본이 왼쪽을 보므로, 오른쪽으로 갈 때 뒤집음
       drawFrame = (this.moving && this.state !== 'DASH') ? Math.floor(this.time * 9) % 3 : 1; // 정지 시 가운데 프레임
     }
     const w = this.weapon, behind = Math.sin(this.aimVis) < -0.4;
