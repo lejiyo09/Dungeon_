@@ -112,7 +112,7 @@ const GACHA = {
   costSingle: 300, cost5: 1500,           // 결정석 비용 (1뽑 300, 5뽑 1500)
   shardRate: 0.05, shardsNeeded: 20,       // 전설 조각 5%, 20개 = 스킨 완성
   commonRate: 0.25,                        // 일반 스킨 25% · 나머지 70% = 탐험 보급품(보관함에 쌓임)
-  dupeMileage: 250, commonDupeMileage: 30, // [사용자 결정] 마일리지는 스킨 중복일 때만: 전설 조각(보유 스킨) 250 · 일반 스킨 중복 30
+  dupeMileage: 250, commonDupeMileage: 15, // [사용자 결정] 마일리지는 스킨 중복일 때만: 전설 조각(보유 스킨) 250 · 일반 스킨 중복 15
   shopPrice: 400,                          // 마일리지 상점 스킨 1개 가격
   mileageName: '스킨 마일리지', mileageColor: '#ffb0d8', shardName: '전설 조각', shardColor: '#ffe9a0',
   banners: { skin_leg_abyss: 'abyss', skin_leg_crimson: 'crimson', skin_leg_void: 'void', skin_leg_star: 'star' } // 스킨별 배너 이미지 키 (assets/banners/<key>.jpg)
