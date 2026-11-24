@@ -64,8 +64,8 @@ let pass = 0, fail = 0; const ok = (c, m) => { console.log((c ? '✓ ' : '✗ ')
   // ── 3) 무기 191종 × 각 영웅: 기본 공격 판정 불변 + 무기 외형 피벗 일치
   const W = await pg.evaluate(() => { const g = window.__game, T = window.__T, out = { bad: [], unstable: [], n: 0, pivotBad: 0, newArt: 0 };
     for (const hero of ['hero_engineer', 'hero_swordsman', 'hero_druid']) { T.start(hero);
-      for (const d of DATA_WEAPONS) { const run = (on) => { T.reset(); T.skin(on, hero); g.player.weapons = [new WeaponInstance(d)]; g.player.slot = 0; T.seed(99); T.foes(); g.input.mouse.down = true; T.step(90); g.input.mouse.down = false; T.step(30); return T.snapState(); };
-        run(false); const a = run(false), b2 = run(true), a2 = run(false); out.n++; if (a !== a2) out.unstable.push(hero + ':' + d.id); else if (a !== b2) out.bad.push(hero + ':' + d.id);
+      for (const d of DATA_WEAPONS) { const run = (on) => { T.reset(); T.skin(on, hero); g.player.weapons = [new WeaponInstance(d)]; g.player.slot = 0; T.seed(99); T.foes(); g.input.mouse.down = true; T.step(50); g.input.mouse.down = false; T.step(20); return T.snapState(); };
+        const a = run(false), b2 = run(true), a2 = run(false); out.n++; if (a !== a2) out.unstable.push(hero + ':' + d.id); else if (a !== b2) out.bad.push(hero + ':' + d.id);
         const th = UVFX.themeOf(g, g.player) || T.SK[hero].replace('skin_u_', ''), s0 = weaponSprite(d), s1 = weaponSprite(d, th === 'first_explorer' ? 'first_explorer' : th);
         if (!WEAPON_SPRITE[d.id]) { out.newArt++; continue; } // 원래 전용 그림이 없던 23종: 팩이 새로 그린 실루엣 (원래는 기본 권총 그림)
         if ((s1.px - s0.px) * 2 !== s1.w - s0.w || (s1.py - s0.py) * 2 !== s1.h - s0.h) out.pivotBad++; } }
