@@ -225,15 +225,15 @@ class Player extends Entity {
     if (this.fallK > 0) { ctx.save(); const s = 1 - 0.7 * this.fallK; ctx.globalAlpha = 1 - this.fallK; ctx.translate(x, y + 7 + this.fallK * 6); ctx.scale(s, s); ctx.translate(-x, -(y + 7)); } /* 바빌로니아 지하로 떨어짐 */
     let drew = false;
     if (sk === 'druid_bandi' && typeof druidSprite === 'function') { // [변신 드루이드 스킨] 평소 반디(방향별) ↔ 변신 샘(대기/공격, 좌우 반전)
-      const md = this.moveFaceDir(), ax = md.x, ay = md.y; let key, flip = false; // [변신 스킨] 바라보는 방향 = 이동 방향(정지 시 마지막 방향, 멀티 동료는 위치 변화)
-      if (this.transformT > 0) { const atk = this.swing && this.swing.t < this.swing.dur; if (Math.abs(ay) > Math.abs(ax) && DRUID_SKIN.sam_down) { key = ay >= 0 ? 'sam_down' : 'sam_up'; if (atk && DRUID_SKIN[key + '_a1']) key += this.swing.t < this.swing.dur * 0.4 ? '_a1' : '_a2'; } else { key = atk ? 'sam_atk' : 'sam_idle'; flip = ax < 0; } } // 샘: 위/아래면 정면·후면(공격 = 쌍검 치켜듦 → X자 베기), 그 외 옆모습(기본 오른쪽, 왼쪽이면 반전)
+      const md = this.moveFaceDir(), ax = md.x, ay = md.y; let key, flip = false, lungeY = 0; // lungeY: 앞/뒤 공격 시 바라보는 쪽으로 내딛기 // [변신 스킨] 바라보는 방향 = 이동 방향(정지 시 마지막 방향, 멀티 동료는 위치 변화)
+      if (this.transformT > 0) { const atk = this.swing && this.swing.t < this.swing.dur; if (Math.abs(ay) > Math.abs(ax) && DRUID_SKIN.sam_down) { key = ay >= 0 ? 'sam_down' : 'sam_up'; if (atk && DRUID_SKIN[key + '_a1']) { const k = this.swing.t / this.swing.dur, dir = ay >= 0 ? 1 : -1; key += k < 0.3 ? '_a1' : k < 0.5 ? '_a2' : '_a3'; lungeY = dir * (k < 0.3 ? -2 : k < 0.5 ? 2 : 4 * (1 - (k - 0.5) / 0.5) + 1); } } else { key = atk ? 'sam_atk' : 'sam_idle'; flip = ax < 0; } } // 샘: 위/아래면 정면·후면(공격 = 쌍검 치켜듦 → X자 베기), 그 외 옆모습(기본 오른쪽, 왼쪽이면 반전)
       else if (Math.abs(ay) > Math.abs(ax)) key = ay >= 0 ? 'bandi_down' : 'bandi_up'; // 앞/뒤
       else { key = 'bandi_side'; flip = ax > 0; } // 옆: 원본이 왼쪽 → 오른쪽이면 반전
       const spr = druidSprite(key);
       if (spr) { ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x - 5, y + 6, 10, 2);
         if (spr.steps && key.indexOf('bandi') === 0 && this.moving && this.state !== 'DASH') { const ph = Math.floor(this.time * 8) % 4, S = flip ? spr.steps.f : spr.steps.n, img = ph === 0 ? S[0] : ph === 2 ? S[1] : (flip ? spr.f : spr.n); // 이동 중: 걷기1 → 서기 → 걷기2 → 서기 (4방향, 앞뒤는 발을 위아래로)
           ctx.drawImage(img, Math.round(x - spr.w / 2), Math.round(y + 7 - spr.h), spr.w, spr.h); }
-        else drawSprite(ctx, spr, x, y + 7, { flip });
+        else drawSprite(ctx, spr, x, y + 7 + Math.round(lungeY), { flip });
         drew = true; }
     }
     else if (sk && sk.indexOf('c_') === 0 && typeof commonSprite === 'function') { // [일반 스킨] 앞모습 1포즈, 좌우 반전 + 이동 시 살짝 들썩
