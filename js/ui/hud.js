@@ -318,14 +318,14 @@ class HUD {
       // 확률표 팝업
       if (o.rates) {
         ctx.fillStyle = 'rgba(6,5,12,0.92)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-        const pw = 320, ph = 180, px = VIEW_W / 2 - pw / 2, py = VIEW_H / 2 - ph / 2;
+        const pw = 320, ph = 200, px = VIEW_W / 2 - pw / 2, py = VIEW_H / 2 - ph / 2;
         ctx.fillStyle = 'rgba(20,16,30,0.98)'; ctx.fillRect(px, py, pw, ph); ctx.strokeStyle = '#ffd84a'; ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
         hudText(ctx, '뽑기 확률', VIEW_W / 2, py + 12, '#ffd84a', 'center', 12);
-        const rows = [[`${GACHA.shardName} (배너 스킨)`, `${Math.round(GACHA.shardRate * 100)}%`, GACHA.shardColor], ['일반 스킨', `${Math.round(GACHA.commonRate * 100)}%`, '#9ad8ff'], ['탐험 보급품', `${Math.round((1 - GACHA.shardRate - GACHA.commonRate) * 100)}%`, '#9fe89f']];
+        const rows = [['전설 스킨 완성품 (배너)', `${Math.round(GACHA.legendRate * 100)}%`, '#ffd84a'], [`${GACHA.shardName} (배너 스킨)`, `${Math.round(GACHA.shardRate * 100)}%`, GACHA.shardColor], ['일반 스킨', `${Math.round(GACHA.commonRate * 100)}%`, '#9ad8ff'], ['탐험 보급품', `${Math.round((1 - GACHA.legendRate - GACHA.shardRate - GACHA.commonRate) * 100)}%`, '#9fe89f']];
         rows.forEach(([n2, p2, c], i) => { const ry = py + 38 + i * 20; hudText(ctx, n2, px + 20, ry, '#eee', 'left', 9); hudText(ctx, p2, px + pw - 20, ry, c, 'right', 10); });
-        hudText(ctx, `· ${GACHA.shardName} ${GACHA.shardsNeeded}개를 모으면 그 배너 스킨 완성`, VIEW_W / 2, py + 104, '#bfe6ff', 'center', 8);
-        hudText(ctx, `· 가진 스킨이 또 나오면 ${GACHA.mileageName} (전설 ${GACHA.dupeMileage} · 일반 ${GACHA.commonDupeMileage})`, VIEW_W / 2, py + 118, '#ffb0d8', 'center', 8);
-        hudText(ctx, '· 보급품은 보관함에 쌓이고 탐험마다 종류별 1개씩 사용', VIEW_W / 2, py + 132, '#9fe89f', 'center', 8);
+        hudText(ctx, `· ${GACHA.shardName} ${GACHA.shardsNeeded}개를 모으면 그 배너 스킨 완성`, VIEW_W / 2, py + 118, '#bfe6ff', 'center', 8);
+        hudText(ctx, `· 가진 스킨이 또 나오면 ${GACHA.mileageName} (전설 ${GACHA.dupeMileage} · 일반 ${GACHA.commonDupeMileage})`, VIEW_W / 2, py + 132, '#ffb0d8', 'center', 8);
+        hudText(ctx, '· 보급품은 보관함에 쌓이고 탐험마다 종류별 1개씩 사용', VIEW_W / 2, py + 146, '#9fe89f', 'center', 8);
         hudText(ctx, '클릭 / Esc — 닫기', VIEW_W / 2, py + ph - 16, '#999', 'center', 8);
       }
     } else if (o.type === 'codex' || o.type === 'armory' || o.type === 'trial_weapons') {

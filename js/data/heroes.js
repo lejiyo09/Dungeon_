@@ -110,8 +110,9 @@ function skinsForMenu(save) { const owned = save && Array.isArray(save.skins) ? 
 // ── 스킨 뽑기 [사용자 결정] 재화=결정석, 1뽑/5뽑. 5%로 배너 스킨 "전설 조각" → 20개 모으면 스킨 완성. 나머지는 스킨 마일리지. 마일리지 상점 별도
 const GACHA = {
   costSingle: 300, cost5: 1500,           // 결정석 비용 (1뽑 300, 5뽑 1500)
+  legendRate: 0.01,                        // 전설 스킨 완성품 1% (보유 중이면 마일리지)
   shardRate: 0.05, shardsNeeded: 20,       // 전설 조각 5%, 20개 = 스킨 완성
-  commonRate: 0.25,                        // 일반 스킨 25% · 나머지 70% = 탐험 보급품(보관함에 쌓임)
+  commonRate: 0.25,                        // 일반 스킨 25% · 나머지 69% = 탐험 보급품(보관함에 쌓임)
   dupeMileage: 250, commonDupeMileage: 15, // [사용자 결정] 마일리지는 스킨 중복일 때만: 전설 조각(보유 스킨) 250 · 일반 스킨 중복 15
   shopPrice: 400,                          // 마일리지 상점 스킨 1개 가격
   mileageName: '스킨 마일리지', mileageColor: '#ffb0d8', shardName: '전설 조각', shardColor: '#ffe9a0',
