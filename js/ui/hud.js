@@ -8,6 +8,7 @@ function bannerImg(key) {
   let im = _bannerImgs[key];
   if (im === undefined) {
     im = new Image();
+    im.onerror = () => { if (!im.fellBack) { im.fellBack = true; im.src = 'assets/banners/' + key + '.jpg'; } }; // webp가 없으면(빌드 전·아트팩트) 원본 jpg로
     im.src = 'assets/banners/' + key + '.webp';
     _bannerImgs[key] = im;
   }
@@ -765,7 +766,7 @@ class HUD {
   static gachaPullBtn(i) { const mw = HUD.gachaMainW(), w = 150, g = 14, x0 = (mw - (w * 2 + g)) / 2; return { x: x0 + i * (w + g), y: VIEW_H - 46, w, h: 32 }; } // 1뽑/5뽑 (메인 하단)
   static gachaShopRow(i) { const mw = HUD.gachaMainW(), h = 48, y0 = 52; return { x: 10, y: y0 + i * (h + 6), w: mw - 20, h }; } // 상점: 메인 영역 세로 리스트
   static gachaShopBuy(i) { const r = HUD.gachaShopRow(i); return { x: r.x + r.w - 78, y: r.y + r.h / 2 - 9, w: 72, h: 18 }; }
-  static gachaRatesBtn() { return { x: 8, y: VIEW_H - 22, w: 72, h: 16 }; } // 좌측 하단 확률 보기
+  static gachaRatesBtn() { return { x: 8, y: VIEW_H - 64, w: 72, h: 16 }; } // 좌측 하단 확률 보기 (1뽑 버튼 위)
   static drawSupply(ctx, cx, cy, id) { // 탐험 보급품 아이콘 (종류별 도트풍 도형)
     ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#9fe89f'; ctx.beginPath(); ctx.arc(cx, cy, 15, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
     const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(cx + x), Math.round(cy + y), w, h); };
