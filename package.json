@@ -6,7 +6,7 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "build": "node tools/build.js"
+    "build": "npm install --no-save --package-lock=false sharp@0.35.5 && node tools/build.js"
   },
   "engines": {
     "node": ">=18"
