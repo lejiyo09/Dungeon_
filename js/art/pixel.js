@@ -395,7 +395,8 @@ function weaponSprite(def, themeKey) { // themeKey: 고유 스킨 테마 (있으
   const key = 'wpn|' + def.id + (TT ? '|' + themeKey : '');
   let s = spriteCache.get(key);
   if (s) return s;
-  const t = TT || WPIX[WEAPON_SPRITE[def.id]] || WPIX.pistol;
+  const MK = typeof UNIQUE_EQUIPMENT_MISSING_WEAPON_SPRITES !== 'undefined' && !WEAPON_SPRITE[def.id] ? UNIQUE_EQUIPMENT_MISSING_WEAPON_SPRITES[def.id] : null; // 전용 그림이 없던 23종: 장비 팩의 새 실루엣 (원래는 기본 권총 그림)
+  const t = TT || WPIX[WEAPON_SPRITE[def.id]] || (MK && UNIQUE_EQUIPMENT_MISSING_WEAPON_ART[MK]) || WPIX.pistol;
   const pal = { k: OUTLINE, a: def.color, b: shade(def.color, 0.65), c: shade(def.color, 1.4), o: def.bulletColor || '#ffffff',
     w: '#ffffff', d: '#7a5530', e: '#5a3a1e', y: '#d0a040', s: '#dddddd', m: '#a8b0bc', n: '#5a6070', g: '#2a2a34', r: '#d04040' };
   if (t.pal) Object.assign(pal, t.pal); /* 무기 전용 색 (벗의 맹약 등) */

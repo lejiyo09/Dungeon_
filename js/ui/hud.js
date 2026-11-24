@@ -826,7 +826,7 @@ class HUD {
   static legIntroEnd(K) { return K && K.intro ? 1.8 + K.intro.length / 16 + 0.4 : 2.6; } // 대사가 다 나올 때까지
   static legendIntro(ctx, game) {
     const L = game.legendIntro, K = L.K, t = (performance.now() - L.start) / 1000, W = VIEW_W, H = VIEW_H, cx = W / 2, cy = H / 2;
-    const col = { skin_leg_abyss: '#5ae0ff', skin_leg_crimson: '#ff4a5a', skin_leg_void: '#b07aff', skin_leg_star: '#ffe08a', skin_bandi: '#9ae8ff' }[K.id] || '#ffd84a';
+    const col = { skin_leg_abyss: '#5ae0ff', skin_leg_crimson: '#ff4a5a', skin_leg_void: '#b07aff', skin_leg_star: '#ffe08a', skin_bandi: '#9ae8ff', skin_u_unrecorded: '#48eaff', skin_u_first_explorer: '#e0b058', skin_u_primordial: '#f0c8ff' }[K.id] || '#ffd84a', uni = K.rarity === 'unique';
     const ease = (x) => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3); let im = null;
     ctx.save();
     ctx.fillStyle = '#05040a'; ctx.fillRect(0, 0, W, H);
@@ -838,7 +838,7 @@ class HUD {
         ctx.globalAlpha = 0.4 + 0.6 * k; ctx.fillStyle = i % 3 ? col : '#fff'; const sz = i % 4 ? 2 : 3; ctx.fillRect(Math.round(cx + Math.cos(a) * r * 1.6) - 1, Math.round(cy + Math.sin(a) * r) - 1, sz, sz); }
       ctx.globalAlpha = Math.min(1, k * 1.4); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, cy, 2 + 8 * k, 0, TAU); ctx.fill();
       ctx.globalAlpha = 1;
-      if (t > 0.3) hudText(ctx, '전설의 기운이 모여듭니다…', cx, H - 40, col, 'center', 9);
+      if (t > 0.3) hudText(ctx, uni ? '기록되지 않은 힘이 깨어납니다…' : '전설의 기운이 모여듭니다…', cx, H - 40, col, 'center', 9);
     }
     if (t >= 1.0) { // ② 섬광 이후: 배너 공개
       if (!L.flashed) { L.flashed = true; if (typeof SFX !== 'undefined') SFX.play('excal'); game.addShake && game.addShake(0.25, 3); }
@@ -855,13 +855,14 @@ class HUD {
       ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(sx, sy, im ? 24 : 34, im ? 5 : 7, 0, 0, TAU); ctx.fill();
       if (K.druid) { const b = typeof druidSprite === 'function' && druidSprite('bandi_down'), m = typeof druidSprite === 'function' && druidSprite('sam_down');
         if (m) drawSprite(ctx, m, sx + 26, sy, { scale: 2.4 }); if (b) drawSprite(ctx, b, sx - 62, sy, { scale: 3 }); }
-      else if (hero) { const spr = heroSprite(heroWithLook(hero, { sprite: K.sprite }), fr, 0); drawSprite(ctx, spr, sx, sy + Math.round(Math.sin(t * 2) * 1.5), { scale: im ? 3 : 4 }); }
+      else if (hero) { if (uni && typeof UVFX !== 'undefined') { const th = UVFX.themeOfSprite(K.sprite); if (th) { UVFX.preload(th); UVFX.draw(ctx, { sheet: UVFX_THEMES[th].common, row: 0, cell: 32, frames: 6, ms: 100, loop: true, t, x: sx, y: sy - 18, scale: 3, alpha: 0.9 }); UVFX.draw(ctx, { sheet: UVFX_THEMES[th].common, row: 1, cell: 32, frames: 6, ms: 100, loop: true, t, x: sx, y: sy - 70, scale: 3, alpha: 0.85 }); } } // 고유: 테마 오라·반짝임
+        const spr = heroSprite(heroWithLook(hero, { sprite: K.sprite }), fr, 0); drawSprite(ctx, spr, sx, sy + Math.round(Math.sin(t * 2) * 1.5), { scale: im ? 3 : 4 }); }
       // 글자: 왼쪽에서 밀려 들어옴
       const tx = 30 - 40 * (1 - rv); ctx.globalAlpha = rv;
-      hudText(ctx, '★  전설 스킨 획득  ★', tx, 74, '#ffd84a', 'left', 10);
+      hudText(ctx, uni ? '✦  고유 스킨 획득  ✦' : '★  전설 스킨 획득  ★', tx, 74, uni ? '#9ae8d8' : '#ffd84a', 'left', 10);
       hudText(ctx, K.name, tx, 92, '#fff', 'left', 22);
       ctx.fillStyle = col; ctx.fillRect(tx, 124, 150 * rv, 2);
-      const LN = K.line && jobLines(K.hero).find((l) => l.id === K.line), L2 = hero ? `${hero.name}${LN ? ' · ' + LN.name + ' 계열 전용' : ''}` : '';
+      const LN = K.line && jobLines(K.hero).find((l) => l.id === K.line), L2 = hero ? `${hero.name}${LN ? ' · ' + LN.name + ' 계열 전용' : uni ? ' · 모든 계열' : ''}` : '';
       hudText(ctx, L2, tx, 132, col, 'left', 10);
       const desc = (K.desc || '').split(' — ').pop().replace(/\s*\(.*\)\s*$/, '');
       hudText(ctx, desc, tx, 152, '#d8d0e8', 'left', 9);
@@ -879,7 +880,7 @@ class HUD {
       hudText(ctx, K.druid ? '반디' : K.name, bx + 10, by + 3, col, 'left', 7);
       hudText(ctx, line, bx + 10, by + 13, '#fff', 'left', fs);
     }
-    if (t >= HUD.legIntroEnd(K)) { ctx.globalAlpha = 0.55 + 0.45 * Math.sin(t * 4); hudText(ctx, L.queue.length ? '클릭 — 다음 전설 스킨' : '클릭하여 계속', cx, H - 17, '#ffe9a0', 'center', 8); ctx.globalAlpha = 1; }
+    if (t >= HUD.legIntroEnd(K)) { ctx.globalAlpha = 0.55 + 0.45 * Math.sin(t * 4); hudText(ctx, L.queue.length ? '클릭 — 다음 스킨' : '클릭하여 계속', cx, H - 17, '#ffe9a0', 'center', 8); ctx.globalAlpha = 1; }
     else if (t > 1.3) hudText(ctx, '클릭 — 건너뛰기', W - 10, H - 17, '#777', 'right', 7);
     ctx.restore();
   }

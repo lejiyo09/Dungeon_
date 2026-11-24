@@ -56,9 +56,9 @@ const SKINS = [
   { id: 'skin_redgunner', name: '붉은 머리 총잡이', hero: 'hero_gunner', line: 'base', sprite: 'redgunner', source: 'code', desc: '속사 사수 외형: 붉은 머리와 보안관 별을 단 남색 조끼' },
   { id: 'skin_silverelf', name: '은발 엘프 마도사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', source: 'code', desc: '빛 마도사 외형: 은발 트윈테일과 뾰족한 귀, 금테 흰 망토' },
   // ── 고유 등급 스킨: 직업 전체(모든 계열) · 착용하면 모든 스킬·공통 동작에 전용 VFX (js/systems/unique_vfx.js) · 장비 외형 테마
-  { id: 'skin_u_unrecorded', name: '미기록자', hero: 'hero_engineer', sprite: 'u_unrecorded', rarity: 'unique', source: 'unique', uniqueTheme: 'unrecorded', desc: '기술자 고유 외형 — 기록되지 않은 존재, 청록 글리치와 데이터 파편' },
-  { id: 'skin_u_first_explorer', name: '최초의 탐험가', hero: 'hero_swordsman', sprite: 'u_first_explorer', rarity: 'unique', source: 'unique', uniqueTheme: 'first_explorer', desc: '검사 고유 외형 — 나침반을 새긴 최초의 탐험가, 금빛 바람과 고대 문양' },
-  { id: 'skin_u_primordial', name: '시원체', hero: 'hero_druid', sprite: 'u_primordial', rarity: 'unique', source: 'unique', uniqueTheme: 'primordial', desc: '드루이드 고유 외형 — 모든 생명의 시작, 꽃잎과 생명 핵' },
+  { id: 'skin_u_unrecorded', name: '미기록자', hero: 'hero_engineer', sprite: 'u_unrecorded', rarity: 'unique', source: 'unique', uniqueTheme: 'unrecorded', intro: '기록에 없는 자. 그러니 아무도 나를 멈출 수 없어.', desc: '기술자 고유 외형 — 기록되지 않은 존재, 청록 글리치와 데이터 파편' },
+  { id: 'skin_u_first_explorer', name: '최초의 탐험가', hero: 'hero_swordsman', sprite: 'u_first_explorer', rarity: 'unique', source: 'unique', uniqueTheme: 'first_explorer', intro: '길이 없다면, 내가 처음 걷는 자가 되겠다.', desc: '검사 고유 외형 — 나침반을 새긴 최초의 탐험가, 금빛 바람과 고대 문양' },
+  { id: 'skin_u_primordial', name: '시원체', hero: 'hero_druid', sprite: 'u_primordial', rarity: 'unique', source: 'unique', uniqueTheme: 'primordial', intro: '모든 생명은 나에게서 시작되었다.', desc: '드루이드 고유 외형 — 모든 생명의 시작, 꽃잎과 생명 핵' },
   // ── 전설 등급 스킨 (애니메이션, 고퀄) — assets/legskins.png (4행 × 3프레임, 셀 106×108)
   { id: 'skin_leg_abyss', name: '심연의 기사', hero: 'hero_swordsman', line: 'sword', sprite: 'leg_abyss', rarity: 'legendary', source: 'gacha', intro: '심연의 바닥에서 돌아왔다. 이번엔 내가 어둠을 벤다.', desc: '검사 전설 외형 — 심연에서 돌아온 뿔투구 기사 (검사 계열 전용)' },
   { id: 'skin_leg_crimson', name: '진홍의 칼날', hero: 'hero_assassin', line: 'blade', sprite: 'leg_crimson', rarity: 'legendary', source: 'gacha', intro: '핏빛 장막이 걷힐 즈음엔… 이미 끝나 있을 거야.', desc: '암살자 전설 외형 — 핏빛 장막 속에서 춤추는 칼날 (칼날 계열 전용)' },

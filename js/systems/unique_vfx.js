@@ -76,8 +76,41 @@ const UVFX = {
     const th = this.themeOfSprite(sk); return th && UVFX_THEMES[th].hero === p.hero.id ? th : null;
   },
   // ── 인스턴스: { sheet, row, cell, frames, ms, loop, x, y, follow, until, layer, scale, rot, alpha, t, delay, fade, reverse }
-  add(o) { if (!this.enabled) return null; const I = Object.assign({ row: 0, cell: 64, frames: 8, ms: 90, loop: false, layer: 'top', scale: 1, rot: 0, alpha: 1, t: 0, delay: 0 }, o); this.list.push(I); if (this.list.length > 260) this.list.splice(0, this.list.length - 260); return I; },
-  common(theme, name, x, y, o = {}) { const T = UVFX_THEMES[theme]; if (!T) return null; return this.add(Object.assign({ sheet: T.common, row: UVFX_ROW[name], cell: 32, frames: 6, ms: 100, x, y, kind: name }, o)); },
+  add(o) { if (!this.enabled) return null; const I = Object.assign({ row: 0, cell: 64, frames: 8, ms: 90, loop: false, layer: 'top', scale: 1, rot: 0, alpha: 1, t: 0, delay: 0 }, o); this.list.push(I); if (this.list.length > 260) this.list.splice(0, this.list.length - 260);
+    if (!I.pending && !I.remote) this.netAdd(I); return I; },
+  // ── 멀티: 방장에서 생긴 효과를 참가자에게 (스냅샷에 실어 보냄) — 소환물·장판은 nid, 플레이어는 접속 ID로 따라감
+  net: { a: [], e: [], uid: 0 },
+  netGame() { const g = typeof game !== 'undefined' ? game : null; return g && g.coop && g.coop.host && typeof Net !== 'undefined' && Net.inRoom ? g : null; },
+  netPid(g, p) { if (!p || !g || !g.coop) return null; if (p === g.coop.me) return Net.id; for (const R of (g.remotes || new Map()).values()) if (R.p === p) return R.id; return null; },
+  netAdd(I) {
+    const g = this.netGame(); if (!g) return;
+    I.uid = ++this.net.uid; I.synced = true;
+    const r = { u: I.uid, s: I.sheet, r: I.row, c: I.cell, f: I.frames, m: I.ms, x: Math.round(I.x), y: Math.round(I.y), ly: I.layer === 'floor' ? 0 : 1 };
+    if (I.loop) r.l = 1; if (I.scale !== 1) r.sc = I.scale; if (I.rot) r.ro = Math.round(I.rot * 100) / 100; if (I.alpha !== 1) r.a = Math.round(I.alpha * 100) / 100; if (I.delay) r.d = Math.round(I.delay * 100) / 100;
+    if (I.life != null) r.lf = I.life; if (I.reverse) r.rv = 1; if (I.fadeOut) r.fo = 1; if (I.kind) r.k = I.kind; if (I.ox) r.ox = I.ox; if (I.oy) r.oy = I.oy;
+    const F = I.follow;
+    if (F) { if (typeof Player !== 'undefined' && F instanceof Player) r.fp = this.netPid(g, F);
+      else if ([...g.zones, ...g.allies].includes(F)) { if (!F.nid) F.nid = ++g.coop.nid; r.fz = F.nid; }
+      else if (F.dx !== undefined && F.speed) { r.vx = Math.round(F.dx * F.speed); r.vy = Math.round(F.dy * F.speed); r.lf = r.lf || 3; } }
+    const owner = I.pl || (typeof Player !== 'undefined' && F instanceof Player ? F : null); const pid = this.netPid(g, owner); if (pid != null) r.o = pid; // 이 효과의 주인 (참가자 자기 공통 효과는 참가자 화면에서 직접 만듦)
+    if (this.net.a.length < 80) this.net.a.push(r);
+  },
+  netEnd(I) { if (I.synced && this.netGame() && this.net.e.length < 120) this.net.e.push(I.uid); },
+  drainNet() { if (!this.net.a.length && !this.net.e.length) return undefined; const out = { a: this.net.a.splice(0), e: this.net.e.splice(0) }; return out; },
+  applyNet(g, d) { // 참가자 화면
+    const OWN = /^(move|dash|weapon|hit|heal|death|pickup|use)$/; const me = typeof Net !== 'undefined' ? Net.id : null;
+    for (const r of d.a || []) {
+      if (r.o === me && OWN.test(r.k || '')) continue; // 내 캐릭터의 공통 효과는 내 화면이 직접 만듦 (중복 방지)
+      const o = { sheet: r.s, row: r.r, cell: r.c, frames: r.f, ms: r.m, x: r.x, y: r.y, layer: r.ly ? 'top' : 'floor', loop: !!r.l, scale: r.sc || 1, rot: r.ro || 0, alpha: r.a == null ? 1 : r.a, delay: r.d || 0, reverse: !!r.rv, fadeOut: !!r.fo, kind: r.k, remote: true, uid: r.u, ox: r.ox || 0, oy: r.oy || 0 };
+      if (r.lf != null) o.life = r.lf; else if (o.loop) o.life = 60; // 반복 효과는 방장의 끝 신호로 사라짐 (안전 상한 60초)
+      if (r.fz != null) { const Z = g.coop && g.coop.zones; o.follow = Z ? Z.get(r.fz) : null; o.until = () => !(Z && Z.has(r.fz)); if (!o.follow) o.follow = null; }
+      else if (r.fp != null) { o.follow = r.fp === me ? g.player : (g.coop && g.coop.others && g.coop.others.get(r.fp) ? g.coop.others.get(r.fp).p : null); }
+      else if (r.vx != null) { o.vx = r.vx; o.vy = r.vy; }
+      this.add(o);
+    }
+    if (d.e && d.e.length) { const E = new Set(d.e); for (const I of this.list) if (I.remote && E.has(I.uid)) I.dead = true; this.list = this.list.filter((I) => !I.dead); }
+  },
+  common(theme, name, x, y, o = {}) { const T = UVFX_THEMES[theme]; if (!T) return null; return this.add(Object.assign({ sheet: T.common, row: UVFX_ROW[name], cell: 32, frames: 6, ms: 100, x, y, kind: name, pl: this.curPlayer || null }, o)); },
   skill(theme, id, x, y, o = {}) { const T = UVFX_THEMES[theme]; if (!T || !UVFX_SKILLS[T.dir].includes(id)) return null; return this.add(Object.assign({ sheet: `skills/${T.dir}/${id}.png`, cell: 64, frames: 8, ms: UVFX_SLOW.has(id) ? 110 : 90, x, y, kind: 'skill:' + id }, o)); },
   active(theme, id, o) { const T = UVFX_THEMES[theme]; if (!T || !UVFX_ACTIVE.has(id)) return null; return this.add(Object.assign({ sheet: `skills/${T.dir}/${id}_active.png`, cell: 64, frames: 6, ms: 140, loop: true, layer: 'floor', kind: 'active:' + id, theme, id }, o)); },
   clear() { this.list.length = 0; },
@@ -123,7 +156,7 @@ const UVFX = {
   track(game, dt) {
     const players = game.allPlayers ? game.allPlayers() : [game.player];
     for (const p of players) {
-      if (!p) continue;
+      if (!p) continue; this.curPlayer = p;
       const theme = this.themeOf(game, p); let s = this.st.get(p);
       if (!s) { s = { hp: p.hp, sh: p.shield || 0, state: p.state, step: 0, side: 1, dashT: 0, swing: p.swing, rec: p.recoil || 0, healT: 0, wT: 0, tf: 0 }; this.st.set(p, s); }
       if (theme) {
@@ -141,8 +174,9 @@ const UVFX = {
       }
       s.hp = p.hp; s.sh = p.shield || 0; s.state = p.state; s.swing = p.swing; s.rec = p.recoil || 0;
     }
+    this.curPlayer = null;
   },
-  event(game, p, name) { const theme = this.themeOf(game, p || game.player); if (theme && p) this.common(theme, name, p.x, p.y - 6, { layer: 'top', follow: p, oy: -6 }); }, // 획득·사용
+  event(game, p, name) { const theme = this.themeOf(game, p || game.player); if (theme && p) this.common(theme, name, p.x, p.y - 6, { layer: 'top', follow: p, oy: -6, pl: p }); }, // 획득·사용
   // ── 진행
   update(game, dt) {
     if (!this.enabled) return;
@@ -157,18 +191,47 @@ const UVFX = {
         const z = I.watch; if (z && z.alive === false) { if (I.pending === 'hitEnd') add.push(['hit', I.theme, z.x, z.y]); else add.push(['skill', I.theme, I.id, z.x, z.y, I.opts]); I.dead = true; }
         else if (I.t > 8) I.dead = true; continue;
       }
+      if (I.vx != null) { I.x += I.vx * dt; I.y += I.vy * dt; } // 참가자 화면: 탄 꼬리는 속도로 따라감
       if (I.follow) { if (I.follow.alive !== false) { I.x = I.follow.x + (I.ox || 0); I.y = I.follow.y + (I.oy || 0) + (I.oyFn ? I.oyFn() : 0); } }
       if (I.until && !I.ending && I.until()) { I.ending = true; I.t = 0; if (I.endHit) { add.push(['hit', null, I.x, I.y, I]); I.dead = true; continue; } if (I.kind && I.kind.indexOf('active:') === 0) add.push(['dissolve', I]); else { I.dead = true; continue; } }
       if (I.ending && I.kind && I.kind.indexOf('active:') === 0) { I.dead = true; continue; }
       if (I.life != null && I.t >= I.life) { if (I.kind && I.kind.indexOf('active:') === 0 && !I.ending) add.push(['dissolve', I]); I.dead = true; continue; }
       if (!I.loop && I.t >= I.frames * I.ms / 1000) I.dead = true;
     }
+    for (const I of this.list) if (I.dead || I.ending) this.netEnd(I);
     this.list = this.list.filter((I) => !I.dead);
     for (const a of add) {
       if (a[0] === 'hit') { const th = a[1] || (a[4] && a[4].sheet && Object.keys(UVFX_THEMES).find((k) => UVFX_THEMES[k].common === a[4].sheet)); if (th) this.common(th, 'hit', a[2], a[3], { layer: 'top' }); }
       else if (a[0] === 'skill') this.skill(a[1], a[2], a[3], a[4], a[5]);
       else if (a[0] === 'dissolve') { const I = a[1], T = UVFX_THEMES[I.theme]; if (T) this.add({ sheet: `skills/${T.dir}/${I.id}.png`, cell: 64, frames: 4, ms: 90, x: I.x, y: I.y, layer: I.layer, scale: I.scale, reverse: true, fadeOut: true, kind: 'end:' + I.id }); } // 사라지는 효과: 시전 끝 4프레임 역재생 + 흐려짐
     }
+  },
+  // ── 픽셀아트 회전 (RotSprite 방식): Scale2x 세 번으로 8배 → 회전 → 가운데 표본으로 줄임 · 32방향 캐시 (대각선 계단 현상 줄임)
+  rotCache: new Map(), rotOk: true,
+  scale2x(src, w, h) {
+    const out = new Uint32Array(w * h * 4), W2 = w * 2;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const P = src[y * w + x], A = y > 0 ? src[(y - 1) * w + x] : P, B = x < w - 1 ? src[y * w + x + 1] : P, C = x > 0 ? src[y * w + x - 1] : P, D = y < h - 1 ? src[(y + 1) * w + x] : P;
+      let e0 = P, e1 = P, e2 = P, e3 = P;
+      if (C === A && C !== D && A !== B) e0 = A; if (A === B && A !== C && B !== D) e1 = B; if (D === C && D !== B && C !== A) e2 = C; if (B === D && B !== A && D !== C) e3 = D;
+      const o = (y * 2) * W2 + x * 2; out[o] = e0; out[o + 1] = e1; out[o + W2] = e2; out[o + W2 + 1] = e3;
+    }
+    return out;
+  },
+  rotFrame(im, sx, sy, c, rot) {
+    if (!this.rotOk) return null;
+    const n = 32, k = ((Math.round(rot / TAU * n) % n) + n) % n; if (k === 0) return { cv: null, k };
+    const key = im.src + '|' + sx + '|' + sy + '|' + k; let R = this.rotCache.get(key); if (R) return R;
+    try {
+      const t = document.createElement('canvas'); t.width = c; t.height = c; const g = t.getContext('2d'); g.drawImage(im, sx, sy, c, c, 0, 0, c, c);
+      let px = new Uint32Array(g.getImageData(0, 0, c, c).data.buffer), w = c; for (let i = 0; i < 3; i++) { px = this.scale2x(px, w, w); w *= 2; } // 8배
+      const D = Math.ceil(c * 1.4143) + 2, out = new ImageData(D, D), o32 = new Uint32Array(out.data.buffer), th = k / n * TAU, cs = Math.cos(th), sn = Math.sin(th), h = D / 2, hc = c / 2;
+      for (let y = 0; y < D; y++) for (let x = 0; x < D; x++) { // 결과 픽셀 가운데를 거꾸로 돌려 8배 그림에서 한 점만 표본 (색 섞지 않음)
+        const dx = x + 0.5 - h, dy = y + 0.5 - h, u = (dx * cs + dy * sn + hc) * 8, v = (-dx * sn + dy * cs + hc) * 8, ui = Math.floor(u), vi = Math.floor(v);
+        if (ui >= 0 && vi >= 0 && ui < w && vi < w) o32[y * D + x] = px[vi * w + ui]; }
+      const cv = document.createElement('canvas'); cv.width = D; cv.height = D; cv.getContext('2d').putImageData(out, 0, 0);
+      R = { cv, k, D }; if (this.rotCache.size > 1500) this.rotCache.clear(); this.rotCache.set(key, R); return R;
+    } catch (e) { this.rotOk = false; return null; } // 그림을 읽을 수 없는 환경(file:// 등): 일반 회전으로
   },
   // ── 그리기
   draw(ctx, I) {
@@ -179,8 +242,9 @@ const UVFX = {
     const c = I.cell, s = I.scale, sx = f * c, sy = I.row * c, w = c * s;
     let a = I.alpha; if (I.fadeOut) a *= Math.max(0, 1 - I.t / (I.frames * I.ms / 1000));
     ctx.save(); ctx.imageSmoothingEnabled = false; ctx.globalAlpha = a; ctx.translate(Math.round(I.x), Math.round(I.y));
-    if (I.rot) ctx.rotate(I.rot);
-    ctx.drawImage(im, sx, sy, c, c, -Math.round(w / 2), -Math.round(w / 2), w, w);
+    const R = I.rot ? this.rotFrame(im, sx, sy, c, I.rot) : null;
+    if (R && R.cv) { const W = R.D * s; ctx.drawImage(R.cv, -Math.round(W / 2), -Math.round(W / 2), W, W); } // 미리 돌린 픽셀아트 (선명)
+    else { if (I.rot && !R) ctx.rotate(I.rot); ctx.drawImage(im, sx, sy, c, c, -Math.round(w / 2), -Math.round(w / 2), w, w); }
     ctx.restore();
   },
   render(ctx, layer, game) {

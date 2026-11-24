@@ -507,7 +507,7 @@ class Game {
     const here = this.lobbyArea === 'vault' ? 'vault' : 'lobby'; for (const P of Net.peers.values()) { if (P.mode !== here || performance.now() - P.seen > 8000) continue; /* 로비/지하 무기고 각각 */
       const base = this.data.heroes.get(P.hero) || DATA_HEROES[0], sk = skinSpriteOk(P.sk), hero = P.look || sk ? heroWithLook(base, Object.assign({}, P.look || {}, sk ? { sprite: sk } : {})) : base, name = Net.nameOf(P.id), t = this.time; /* 동료 스킨 */
       out.push({ y: P.y, render: (ctx) => { const spr = heroSprite(hero, P.moving ? Math.floor(t * 8) % 2 : 0); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(Math.round(P.x), Math.round(P.y) + 7, 6, 2, 0, 0, TAU); ctx.fill();
-        drawSprite(ctx, spr, P.x, P.y + 7, { flip: P.face < 0 }); hudText(ctx, name, Math.round(P.x), Math.round(P.y) - 20, '#7affc0', 'center', 7); } }); }
+        if (typeof UVFX !== 'undefined') UVFX.renderBack(ctx, { hero: base, state: 'IDLE', moving: P.moving, time: t }, Math.round(P.x), Math.round(P.y), P.sk); /* 고유 스킨 오라 */ drawSprite(ctx, spr, P.x, P.y + 7, { flip: P.face < 0 }); hudText(ctx, name, Math.round(P.x), Math.round(P.y) - 20, '#7affc0', 'center', 7); } }); }
     return out;
   }
   coopPartyMembers(players = Net.players) {
@@ -806,7 +806,7 @@ class Game {
   }
   legendIntroCheck(ids) { // [전설 스킨 획득 컷신] 스킨마다 처음 얻을 때 한 번씩
     const sv = this.save; sv.legIntroSeen = sv.legIntroSeen || []; let add = false;
-    for (const id of ids) { const K = SKINS.find((k) => k.id === id); if (!K || K.rarity !== 'legendary' || sv.legIntroSeen.includes(id) || !(sv.skins || []).includes(id)) continue;
+    for (const id of ids) { const K = SKINS.find((k) => k.id === id); if (!K || (K.rarity !== 'legendary' && K.rarity !== 'unique') || sv.legIntroSeen.includes(id) || !(sv.skins || []).includes(id)) continue;
       sv.legIntroSeen.push(id); (this.legendIntro = this.legendIntro || { queue: [], start: 0 }).queue.push(K); add = true; }
     if (add) { if (this.legendIntro.queue.length && !this.legendIntro.K) this.legendIntroNext(); writeSave(sv); }
   }

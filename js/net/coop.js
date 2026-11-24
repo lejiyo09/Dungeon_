@@ -372,7 +372,7 @@ Object.assign(Game.prototype, {
     const eb = this.enemyBullets.slice(0, 240).map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.vx), Math.round(b.vy), b.r, b.color]);
     const td = []; const T = this.map.tiles, L = C.lastTiles; if (L && L.length === T.length) for (let i = 0; i < T.length; i++) if (T[i] !== L[i]) { td.push([i, T[i]]); L[i] = T[i]; }
     C.seq = (C.seq || 0) + 1;
-    const msg = { k: 'snap', q: C.seq, g: this.gold, kills: this.kills, wi: this.worldIdx, li: this.levelIdx, ru: C.reviveUsed ? 1 : 0, pl: players, en, pr, eb,
+    const msg = { k: 'snap', q: C.seq, ux: typeof UVFX !== 'undefined' ? UVFX.drainNet() : undefined, /* 고유 스킨 VFX */ g: this.gold, kills: this.kills, wi: this.worldIdx, li: this.levelIdx, ru: C.reviveUsed ? 1 : 0, pl: players, en, pr, eb,
       pk: this.pickups.map((k) => [k.kind, Math.round(k.x), Math.round(k.y), k.def ? k.def.id : 0]),
       hz: this.hazards.map((h) => [Math.round(h.x), Math.round(h.y), h.r, r1(h.t), h.delay, h.color, h.kind || 0]),
       po: this.portals.map((p) => [Math.round(p.x), Math.round(p.y), p.label || '', p.color || null]),
@@ -493,6 +493,7 @@ Object.assign(Game.prototype, {
       for (const [k, v] of Object.entries(coopUnpack(z))) { if (k === 'f') continue; try { o[k] = v; } catch (e) { /* 읽기 전용 값은 건너뜀 */ } } (['Turret', 'Drone', 'SpiritWolf'].includes(z.c) ? al : zl).push(o); }
     for (const id of [...C.zones.keys()]) if (!seenZ.has(id)) C.zones.delete(id);
     this.zones = zl; this.allies = al;
+    if (d.ux && typeof UVFX !== 'undefined') UVFX.applyNet(this, d.ux); // 고유 스킨 VFX (방장에서 생긴 것, 소환물·장판·플레이어를 따라감)
   },
   coopGuestSanctum(d) {
     if (!this.coopRunKey) { const sv = this.save; sv.sanctumReached = true; if (d.cp) { const c = this.deepCps(); c[this.deepKey(sv.selected, d.cp.line || null)] = d.cp; } writeSave(sv); }
