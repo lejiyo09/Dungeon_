@@ -292,7 +292,7 @@ class HUD {
         const g = ctx.createLinearGradient(0, 0, 0, VIEW_H); g.addColorStop(0, 'rgba(10,8,18,0.5)'); g.addColorStop(0.4, 'rgba(10,8,18,0.05)'); g.addColorStop(1, 'rgba(10,8,18,0.92)'); ctx.fillStyle = g; ctx.fillRect(0, 0, MW, VIEW_H);
         hudText(ctx, '✦ 전설 배너 ✦', MW / 2, 152, '#ffe9a0', 'center', 9);
         hudText(ctx, K.name, MW / 2, 164, '#fff', 'center', 16);
-        hudText(ctx, `${game.data.heroes.get(K.hero).name} 전용`, MW / 2, 186, '#bfe6ff', 'center', 8);
+        { const LN = K.line && jobLines(K.hero).find((l) => l.id === K.line); hudText(ctx, `${game.data.heroes.get(K.hero).name}${LN ? ' · ' + LN.name + ' 계열' : ''} 전용`, MW / 2, 186, '#bfe6ff', 'center', 8); } // 계열 전용 표시
         const owned = (sv.skins || []).includes(K.id), sh = (sv.shards && sv.shards[K.id]) || 0;
         if (owned) hudText(ctx, '보유 완료 — 조각은 마일리지로 전환', MW / 2, 200, '#ffb0d8', 'center', 7);
         else { // 조각 진행도 게이지
@@ -859,7 +859,7 @@ class HUD {
       hudText(ctx, '★  전설 스킨 획득  ★', tx, 74, '#ffd84a', 'left', 10);
       hudText(ctx, K.name, tx, 92, '#fff', 'left', 22);
       ctx.fillStyle = col; ctx.fillRect(tx, 124, 150 * rv, 2);
-      const L2 = hero ? `${hero.name}${K.desc && K.desc.indexOf('전직:') >= 0 ? ' · ' + K.desc.slice(K.desc.indexOf('전직:') + 3).replace(')', '').trim() + ' 계열' : ''}` : '';
+      const LN = K.line && jobLines(K.hero).find((l) => l.id === K.line), L2 = hero ? `${hero.name}${LN ? ' · ' + LN.name + ' 계열 전용' : ''}` : '';
       hudText(ctx, L2, tx, 132, col, 'left', 10);
       const desc = (K.desc || '').split(' — ').pop().replace(/\s*\(.*\)\s*$/, '');
       hudText(ctx, desc, tx, 152, '#d8d0e8', 'left', 9);

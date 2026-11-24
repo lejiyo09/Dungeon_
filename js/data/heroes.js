@@ -56,10 +56,10 @@ const SKINS = [
   { id: 'skin_redgunner', name: '붉은 머리 총잡이', hero: 'hero_gunner', line: 'base', sprite: 'redgunner', source: 'code', desc: '속사 사수 외형: 붉은 머리와 보안관 별을 단 남색 조끼' },
   { id: 'skin_silverelf', name: '은발 엘프 마도사', hero: 'hero_mage', line: 'light', sprite: 'silverelf', source: 'code', desc: '빛 마도사 외형: 은발 트윈테일과 뾰족한 귀, 금테 흰 망토' },
   // ── 전설 등급 스킨 (애니메이션, 고퀄) — assets/legskins.png (4행 × 3프레임, 셀 106×108)
-  { id: 'skin_leg_abyss', name: '심연의 기사', hero: 'hero_swordsman', sprite: 'leg_abyss', rarity: 'legendary', source: 'gacha', intro: '심연의 바닥에서 돌아왔다. 이번엔 내가 어둠을 벤다.', desc: '검사 전설 외형 — 심연에서 돌아온 뿔투구 기사 (전직: 심연)' },
-  { id: 'skin_leg_crimson', name: '진홍의 그림자', hero: 'hero_assassin', sprite: 'leg_crimson', rarity: 'legendary', source: 'gacha', intro: '핏빛 장막이 걷힐 즈음엔… 이미 끝나 있을 거야.', desc: '암살자 전설 외형 — 핏빛 장막을 두른 그림자 (전직: 그림자)' },
-  { id: 'skin_leg_void', name: '공허의 마도사', hero: 'hero_mage', sprite: 'leg_void', rarity: 'legendary', source: 'gacha', intro: '공허는 비어 있지 않아. 모든 것을 삼킬 뿐이지.', desc: '마법사 전설 외형 — 어둠을 휘감은 공허의 현자 (전직: 어둠)' },
-  { id: 'skin_leg_star', name: '성역의 성자', hero: 'hero_priest', sprite: 'leg_star', rarity: 'legendary', source: 'gacha', intro: '별빛이 머무는 곳, 그곳이 저의 성역입니다.', desc: '사제 전설 외형 — 별빛 성역의 성자 (전직: 성역)' },
+  { id: 'skin_leg_abyss', name: '심연의 기사', hero: 'hero_swordsman', line: 'sword', sprite: 'leg_abyss', rarity: 'legendary', source: 'gacha', intro: '심연의 바닥에서 돌아왔다. 이번엔 내가 어둠을 벤다.', desc: '검사 전설 외형 — 심연에서 돌아온 뿔투구 기사 (검사 계열 전용)' },
+  { id: 'skin_leg_crimson', name: '진홍의 칼날', hero: 'hero_assassin', line: 'blade', sprite: 'leg_crimson', rarity: 'legendary', source: 'gacha', intro: '핏빛 장막이 걷힐 즈음엔… 이미 끝나 있을 거야.', desc: '암살자 전설 외형 — 핏빛 장막 속에서 춤추는 칼날 (칼날 계열 전용)' },
+  { id: 'skin_leg_void', name: '공허의 마도사', hero: 'hero_mage', line: 'dark', sprite: 'leg_void', rarity: 'legendary', source: 'gacha', intro: '공허는 비어 있지 않아. 모든 것을 삼킬 뿐이지.', desc: '마법사 전설 외형 — 어둠을 휘감은 공허의 현자 (어둠 계열 전용)' },
+  { id: 'skin_leg_star', name: '성역의 성자', hero: 'hero_priest', line: 'base', sprite: 'leg_star', rarity: 'legendary', source: 'gacha', intro: '별빛이 머무는 곳, 그곳이 저의 성역입니다.', desc: '사제 전설 외형 — 별빛 성역의 성자 (성역 계열 전용)' },
   // ── 변신 드루이드 스킨: 평소 반디(앞/옆/뒤) ↔ 변신 시 샘(대기=22·공격=21, 좌우 반전만)
   { id: 'skin_bandi', name: '반디', hero: 'hero_druid', sprite: 'druid_bandi', rarity: 'legendary', source: 'code', druid: true, intro: '난 싸울 거야. 모든 것이 불타 버릴 때까지.', desc: '드루이드 변신 스킨 — 평소엔 반디, 변신하면 날개 돋친 샘으로 (선물 코드)' },
   // ── 일반·레어·에픽 스킨 (앞모습, 좌우 반전) — assets/commonskins.png · 퀄리티별 등급: 기존 1·2단계=레어, 3단계=에픽, 새 22종=일반
