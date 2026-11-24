@@ -628,7 +628,20 @@ const DATA_WEAPONS = [
     status: { type: 'burn', chance: 0.4, duration: 2, dps: 9 }, pierce: 0, knockback: 3, color: '#8a4a2a', len: 12, bulletColor: '#ff8a3a', bulletSize: 2 },
   { id: 'weapon_frostscythe_001', name: '서리 대낫', rarity: 'legendary', type: 'melee', shape: 'sword',
     damage: 83, fireRate: 1.5, energyCost: 0.4, range: 48, arcDeg: 200, lifesteal: 0.25, knockback: 7,
-    status: { type: 'freeze', chance: 0.5, duration: 1.5, slow: 0.55 }, wave: { damage: 30, speed: 340, range: 190 }, color: '#9ad8f0', len: 18 }
+    status: { type: 'freeze', chance: 0.5, duration: 1.5, slow: 0.55 }, wave: { damage: 30, speed: 340, range: 190 }, color: '#9ad8f0', len: 18 },
+  // ── 소환 무기 (영웅): 쏘면 소환수가 나와 따로 싸움 — 최대 수를 넘으면 가장 오래된 소환수가 사라짐 · 피해는 무기 강화·공격력·치명타를 따름 (Familiar)
+  { id: 'weapon_beasthorn_001', name: '야수의 뿔피리', rarity: 'epic', type: 'gun', shape: 'gun',
+    damage: 26, fireRate: 0.6, energyCost: 6, range: 230, projectileSpeed: 0, projectileCount: 1,
+    familiar: { kind: 'hound', name: '그림자 사냥개', max: 3, life: 12, rate: 0.6, speed: 165, reach: 9 }, knockback: 3, color: '#e8d8b0', len: 10, bulletColor: '#ff9a3a',
+    desc: '불러낸 그림자 사냥개(최대 3마리)가 가까운 적을 쫓아가 물어뜯는다.' },
+  { id: 'weapon_wisplantern_001', name: '정령 등불', rarity: 'epic', type: 'gun', shape: 'staff',
+    damage: 18, fireRate: 0.5, energyCost: 5, range: 250, projectileSpeed: 260, projectileCount: 1, pierce: 1,
+    familiar: { kind: 'wisp', name: '등불 정령', max: 2, life: 14, rate: 0.45, homing: 4.5 }, status: { type: 'curse', chance: 0.2, duration: 3 }, knockback: 1, color: '#6a5a8a', len: 14, bulletColor: '#b89aff',
+    desc: '등불 정령(최대 2)이 곁을 맴돌며 적을 따라가는 마탄을 쏜다. 가끔 저주를 건다.' },
+  { id: 'weapon_golemcore_001', name: '바위 골렘 핵', rarity: 'epic', type: 'gun', shape: 'gun',
+    damage: 58, fireRate: 0.35, energyCost: 8, range: 220, projectileSpeed: 0, projectileCount: 1,
+    familiar: { kind: 'golem', name: '바위 골렘', max: 1, life: 16, rate: 1.3, speed: 70, reach: 14, radius: 30 }, knockback: 9, color: '#8a8478', len: 9, bulletColor: '#7ae8d8',
+    desc: '바위 골렘(1기)이 느리게 다가가 주먹으로 내려쳐 주변 적을 함께 날려 버린다.' }
 ];
 
 // [사용자 결정] 기본 무기(직업·갈래 시작 무기) +10강 각성: 이름에 '· 각성'이 붙고 아래 능력이 더해짐 (수치는 Claude가 정한 [제안])

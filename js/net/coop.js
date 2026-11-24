@@ -30,7 +30,7 @@ const r1 = (v) => Math.round(v * 10) / 10;
 // 장판·소환물 공유: 클래스 이름으로 다시 만들어 그림만 그림 (처음엔 전부, 그다음엔 움직이는 값만)
 const COOP_CLASSES = {};
 ['RhongoTower', 'BossRhongoTower', 'ChainCircle', 'AvalonGarden', 'SkillAura', 'SkillCast', 'ExcaliburRaise', 'FxEmitter', 'DarkHole', 'ShadowStrike', 'Trap', 'Strike', 'Sanctuary', 'SpiritWolf', 'Turret', 'Drone', 'Puddle',
-  'ThornBurst', 'BleedTicker', 'GaeBolgThrow', 'HeavenChains', 'BossGate', 'KingChainCast', 'BullHornCharge', 'ExplosionSigil', 'BladeRing', 'LightSatellites', 'FireBomb', 'ShockGrid', 'TrapSentry'].forEach((n) => { try { const c = Function('return typeof ' + n + " !== 'undefined' ? " + n + ' : null')(); if (c) COOP_CLASSES[n] = c; } catch (e) { /* 없는 클래스 */ } });
+  'Familiar', 'ThornBurst', 'BleedTicker', 'GaeBolgThrow', 'HeavenChains', 'BossGate', 'KingChainCast', 'BullHornCharge', 'ExplosionSigil', 'BladeRing', 'LightSatellites', 'FireBomb', 'ShockGrid', 'TrapSentry'].forEach((n) => { try { const c = Function('return typeof ' + n + " !== 'undefined' ? " + n + ' : null')(); if (c) COOP_CLASSES[n] = c; } catch (e) { /* 없는 클래스 */ } });
 const COOP_REF_RENDER = new Set(['SkillCast', 'ExcaliburRaise', 'ShadowStrike', 'Drone', 'BladeRing', 'LightSatellites']); // 그림에 주인(플레이어) 위치를 쓰는 장판·소환물
 // 이름표가 '보는 사람의 무기·체력'에 따라 바뀌는 물건: 방장 쪽 이름표 대신 값만 보내고, 참가자 화면에서 자기 기준으로 만듦 (강화대에 방장 무기가 뜨던 문제)
 const COOP_OWN_LABEL = { UpgradeAnvil: ['discount', 'bonus', 'room'], Forge: ['price', 'used'], BloodAltar: ['used'] };
@@ -490,7 +490,7 @@ Object.assign(Game.prototype, {
       if (!o) { o = Object.create(K.prototype); o.alive = true; C.zones.set(z.n, o); // 그림이 실패해도 게임은 계속 (그리기 상태는 따로 저장·복원 → 화면이 망가지지 않음)
         o.render = function (ctx) { coopSafeDraw(ctx, () => K.prototype.render.call(this, ctx, window.__game)); };
         if (K.prototype.renderTop) o.renderTop = function (ctx) { coopSafeDraw(ctx, () => K.prototype.renderTop.call(this, ctx, window.__game)); }; }
-      for (const [k, v] of Object.entries(coopUnpack(z))) { if (k === 'f') continue; try { o[k] = v; } catch (e) { /* 읽기 전용 값은 건너뜀 */ } } (['Turret', 'Drone', 'SpiritWolf'].includes(z.c) ? al : zl).push(o); }
+      for (const [k, v] of Object.entries(coopUnpack(z))) { if (k === 'f') continue; try { o[k] = v; } catch (e) { /* 읽기 전용 값은 건너뜀 */ } } (['Turret', 'Drone', 'SpiritWolf', 'Familiar'].includes(z.c) ? al : zl).push(o); }
     for (const id of [...C.zones.keys()]) if (!seenZ.has(id)) C.zones.delete(id);
     this.zones = zl; this.allies = al;
     if (d.ux && typeof UVFX !== 'undefined') UVFX.applyNet(this, d.ux); // 고유 스킨 VFX (방장에서 생긴 것, 소환물·장판·플레이어를 따라감)

@@ -634,6 +634,62 @@ class Puddle {
 }
 
 // 전투 드론: 플레이어 주위를 따라다니며 가장 가까운 적을 사격
+// 소환 무기의 소환수: hound(쫓아가 물기) · wisp(곁을 돌며 유도 마탄) · golem(느리게 다가가 범위 내려치기)
+class Familiar {
+  constructor(owner, def, idx, wmods) { const F = def.familiar; this.owner = owner; this.def = def; this.F = F; this.kind = F.kind; this.idx = idx; this.wmods = wmods; this.x = owner.x + (idx - 1) * 10; this.y = owner.y + 6;
+    this.half = F.kind === 'golem' ? 8 : 5; this.life = F.life; this.cd = 0.4; this.t = 0; this.face = 1; this.alive = true; this.atkT = 0; this.ang = 0; }
+  target(world, range, los) { let best = null, bd = range;
+    for (const e of world.enemies) { if (!e.targetable || (e.def.dummy && world.mode !== 'lobby')) continue; const d = Math.hypot(e.x - this.x, e.y - this.y); if (d < bd && (!los || hasLineOfSight(this, e, world.map))) { bd = d; best = e; } }
+    return best; }
+  update(dt, world) {
+    this.t += dt; this.life -= dt; this.cd -= dt; this.atkT = Math.max(0, this.atkT - dt);
+    if (this.life <= 0 || this.owner.state === 'DEAD') { this.alive = false; world.effects.burst(this.x, this.y, this.def.bulletColor, 8); return; }
+    const P = this.owner, F = this.F, mods = this.wmods ? this.wmods() : P.mods;
+    if (Math.hypot(this.x - P.x, this.y - P.y) > 220 || overlapsSolid(this.x, this.y, this.half, world.map)) { this.x = P.x; this.y = P.y; } // 너무 멀어지거나 벽에 끼면 주인 곁으로
+    if (this.kind === 'wisp') { // 주인 곁을 돌며 쏨 (떠 있으니 벽 판정 없이 부드럽게)
+      const a = this.t * 1.8 + this.idx * Math.PI, tx = P.x + Math.cos(a) * 20, ty = P.y - 14 + Math.sin(a) * 9, k = 1 - Math.exp(-7 * dt);
+      this.x += (tx - this.x) * k; this.y += (ty - this.y) * k;
+      const best = this.target(world, this.def.range, true); if (!best) return;
+      this.ang = Math.atan2(best.y - this.y, best.x - this.x); this.face = Math.cos(this.ang) < 0 ? -1 : 1;
+      if (this.cd <= 0) { this.cd = F.rate; this.atkT = 0.15;
+        world.projectiles.push(new Projectile({ x: this.x, y: this.y, dx: Math.cos(this.ang), dy: Math.sin(this.ang), speed: this.def.projectileSpeed, range: this.def.range, damage: this.def.damage, pierce: this.def.pierce || 0, knockback: this.def.knockback, mods, color: this.def.bulletColor, size: 2, homing: F.homing, status: this.def.status || null }));
+        world.effects.muzzle(this.x, this.y, this.ang, this.def.bulletColor); }
+      return; }
+    // hound · golem: 걸어서 쫓아감, 적이 없으면 주인 뒤를 따라감
+    const best = this.target(world, this.def.range, false);
+    const tx = best ? best.x : P.x - (P.faceVis || 1) * (14 + this.idx * 8), ty = best ? best.y : P.y + 6 + (this.idx % 2) * 6;
+    const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy) || 1, stop = best ? best.radius + F.reach : 8;
+    if (d > stop) { const v = F.speed * dt; moveAndCollide(this, dx / d * Math.min(v, d - stop + 0.5), dy / d * Math.min(v, d - stop + 0.5), world.map); }
+    if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1;
+    if (best && d <= stop + 4 && this.cd <= 0) { this.cd = F.rate; this.atkT = this.kind === 'golem' ? 0.35 : 0.2;
+      const src = { damage: this.def.damage, mods, knockback: this.def.knockback, status: this.def.status || null };
+      if (this.kind === 'golem') { world.explodeAt(best.x, best.y, F.radius, { color: '#a89a80', hurtEnemies: true, src }); world.effects.ring(best.x, best.y, F.radius, this.def.bulletColor); world.addShake(0.1, 3); }
+      else { world.damageEnemy(best, src, dx / d, dy / d); world.effects.slash(this.x + this.face * 4, this.y, Math.atan2(dy, dx), 10, 1.2, this.def.bulletColor); } }
+  }
+  render(ctx) {
+    if (this.life < 2 && Math.floor(this.life * 10) % 2 === 0) return; // 사라지기 직전 깜박임
+    const x = Math.round(this.x), y = Math.round(this.y), f = this.face, t = this.t, R = (dx, dy, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(f > 0 ? x + dx : x - dx - w, y + dy, w, h); };
+    if (this.kind === 'wisp') {
+      const fl = Math.sin(t * 9) * 0.5 + 0.5, yy = Math.round(Math.sin(t * 5) * 1.5);
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x - 3, Math.round(this.owner.y) + 4, 6, 2);
+      ctx.save(); ctx.globalAlpha = 0.25 + 0.15 * fl; ctx.fillStyle = this.def.bulletColor; ctx.beginPath(); ctx.arc(x, y + yy, 7 + fl * 2, 0, TAU); ctx.fill(); ctx.restore();
+      ctx.fillStyle = OUTLINE; ctx.fillRect(x - 3, y + yy - 3, 6, 6); ctx.fillStyle = '#8a6ad8'; ctx.fillRect(x - 2, y + yy - 2, 4, 4); ctx.fillStyle = '#efe4ff'; ctx.fillRect(x - 1, y + yy - 2, 2, 2);
+      ctx.fillStyle = this.def.bulletColor; ctx.fillRect(x - 1, y + yy + 3, 2, 1 + Math.round(fl * 2)); ctx.fillRect(x - 1 + (Math.floor(t * 8) % 2 ? 1 : -1), y + yy - 5, 1, 2); // 꼬리 불꽃·불티
+      return; }
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    if (this.kind === 'hound') { const st = this.atkT > 0 ? 1 : Math.floor(t * 10) % 2, lunge = this.atkT > 0 ? 2 : 0; ctx.fillRect(x - 5, y + 5, 10, 2);
+      const X = (dx) => dx + lunge;
+      R(X(-6), -4, 11, 6, OUTLINE); R(X(-5), -3, 9, 4, '#2c2438'); R(X(3), -6, 5, 5, OUTLINE); R(X(4), -5, 3, 3, '#2c2438'); R(X(4), -7, 1, 2, OUTLINE); R(X(6), -7, 1, 2, OUTLINE); // 몸·머리·귀
+      R(X(6), -4, 1, 1, '#ff9a3a'); R(X(-8), -5 - (Math.floor(t * 12) % 2), 3, 2, '#ff9a3a'); R(X(-7), -4, 2, 1, '#ffd08a'); // 눈·불꽃 꼬리
+      R(X(-5), 2, 2, st ? 2 : 3, OUTLINE); R(X(2), 2, 2, st ? 3 : 2, OUTLINE); return; }
+    // golem
+    const sl = this.atkT > 0 ? Math.round(this.atkT / 0.35 * 4) : 0, bob = Math.floor(t * 4) % 2; ctx.fillRect(x - 9, y + 7, 18, 3);
+    R(-8, -14 + bob, 16, 18, OUTLINE); R(-7, -13 + bob, 14, 16, '#8a8478'); R(-7, -13 + bob, 14, 3, '#a8a294'); R(-4, -18 + bob, 8, 6, OUTLINE); R(-3, -17 + bob, 6, 4, '#9a9488'); // 몸통·머리
+    R(1, -16 + bob, 2, 1, '#7ae8d8'); R(-2, -8 + bob, 4, 1, '#7ae8d8'); R(0, -9 + bob, 1, 3, '#7ae8d8'); R(-5, -4 + bob, 2, 1, '#5ac8b8'); // 빛나는 룬
+    R(-12, -12 + bob - sl, 5, 10, OUTLINE); R(-11, -11 + bob - sl, 3, 8, '#7a7468'); R(7, -12 + bob - sl, 5, 10, OUTLINE); R(8, -11 + bob - sl, 3, 8, '#7a7468'); // 팔 (내려치기 전 들어 올림)
+    R(-6, 4, 4, 3, OUTLINE); R(2, 4, 4, 3, OUTLINE);
+  }
+}
 class Drone {
   constructor(owner, def, idx) { this.owner = owner; this.def = def; this.idx = idx; this.x = owner.x; this.y = owner.y - 16; this.half = 5; this.life = def.summon.life; this.cd = 0.3; this.ang = 0; this.t = 0; this.alive = true; }
   update(dt, world) {

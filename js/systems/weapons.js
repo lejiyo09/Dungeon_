@@ -111,6 +111,13 @@ class WeaponSystem {
     if (!this.canPay(player, w.def.energyCost)) { this.weakAttack(player, w); return; }
     if (!this.spend(player, w.def.energyCost)) return;
     w.cooldown += 1 / this.getFireRate(player, w);
+    if (w.def.familiar) { // 소환 무기: 사냥개·정령·골렘 — 최대 수를 넘으면 가장 오래된 소환수가 사라짐
+      const mine = this.world.allies.filter((a) => a instanceof Familiar && a.def === w.def && a.owner === player && a.alive);
+      while (mine.length >= w.def.familiar.max) mine.shift().alive = false;
+      const fm = new Familiar(player, w.def, mine.length, () => weaponMods(player, w)); this.world.allies.push(fm);
+      this.world.effects.sparkle(fm.x, fm.y - 4, w.def.bulletColor); this.world.effects.ring(fm.x, fm.y, 10, w.def.bulletColor); SFX.play('skill', 0.1); player.recoil = 0.5;
+      return;
+    }
     if (w.def.summon) { // 드론 소환: 최대 수를 넘으면 가장 오래된 드론이 사라짐
       const mine = this.world.allies.filter((a) => a instanceof Drone && a.def === w.def);
       while (mine.length >= w.def.summon.max) mine.shift().alive = false;

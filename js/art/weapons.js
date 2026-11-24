@@ -7,6 +7,10 @@
 //        y 금색, r 빨강, s 시위, w 흰색, .=투명
 // ════════════════════════════════════════════
 Object.assign(WPIX, {
+  // ── 소환 무기 (영웅)
+  beasthorn: { auto: true, p: [1, 4], rows: ['..........ccc.', '.......ccaaaac', '....yyaaaabbb.', '.ddyaaabbb....', 'dddyabb.......', '.d..b.........'] },
+  wisplantern: { auto: true, p: [2, 2], rows: ['...............nnn.', '..............nooon', 'ddddddddddddddnowon', '..............nooon', '...............nnn.'] },
+  golemcore: { auto: true, p: [2, 5], rows: ['..mmmm..', '.maaaam.', 'maoooam.', 'maoowam.', '.maaam..', '..nn....', '..nn....'] },
   // ── 권총류
   pistol2: { auto: true, p: [2, 3], rows: ['.cccccccc.', '.aaaaaaaan', '.bbnbbbbb.', '.ggn......', '.gg.......', '.gg.......'] },
   revolver: { auto: true, p: [2, 3], rows: ['...cccccccccc', '.naaaaaaaaaaa', '.nnmmmmbb....', '.dd.mmm......', '.dd..........', '..d..........'] },
@@ -140,6 +144,7 @@ Object.assign(WPIX, {
 });
 
 Object.assign(WEAPON_SPRITE, {
+  weapon_beasthorn_001: 'beasthorn', weapon_wisplantern_001: 'wisplantern', weapon_golemcore_001: 'golemcore', // 소환 무기
   weapon_friendchain_001: 'friendchain',
   weapon_pistol_001: 'pistol2', weapon_revolver_001: 'revolver', weapon_flintlock_001: 'flintlock', weapon_watergun_001: 'watergun',
   weapon_dual_001: 'dual', weapon_laser_001: 'laser2', weapon_smg_001: 'smg2', weapon_rivet_001: 'rivet', weapon_burst_001: 'rifle2',
