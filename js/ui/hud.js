@@ -28,6 +28,7 @@ function drawBannerContain(ctx, im, dx, dy, dw, dh) {
   const scale = Math.min(dw / iw, dh / ih), w = iw * scale, h = ih * scale;
   ctx.drawImage(im, 0, 0, iw, ih, dx + (dw - w) / 2, dy + (dh - h) / 2, w, h);
 }
+function fitSize(str, w, max = 8, min = 5) { return Math.max(min, Math.min(max, Math.floor(w / Math.max(1, String(str).length)))); } // 이름이 칸을 넘지 않게 글자 크기 줄이기 (한글 1자 ≈ 글자 크기 px)
 function hudText(ctx, str, x, y, color = '#fff', align = 'left', size = 10) {
   ctx.font = HUD_FONTS[size] || (HUD_FONTS[size] = `bold ${size}px 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif`); ctx.textAlign = align; ctx.textBaseline = 'top';
   ctx.fillStyle = '#000'; ctx.fillText(str, x + 1, y + 1);
@@ -252,7 +253,7 @@ class HUD {
         if (leg) hudText(ctx, '★ 전설', r.x + 5, r.y + 4, '#ffd84a', 'left', 6);
         else if (SKIN_RARITY[K.rarity] && K.source === 'common') hudText(ctx, (K.rarity === 'common' ? '' : '◆ ') + SKIN_RARITY[K.rarity].name, r.x + 5, r.y + 4, SKIN_RARITY[K.rarity].color, 'left', 6); // 일반·레어·에픽 표시
         if (!owned) hudText(ctx, '🔒', r.x + r.w / 2, r.y + (r.small ? 16 : 22), '#fff', 'center', 10);
-        hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + (r.small ? 42 : 54), owned ? (leg ? '#ffe9a0' : '#fff') : '#888', 'center', 8);
+        hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + (r.small ? 42 : 54), owned ? (leg ? '#ffe9a0' : '#fff') : '#888', 'center', fitSize(`${i + 1}. ${K.name}`, r.w - 8));
         hudText(ctx, `${hero ? hero.name.split(' ')[0] : ''}${L ? ' · ' + L.name + ' 계열' : leg ? ' · 전 계열' : ''}`, r.x + r.w / 2, r.y + (r.small ? 52 : 66), '#c8c0d8', 'center', 6);
         hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : K.source === 'gacha' || K.source === 'common' ? '스킨 뽑기로 획득 (J)' : '선물 코드로 획득', r.x + r.w / 2, r.y + (r.small ? 61 : 78), on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
       });
@@ -280,7 +281,7 @@ class HUD {
           ctx.fillStyle = '#1a1626'; ctx.fillRect(r.x + 4, r.y + 4, tw, thh);
           if (th) drawBannerContain(ctx, th, r.x + 4, r.y + 4, tw, thh);
           hudText(ctx, Ks.name, r.x + tw + 12, r.y + 12, '#fff', 'left', 11);
-          hudText(ctx, game.data.heroes.get(Ks.hero).name, r.x + tw + 12, r.y + 28, '#9ad8ff', 'left', 7);
+          { const LN = Ks.line && jobLines(Ks.hero).find((l) => l.id === Ks.line); hudText(ctx, `${game.data.heroes.get(Ks.hero).name}${LN ? ' · ' + LN.name + ' 계열 전용' : ''}`, r.x + tw + 12, r.y + 28, '#9ad8ff', 'left', 7); }
           const buy = HUD.gachaShopBuy(i), can = !own && (sv.mileage || 0) >= GACHA.shopPrice, bon = hit(buy);
           ctx.fillStyle = own ? 'rgba(255,216,74,0.14)' : can ? (bon ? 'rgba(255,216,74,0.34)' : 'rgba(255,176,216,0.22)') : 'rgba(90,90,90,0.18)'; ctx.fillRect(buy.x, buy.y, buy.w, buy.h);
           ctx.strokeStyle = own ? '#ffd84a' : can ? GACHA.mileageColor : '#555'; ctx.strokeRect(buy.x + 0.5, buy.y + 0.5, buy.w - 1, buy.h - 1);
@@ -334,12 +335,12 @@ class HUD {
           const Ks = SKINS.find((p) => p.id === res.id), dupeCommon = isDupe && Ks && Ks.source === 'common', RC = SKIN_RARITY[(Ks && Ks.rarity) || 'common'] || SKIN_RARITY.common; // 일반·레어·에픽 색
           ctx.fillStyle = isSkin ? 'rgba(255,216,74,0.14)' : isShard ? 'rgba(255,233,160,0.1)' : isCommon ? (RC === SKIN_RARITY.epic ? 'rgba(197,138,255,0.16)' : RC === SKIN_RARITY.rare ? 'rgba(90,168,255,0.13)' : 'rgba(168,188,207,0.08)') : isSupply ? 'rgba(159,232,159,0.08)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(x, y, cw, h);
           ctx.strokeStyle = isSkin ? '#ffd84a' : isShard ? GACHA.shardColor : isCommon ? RC.color : isSupply ? '#9fe89f' : isDupe ? '#ffb0d8' : '#51475f'; ctx.strokeRect(x + 0.5, y + 0.5, cw - 1, h - 1);
-          if (isSkin || (isDupe && !dupeCommon)) { const th = bannerImg(GACHA.banners[res.id]); if (th) drawBannerCover(ctx, th, x + 4, y + 4, cw - 8, 60); hudText(ctx, Ks ? Ks.name : '', x + cw / 2, y + 70, '#fff', 'center', 8); }
-          if (dupeCommon) { const spr = typeof commonSprite === 'function' && commonSprite(Ks.sprite); if (spr) { const dw = spr.w * 2, dh = spr.h * 2; ctx.drawImage(spr.n, x + cw / 2 - dw / 2, y + 56 - dh, dw, dh); } hudText(ctx, Ks.name, x + cw / 2, y + 66, '#fff', 'center', 8); hudText(ctx, RC.name, x + cw / 2, y + 76, RC.color, 'center', 7); }
+          if (isSkin || (isDupe && !dupeCommon)) { const th = bannerImg(GACHA.banners[res.id]); if (th) drawBannerCover(ctx, th, x + 4, y + 4, cw - 8, 60); hudText(ctx, Ks ? Ks.name : '', x + cw / 2, y + 70, '#fff', 'center', fitSize(Ks ? Ks.name : '', cw - 8)); }
+          if (dupeCommon) { const spr = typeof commonSprite === 'function' && commonSprite(Ks.sprite); if (spr) { const dw = spr.w * 2, dh = spr.h * 2; ctx.drawImage(spr.n, x + cw / 2 - dw / 2, y + 56 - dh, dw, dh); } hudText(ctx, Ks.name, x + cw / 2, y + 66, '#fff', 'center', fitSize(Ks.name, cw - 8)); hudText(ctx, RC.name, x + cw / 2, y + 76, RC.color, 'center', 7); }
           if (isSupply) { const S = GUILD_SUPPLIES.find((q) => q.id === res.id); HUD.drawSupply(ctx, x + cw / 2, y + 36, res.id); hudText(ctx, S ? S.name : '보급품', x + cw / 2, y + 66, '#e8ffe8', 'center', 8); hudText(ctx, '탐험 보급품', x + cw / 2, y + 88, '#9fe89f', 'center', 8); hudText(ctx, '보관함 +1', x + cw / 2, y + 102, '#bbb', 'center', 7); }
           if (res.type === 'shardDupe') { HUD.drawShard(ctx, x + cw / 2, y + 36, 16); hudText(ctx, GACHA.shardName, x + cw / 2, y + 66, GACHA.shardColor, 'center', 8); hudText(ctx, '보유 스킨', x + cw / 2, y + 86, '#ffb0d8', 'center', 8); hudText(ctx, `+${res.mileage} M`, x + cw / 2, y + 100, GACHA.mileageColor, 'center', 8); }
           if (res.type === 'shard') { HUD.drawShard(ctx, x + cw / 2, y + 36, 16); hudText(ctx, GACHA.shardName, x + cw / 2, y + 70, GACHA.shardColor, 'center', 8); hudText(ctx, `${res.count} / ${GACHA.shardsNeeded}`, x + cw / 2, y + 96, '#fff', 'center', 10); } // 조각: 전용 아이콘(배경 없음)
-          else if (isCommon) { const Cs = SKINS.find((p) => p.id === res.id), spr = typeof commonSprite === 'function' && commonSprite(Cs && Cs.sprite); if (spr) { const sc = 2, dw = spr.w * sc, dh = spr.h * sc; ctx.drawImage(spr.n, x + cw / 2 - dw / 2, y + 56 - dh, dw, dh); } hudText(ctx, Cs ? Cs.name : '', x + cw / 2, y + 66, '#fff', 'center', 8); hudText(ctx, `${RC.name} 획득`, x + cw / 2, y + 92, RC.color, 'center', 9); }
+          else if (isCommon) { const Cs = SKINS.find((p) => p.id === res.id), spr = typeof commonSprite === 'function' && commonSprite(Cs && Cs.sprite); if (spr) { const sc = 2, dw = spr.w * sc, dh = spr.h * sc; ctx.drawImage(spr.n, x + cw / 2 - dw / 2, y + 56 - dh, dw, dh); } hudText(ctx, Cs ? Cs.name : '', x + cw / 2, y + 66, '#fff', 'center', fitSize(Cs ? Cs.name : '', cw - 8)); hudText(ctx, `${RC.name} 획득`, x + cw / 2, y + 92, RC.color, 'center', 9); }
           else if (isSkin) { hudText(ctx, '완성 획득!', x + cw / 2, y + 88, '#ffd84a', 'center', 9); if (res.refund) hudText(ctx, `모은 조각 +${res.refund} M`, x + cw / 2, y + 102, GACHA.mileageColor, 'center', 6); }
           else if (isDupe) { hudText(ctx, '보유', x + cw / 2, y + 88, '#ffb0d8', 'center', 9); hudText(ctx, `+${res.mileage} M`, x + cw / 2, y + 102, GACHA.mileageColor, 'center', 8); }
           else if (!isSupply && res.type !== 'shardDupe' && res.mileage) { hudText(ctx, `+${res.mileage}`, x + cw / 2, y + 48, GACHA.mileageColor, 'center', 13); hudText(ctx, GACHA.mileageName, x + cw / 2, y + 68, '#bbb', 'center', 7); } });

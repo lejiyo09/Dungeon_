@@ -1365,7 +1365,7 @@ class Game {
       else if (input.wasPressed('KeyI')) { this.overlay = { type: 'details', tab: 0 }; return; } // 상세 정보
       else if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; } // 선물 코드
       else if (input.wasPressed('KeyK')) { this.overlay = { type: 'skins', back: 'pause', msg: null }; return; } // 스킨 고르기 창
-      else if (this.mode === 'lobby' && input.wasPressed('KeyJ')) { this.overlay = { type: 'gacha', tab: 0, banner: 0, results: null, msg: null }; input.mouse.down = false; return; } // 스킨 뽑기
+      else if (this.mode === 'lobby' && input.wasPressed('KeyJ')) { this.overlay = { type: 'gacha', tab: 0, banner: 0, results: null, msg: null, back: 'pause' }; input.mouse.down = false; return; } // 스킨 뽑기 (닫으면 Esc 메뉴로)
       else if (input.wasPressed('KeyO')) { this.overlay = { type: 'keys', wait: null, msg: null }; input.mouse.down = false; return; } // 조작키 설정
       else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
       else if (this.mode === 'lobby' && input.wasPressed('KeyP')) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => {} }; return; }
@@ -1515,7 +1515,7 @@ class Game {
       const pool = gachaPool(), n = pool.length, m = input.mouse, hit = (r) => m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
       if (o.results) { if (input.wasPressed('Mouse0') || input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('Escape')) { o.results = null; this.input.mouse.down = false; } return; } // 결과 보는 중엔 아무 클릭으로 닫기
       if (o.rates) { if (input.wasPressed('Mouse0') || input.wasPressed('Enter') || input.wasPressed('Escape')) { o.rates = false; this.input.mouse.down = false; } return; } // 확률표 보는 중
-      if (input.wasPressed('Escape') || input.wasPressed('KeyJ') || input.wasPressed('KeyE')) { this.overlay = { type: 'pause' }; return; }
+      if (input.wasPressed('Escape') || input.wasPressed('KeyJ') || input.wasPressed('KeyE')) { this.overlay = o.back === 'pause' ? { type: 'pause' } : null; return; } // Esc 메뉴에서 열었으면 Esc 메뉴로, 소환 제단에서 열었으면 바로 닫기
       if (input.wasPressed('ArrowUp')) { o.tab = 0; o.banner = (o.banner + n - 1) % n; }
       else if (input.wasPressed('ArrowDown')) { o.tab = 0; o.banner = (o.banner + 1) % n; }
       if (input.wasPressed('Mouse0')) {
