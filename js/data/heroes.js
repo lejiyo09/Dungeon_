@@ -62,35 +62,62 @@ const SKINS = [
   { id: 'skin_leg_star', name: '성역의 성자', hero: 'hero_priest', sprite: 'leg_star', rarity: 'legendary', source: 'gacha', desc: '사제 전설 외형 — 별빛 성역의 성자 (전직: 성역)' },
   // ── 변신 드루이드 스킨: 평소 반디(앞/옆/뒤) ↔ 변신 시 샘(대기=22·공격=21, 좌우 반전만)
   { id: 'skin_bandi', name: '반디', hero: 'hero_druid', sprite: 'druid_bandi', rarity: 'legendary', source: 'code', druid: true, desc: '드루이드 변신 스킨 — 평소엔 반디, 변신하면 날개 돋친 샘으로 (선물 코드)' },
-  // ── 일반 등급 스킨 (앞모습 1포즈, 좌우 반전) — assets/commonskins.png · 뽑기 일반 풀
+  // ── 일반·레어·에픽 스킨 (앞모습, 좌우 반전) — assets/commonskins.png · 퀄리티별 등급: 1단계=일반, 2단계=레어, 3단계=에픽
   { id: 'skin_c_sw_1', name: '붉은 기사', hero: 'hero_swordsman', sprite: 'c_swordsman_1', rarity: 'common', source: 'common', desc: '검사 일반 외형 — 핏빛 강철 갑옷' },
-  { id: 'skin_c_sw_2', name: '황금 성기사', hero: 'hero_swordsman', sprite: 'c_swordsman_2', rarity: 'common', source: 'common', desc: '검사 일반 외형 — 백금빛 성기사' },
-  { id: 'skin_c_sw_3', name: '자수정 기사', hero: 'hero_swordsman', sprite: 'c_swordsman_3', rarity: 'common', source: 'common', desc: '검사 일반 외형 — 보랏빛 뿔투구' },
+  { id: 'skin_c_sw_2', name: '황금 성기사', hero: 'hero_swordsman', sprite: 'c_swordsman_2', rarity: 'rare', source: 'common', desc: '검사 레어 외형 — 백금빛 성기사' },
+  { id: 'skin_c_sw_3', name: '자수정 기사', hero: 'hero_swordsman', sprite: 'c_swordsman_3', rarity: 'epic', source: 'common', desc: '검사 에픽 외형 — 보랏빛 뿔투구' },
   { id: 'skin_c_gn_1', name: '진홍 보안관', hero: 'hero_gunner', sprite: 'c_gunner_1', rarity: 'common', source: 'common', desc: '사수 일반 외형 — 붉은 외투의 보안관' },
-  { id: 'skin_c_gn_2', name: '금장 총사', hero: 'hero_gunner', sprite: 'c_gunner_2', rarity: 'common', source: 'common', desc: '사수 일반 외형 — 남색·금장 제복' },
-  { id: 'skin_c_gn_3', name: '청록 총잡이', hero: 'hero_gunner', sprite: 'c_gunner_3', rarity: 'common', source: 'common', desc: '사수 일반 외형 — 청록빛 코트' },
+  { id: 'skin_c_gn_2', name: '금장 총사', hero: 'hero_gunner', sprite: 'c_gunner_2', rarity: 'rare', source: 'common', desc: '사수 레어 외형 — 남색·금장 제복' },
+  { id: 'skin_c_gn_3', name: '청록 총잡이', hero: 'hero_gunner', sprite: 'c_gunner_3', rarity: 'epic', source: 'common', desc: '사수 에픽 외형 — 청록빛 코트' },
   { id: 'skin_c_mg_1', name: '서리 마법사', hero: 'hero_mage', sprite: 'c_mage_1', rarity: 'common', source: 'common', desc: '마도사 일반 외형 — 푸른 서리 로브' },
-  { id: 'skin_c_mg_2', name: '보라 현자', hero: 'hero_mage', sprite: 'c_mage_2', rarity: 'common', source: 'common', desc: '마도사 일반 외형 — 보랏빛 현자 복장' },
-  { id: 'skin_c_mg_3', name: '황혼 마도사', hero: 'hero_mage', sprite: 'c_mage_3', rarity: 'common', source: 'common', desc: '마도사 일반 외형 — 자금빛 황혼 예복' },
+  { id: 'skin_c_mg_2', name: '보라 현자', hero: 'hero_mage', sprite: 'c_mage_2', rarity: 'rare', source: 'common', desc: '마도사 레어 외형 — 보랏빛 현자 복장' },
+  { id: 'skin_c_mg_3', name: '황혼 마도사', hero: 'hero_mage', sprite: 'c_mage_3', rarity: 'epic', source: 'common', desc: '마도사 에픽 외형 — 자금빛 황혼 예복' },
   { id: 'skin_c_en_1', name: '고글 기술자', hero: 'hero_engineer', sprite: 'c_engineer_1', rarity: 'common', source: 'common', desc: '기술자 일반 외형 — 고글 쓴 정비사' },
-  { id: 'skin_c_en_2', name: '두건 정비공', hero: 'hero_engineer', sprite: 'c_engineer_2', rarity: 'common', source: 'common', desc: '기술자 일반 외형 — 갈색 두건 작업복' },
-  { id: 'skin_c_en_3', name: '황금 기공사', hero: 'hero_engineer', sprite: 'c_engineer_3', rarity: 'common', source: 'common', desc: '기술자 일반 외형 — 금빛 기공 장비' },
+  { id: 'skin_c_en_2', name: '두건 정비공', hero: 'hero_engineer', sprite: 'c_engineer_2', rarity: 'rare', source: 'common', desc: '기술자 레어 외형 — 갈색 두건 작업복' },
+  { id: 'skin_c_en_3', name: '황금 기공사', hero: 'hero_engineer', sprite: 'c_engineer_3', rarity: 'epic', source: 'common', desc: '기술자 에픽 외형 — 금빛 기공 장비' },
   { id: 'skin_c_as_1', name: '핏빛 자객', hero: 'hero_assassin', sprite: 'c_assassin_1', rarity: 'common', source: 'common', desc: '암살자 일반 외형 — 붉은 두건의 자객' },
-  { id: 'skin_c_as_2', name: '서리 그림자', hero: 'hero_assassin', sprite: 'c_assassin_2', rarity: 'common', source: 'common', desc: '암살자 일반 외형 — 푸른 서리 장막' },
-  { id: 'skin_c_as_3', name: '보랏빛 자객', hero: 'hero_assassin', sprite: 'c_assassin_3', rarity: 'common', source: 'common', desc: '암살자 일반 외형 — 자줏빛 암영' },
+  { id: 'skin_c_as_2', name: '서리 그림자', hero: 'hero_assassin', sprite: 'c_assassin_2', rarity: 'rare', source: 'common', desc: '암살자 레어 외형 — 푸른 서리 장막' },
+  { id: 'skin_c_as_3', name: '보랏빛 자객', hero: 'hero_assassin', sprite: 'c_assassin_3', rarity: 'epic', source: 'common', desc: '암살자 에픽 외형 — 자줏빛 암영' },
   { id: 'skin_c_pr_1', name: '홍련 사제', hero: 'hero_priest', sprite: 'c_priest_1', rarity: 'common', source: 'common', desc: '사제 일반 외형 — 홍련빛 사제복' },
-  { id: 'skin_c_pr_2', name: '백색 천사', hero: 'hero_priest', sprite: 'c_priest_2', rarity: 'common', source: 'common', desc: '사제 일반 외형 — 흰 날개의 천사' },
-  { id: 'skin_c_pr_3', name: '황금 세라핌', hero: 'hero_priest', sprite: 'c_priest_3', rarity: 'common', source: 'common', desc: '사제 일반 외형 — 금빛 세라핌' },
+  { id: 'skin_c_pr_2', name: '백색 천사', hero: 'hero_priest', sprite: 'c_priest_2', rarity: 'rare', source: 'common', desc: '사제 레어 외형 — 흰 날개의 천사' },
+  { id: 'skin_c_pr_3', name: '황금 세라핌', hero: 'hero_priest', sprite: 'c_priest_3', rarity: 'epic', source: 'common', desc: '사제 에픽 외형 — 금빛 세라핌' },
   { id: 'skin_c_be_1', name: '서리뿔 전사', hero: 'hero_berserker', sprite: 'c_berserker_1', rarity: 'common', source: 'common', desc: '광전사 일반 외형 — 푸른 뿔 투구' },
-  { id: 'skin_c_be_2', name: '홍염 광전사', hero: 'hero_berserker', sprite: 'c_berserker_2', rarity: 'common', source: 'common', desc: '광전사 일반 외형 — 붉은·금빛 뿔갑옷' },
-  { id: 'skin_c_be_3', name: '황금 뿔 군주', hero: 'hero_berserker', sprite: 'c_berserker_3', rarity: 'common', source: 'common', desc: '광전사 일반 외형 — 금빛 뿔의 군주' },
+  { id: 'skin_c_be_2', name: '홍염 광전사', hero: 'hero_berserker', sprite: 'c_berserker_2', rarity: 'rare', source: 'common', desc: '광전사 레어 외형 — 붉은·금빛 뿔갑옷' },
+  { id: 'skin_c_be_3', name: '황금 뿔 군주', hero: 'hero_berserker', sprite: 'c_berserker_3', rarity: 'epic', source: 'common', desc: '광전사 에픽 외형 — 금빛 뿔의 군주' },
   { id: 'skin_c_dr_1', name: '단풍 드루이드', hero: 'hero_druid', sprite: 'c_druid_1', rarity: 'common', source: 'common', desc: '드루이드 일반 외형 — 단풍빛 망토' },
-  { id: 'skin_c_dr_2', name: '버섯 드루이드', hero: 'hero_druid', sprite: 'c_druid_2', rarity: 'common', source: 'common', desc: '드루이드 일반 외형 — 붉은 버섯 모자' },
-  { id: 'skin_c_dr_3', name: '큰뿔 드루이드', hero: 'hero_druid', sprite: 'c_druid_3', rarity: 'common', source: 'common', desc: '드루이드 일반 외형 — 큰 사슴뿔' }
+  { id: 'skin_c_dr_2', name: '버섯 드루이드', hero: 'hero_druid', sprite: 'c_druid_2', rarity: 'rare', source: 'common', desc: '드루이드 레어 외형 — 붉은 버섯 모자' },
+  { id: 'skin_c_dr_3', name: '큰뿔 드루이드', hero: 'hero_druid', sprite: 'c_druid_3', rarity: 'epic', source: 'common', desc: '드루이드 에픽 외형 — 큰 사슴뿔' },
+  // ── 일반 스킨 추가 22종 (앞모습 정지 + 걷기 1장) — commonskins.png 아래쪽
+  { id: 'skin_c_n01', name: '사막의 유랑검객', hero: 'hero_swordsman', sprite: 'c_n01', rarity: 'common', source: 'common', desc: '검사 일반 외형 — 모래색 천 망토와 굽은 곡선 검의 떠돌이 검객' },
+  { id: 'skin_c_n02', name: '왕도의 결투사', hero: 'hero_swordsman', sprite: 'c_n02', rarity: 'common', source: 'common', desc: '검사 일반 외형 — 귀족풍 긴 외투와 장식 세검의 결투사' },
+  { id: 'skin_c_n03', name: '폐허 탐색대원', hero: 'hero_swordsman', sprite: 'c_n03', rarity: 'common', source: 'common', desc: '검사 일반 외형 — 낡은 가죽 장비·탐험 가방·보호 고글의 유적 탐험가' },
+  { id: 'skin_c_n04', name: '유리공방 연금술사', hero: 'hero_mage', sprite: 'c_n04', rarity: 'common', source: 'common', desc: '마도사 일반 외형 — 약병과 유리 장식이 달린 연금술 작업복' },
+  { id: 'skin_c_n05', name: '도서관의 기록술사', hero: 'hero_mage', sprite: 'c_n05', rarity: 'common', source: 'common', desc: '마도사 일반 외형 — 책과 두루마리로 장식한 학자 복장' },
+  { id: 'skin_c_n06', name: '안개 조향술사', hero: 'hero_mage', sprite: 'c_n06', rarity: 'common', source: 'common', desc: '마도사 일반 외형 — 향수병과 작은 유리 용기를 지닌 안개의 마법사' },
+  { id: 'skin_c_n07', name: '철도 호송대원', hero: 'hero_gunner', sprite: 'c_n07', rarity: 'common', source: 'common', desc: '사수 일반 외형 — 철도 경비대 제복과 여행 가방' },
+  { id: 'skin_c_n08', name: '해안 경비 포수', hero: 'hero_gunner', sprite: 'c_n08', rarity: 'common', source: 'common', desc: '사수 일반 외형 — 짙은 남색 방수 외투와 해양 장비' },
+  { id: 'skin_c_n09', name: '유적 발굴 기술자', hero: 'hero_engineer', sprite: 'c_n09', rarity: 'common', source: 'common', desc: '기술자 일반 외형 — 낡은 작업복과 발굴·측량 도구' },
+  { id: 'skin_c_n10', name: '극지 관측 기술자', hero: 'hero_engineer', sprite: 'c_n10', rarity: 'common', source: 'common', desc: '기술자 일반 외형 — 방한복과 휴대용 관측 장치' },
+  { id: 'skin_c_n11', name: '가면무도회 도둑', hero: 'hero_assassin', sprite: 'c_n11', rarity: 'common', source: 'common', desc: '암살자 일반 외형 — 화려한 반쪽 가면과 정장풍 잠행복' },
+  { id: 'skin_c_n12', name: '유랑극단 곡예사', hero: 'hero_assassin', sprite: 'c_n12', rarity: 'common', source: 'common', desc: '암살자 일반 외형 — 화려한 무대 의상과 리본 장식' },
+  { id: 'skin_c_n13', name: '야전 의무관', hero: 'hero_priest', sprite: 'c_n13', rarity: 'common', source: 'common', desc: '사제 일반 외형 — 의료 가방과 간소한 흰 작업복' },
+  { id: 'skin_c_n14', name: '종탑의 종지기', hero: 'hero_priest', sprite: 'c_n14', rarity: 'common', source: 'common', desc: '사제 일반 외형 — 짙은 갈색 예복과 작은 종 장식' },
+  { id: 'skin_c_n15', name: '광산의 파쇄꾼', hero: 'hero_berserker', sprite: 'c_n15', rarity: 'common', source: 'common', desc: '광전사 일반 외형 — 광부 작업복과 두꺼운 보호 장비' },
+  { id: 'skin_c_n16', name: '해적 갑판장', hero: 'hero_berserker', sprite: 'c_n16', rarity: 'common', source: 'common', desc: '광전사 일반 외형 — 해적 모자와 낡은 선원 코트' },
+  { id: 'skin_c_n17', name: '사막 오아시스 길잡이', hero: 'hero_druid', sprite: 'c_n17', rarity: 'common', source: 'common', desc: '드루이드 일반 외형 — 모래색 망토와 선인장 장식의 사막 길잡이' },
+  { id: 'skin_c_n18', name: '갈대 습지의 수호자', hero: 'hero_druid', sprite: 'c_n18', rarity: 'common', source: 'common', desc: '드루이드 일반 외형 — 갈대와 습지 식물로 만든 자연 장비' },
+  { id: 'skin_c_n19', name: '용린의 계승자', hero: 'hero_swordsman', sprite: 'c_n19', rarity: 'common', source: 'common', desc: '검사 일반 외형 — 청록색 용 비늘 갑옷과 용 문양' },
+  { id: 'skin_c_n20', name: '유리차원의 조율자', hero: 'hero_mage', sprite: 'c_n20', rarity: 'common', source: 'common', desc: '마도사 일반 외형 — 투명한 수정 장식과 무지갯빛 로브' },
+  { id: 'skin_c_n21', name: '심해기지의 기관장', hero: 'hero_engineer', sprite: 'c_n21', rarity: 'common', source: 'common', desc: '기술자 일반 외형 — 둥근 잠수 헬멧과 압력 보호복' },
+  { id: 'skin_c_n22', name: '사막 생명의 화신', hero: 'hero_druid', sprite: 'c_n22', rarity: 'common', source: 'common', desc: '드루이드 일반 외형 — 황금빛 사막 망토와 선인장·꽃 장식' }
 ];
 // 일반 스킨 시트(assets/commonskins.png) 좌표 [x,y,w,h] — 앞모습 1포즈 (좌우 반전만)
-const COMMON_SKIN = { c_swordsman_1: [2, 0, 22, 22], c_gunner_1: [30, 0, 18, 22], c_mage_1: [56, 0, 18, 22], c_engineer_1: [82, 0, 18, 22], c_assassin_1: [107, 0, 20, 22], c_priest_1: [133, 0, 20, 22], c_berserker_1: [158, 0, 22, 22], c_druid_1: [184, 0, 22, 22], c_swordsman_2: [3, 22, 20, 22], c_gunner_2: [29, 22, 20, 22], c_mage_2: [54, 22, 22, 22], c_engineer_2: [82, 22, 18, 22], c_assassin_2: [106, 22, 22, 22], c_priest_2: [132, 22, 22, 22], c_berserker_2: [157, 22, 24, 22], c_druid_2: [184, 22, 22, 22], c_swordsman_3: [2, 44, 22, 22], c_gunner_3: [28, 44, 22, 22], c_mage_3: [54, 44, 22, 22], c_engineer_3: [81, 44, 20, 22], c_assassin_3: [105, 44, 24, 22], c_priest_3: [132, 44, 22, 22], c_berserker_3: [156, 44, 26, 22], c_druid_3: [183, 44, 24, 22] };
+const COMMON_SKIN = { c_swordsman_1: [2, 0, 22, 22], c_gunner_1: [30, 0, 18, 22], c_mage_1: [56, 0, 18, 22], c_engineer_1: [82, 0, 18, 22], c_assassin_1: [107, 0, 20, 22], c_priest_1: [133, 0, 20, 22], c_berserker_1: [158, 0, 22, 22], c_druid_1: [184, 0, 22, 22], c_swordsman_2: [3, 22, 20, 22], c_gunner_2: [29, 22, 20, 22], c_mage_2: [54, 22, 22, 22], c_engineer_2: [82, 22, 18, 22], c_assassin_2: [106, 22, 22, 22], c_priest_2: [132, 22, 22, 22], c_berserker_2: [157, 22, 24, 22], c_druid_2: [184, 22, 22, 22], c_swordsman_3: [2, 44, 22, 22], c_gunner_3: [28, 44, 22, 22], c_mage_3: [54, 44, 22, 22], c_engineer_3: [81, 44, 20, 22], c_assassin_3: [105, 44, 24, 22], c_priest_3: [132, 44, 22, 22], c_berserker_3: [156, 44, 26, 22], c_druid_3: [183, 44, 24, 22], c_n01: [2, 70, 26, 22], c_n02: [56, 70, 26, 22], c_n03: [110, 70, 26, 22], c_n04: [164, 70, 26, 22], c_n05: [2, 94, 26, 22], c_n06: [56, 94, 26, 22], c_n07: [110, 94, 26, 22], c_n08: [164, 94, 26, 22], c_n09: [2, 118, 26, 22], c_n10: [56, 118, 26, 22], c_n11: [110, 118, 26, 22], c_n12: [164, 118, 26, 22], c_n13: [2, 142, 26, 22], c_n14: [56, 142, 26, 22], c_n15: [110, 142, 26, 22], c_n16: [164, 142, 26, 22], c_n17: [2, 166, 26, 22], c_n18: [56, 166, 26, 22], c_n19: [110, 166, 26, 22], c_n20: [164, 166, 26, 22], c_n21: [2, 190, 26, 22], c_n22: [56, 190, 26, 22] };
 // 드루이드 스킨 시트(assets/druidskin.png) 스프라이트 좌표 [x,y,w,h] — 이미 인게임 크기로 구움
+// 일반 스킨 걷기 프레임 (있는 스킨만): 이동 중 정지 ↔ 걷기 번갈아
+const COMMON_WALK = { c_n01: [28, 70, 26, 22], c_n02: [82, 70, 26, 22], c_n03: [136, 70, 26, 22], c_n04: [190, 70, 26, 22], c_n05: [28, 94, 26, 22], c_n06: [82, 94, 26, 22], c_n07: [136, 94, 26, 22], c_n08: [190, 94, 26, 22], c_n09: [28, 118, 26, 22], c_n10: [82, 118, 26, 22], c_n11: [136, 118, 26, 22], c_n12: [190, 118, 26, 22], c_n13: [28, 142, 26, 22], c_n14: [82, 142, 26, 22], c_n15: [136, 142, 26, 22], c_n16: [190, 142, 26, 22], c_n17: [28, 166, 26, 22], c_n18: [82, 166, 26, 22], c_n19: [136, 166, 26, 22], c_n20: [190, 166, 26, 22], c_n21: [28, 190, 26, 22], c_n22: [82, 190, 26, 22] };
+// 스킨 등급 표시 (스킨창·뽑기 결과)
+const SKIN_RARITY = { common: { name: '일반', color: '#a8bccf' }, rare: { name: '레어', color: '#5aa8ff' }, epic: { name: '에픽', color: '#c58aff' }, legendary: { name: '전설', color: '#ffd84a' } };
 const DRUID_SKIN = { bandi_down: [0, 13, 32, 27], bandi_up: [33, 14, 22, 26], bandi_side: [56, 14, 24, 26], sam_idle: [243, 0, 62, 40], sam_atk: [306, 14, 49, 26], sam_down: [356, 0, 61, 47], sam_down_a1: [418, 0, 61, 47], sam_down_a2: [480, 0, 61, 47], sam_down_a3: [542, 0, 61, 47], sam_up: [604, 2, 63, 45], sam_up_a1: [668, 2, 63, 45], sam_up_a2: [732, 2, 63, 45], sam_up_a3: [796, 2, 63, 45] };
 // 반디 걷기: 방향별 걷기 2프레임 — 이동 중 [걷기1, 서기, 걷기2, 서기] 순환 (앞뒤는 발을 위아래로 드는 방식)
 const BANDI_WALK = { bandi_down: [[81, 13, 32, 27], [114, 13, 32, 27]], bandi_up: [[147, 14, 22, 26], [170, 14, 22, 26]], bandi_side: [[193, 14, 24, 26], [218, 14, 24, 26]] };
@@ -112,14 +139,14 @@ const GACHA = {
   costSingle: 300, cost5: 1500,           // 결정석 비용 (1뽑 300, 5뽑 1500)
   legendRate: 0.01,                        // 전설 스킨 완성품 1% (보유 중이면 마일리지)
   shardRate: 0.03, shardsNeeded: 20,       // 전설 조각 3%, 20개 = 스킨 완성
-  commonRate: 0.25,                        // 일반 스킨 25% · 나머지 71% = 탐험 보급품(보관함에 쌓임)
-  dupeMileage: 250, shardDupeMileage: 12, commonDupeMileage: 15, // [사용자 결정] 마일리지는 스킨 중복일 때만: 완성품 중복 250 · 보유 스킨 조각 12 · 일반 스킨 중복 15
+  epicRate: 0.03, rareRate: 0.08, commonRate: 0.25, // 에픽 3% · 레어 8% · 일반 25% · 나머지 60% = 탐험 보급품(보관함에 쌓임)
+  dupeMileage: 250, shardDupeMileage: 12, commonDupeMileage: 15, rareDupeMileage: 30, epicDupeMileage: 60, // [사용자 결정] 마일리지는 스킨 중복일 때만: 완성품 중복 250 · 보유 스킨 조각 12 · 일반 스킨 중복 15
   shopPrice: 400,                          // 마일리지 상점 스킨 1개 가격
   mileageName: '스킨 마일리지', mileageColor: '#ffb0d8', shardName: '전설 조각', shardColor: '#ffe9a0',
   banners: { skin_leg_abyss: 'abyss', skin_leg_crimson: 'crimson', skin_leg_void: 'void', skin_leg_star: 'star' } // 스킨별 배너 이미지 키 (assets/banners/<key>.webp)
 };
 function gachaPool() { return SKINS.filter((k) => k.source === 'gacha'); } // 전설 배너 뽑기 대상
-function commonPool() { return SKINS.filter((k) => k.source === 'common'); } // 일반 뽑기 풀
+function commonPool(r = 'common') { return SKINS.filter((k) => k.source === 'common' && (k.rarity || 'common') === r); } // 등급별 뽑기 풀 (common / rare / epic)
 function skinsForHero(save, heroId) { return skinsForMenu(save).filter((k) => k.hero === heroId); } // 스킨창: 직업별 페이지
 function skinKey(K) { return K.line ? K.hero + '|' + K.line : K.hero; } /* 장착 칸: 직업·계열마다 하나 (마도사 불·빛 스킨을 따로 켜 둘 수 있게) */
 function skinAllowed(sp, heroId, lineId) { return SKINS.some((k) => k.sprite === sp && k.hero === heroId && (!k.line || k.line === lineId)); } /* [사용자 결정] 스킨은 정해진 갈래일 때만 (불꽃 마녀 = 불 마도사 · 붉은 머리 총잡이 = 속사 사수) */

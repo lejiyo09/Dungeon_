@@ -777,7 +777,7 @@ class Game {
     if ((sv.bank || 0) < cost) return { error: '결정석이 부족합니다' };
     const K = gachaPool().find((k) => k.id === bannerSkinId); if (!K) return { error: '배너를 찾을 수 없습니다' };
     sv.bank -= cost; sv.skins = sv.skins || []; sv.mileage = sv.mileage || 0; sv.skinOn = sv.skinOn || {}; sv.shards = sv.shards || {};
-    const commons = commonPool(), results = []; let gotSkin = false;
+    const results = []; let gotSkin = false;
     for (let i = 0; i < n; i++) {
       const roll = Math.random();
       if (roll < GACHA.legendRate) { // 전설 완성품
@@ -789,10 +789,12 @@ class Game {
         else { sv.shards[K.id] = (sv.shards[K.id] || 0) + 1;
           if (sv.shards[K.id] >= GACHA.shardsNeeded) { sv.shards[K.id] -= GACHA.shardsNeeded; sv.skins.push(K.id); this.skinOnMap()[skinKey(K)] = K.id; results.push({ type: 'skin', id: K.id }); gotSkin = true; } // 20개 완성
           else results.push({ type: 'shard', id: K.id, count: sv.shards[K.id] }); }
-      } else if (roll < GACHA.legendRate + GACHA.shardRate + GACHA.commonRate && commons.length) { // 일반 스킨
-        const avail = commons.filter((c) => !sv.skins.includes(c.id)), C = (avail.length ? avail : commons)[randInt(0, (avail.length ? avail : commons).length - 1)];
-        if (sv.skins.includes(C.id)) { sv.mileage += GACHA.commonDupeMileage; results.push({ type: 'dupe', id: C.id, mileage: GACHA.commonDupeMileage }); } // 이미 보유 → 마일리지
-        else { sv.skins.push(C.id); results.push({ type: 'common', id: C.id }); gotSkin = true; } // 일반 스킨은 자동 장착하지 않음(스킨창 K에서 선택)
+      } else if (roll < GACHA.legendRate + GACHA.shardRate + GACHA.epicRate + GACHA.rareRate + GACHA.commonRate) { // 에픽 / 레어 / 일반 스킨
+        const r2 = roll - GACHA.legendRate - GACHA.shardRate, tier = r2 < GACHA.epicRate ? 'epic' : r2 < GACHA.epicRate + GACHA.rareRate ? 'rare' : 'common';
+        const pool = commonPool(tier), avail = pool.filter((c) => !sv.skins.includes(c.id)), from = avail.length ? avail : pool, C = from[randInt(0, from.length - 1)]; // 아직 없는 스킨부터
+        const dm = tier === 'epic' ? GACHA.epicDupeMileage : tier === 'rare' ? GACHA.rareDupeMileage : GACHA.commonDupeMileage;
+        if (sv.skins.includes(C.id)) { sv.mileage += dm; results.push({ type: 'dupe', id: C.id, mileage: dm }); } // 이미 보유 → 등급별 마일리지
+        else { sv.skins.push(C.id); results.push({ type: 'common', id: C.id, tier }); gotSkin = true; } // 자동 장착하지 않음(스킨창 K에서 선택)
       } else { // 탐험 보급품 → 보관함 (탐험마다 종류별 1개씩 사용)
         const S = pick(GUILD_SUPPLIES); sv.supplyStash = sv.supplyStash || {}; sv.supplyStash[S.id] = (sv.supplyStash[S.id] || 0) + 1;
         results.push({ type: 'supply', id: S.id });
@@ -1487,8 +1489,8 @@ class Game {
       if (input.wasPressed('Mouse0')) { if (inR(HUD.skinHeroArrow(0))) dh = -1; else if (inR(HUD.skinHeroArrow(1))) dh = 1; }
       if (dh) { o.hero = HIDS[(HIDS.indexOf(o.hero) + dh + HIDS.length) % HIDS.length]; this.input.mouse.down = false; SFX.play('ui'); return; }
       const skins = skinsForHero(this.save, o.hero);
-      let ch = -1; skins.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1))) ch = i; });
-      if (input.wasPressed('Mouse0')) { skins.forEach((_, i) => { if (inR(HUD.skinRect(i))) ch = i; }); this.input.mouse.down = false; }
+      let ch = -1; skins.forEach((_, i) => { if (input.wasPressed(i === 9 ? 'Digit0' : 'Digit' + (i + 1))) ch = i; }); /* 10번째는 0 키 */
+      if (input.wasPressed('Mouse0')) { skins.forEach((_, i) => { if (inR(HUD.skinRect(i, skins.length))) ch = i; }); this.input.mouse.down = false; }
       if (ch >= 0) { const K = skins[ch], sv = this.save; sv.skinOn = sv.skinOn || {};
         if (!(sv.skins || []).includes(K.id)) o.msg = { text: K.source === 'gacha' ? `아직 없는 스킨입니다 — 스킨 뽑기로 얻을 수 있어요 (J)` : `아직 없는 스킨입니다 — 선물 코드로 얻을 수 있어요 (G)`, color: '#ff9a9a', t: 2.5 };
         else { const M = this.skinOnMap(), key = skinKey(K), on = M[key] === K.id; M[key] = on ? null : K.id;
