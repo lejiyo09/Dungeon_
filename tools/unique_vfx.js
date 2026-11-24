@@ -62,16 +62,19 @@ let pass = 0, fail = 0; const ok = (c, m) => { console.log((c ? '✓ ' : '✗ ')
   ok(S.length === 31, `스킬 VFX 연결 수: ${S.length} / 31`);
 
   // ── 3) 무기 191종 × 각 영웅: 기본 공격 판정 불변 + 무기 외형 피벗 일치
-  const W = await pg.evaluate(() => { const g = window.__game, T = window.__T, out = { bad: [], unstable: [], n: 0, pivotBad: 0, newArt: 0 };
+  const W = await pg.evaluate(() => { const g = window.__game, T = window.__T, out = { bad: [], unstable: [], n: 0, pivotBad: 0, newArt: 0, refreshed: 0 };
     for (const hero of ['hero_engineer', 'hero_swordsman', 'hero_druid']) { T.start(hero); let warm = true;
       for (const d of DATA_WEAPONS) { const run = (on) => { T.reset(); T.skin(on, hero); g.player.weapons = [new WeaponInstance(d)]; g.player.slot = 0; T.seed(99); T.foes(); g.input.mouse.down = true; T.step(50); g.input.mouse.down = false; T.step(20); return T.snapState(); };
         if (warm) { run(false); warm = false; } // 직업마다 첫 무기 전에 준비 운동 한 번
-        const a = run(false), b2 = run(true), a2 = run(false); out.n++; if (a !== a2) out.unstable.push(hero + ':' + d.id); else if (a !== b2) out.bad.push(hero + ':' + d.id);
+        let a = run(false), b2 = run(true), a2 = run(false); out.n++;
+        if (a !== a2) { // 상자를 부수는 무기 등: 맵이 바뀌어 시험이 재현되지 않으면 매번 새 맵으로 다시 비교
+          const fresh = (on) => { T.start(hero); return run(on); }; a = fresh(false); b2 = fresh(true); a2 = fresh(false); out.refreshed++; T.start(hero); warm = true; }
+        if (a !== a2) out.unstable.push(hero + ':' + d.id); else if (a !== b2) out.bad.push(hero + ':' + d.id);
         const th = UVFX.themeOf(g, g.player) || T.SK[hero].replace('skin_u_', ''), s0 = weaponSprite(d), s1 = weaponSprite(d, th === 'first_explorer' ? 'first_explorer' : th);
         if (!WEAPON_SPRITE[d.id]) { out.newArt++; continue; } // 원래 전용 그림이 없던 23종: 팩이 새로 그린 실루엣 (원래는 기본 권총 그림)
         if ((s1.px - s0.px) * 2 !== s1.w - s0.w || (s1.py - s0.py) * 2 !== s1.h - s0.h) out.pivotBad++; } }
     return out; });
-  ok(W.bad.length === 0 && W.unstable.length === 0, `무기 ${W.n}회(191종 × 3직업) 기본 공격: 판정 불일치 ${W.bad.length}` + (W.bad.length ? ' ' + W.bad.slice(0, 5).join(', ') : '') + (W.unstable.length ? ` · 시험 재현 실패 ${W.unstable.length} ` + W.unstable.slice(0, 3).join(', ') : ''));
+  ok(W.bad.length === 0 && W.unstable.length === 0, `무기 ${W.n}회(191종 × 3직업) 기본 공격: 판정 불일치 ${W.bad.length}` + (W.bad.length ? ' ' + W.bad.slice(0, 5).join(', ') : '') + (W.unstable.length ? ` · 시험 재현 실패 ${W.unstable.length} ` + W.unstable.slice(0, 3).join(', ') : '') + (W.refreshed ? ` · 새 맵으로 다시 비교 ${W.refreshed}` : ''));
   ok(W.pivotBad === 0, `테마 무기 외형: 손잡이(피벗) 위치 어긋남 ${W.pivotBad} (테두리 장식 여백만 늘어남) · 새 실루엣 ${W.newArt / 3}종`);
 
   // ── 4) 공통 효과: 발자국(이동 중에만 · 좌우 교대) · 대시 · 무기 · 피격 · 회복 · 사망 · 획득 · 사용 · 오라/대기
