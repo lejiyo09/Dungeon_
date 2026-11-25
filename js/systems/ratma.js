@@ -110,7 +110,7 @@ class NecroSkeleton {
 // ── 망령 골렘: 느리지만 맞힌 적을 확정 0.5초 기절 · 근처 일반 적의 어그로를 끎(적 탄을 몸으로 막음) · 쓰러지면 5초 뒤 부활
 class NecroGolem {
   constructor(x, y, owner) {
-    this.x = x; this.y = y; this.owner = owner; this.half = 7; this.maxHp = Math.round(owner.maxHp * NECRO.golem.hpMul); this.hp = this.maxHp; this.up = true; this.respawnT = 0;
+    this.x = x; this.y = y; this.owner = owner; this.half = 7; this.maxHp = Math.round(owner.maxHp * NECRO.golem.hpMul * (typeof game !== 'undefined' && game.necroFloor ? game.necroFloor().hp : 1)); this.hp = this.maxHp; this.up = true; this.respawnT = 0;
     this.cd = 0.5; this.t = 0; this.face = 1; this.alive = true; this.atkT = 0; this.hurtT = 0;
     const self = this, px = Object.create(owner); // 어그로용 대역: 적 AI가 '플레이어'로 보는 동안 맞는 피해는 골렘이 받음
     Object.defineProperty(px, 'isInvulnerable', { get: () => !self.up });
@@ -120,7 +120,7 @@ class NecroGolem {
   hurt(a) { if (!this.up) return; this.hp -= a; this.proxy.hp = this.hp; this.hurtT = 0.12; if (this.hp <= 0) { this.up = false; this.respawnT = NECRO.golem.respawn; this.proxy.state = 'DEAD'; if (typeof game !== 'undefined') { game.effects.burst(this.x, this.y - 8, '#c8c0b0', 18); game.effects.text(this.x, this.y - 24, '골렘 붕괴 — 5초 뒤 부활', '#c8c0b0'); } } }
   update(dt, world) {
     const P = this.owner, G = NECRO.golem; this.t += dt; this.cd -= dt; this.atkT = Math.max(0, this.atkT - dt); this.hurtT = Math.max(0, this.hurtT - dt);
-    if (!this.up) { this.respawnT -= dt; if (this.respawnT <= 0 && P.state !== 'DEAD') { this.up = true; this.maxHp = Math.round(P.maxHp * G.hpMul); this.hp = this.maxHp; this.proxy.hp = this.hp; this.proxy.state = 'NORMAL'; this.x = P.x - 16; this.y = P.y + 8;
+    if (!this.up) { this.respawnT -= dt; if (this.respawnT <= 0 && P.state !== 'DEAD') { this.up = true; this.maxHp = Math.round(P.maxHp * G.hpMul * world.necroFloor().hp); this.hp = this.maxHp; this.proxy.hp = this.hp; this.proxy.state = 'NORMAL'; this.x = P.x - 16; this.y = P.y + 8;
         world.zones.push(new RatmaSigil(this.x, this.y, 20, '#9affd8', 0.9)); world.effects.burst(this.x, this.y - 6, '#9affd8', 14); world.effects.text(this.x, this.y - 26, '골렘 부활', '#9affd8'); } return; }
     if (Math.hypot(this.x - P.x, this.y - P.y) > 280) { this.x = P.x - 16; this.y = P.y + 8; }
     let best = null, bd = 210;
@@ -168,12 +168,12 @@ class NecroThrall {
   }
   get x() { return this.e.x; } get y() { return this.e.y; }
   hitTarget(a) { const T = this.tgt; if (!T || !T.alive || typeof game === 'undefined') return; game.damageEnemy(T, { damage: a, mods: { attackBonus: 0, critChance: 0, critMultiplier: 1 }, knockback: 3, minion: true }, Math.sign(T.x - this.e.x) || 1, 0, { quiet: true }); }
-  hurt(a) { const e = this.e; if (!this.alive) return; e.hp -= a; e.hurtFlash = 0.12; this.hpBar = 2; if (this.rec) this.rec.hp = e.hp; if (e.hp <= 0) this.die(typeof game !== 'undefined' ? game : null, true); }
+  hurt(a) { const e = this.e; if (!this.alive) return; e.hp -= a; e.hurtFlash = 0.12; this.hpBar = 2; if (this.rec) this.rec.hpFrac = e.hp / e.maxHp; if (e.hp <= 0) this.die(typeof game !== 'undefined' ? game : null, true); }
   die(world, killed) {
     if (!this.alive) return; this.alive = false; const e = this.e; e.alive = false;
     if (!world) return; world.effects.death(e.x, e.y, this.col, e.def.hitboxHalf * 2);
     const P = this.owner; if (this.rec && P.thralls) { const i = P.thralls.indexOf(this.rec); if (i >= 0) P.thralls.splice(i, 1); }
-    if (killed && !this.charm && world.necroAddCorpse) world.necroAddCorpse(Object.assign(Object.create(e), { elite: e.elite, maxHp: Math.round(e.maxHp / NECRO.thrall.hpMul), damage: Math.round(e.damage / NECRO.thrall.dmgMul) })); // 원본 수치로 (다시 살리면 또 2배) // 쓰러진 부하는 다시 시체로
+    if (killed && !this.charm && world.necroAddCorpse) world.necroAddCorpse(Object.assign(Object.create(e), { elite: e.elite, maxHp: Math.round(e.maxHp / NECRO.thrall.hpMul), damage: Math.round(e.damage / NECRO.thrall.dmgMul), necroSHp: world.scale.hp, necroSDmg: world.scale.dmg })); // 원본 수치로 (다시 살리면 또 2배) // 쓰러진 부하는 다시 시체로
   }
   update(dt, world) {
     const e = this.e, P = this.owner; this.t += dt; this.hpBar = Math.max(0, this.hpBar - dt);
@@ -671,7 +671,7 @@ Player.prototype.ratmaAtkBonus = function () {
   });
   G.necroAddCorpse = function (e) {
     const L = this.necroCorpses || (this.necroCorpses = []);
-    L.push({ x: e.x, y: e.y, def: e.def, elite: !!e.elite, maxHp: e.maxHp, damage: e.damage, t: this.time }); if (L.length > NECRO.corpse.max) L.shift();
+    L.push({ x: e.x, y: e.y, def: e.def, elite: !!e.elite, maxHp: e.maxHp, damage: e.damage, sHp: e.necroSHp || this.scale.hp, sDmg: e.necroSDmg || this.scale.dmg, t: this.time }); // 죽은 층의 강화 배율 if (L.length > NECRO.corpse.max) L.shift();
     this.effects.part(e.x, e.y - 2, 0, -12, { color: '#d8d0c0', life: 0.5, size: 2, size2: 0, drag: 1 });
   };
   G.necroCorpseAtMouse = function () {
@@ -681,7 +681,7 @@ Player.prototype.ratmaAtkBonus = function () {
   G.necroUseCorpse = function (c) { const L = this.necroCorpses || []; const i = L.indexOf(c); if (i >= 0) L.splice(i, 1); };
   G.necroRaise = function (p, c) { // 망자의 군주: 시체 부활 (최대 5 — 넘으면 가장 오래된 부하가 돌아감)
     this.necroUseCorpse(c); const T = p.thralls || (p.thralls = []);
-    T.push({ id: c.def.id, elite: c.elite, maxHp: c.maxHp, damage: c.damage, hp: c.maxHp * NECRO.thrall.hpMul, k: Math.random() }); // 원본 체력·공격력 그대로
+    T.push({ id: c.def.id, elite: c.elite, maxHp: c.maxHp, damage: c.damage, hpFrac: 1, sHp: c.sHp || this.scale.hp, sDmg: c.sDmg || this.scale.dmg, k: Math.random() }); // 원본 체력·공격력 그대로
     while (T.length > NECRO.thrall.max) { const old = T.shift(); const a = this.allies.find((x) => x instanceof NecroThrall && x.owner === p && x.rec === old); if (a) { a.alive = false; this.effects.burst(a.x, a.y - 4, '#7affc0', 10); } }
     this.zones.push(new RatmaSigil(c.x, c.y, 18, '#7affc0', 0.8)); this.effects.skyBeam(c.x, c.y, '#9affd8', 0, 5);
     for (let i = 0; i < 12; i++) this.effects.part(c.x + randInt(-8, 8), c.y + 4, randInt(-10, 10), -40 - Math.random() * 30, { color: i % 2 ? '#9affd8' : '#e8f8f0', life: 0.6, size: 2, size2: 0, drag: 1, add: true });
@@ -691,7 +691,8 @@ Player.prototype.ratmaAtkBonus = function () {
     const def = this.data.enemies.get(rec.id); if (!def) return null;
     const e = new Enemy(x, y, def, this.scale, this.map.roomAtPoint(x, y) || this.map.startRoom); // 죽기 전 원본 그대로
     const T = NECRO.thrall; if (rec.maxHp) { e.maxHp = rec.maxHp; e.damage = rec.damage; } e.maxHp = Math.round(e.maxHp * T.hpMul); e.damage = Math.round(e.damage * T.dmgMul); // 체급 2배
-    if (rec.elite) e.elite = true; e.hp = Math.max(1, Math.min(e.maxHp, rec.hp || e.maxHp));
+    if (rec.sHp) { const S = this.scale; e.maxHp = Math.round(e.maxHp * S.hp / rec.sHp); e.damage = Math.round(e.damage * S.dmg / rec.sDmg); } // 층수 비례: 죽은 층 → 지금 층 강화 곡선
+    if (rec.elite) e.elite = true; e.hp = Math.max(1, Math.round(e.maxHp * (rec.hpFrac == null ? 1 : rec.hpFrac)));
     const a = new NecroThrall(e, p, { rec }); this.allies.push(a); return a;
   };
   G.necroSpears = function (p, c) { // 리치: 시체 1개 → 시체 창 3개
@@ -758,12 +759,14 @@ Player.prototype.ratmaAtkBonus = function () {
   };
   wrap('activateRoom', function (orig, r, leader) { const res = orig.call(this, r, leader); this.summonFollowsIntoRoom(r); return res; });
   // [사용자 결정] 해골·골렘 한 방 = 들고 있는 두 무기 한 방의 합 (탄 여러 발은 합산 · 광선은 0.5초치 · 무기마다 강화 단계 반영, 공격력 보너스·치명타는 플레이어 기준)
+  // [사용자 결정] 소환수 층수 비례 버프 — 공격력: 몬스터 체력 강화 곡선의 floorDmg 만큼 (기본 0.5 = 직업 스킬이 깊이에 따라 자라는 것과 같은 비율) · 체력: 몬스터 공격력 곡선 그대로
+  G.necroFloor = function () { const S = this.scale || { hp: 1, dmg: 1 }; return { dmg: 1 + ((S.hp || 1) - 1) * NECRO.floorDmg, hp: S.dmg || 1 }; };
   G.necroWeaponSrc = function (p, knockback) {
     let sum = 0;
     for (const w of p.weapons) { const d = w && w.def; if (!d) continue;
       const base = d.type === 'beam' ? d.damage / (d.tickRate || 0.1) * 0.5 : d.damage * (d.projectileCount || 1);
       sum += base * (1 + (w.lv || 0) * BALANCE.upgrade.perLevel); }
-    return { damage: Math.max(5, sum) * NECRO.weaponAtk, mods: p.mods, knockback, minion: true };
+    return { damage: Math.max(5, sum) * NECRO.weaponAtk * this.necroFloor().dmg, mods: p.mods, knockback, minion: true }; // 층수 비례
   };
   G.summonTempSkeletons = function (p, n) { for (let i = 0; i < n; i++) this.allies.push(new NecroSkeleton(p.x + randInt(-12, 12), p.y + randInt(4, 12), p, { temp: NECRO.skeleton.tempLife, idx: 9 + i })); }; // 장비 등 추가 소환: 10초 뒤 소멸
 
