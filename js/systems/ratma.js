@@ -673,12 +673,15 @@ Player.prototype.ratmaAtkBonus = function () {
     const L = this.necroCorpses || (this.necroCorpses = []);
     L.push({ x: e.x, y: e.y, def: e.def, elite: !!e.elite, maxHp: e.maxHp, damage: e.damage, sHp: e.necroSHp || this.scale.hp, sDmg: e.necroSDmg || this.scale.dmg, t: this.time }); // 죽은 층의 강화 배율 if (L.length > NECRO.corpse.max) L.shift();
     this.effects.part(e.x, e.y - 2, 0, -12, { color: '#d8d0c0', life: 0.5, size: 2, size2: 0, drag: 1 });
+    const p = this.player; if (p && p.hero.id === NECRO_ID && p.state !== 'DEAD' && p.line && p.line.id === 'lich' && (p.rank || 0) >= 1) this.necroSpears(p, L[L.length - 1]); // [사용자 결정] 리치 계열: 시체가 생기면 자동으로 시체 창
   };
   G.necroCorpseAtMouse = function () {
     const mw = this.mouseWorld(), L = this.necroCorpses || []; let best = null, bd = NECRO.corpse.pick;
     for (const c of L) { const d = Math.hypot(c.x - mw.x, c.y - mw.y); if (d < bd) { bd = d; best = c; } } return best;
   };
-  G.necroUseCorpse = function (c) { const L = this.necroCorpses || []; const i = L.indexOf(c); if (i >= 0) L.splice(i, 1); };
+  G.necroUseCorpse = function (c) { const L = this.necroCorpses || []; const i = L.indexOf(c); if (i >= 0) L.splice(i, 1);
+    const p = this.player; if (p && p.hero.id === NECRO_ID && p.state !== 'DEAD' && p.line && p.line.id === 'lich') { const F = NECRO.lichFeed; // 리치 계열 패시브: 시체 소비 → 체력 20 · 에너지 10
+      p.hp = Math.min(p.maxHp, p.hp + F.hp); p.energy = Math.min(p.maxEnergy, p.energy + F.energy); this.effects.text(p.x, p.y - 22, `+${F.hp}`, '#7be36b'); this.effects.part(c.x, c.y - 2, (p.x - c.x) * 2, (p.y - c.y) * 2, { color: '#c08aff', life: 0.5, size: 2, size2: 0, drag: 1, add: true }); } };
   G.necroRaise = function (p, c) { // 망자의 군주: 시체 부활 (최대 5 — 넘으면 가장 오래된 부하가 돌아감)
     this.necroUseCorpse(c); const T = p.thralls || (p.thralls = []);
     T.push({ id: c.def.id, elite: c.elite, maxHp: c.maxHp, damage: c.damage, hpFrac: 1, sHp: c.sHp || this.scale.hp, sDmg: c.sDmg || this.scale.dmg, k: Math.random() }); // 원본 체력·공격력 그대로

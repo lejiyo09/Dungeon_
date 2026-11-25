@@ -25,6 +25,7 @@ const NECRO = {
   golem: { dmg: 30, rate: 1.6, stun: 0.5, hpMul: 3, respawn: 5, taunt: 120, speed: 70 },     // 망령 골렘: 확정 0.5초 기절 · 어그로 · 사망 5초 후 부활
   corpse: { life: 25, max: 30, pick: 16 },                                                      // 시체: 적이 쓰러진 자리 · 마우스로 고르는 거리
   thrall: { max: 5, hpMul: 2, dmgMul: 2 },  // [사용자 결정] 체급 2배: 부활 부하·정신지배된 적의 체력·공격력 2배 (원본 몬스터 기준)                                                                           // 망자의 군주: 부활한 몬스터 최대 5 — 원본 몬스터 그대로 (체력·공격력·AI·특수 능력)
+  lichFeed: { hp: 20, energy: 10 },                                                             // [사용자 결정] 리치 계열 패시브: 시체를 쓸 때마다 체력 20 · 에너지 10 회복
   spear: { count: 3, dmg: 40, speed: 260, range: 200, debuffs: 2 },                             // 리치: 시체 창 3개 · 무작위 디버프 2종
   grave: { r: 92, life: 10, every: 2, bombs: [2, 4], bombDmg: 55, bombR: 36, charm: 0.7, charmLife: 10, charmDmg: 90, charmR: 46, cd: 16 } // 불멸의 군주: 묘지
 };
@@ -46,8 +47,8 @@ JOB_LINES.hero_necromancer = {
     looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_lich', body: '#2c2528', accent: '#d6c8a0' }, { sprite: 'necro_lichlord', body: '#17171f', accent: '#e0c77d' }],
     fx: { trail: '#b47aff', trail2: '#5a2a9a', kind: 'crack' },
     skills: [NECRO_NONE,
-      { id: 'necro_spear', name: '시체 창', desc: '시체에 마우스를 올리고 스킬 키 → 시체 1개로 시체 창 3개 (주변 적 자동 추적 · 무작위 디버프 2종) · 재사용 대기 없음', cd: 0.3 },
-      { id: 'necro_grave', name: '묘지', desc: '마우스 위치에 10초 묘지 — 2초마다 자폭 해골 2~4, 주변 일반 적 70% 정신지배(10초 뒤 자폭, 보스 면역) · 시체 위에서는 시체 창', cd: NECRO.grave.cd }] }
+      { id: 'necro_spear', name: '시체 창', desc: '시체가 생기면 자동으로 시체 1개를 써서 시체 창 3개 (주변 적 자동 추적 · 무작위 디버프 2종) · 패시브: 시체를 쓸 때마다 체력 20 · 에너지 10 회복', cd: 0.3 },
+      { id: 'necro_grave', name: '묘지', desc: '마우스 위치에 10초 묘지 — 2초마다 자폭 해골 2~4, 주변 일반 적 70% 정신지배(10초 뒤 자폭, 보스 면역) · 시체 창은 자동 · 시체를 쓸 때마다 체력 20 · 에너지 10', cd: NECRO.grave.cd }] }
 };
 
 // ── 무기: 시작 무기 1종 + 라트마 고유 무기 8종
