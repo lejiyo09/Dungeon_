@@ -2006,7 +2006,7 @@ class Game {
           this.zones.push(new Strike(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r * 0.75, 0.75 + i * 0.06, 24, { damage: D(34), mods: p.mods, knockback: 4 }, '#ffc070', false)); }
         SFX.play('crate'); break; }
       case 'carpet': { const a = A, n = p.jobSkillFx === 'carpet' ? 13 : 11; /* [숙련] 융단 강화: 폭발 +2 */
-        for (let i = 0; i < n; i++) { const d = 30 + i * 24; this.zones.push(new Strike(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, 0.3 + i * 0.07, 34, { damage: D(100), mods: p.mods, knockback: 6, status: { type: 'burn', chance: 1, duration: 3, dps: 12 } }, '#ff7a3a', false)); }
+        for (let i = 0; i < n; i++) { const d = 30 + i * 24; this.zones.push(new Strike(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, 0.3 + i * 0.05, 40, { damage: D(100), mods: p.mods, knockback: 6, status: { type: 'burn', chance: 1, duration: 3, dps: 12 } }, '#ff7a3a', false)); }
         this.addShake(0.2, 4); SFX.play('heavy'); break; }
       case 'deadeye': this.zones.push(new SkillCast(p, p.x, p.y, { r: 22, time: 0.7, color: '#ffd84a' }, () => {
         for (const e of this.enemies) if (e.targetable && Math.hypot(e.x - p.x, e.y - p.y) < 320 && hasLineOfSight(p, e, this.map)) {
@@ -2181,8 +2181,8 @@ class Game {
       case 'railshot': later(0.8, () => { const L = 700, x1 = p.x + Math.cos(A) * L, y1 = p.y + Math.sin(A) * L;
         for (let d = 16; d < 420; d += 12) P(p.x + Math.cos(A) * d, p.y + Math.sin(A) * d, -Math.sin(A) * randInt(-40, 40), Math.cos(A) * randInt(-40, 40), d % 24 ? '#ffe9a0' : '#ffffff', 0.5, 1.5);
         E.rays(p.x, p.y, '#ffe9a0', 12, 40, 0.4); E.ring(p.x, p.y, 26, '#ffffff'); }); break;
-      case 'carpet': for (let i = 0; i < 11; i++) { const d = 30 + i * 24; E.skyBeam(p.x + Math.cos(A) * d, p.y + Math.sin(A) * d, '#ffb04a', 0.15 + i * 0.07, 3); }
-        later(0.3 + 11 * 0.07, () => { const x1 = p.x + Math.cos(A) * 270, y1 = p.y + Math.sin(A) * 270; E.rays(x1, y1, '#ff7a3a', 14, 60, 0.6); }); break;
+      case 'carpet': for (let i = 0; i < 11; i++) { const d = 30 + i * 24; E.skyBeam(p.x + Math.cos(A) * d, p.y + Math.sin(A) * d, '#ffb04a', 0.15 + i * 0.05, 3); }
+        later(0.3 + 11 * 0.05, () => { const x1 = p.x + Math.cos(A) * 270, y1 = p.y + Math.sin(A) * 270; E.rays(x1, y1, '#ff7a3a', 14, 60, 0.6); }); break;
       case 'barrage': { const c = at(200); for (let i = 0; i < 14; i++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * 60; E.skyBeam(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r * 0.7, '#ffd070', 1.15 + i * 0.1, 3); }
         later(1, () => E.rays(c.x, c.y, '#f0c030', 14, 80, 0.6)); break; }
       case 'execution': E.rays(p.x, p.y, '#b080ff', 16, 90, 0.6); E.ring(p.x, p.y, 40, '#3a2050'); E.ring(p.x, p.y, 70, '#b080ff');

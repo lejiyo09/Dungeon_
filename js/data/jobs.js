@@ -79,7 +79,7 @@ const JOB_LINES = {
       skills: [
         { id: 'grenade', name: '수류탄', desc: '조준 지점에 던져 폭발 (화상)', cd: 5 },
         { id: 'cluster', name: '집속 수류탄', desc: '큰 폭발 뒤 주변에 작은 폭발 6개', cd: 6 },
-        { id: 'carpet', name: '융단 폭격', desc: '조준 방향 일직선으로 폭발 11개가 차례로 (화상)', cd: 10 }] } },
+        { id: 'carpet', name: '융단 폭격', desc: '조준 방향 일직선으로 폭발 11개가 차례로 (화상)', cd: 8 }] } },
   hero_engineer: { title: '공학 분야 선택',
     base: { name: '포탑', desc: '자리에 포탑을 세워 화력 지원', ranks: ['기술자', '기계공학자', '전쟁 설계자'], color: '#f0c030',
     skills: [
