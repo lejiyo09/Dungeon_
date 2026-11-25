@@ -12,6 +12,23 @@ const LEGEND_VFX = { // 스킨 그림 이름 → 색 (main: 선, soft: 빛·점)
   leg_crimson: { key: 'crimson', main: '#ff648d', soft: '#ffc1d3' },
   leg_admiral: { key: 'admiral', main: '#f0c050', soft: '#fff1c0', sea: '#9ad8ff', smoke: '#eef6ff', navy: '#26355e' } // 천공함대 제독: 하늘빛 비행운 · 구름 · 금빛 날개 닻
 };
+// 천공함대 비행함 도트 (오른쪽을 봄 · 외곽선 자동) — a/b/c = 남색 기낭, y 금, h 나무, w 흰, r 붉은 깃발, e 창문 불빛
+if (typeof PIX !== 'undefined') Object.assign(PIX, {
+  fleet_flag: { tint: '#2c3d70', w: 36, h: 20, pal: { y: '#f0c050', z: '#a8782a', h: '#6a4428', j: '#4a2e1a', w: '#ffffff', r: '#d8404a', e: '#ffe9a0', d: '#1a2240' }, proc: (P) => {
+    P.tri(1, 2, 7, 7, 1, 12, 'z'); P.tri(2, 4, 6, 7, 2, 10, 'y'); // 꼬리 날개
+    P.ell(18, 7, 13, 5, 'a'); P.ell(18, 5, 11, 2, 'c'); P.rect(6, 7, 25, 1, 'y'); // 기낭 · 윗빛 · 금띠
+    for (const x of [10, 15, 20, 25]) P.line(x, 3, x, 11, 'b'); P.px(30, 7, 'y'); P.px(31, 7, 'e'); // 늑골 · 뱃머리 등
+    P.line(11, 12, 12, 14, 'd'); P.line(24, 12, 23, 14, 'd'); P.line(17, 12, 17, 14, 'd'); // 줄
+    P.rect(9, 14, 17, 4, 'h'); P.rect(9, 14, 17, 1, 'y'); P.rect(10, 17, 15, 1, 'j'); P.tri(26, 14, 30, 15, 26, 18, 'h'); P.px(27, 15, 'y'); // 선체 · 금테 · 뱃머리
+    P.px(12, 15, 'e'); P.px(16, 15, 'e'); P.px(20, 15, 'e'); P.rect(13, 18, 1, 2, 'd'); P.rect(18, 18, 1, 2, 'd'); P.rect(22, 18, 1, 2, 'd'); // 창문 · 아래 포구
+    P.line(18, 0, 18, 2, 'y'); P.rect(19, 0, 3, 1, 'r'); P.px(19, 1, 'r'); // 깃발
+    P.rect(0, 6, 1, 3, 'w'); // 프로펠러
+  } },
+  fleet_escort: { tint: '#2c3d70', w: 24, h: 13, pal: { y: '#f0c050', z: '#a8782a', h: '#6a4428', w: '#ffffff', e: '#ffe9a0', d: '#1a2240' }, proc: (P) => {
+    P.tri(1, 1, 5, 4, 1, 8, 'z'); P.ell(12, 4, 9, 3, 'a'); P.ell(12, 3, 7, 1, 'c'); P.rect(4, 4, 17, 1, 'y'); P.px(20, 4, 'e');
+    P.line(8, 7, 9, 9, 'd'); P.line(16, 7, 15, 9, 'd'); P.rect(7, 9, 11, 3, 'h'); P.rect(7, 9, 11, 1, 'y'); P.tri(18, 9, 21, 10, 18, 12, 'h'); P.px(10, 10, 'e'); P.px(14, 10, 'e'); P.rect(0, 3, 1, 3, 'w');
+  } }
+});
 let _lvSeed = 0x51ed27; function lvRand() { _lvSeed = (_lvSeed * 1664525 + 1013904223) >>> 0; return _lvSeed / 4294967296; } // 장식 전용 난수
 
 // 이 플레이어가 지금 보이는 스킨 그림 이름 (actors.js 의 render 와 같은 규칙)
@@ -39,10 +56,12 @@ Effects.prototype.legendDash = function (sk, x, y, dx = 1, dy = 0, first = false
     this.part(x, y, Math.cos(a) * sp, Math.sin(a) * sp, { color: i % 2 ? s.main : s.soft, life: 0.2 + lvRand() * 0.1, size: first ? 1.9 : 1.5, size2: 0, drag: 6, add: true }); }
   if (s.key === 'admiral' && lvRand() < 0.5) this.part(x - dx * 6, y - dy * 6 - 2, -dx * 8, -dy * 8 - 4, { color: s.smoke, life: 0.45, size: 2, size2: 4.6, drag: 4, shape: 'circle' }); // 흩어지는 구름 조각
 };
-Effects.prototype.legendSkill = function (sk, x, y, angle = 0) {
+Effects.prototype.legendSkill = function (sk, x, y, angle = 0, targets = null) {
   const s = LEGEND_VFX[sk]; if (!s || s.dashOnly) return;
-  if (s.key === 'admiral') { // 천공함대 포격 지원: 발밑 지휘 문장 + 머리 위를 지나가는 함대 셋
-    this.push({ kind: 'legend', fx: 'skill', key: s.key, x, y, angle, color: s.main, accent: s.soft, sea: s.sea, smoke: s.smoke, navy: s.navy, t: 0, life: 1.3, opacity: 1 });
+  if (s.key === 'admiral') { // 천공함대 포격 지원: 신호탄 → 폭발 지점마다 조준 표식 → 머리 위로 지나가는 함대가 그 순간 포탄을 내리꽂음
+    const T = targets && targets.length ? targets : [[x + Math.cos(angle) * 60, y + Math.sin(angle) * 60, 0.45]];
+    const last = Math.max(...T.map((q) => q[2]));
+    this.push({ kind: 'legend', fx: 'skill', key: s.key, x, y, angle, targets: T, color: s.main, accent: s.soft, sea: s.sea, smoke: s.smoke, t: 0, life: last + 0.75, opacity: 1 });
     for (let i = 0; i < 6; i++) { const a = i * TAU / 6 + angle; this.part(x + Math.cos(a) * 10, y + 6 + Math.sin(a) * 4, Math.cos(a) * 26, Math.sin(a) * 10 - 6, { color: i % 2 ? s.main : s.smoke, life: 0.35, size: 1.6, size2: 0, drag: 5, add: i % 2 === 1 }); }
     return;
   }
@@ -98,7 +117,7 @@ function drawLegendFx(ctx, fx, x, y) {
       ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 0.45 * k; ctx.fillStyle = fx.smoke; // 출발점의 작은 구름
       for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(-L2 - 2 + i * 3, (i - 1) * 2, 1.5 + p * 3 - i * 0.4, 0, TAU); ctx.fill(); }
     }
-  } else if (fx.fx === 'skill' && fx.key === 'admiral') { drawAdmiralSkill(ctx, fx, x, y, p, k);
+  } else if (fx.fx === 'skill' && fx.key === 'admiral') { drawAdmiralSkill(ctx, fx);
   } else if (fx.fx === 'skill') { // 스킬: 시전자 위치에 크게 펼쳐지는 스킨별 인장
     const reach = 14 + p * 23; ctx.translate(x, y - 4); ctx.rotate(fx.angle);
     ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, fx.opacity * (0.9 + 0.1 * k)) * Math.min(1, k * 2.2);
@@ -125,38 +144,50 @@ function drawLegendFx(ctx, fx, x, y) {
   ctx.restore(); ctx.lineWidth = 1;
 }
 
-// 천공함대 포격 지원 (제독 스킬): 발밑에 펼쳐지는 금빛 지휘 문장 → 뒤에서 날아와 조준 방향으로 지나가는 비행함 셋 (땅에 그림자) → 지나가며 포격 섬광
-function drawAdmiralSkill(ctx, fx, x, y, p, k) {
-  const fin = Math.min(1, p / 0.1) * Math.min(1, k / 0.2); // 처음엔 나타나고 끝엔 사라짐
-  const ux = Math.cos(fx.angle), uy = Math.sin(fx.angle), dir = ux >= 0 ? 1 : -1;
-  // 1) 지휘 문장: 바닥에 눕힌 금빛 고리 + 도는 눈금 8개 + 가운데 날개 닻
-  ctx.save(); ctx.translate(x, y + 6); ctx.globalCompositeOperation = 'lighter';
-  const R = 10 + 6 * Math.min(1, p * 4); ctx.globalAlpha = 0.8 * fin; ctx.strokeStyle = fx.color; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.ellipse(0, 0, R, R * 0.4, 0, 0, TAU); ctx.stroke();
-  ctx.globalAlpha = 0.5 * fin; ctx.strokeStyle = fx.sea; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(0, 0, R * 0.65, R * 0.26, 0, 0, TAU); ctx.stroke();
-  ctx.globalAlpha = 0.85 * fin; ctx.fillStyle = fx.accent;
-  for (let i = 0; i < 8; i++) { const a = i * TAU / 8 + p * 2.2; ctx.fillRect(Math.round(Math.cos(a) * (R + 2)), Math.round(Math.sin(a) * (R + 2) * 0.4), 2, 1); }
-  ctx.fillStyle = fx.color; ctx.fillRect(-1, -6, 2, 8); ctx.fillRect(-3, -5, 6, 1); ctx.fillRect(-4, 1, 8, 1); ctx.fillRect(-4, 0, 1, 1); ctx.fillRect(3, 0, 1, 1); // 닻
-  ctx.fillStyle = fx.accent; ctx.fillRect(-8, -6, 5, 1); ctx.fillRect(-7, -5, 3, 1); ctx.fillRect(3, -6, 5, 1); ctx.fillRect(4, -5, 3, 1); // 날개
+// 천공함대 포격 지원 (제독 스킬)
+//  ① 신호탄: 시전자에게서 금빛 신호가 하늘로 솟음 + 발밑 지휘 문장
+//  ② 조준 표식: 실제 폭발 지점마다 금빛 표식이 좁혀지며 깜박임 (폭발 순간에 맞춤)
+//  ③ 함대: 기함 + 호위함 둘이 조준 방향으로 폭발 지점 위를 지나감 (땅에 그림자, 비행운)
+//  ④ 포격: 폭발 직전 가장 가까운 배에서 포탄이 내리꽂히고, 터지는 순간 빛기둥 + 충격 고리
+function drawAdmiralSkill(ctx, fx) {
+  const t = fx.t, T = fx.targets, life = fx.life, ux = Math.cos(fx.angle), uy = Math.sin(fx.angle), dir = ux >= 0 ? 1 : -1;
+  const fin = Math.min(1, t / 0.12) * Math.min(1, (life - t) / 0.3);
+  const cx = T.reduce((a, q) => a + q[0], 0) / T.length, cy = T.reduce((a, q) => a + q[1], 0) / T.length, tm = T.reduce((a, q) => a + q[2], 0) / T.length;
+  const ALT = 40, V = 150, ships = [['fleet_flag', 0, 0], ['fleet_escort', -22, -16], ['fleet_escort', -22, 16]]; // [그림, 뒤로, 옆으로]
+  const span = Math.max(0, ...T.map((q) => Math.abs((q[0] - cx) * ux + (q[1] - cy) * uy))); // 융단 폭격처럼 길게 늘어선 경우 함대가 그 길이를 따라감
+  const shipAt = (i, tt) => { const [, back, side] = ships[i], sp = (span > 40 ? span * 2.2 / Math.max(0.3, (T[T.length - 1][2] - T[0][2]) || 0.6) : V), s0 = sp * (tt - tm) + back; const gx = cx + ux * s0 - uy * side, gy = cy + uy * s0 + ux * side; return { gx, gy, ax: gx, ay: gy - ALT + Math.sin(tt * 4 + i) * 1.2 }; };
+  ctx.save();
+  // ① 지휘 문장 + 신호탄
+  if (t < 0.9) { const f = Math.min(1, t / 0.15) * Math.min(1, (0.9 - t) / 0.3), R = 9 + 5 * Math.min(1, t * 5);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.75 * f; ctx.strokeStyle = fx.color; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(fx.x, fx.y + 6, R, R * 0.4, 0, 0, TAU); ctx.stroke();
+    ctx.fillStyle = fx.accent; for (let i = 0; i < 6; i++) { const a = i * TAU / 6 + t * 2; ctx.fillRect(Math.round(fx.x + Math.cos(a) * (R + 2)), Math.round(fx.y + 6 + Math.sin(a) * (R + 2) * 0.4), 2, 1); } }
+  if (t < 0.55) { const g = Math.min(1, t / 0.22), h = 8 + g * 70, a = 1 - Math.max(0, (t - 0.22) / 0.33), X = Math.round(fx.x), Y0 = Math.round(fx.y - 8);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 * a; ctx.fillStyle = fx.color; ctx.fillRect(X - 1, Y0 - h, 3, h);
+    ctx.globalAlpha = 0.9 * a; ctx.fillStyle = fx.accent; ctx.fillRect(X, Y0 - h, 1, h); ctx.fillStyle = '#ffffff'; ctx.fillRect(X - 1, Y0 - h - 1, 3, 3); // 솟는 신호 + 밝은 머리
+    if (g >= 1) { const r = (t - 0.22) * 40; ctx.globalAlpha = 0.6 * a; ctx.strokeStyle = fx.accent; ctx.beginPath(); ctx.arc(X, Y0 - h, r, 0, TAU); ctx.stroke(); } } // 하늘에서 터지는 신호
+  // ② 조준 표식 (폭발 지점, 폭발할 때까지)
+  for (const [tx, ty, d] of T) { if (t > d + 0.05) continue; const q = Math.min(1, t / Math.max(0.05, d)), r = 11 - 5 * q, blink = q > 0.6 ? (Math.floor(t * 16) % 2 ? 1 : 0.45) : 1;
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (0.35 + 0.5 * q) * blink * fin; ctx.strokeStyle = q > 0.75 ? '#ff9a4a' : fx.color; ctx.lineWidth = 1;
+    for (let i = 0; i < 4; i++) { const a = i * TAU / 4 + t * 3; ctx.beginPath(); ctx.ellipse(tx, ty, r, r * 0.5, 0, a, a + 0.9); ctx.stroke(); }
+    ctx.fillStyle = ctx.strokeStyle; ctx.fillRect(Math.round(tx - r - 3), Math.round(ty), 3, 1); ctx.fillRect(Math.round(tx + r + 1), Math.round(ty), 3, 1); ctx.fillRect(Math.round(tx), Math.round(ty - r * 0.5 - 3), 1, 2); ctx.fillRect(Math.round(tx), Math.round(ty + r * 0.5 + 1), 1, 2); }
+  // ③ 함대: 그림자 → 비행운 → 배
+  ships.forEach(([spr], i) => { const S = shipAt(i, t), big = i === 0;
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 0.28 * fin; ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.ellipse(S.gx, S.gy + 4, big ? 15 : 10, big ? 4 : 3, 0, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.4 * fin; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = big ? 2 : 1; const L = big ? 46 : 32, bx = S.ax - ux * (big ? 17 : 11), by = S.ay - uy * (big ? 17 : 11);
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - ux * L, by - uy * L); ctx.stroke();
+    const G = typeof getSprite === 'function' ? getSprite(spr) : null; if (G) { ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = fin; ctx.drawImage(dir > 0 ? G.n : G.f, Math.round(S.ax - G.w / 2), Math.round(S.ay - G.h / 2)); } });
+  // ④ 포탄 · 착탄
+  T.forEach(([tx, ty, d], j) => { const i = j === 0 ? 0 : j % 3, tl = d - 0.24;
+    if (t >= tl && t < d) { const S = shipAt(i, tl), f = (t - tl) / 0.24, e = f * f, sx = S.ax + dir * 4, sy = S.ay + (i === 0 ? 10 : 6); const hx = sx + (tx - sx) * e, hy = sy + (ty - sy) * e, e0 = Math.max(0, e - 0.3), tx0 = sx + (tx - sx) * e0, ty0 = sy + (ty - sy) * e0;
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.55; ctx.strokeStyle = '#ff9a4a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(tx0, ty0); ctx.lineTo(hx, hy); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.strokeStyle = fx.accent; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(tx0, ty0); ctx.lineTo(hx, hy); ctx.stroke(); ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(hx) - 1, Math.round(hy) - 1, 2, 2);
+      if (f < 0.25) { ctx.globalAlpha = 0.8 * (1 - f * 4); ctx.fillStyle = fx.accent; ctx.beginPath(); ctx.arc(sx, sy, 3, 0, TAU); ctx.fill(); } } // 포구 섬광
+    if (t >= d && t < d + 0.32) { const g = (t - d) / 0.32, k2 = 1 - g;
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.7 * k2; ctx.fillStyle = fx.color; const w = Math.max(1, Math.round(5 * k2)); ctx.fillRect(Math.round(tx - w / 2), Math.round(ty - 44 * k2), w, Math.round(44 * k2)); // 빛기둥
+      ctx.globalAlpha = 0.8 * k2; ctx.strokeStyle = fx.accent; ctx.lineWidth = 1 + 2 * k2; ctx.beginPath(); ctx.ellipse(tx, ty, 6 + g * 20, (6 + g * 20) * 0.5, 0, 0, TAU); ctx.stroke(); } // 충격 고리
+  });
   ctx.restore();
-  // 2) 함대: 시전자 뒤 60px에서 앞 70px까지, 머리 위 높이 28 (그림자는 바닥에)
-  const ships = [[0, 0, 1], [-11, -12, 0.8], [-11, 12, 0.8]]; // [뒤로, 옆으로, 크기]
-  for (const [back, side, sc] of ships) {
-    const t = -60 + 130 * p + back, gx = x + ux * t - uy * side, gy = y + uy * t + ux * side, sy = gy - 28;
-    ctx.save(); ctx.globalAlpha = 0.28 * fin; ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.ellipse(gx, gy + 6, 7 * sc, 2.2 * sc, 0, 0, TAU); ctx.fill(); ctx.restore(); // 그림자
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 * fin; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; // 비행운
-    ctx.beginPath(); ctx.moveTo(gx - ux * 8 * sc, sy - uy * 8 * sc); ctx.lineTo(gx - ux * 30, sy - uy * 30); ctx.stroke(); ctx.restore();
-    ctx.save(); ctx.translate(Math.round(gx), Math.round(sy)); ctx.scale(dir * sc, sc); ctx.globalAlpha = fin; // 비행함 (화면 기준 똑바로, 진행 쪽을 봄)
-    ctx.fillStyle = '#0d1428'; ctx.beginPath(); ctx.ellipse(0, -3, 8, 3.6, 0, 0, TAU); ctx.fill(); // 외곽
-    ctx.fillStyle = fx.navy; ctx.beginPath(); ctx.ellipse(0, -3, 7, 2.8, 0, 0, TAU); ctx.fill(); // 기낭
-    ctx.fillStyle = fx.color; ctx.fillRect(-6, -3, 12, 1); ctx.fillRect(-9, -6, 2, 6); ctx.fillRect(-10, -5, 1, 4); // 금띠 · 꼬리 날개
-    ctx.fillStyle = '#6a4a2a'; ctx.fillRect(-3, 1, 7, 2); ctx.fillStyle = fx.color; ctx.fillRect(-3, 1, 7, 1); ctx.fillRect(-1, 0, 1, 1); ctx.fillRect(2, 0, 1, 1); // 선체 · 줄
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(-9, -3 + (Math.floor(p * 40) % 2 ? 0 : -1), 1, 2); ctx.fillStyle = fx.accent; ctx.fillRect(6, -3, 1, 1); // 프로펠러 · 뱃머리 등
-    ctx.restore();
-    const fire = p > 0.32 && p < 0.7 && Math.floor(p * 18 + back) % 3 === 0; // 3) 지나가며 포격: 배 밑에서 땅으로 섬광 한 줄
-    if (fire) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.75 * fin; ctx.strokeStyle = fx.accent; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(gx, sy + 3); ctx.lineTo(gx + ux * 6, gy + 4); ctx.stroke(); ctx.fillStyle = fx.color; ctx.fillRect(Math.round(gx + ux * 6) - 1, Math.round(gy + 4) - 1, 3, 2); ctx.restore(); }
-  }
 }
 
 // ── 연결
@@ -166,8 +197,10 @@ function drawAdmiralSkill(ctx, fx, x, y, p, k) {
   // 스킬: 실제로 시전됐을 때만 (쿨타임·충전 칸이 줄었을 때) — 멀티에서는 방장이 판정하고 'legendSkill' 연출을 동료 화면에도 보냄
   const _useSkill = G.useSkill;
   G.useSkill = function (...a) {
-    const p = this.player, cd = p && p.skillCooldown, ch = p && p.dsCharges, r = _useSkill.apply(this, a);
-    if (p && (p.skillCooldown !== cd || p.dsCharges !== ch)) { const sk = legendOf(p, this); if (sk && this.effects) this.effects.legendSkill(sk, p.x, p.y, Math.atan2(p.aim.y, p.aim.x)); }
+    const p = this.player, cd = p && p.skillCooldown, ch = p && p.dsCharges, z0 = this.zones ? this.zones.length : 0, r = _useSkill.apply(this, a);
+    if (p && (p.skillCooldown !== cd || p.dsCharges !== ch)) { const sk = legendOf(p, this);
+      if (sk && this.effects) { const strikes = (this.zones || []).slice(z0).filter((z) => typeof Strike !== 'undefined' && z instanceof Strike).slice(0, 16).map((z) => [Math.round(z.x), Math.round(z.y), Math.round(z.delay * 100) / 100]); // 이번 스킬이 만든 폭발 지점·터지는 시간
+        this.effects.legendSkill(sk, p.x, p.y, Math.atan2(p.aim.y, p.aim.x), strikes.length ? strikes : null); } }
     return r;
   };
   // 대시: 화면마다 보이는 플레이어 모두를 직접 그림 (참가자의 대시는 방장이 모르므로 보내지 않음)
