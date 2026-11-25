@@ -17,17 +17,19 @@ DATA_HEROES.push({
 
 // [사용자 결정] 네크로맨서 개편: 해골 군세 + 시체 활용 · 계열은 망령·리치 둘 (사령 기사 계열과 그 고유 무기 삭제)
 //  수치 중 개편안에 없는 것(피해·체력·묘지 재사용 대기 등)은 [제안]
+// [밸런스 조정 · Claude] tools/jobs.js 측정(같은 무기·축복·필드, 봇 전투)으로 다른 직업과 비교해 맞춤 — 조정 전엔 같은 단계 1위 직업의 3~4배였음
+//  해골 한 방 = 두 무기 합 × skeleton.atk · 골렘 한 방 = 두 무기 합 × golem.atk (둘 다 × 층수 배율) · 시체 창·자폭 해골·정신지배 자폭 피해도 낮춤
 const NECRO = {
   summonSpeed: 1.5,                                                                             // [사용자 결정] 네크로맨서 소환수 이동 속도 1.5배 (해골·골렘·부활 부하·망령)
   floorDmg: 0.5,                                                                                // [사용자 결정] 소환수 층수 비례 버프: 공격력이 몬스터 체력 곡선의 50%만큼 자람 (1이면 몬스터와 같은 속도) · 체력은 몬스터 공격력 곡선 그대로
   weaponAtk: 1,                                                                                 // [사용자 결정] 해골·골렘 한 방 피해 = 들고 있는 두 무기 한 방의 합 × 100% (강화·공격력 보너스 포함)                                                                               // [사용자 결정] 네크로맨서 소환수 이동 속도 1.5배 (3배 → 절반으로 · 해골·골렘·부활 부하·망령)
-  skeleton: { base: 2, perRank: 1, dmg: 6, rate: 0.75, speed: 120, tempLife: 10 },          // 기본 해골: 사령술사 2 · 1차 3 · 2차 4 · 추가 소환 해골은 10초
-  golem: { dmg: 30, rate: 1.6, stun: 0.5, hpMul: 10, respawn: 5, taunt: 120, speed: 70 },     // 망령 골렘: 확정 0.5초 기절 · 어그로 · 사망 5초 후 부활
+  skeleton: { atk: 0.12, base: 2, perRank: 1, dmg: 6, rate: 1.0, speed: 120, tempLife: 10 },          // 기본 해골: 사령술사 2 · 1차 3 · 2차 4 · 추가 소환 해골은 10초
+  golem: { atk: 0.35, dmg: 30, rate: 1.6, stun: 0.5, hpMul: 10, respawn: 5, taunt: 120, speed: 70 },     // 망령 골렘: 확정 0.5초 기절 · 어그로 · 사망 5초 후 부활
   corpse: { life: 25, max: 30, pick: 16 },                                                      // 시체: 적이 쓰러진 자리 · 마우스로 고르는 거리
-  thrall: { max: 5, hpMul: 20 / 3, dmgMul: 2 }, // [사용자 결정] 부활 부하·정신지배된 적: 체력 6.7배(10배의 2/3) · 공격력 2배 (원본 몬스터 기준)
+  thrall: { max: 5, hpMul: 20 / 3, dmgMul: 1 }, // [사용자 결정] 부활 부하·정신지배된 적: 체력 6.7배(10배의 2/3) · 공격력은 밸런스 조정으로 원본 그대로 (2배 → 1배)
   lichFeed: { hp: 20, energy: 10 },                                                             // [사용자 결정] 리치 계열 패시브: 시체를 쓸 때마다 체력 20 · 에너지 10 회복
-  spear: { count: 3, dmg: 40, speed: 260, range: 200, debuffs: 2 },                             // 리치: 시체 창 3개 · 무작위 디버프 2종
-  grave: { r: 92, life: 10, every: 2, bombs: [2, 4], bombDmg: 55, bombR: 36, charm: 0.3, charmLife: 10, charmDmg: 90, charmR: 46, cd: 16 } // 불멸의 군주: 묘지
+  spear: { count: 3, dmg: 10, speed: 260, range: 200, debuffs: 2 },                             // 리치: 시체 창 3개 · 무작위 디버프 2종
+  grave: { r: 92, life: 10, every: 2, bombs: [2, 4], bombDmg: 20, bombR: 36, charm: 0.3, charmLife: 10, charmDmg: 60, charmR: 46, cd: 20 } // 불멸의 군주: 묘지
 };
 const NECRO_DEBUFFS = [
   { type: 'burn', chance: 1, duration: 3, dps: 10 }, { type: 'freeze', chance: 1, duration: 1.6, slow: 0.5 }, { type: 'poison', chance: 1, duration: 4, dps: 12 },

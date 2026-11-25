@@ -88,7 +88,7 @@ class NecroSkeleton {
     if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1;
     if (best && d < best.radius + 9 && this.spawnT <= 0) {
       if (this.bomb) { this.alive = false; this.blow(world); return; }
-      if (this.cd <= 0) { this.cd = S.rate; this.atkT = 0.16; world.damageEnemy(best, world.necroWeaponSrc(P, 2), dx / d, dy / d, { quiet: true }); world.effects.slash(this.x + this.face * 3, this.y - 3, Math.atan2(dy, dx), 9, 1.2, '#e8e0d0'); }
+      if (this.cd <= 0) { this.cd = S.rate; this.atkT = 0.16; world.damageEnemy(best, world.necroWeaponSrc(P, 2, S.atk), dx / d, dy / d, { quiet: true }); world.effects.slash(this.x + this.face * 3, this.y - 3, Math.atan2(dy, dx), 9, 1.2, '#e8e0d0'); }
     }
   }
   blow(world) { // 자폭 해골 병
@@ -129,7 +129,7 @@ class NecroGolem {
     const gv = G.speed * NECRO.summonSpeed * dt; if (d > stop) moveAndCollide(this, dx / d * Math.min(gv, d - stop), dy / d * Math.min(gv, d - stop), world.map);
     if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1;
     if (best && d < best.radius + 14 && this.cd <= 0) { this.cd = G.rate; this.atkT = 0.35;
-      world.damageEnemy(best, world.necroWeaponSrc(P, 6), dx / d, dy / d);
+      world.damageEnemy(best, world.necroWeaponSrc(P, 6, G.atk), dx / d, dy / d);
       if (best.alive && !best.def.ccImmune) { best.stunT = Math.max(best.stunT || 0, G.stun); world.effects.text(best.x, best.y - best.radius - 8, '기절', '#c8c0b0'); } // 확정 0.5초 기절
       world.effects.ring(best.x, best.y, 16, '#c8c0b0'); world.addShake(0.06, 2); }
     for (const b of world.enemyBullets) if (b.alive && !b.blade && Math.hypot(b.x - this.x, b.y - (this.y - 6)) < this.half + 5) { b.alive = false; this.hurt(b.damage || 5); world.effects.spark(b.x, b.y, '#c8c0b0'); } // 몸으로 막기
@@ -786,12 +786,12 @@ Player.prototype.ratmaAtkBonus = function () {
   // [사용자 결정] 해골·골렘 한 방 = 들고 있는 두 무기 한 방의 합 (탄 여러 발은 합산 · 광선은 0.5초치 · 무기마다 강화 단계 반영, 공격력 보너스·치명타는 플레이어 기준)
   // [사용자 결정] 소환수 층수 비례 버프 — 공격력: 몬스터 체력 강화 곡선의 floorDmg 만큼 (기본 0.5 = 직업 스킬이 깊이에 따라 자라는 것과 같은 비율) · 체력: 몬스터 공격력 곡선 그대로
   G.necroFloor = function () { const S = this.scale || { hp: 1, dmg: 1 }; return { dmg: 1 + ((S.hp || 1) - 1) * NECRO.floorDmg, hp: S.dmg || 1 }; };
-  G.necroWeaponSrc = function (p, knockback) {
+  G.necroWeaponSrc = function (p, knockback, mul = 1) {
     let sum = 0;
     for (const w of p.weapons) { const d = w && w.def; if (!d) continue;
       const base = d.type === 'beam' ? d.damage / (d.tickRate || 0.1) * 0.5 : d.damage * (d.projectileCount || 1);
       sum += base * (1 + (w.lv || 0) * BALANCE.upgrade.perLevel); }
-    return { damage: Math.max(5, sum) * NECRO.weaponAtk * this.necroFloor().dmg, mods: p.mods, knockback, minion: true }; // 층수 비례
+    return { damage: Math.max(5, sum) * NECRO.weaponAtk * mul * this.necroFloor().dmg, mods: p.mods, knockback, minion: true }; // 층수 비례
   };
   // HUD: 소환수 수 (해골 · 골렘 · 부활 부하 · 정신지배 · 시체)
   G.necroHudParts = function (p) {
