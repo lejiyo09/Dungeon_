@@ -1279,6 +1279,7 @@ class Game {
     if (this.cutscene) { if (this.coop && this.coop.host) this.coopHostSend(dt); this.screenFlash = Math.max(0, this.screenFlash - dt); this.shake = Math.max(0, (this.shake || 0) - dt); this.updateCutscene(dt, input); this.effects.update(dt); this.updateCamera(dt); input.endStep(); return; } // 컷신이 먼저 (창이 함께 떠 있어도 컷신을 넘길 수 있게, 창은 컷신이 끝난 뒤) · 컷신 중에는 세계가 멈춤 (번쩍임·흔들림은 가라앉음)
     if (this.overlay) { this.updateOverlay(input); input.endStep(); if (!(this.coop && this.coop.host) || !this.overlay) return; input = NULL_INPUT; } // 멀티 방장: 창을 열어도 다른 사람 때문에 세계는 계속 돌아감 (내 캐릭터만 멈춤)
     if (input.wasPressed('Escape')) { this.overlay = { type: 'pause' }; input.endStep(); return; }
+    if (input.wasPressed('KeyU') && typeof drawQuestWindow === 'function') { this.overlay = { type: 'quests', tab: 0, scroll: 0 }; input.mouse.down = false; input.endStep(); return; } /* 퀘스트 창 */
     if (this.mode === 'lobby' && (input.wasPressed('Equal') || input.wasPressed('NumpadAdd')) && this.save.babylon && this.save.babylon.visited) { this.overlay = { type: 'travel', sub: null, msg: null }; input.endStep(); return; } /* + 빠른 이동 */
     if (this.admin && input.wasPressed('Backquote')) { this.overlay = { type: 'admin', msg: null }; input.endStep(); return; }
     if (this.hitStopT > 0) { this.hitStopT -= dt; return; }
@@ -1367,6 +1368,7 @@ class Game {
     if (o.type === 'pause') {
       if (input.wasPressed('Escape')) this.overlay = null;
       else if (input.wasPressed('KeyI')) { this.overlay = { type: 'details', tab: 0 }; return; } // 상세 정보
+      else if (input.wasPressed('KeyU') && typeof drawQuestWindow === 'function') { this.overlay = { type: 'quests', tab: 0, scroll: 0, back: 'pause' }; input.mouse.down = false; return; } // 퀘스트 창
       else if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; } // 선물 코드
       else if (input.wasPressed('KeyK')) { this.overlay = { type: 'skins', back: 'pause', msg: null }; return; } // 스킨 고르기 창
       else if (this.mode === 'lobby' && input.wasPressed('KeyJ')) { this.overlay = { type: 'gacha', tab: 0, banner: 0, results: null, msg: null, back: 'pause' }; input.mouse.down = false; return; } // 스킨 뽑기 (닫으면 Esc 메뉴로)
@@ -1556,6 +1558,7 @@ class Game {
       if (input.wasPressed('Escape') || input.wasPressed('KeyE')) { this.overlay = null; return; }
       ['Digit1', 'Digit2', 'Digit3', 'Digit4'].forEach((k, i) => { if (input.wasPressed(k)) o.tab = i; });
       if (input.wasPressed('Mouse0')) for (let i = 0; i < 4; i++) { const r = HUD.rankTab(i), m = input.mouse; if (m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h) o.tab = i; }
+    } else if (o.type === 'quests') { updateQuestWindow(this, input); // 퀘스트 창: 메인 · 서브 · 수락한 임무
     } else if (o.type === 'details') { // 상세 정보: 1~3 / 클릭 탭, Esc·I 뒤로
       if (input.wasPressed('Escape') || input.wasPressed('KeyI')) { this.overlay = { type: 'pause' }; return; }
       ['Digit1', 'Digit2', 'Digit3'].forEach((k, i) => { if (input.wasPressed(k)) o.tab = i; });

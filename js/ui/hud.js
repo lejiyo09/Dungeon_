@@ -186,7 +186,7 @@ class HUD {
   }
   overlay(ctx, game) {
     const o = game.overlay;
-    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'hero_info' || o.type === 'skins' || o.type === 'travel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'multi' || o.type === 'rank' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+    ctx.fillStyle = o.type === 'story' || o.type === 'treasure_pick' ? '#06050a' : o.type === 'codex' || o.type === 'armory' || o.type === 'treasures' || o.type === 'joblevel' || o.type === 'hero_info' || o.type === 'skins' || o.type === 'travel' || o.type === 'archive' || o.type === 'guild' || o.type === 'hunt' || o.type === 'trade' || o.type === 'gamble' || o.type === 'trial_confirm' || o.type === 'trial_weapons' || o.type === 'admin' || o.type === 'details' || o.type === 'quests' || o.type === 'multi' || o.type === 'rank' ? 'rgba(8,6,14,0.94)' : 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (o.type === 'pause') {
       const B = game.input.binds, k = (id) => B[id].filter(Boolean).map(keyLabel).join('/') || '없음';
       const hasTr = (game.save.treasures || []).length > 0 || !!game.player.treasure;
@@ -209,7 +209,7 @@ class HUD {
       hudText(ctx, '중독+전격=마비  ·  실명+저주=일식  ·  저주+중독=역병  ·  화상+저주=지옥불  ·  실명+전격=심판', CX, 134, '#9ad8ff', 'center', 8);
       // 메뉴
       panel(160, 54, '메뉴');
-      hudText(ctx, `I  상세 정보 (특수방 확률 · 무기 강화 · 반응 효과)   ·   G  선물 코드${game.mode === 'lobby' ? '   ·   J  스킨 뽑기' : ''}`, CX, 172, '#ffd84a', 'center', 9);
+      hudText(ctx, `U  퀘스트   ·   I  상세 정보 (특수방 확률 · 무기 강화 · 반응 효과)   ·   G  선물 코드${game.mode === 'lobby' ? '   ·   J  스킨 뽑기' : ''}`, CX, 172, '#ffd84a', 'center', 9);
       { const h = game.player.hero.id, K = SKINS.find((s) => s.hero === h && (game.save.skins || []).includes(s.id)); hudText(ctx, `K  스킨 고르기${K && game.skinSprite(h) ? ` (지금: ${K.name})` : ''}${game.mode === 'lobby' && game.save.babylon && game.save.babylon.visited ? '      +  빠른 이동' : ''}`, CX, 188, '#ffb0d8', 'center', 9); }
       hudText(ctx, game.mode === 'dungeon' ? 'Esc 이어하기        L 포기하고 로비로' : 'Esc 이어하기    ·    P 프롤로그 다시 보기    ·    L 로그아웃', CX, 202, '#bbb', 'center', 9);
     } else if (o.type === 'keys') { /* 조작키 설정 */
@@ -616,6 +616,7 @@ class HUD {
       const who = game.admin ? ['관리자 계정은 랭킹에 기록되지 않아요 (일반 계정으로 플레이하면 기록)', '#ffb070'] : !game.profile ? ['게스트는 랭킹에 기록되지 않아요 — 계정으로 로그인하면 기록', '#ffb070'] : [`${game.profile.name} 계정 · 탐험을 마치면 자동으로 기록`, '#7affc0'];
       T(who[0], VIEW_W / 2, VIEW_H - 24, who[1], 'center', 7);
       T('1~4 / 클릭: 분야   ·   E / Esc: 닫기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 8);
+    } else if (o.type === 'quests') { drawQuestWindow(ctx, game, o); // 퀘스트 창 (js/systems/quests.js)
     } else if (o.type === 'details') { // 상세 정보 (수치는 설정값에서 바로 읽음)
       const m = game.input.mouse, T = (s, x, y, c = '#e8e0f0', a = 'left', z = 8) => hudText(ctx, s, x, y, c, a, z), pct = (v) => (Math.round(v * 1000) / 10) + '%';
       ['특수방 확률', '무기 강화', '원소 반응'].forEach((t, i) => { const r = HUD.guildTab(i), on = o.tab === i; ctx.fillStyle = on ? 'rgba(255,216,74,0.25)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); T(`${i + 1} ${t}`, r.x + r.w / 2, r.y + 4, on ? '#ffd84a' : '#aaa', 'center', 9); });
