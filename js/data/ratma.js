@@ -18,11 +18,12 @@ DATA_HEROES.push({
 // [사용자 결정] 네크로맨서 개편: 해골 군세 + 시체 활용 · 계열은 망령·리치 둘 (사령 기사 계열과 그 고유 무기 삭제)
 //  수치 중 개편안에 없는 것(피해·체력·묘지 재사용 대기 등)은 [제안]
 const NECRO = {
-  summonSpeed: 3,                                                                               // [사용자 결정] 네크로맨서 소환수 이동 속도 3배 (해골·골렘·부활 부하·망령)
+  summonSpeed: 3,
+  weaponAtk: 1.1,                                                                               // [사용자 결정] 해골·골렘 한 방 피해 = 지금 든 무기 한 방의 110% (강화·공격력 보너스 포함)                                                                               // [사용자 결정] 네크로맨서 소환수 이동 속도 3배 (해골·골렘·부활 부하·망령)
   skeleton: { base: 2, perRank: 1, dmg: 6, rate: 0.75, speed: 120, tempLife: 10 },          // 기본 해골: 사령술사 2 · 1차 3 · 2차 4 · 추가 소환 해골은 10초
-  golem: { dmg: 30, rate: 1.6, stun: 0.5, hpMul: 1.5, respawn: 5, taunt: 120, speed: 70 },     // 망령 골렘: 확정 0.5초 기절 · 어그로 · 사망 5초 후 부활
+  golem: { dmg: 30, rate: 1.6, stun: 0.5, hpMul: 3, respawn: 5, taunt: 120, speed: 70 },     // 망령 골렘: 확정 0.5초 기절 · 어그로 · 사망 5초 후 부활
   corpse: { life: 25, max: 30, pick: 16 },                                                      // 시체: 적이 쓰러진 자리 · 마우스로 고르는 거리
-  thrall: { max: 5 },                                                                           // 망자의 군주: 부활한 몬스터 최대 5 — 원본 몬스터 그대로 (체력·공격력·AI·특수 능력)
+  thrall: { max: 5, hpMul: 2, dmgMul: 2 },  // [사용자 결정] 체급 2배: 부활 부하·정신지배된 적의 체력·공격력 2배 (원본 몬스터 기준)                                                                           // 망자의 군주: 부활한 몬스터 최대 5 — 원본 몬스터 그대로 (체력·공격력·AI·특수 능력)
   spear: { count: 3, dmg: 40, speed: 260, range: 200, debuffs: 2 },                             // 리치: 시체 창 3개 · 무작위 디버프 2종
   grave: { r: 92, life: 10, every: 2, bombs: [2, 4], bombDmg: 55, bombR: 36, charm: 0.7, charmLife: 10, charmDmg: 90, charmR: 46, cd: 16 } // 불멸의 군주: 묘지
 };
