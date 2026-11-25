@@ -71,7 +71,7 @@ Object.assign(HERO_PROCS, {
     P.rect(5, 2, 6, 6, 'm'); P.rect(5, 5, 6, 1, 'b'); P.px(6, 5, 'e'); P.px(9, 5, 'e');
     P.line(5, 2, 2, 0, 'w'); P.line(10, 2, 14, 0, 'w'); P.px(8, 0, 'y');
   } }
-;
+});
 
 // 라트마 보스 (32×32): 해골 장식 두건, 창백한 얼굴과 차분한 눈, 생(초록)·사(보라) 두 색이 섞인 긴 망토, 순환의 고리가 달린 지팡이
 PIX.boss_ratma = { tint: '#2a3a44', w: 32, h: 32, pal: { s: '#e8e4dc', e: '#9affd0', y: '#c8b080', g: '#9affd0', v: '#c08aff', w: '#ffffff', m: '#d8d2c4' }, proc: (P) => {
