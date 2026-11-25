@@ -256,7 +256,7 @@ class HUD {
         if (!owned) hudText(ctx, '🔒', r.x + r.w / 2, r.y + (r.small ? 16 : 22), '#fff', 'center', 10);
         hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + (r.small ? 42 : 54), owned ? (leg ? '#ffe9a0' : '#fff') : '#888', 'center', fitSize(`${i + 1}. ${K.name}`, r.w - 8));
         hudText(ctx, `${hero ? hero.name.split(' ')[0] : ''}${L ? ' · ' + L.name + ' 계열' : leg ? ' · 전 계열' : ''}`, r.x + r.w / 2, r.y + (r.small ? 52 : 66), '#c8c0d8', 'center', 6);
-        hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : K.source === 'gacha' || K.source === 'common' ? '스킨 뽑기로 획득 (J)' : K.source === 'unique' ? (uniqueRecordOf(K.id) && uniqueRecordFound(sv, uniqueRecordOf(K.id).id) ? '기록 발견 · 다음 장 준비 중' : '단서: 심층 30층') : '선물 코드로 획득', r.x + r.w / 2, r.y + (r.small ? 61 : 78), on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
+        hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : K.source === 'gacha' || K.source === 'common' ? '스킨 뽑기로 획득 (J)' : K.source === 'soon' ? '획득 방법 준비 중' : K.source === 'unique' ? (uniqueRecordOf(K.id) && uniqueRecordFound(sv, uniqueRecordOf(K.id).id) ? '기록 발견 · 다음 장 준비 중' : '단서: 심층 30층') : '선물 코드로 획득', r.x + r.w / 2, r.y + (r.small ? 61 : 78), on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
       });
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 26, o.msg.color, 'center', 8);
       hudText(ctx, '번호 키 / 클릭: 장착·해제   ·   G: 선물 코드   ·   Esc: 돌아가기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);
@@ -826,7 +826,7 @@ class HUD {
   static legIntroEnd(K) { return K && K.intro ? 1.8 + K.intro.length / 16 + 0.4 : 2.6; } // 대사가 다 나올 때까지
   static legendIntro(ctx, game) {
     const L = game.legendIntro, K = L.K, t = (performance.now() - L.start) / 1000, W = VIEW_W, H = VIEW_H, cx = W / 2, cy = H / 2;
-    const col = { skin_leg_abyss: '#5ae0ff', skin_leg_crimson: '#ff4a5a', skin_leg_void: '#b07aff', skin_leg_star: '#ffe08a', skin_bandi: '#9ae8ff', skin_u_unrecorded: '#48eaff', skin_u_first_explorer: '#e0b058', skin_u_primordial: '#f0c8ff' }[K.id] || '#ffd84a', uni = K.rarity === 'unique';
+    const col = { skin_leg_abyss: '#5ae0ff', skin_leg_crimson: '#ff4a5a', skin_leg_void: '#b07aff', skin_leg_star: '#ffe08a', skin_leg_admiral: '#f0c050', skin_bandi: '#9ae8ff', skin_u_unrecorded: '#48eaff', skin_u_first_explorer: '#e0b058', skin_u_primordial: '#f0c8ff' }[K.id] || '#ffd84a', uni = K.rarity === 'unique';
     const ease = (x) => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3); let im = null;
     ctx.save();
     ctx.fillStyle = '#05040a'; ctx.fillRect(0, 0, W, H);
