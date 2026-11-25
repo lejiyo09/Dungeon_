@@ -42,7 +42,7 @@ class NecroWraith {
     const a = this.t * 1.4 + this.idx * 1.3;
     const tx = best ? best.x : P.x + Math.cos(a) * (16 + this.idx * 3), ty = best ? best.y - 2 : P.y - 8 + Math.sin(a) * 7;
     const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy) || 1, stop = best ? best.radius + 5 : 3;
-    if (d > stop) { const v = Math.min((this.big ? 125 : 165) * dt, d - stop); this.x += dx / d * v; this.y += dy / d * v; }
+    if (d > stop) { const v = Math.min((this.big ? 125 : 165) * NECRO.summonSpeed * dt, d - stop); this.x += dx / d * v; this.y += dy / d * v; }
     if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1;
     if (Math.hypot(this.x - P.x, this.y - P.y) > 280) { this.x = P.x; this.y = P.y - 8; }
     if (best && d < best.radius + 12 && this.cd <= 0) {
@@ -84,7 +84,7 @@ class NecroSkeleton {
     const a = this.idx * 2.1 + this.t * 0.4, hx = P.x + Math.cos(a) * 18, hy = P.y + 8 + Math.sin(a) * 8;
     const tx = best ? best.x : this.bomb ? this.x : hx, ty = best ? best.y : this.bomb ? this.y : hy, dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy) || 1, stop = best ? best.radius + 5 : 6;
     if (!this.bomb && Math.hypot(this.x - P.x, this.y - P.y) > 300) { this.x = P.x; this.y = P.y + 6; }
-    if (d > stop && this.spawnT <= 0) { const v = (this.bomb ? 150 : S.speed) * dt; moveAndCollide(this, dx / d * Math.min(v, d - stop), dy / d * Math.min(v, d - stop), world.map); }
+    if (d > stop && this.spawnT <= 0) { const v = (this.bomb ? 150 : S.speed) * NECRO.summonSpeed * dt; moveAndCollide(this, dx / d * Math.min(v, d - stop), dy / d * Math.min(v, d - stop), world.map); }
     if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1;
     if (best && d < best.radius + 9 && this.spawnT <= 0) {
       if (this.bomb) { this.alive = false; this.blow(world); return; }
@@ -126,7 +126,7 @@ class NecroGolem {
     let best = null, bd = 210;
     for (const e of world.enemies) { if (!e.targetable || (e.def.dummy && world.mode !== 'lobby')) continue; const d = Math.hypot(e.x - this.x, e.y - this.y); if (d < bd && Math.hypot(e.x - P.x, e.y - P.y) < 260) { bd = d; best = e; } }
     const tx = best ? best.x : P.x - (P.faceVis || 1) * 20, ty = best ? best.y : P.y + 8, dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy) || 1, stop = best ? best.radius + 8 : 10;
-    if (d > stop) moveAndCollide(this, dx / d * Math.min(G.speed * dt, d - stop), dy / d * Math.min(G.speed * dt, d - stop), world.map);
+    const gv = G.speed * NECRO.summonSpeed * dt; if (d > stop) moveAndCollide(this, dx / d * Math.min(gv, d - stop), dy / d * Math.min(gv, d - stop), world.map);
     if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1;
     if (best && d < best.radius + 14 && this.cd <= 0) { this.cd = G.rate; this.atkT = 0.35;
       world.damageEnemy(best, { damage: world.skillDmg(G.dmg), mods: P.mods, knockback: 6, minion: true }, dx / d, dy / d);
@@ -156,6 +156,7 @@ class NecroGolem {
 class NecroThrall {
   constructor(e, owner, o = {}) {
     this.e = e; this.owner = owner; this.rec = o.rec || null; this.charm = !!o.charm; this.life = o.life || Infinity; this.onEnd = o.onEnd || null; this.alive = true; this.t = 0;
+    if (!e.def.necroFast) e.def = Object.assign(Object.create(e.def), { moveSpeed: (e.def.moveSpeed || 0) * NECRO.summonSpeed, necroFast: true }); // 이동 속도만 3배 (체력·공격·AI·특수 능력은 원본 그대로)
     e.necroAlly = true; e.rewardGiven = true; e.alive = true; if (e.state === 'SPAWN' || e.state === 'DEAD') e.setState('IDLE');
     this.col = this.charm ? '#d8a0ff' : '#9affd8';
     const self = this; this.tgt = null;
@@ -185,7 +186,7 @@ class NecroThrall {
     if (!this.charm && Math.hypot(e.x - P.x, e.y - P.y) > 340) { e.x = P.x; e.y = P.y + 8; }
     if (!best) { // 노릴 적이 없으면 주인 곁으로
       if (this.charm) return; const a = this.t * 0.3 + (this.rec ? this.rec.k * 6 : 0), hx = P.x + Math.cos(a) * 26, hy = P.y + 10 + Math.sin(a) * 10, dx = hx - e.x, dy = hy - e.y, d = Math.hypot(dx, dy) || 1;
-      if (d > 10) moveAndCollide(e, dx / d * Math.min(((e.def.moveSpeed || 50) + 20) * dt, d - 10), dy / d * Math.min(((e.def.moveSpeed || 50) + 20) * dt, d - 10), world.map);
+      const fv = ((e.def.moveSpeed || 50) + 20) * dt; if (d > 10) moveAndCollide(e, dx / d * Math.min(fv, d - 10), dy / d * Math.min(fv, d - 10), world.map);
       if (Math.abs(dx) > 1) e.face = dx > 0 ? 1 : -1; if (e.state !== 'SPAWN') e.state = 'IDLE'; e.stateTime = 0; this.guard.x = e.x; this.guard.y = e.y; return; }
     // 원래 AI 실행: '플레이어' = 노리는 적 (근접 피해는 그 적에게, 쏜 탄·장판·소환은 아군 것으로 바꿈)
     this.aim.x = best.x; this.aim.y = best.y; this.aim.half = best.radius; this.aim.radius = best.radius;
