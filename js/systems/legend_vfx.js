@@ -9,7 +9,8 @@ const LEGEND_VFX = { // 스킨 그림 이름 → 색 (main: 선, soft: 빛·점)
   leg_abyss: { key: 'abyss', main: '#43e5d4', soft: '#b2fff6' },
   leg_star: { key: 'star', main: '#ffdc75', soft: '#fff5c8' },
   leg_void: { key: 'void', main: '#ca8aff', soft: '#f0d2ff' },
-  leg_crimson: { key: 'crimson', main: '#ff648d', soft: '#ffc1d3' }
+  leg_crimson: { key: 'crimson', main: '#ff648d', soft: '#ffc1d3' },
+  leg_admiral: { key: 'admiral', main: '#f0c050', soft: '#fff1c0', sea: '#7ad8ff', smoke: '#b8bcc8', dashOnly: true } // 창해의 포격 제독: 대시만 (스킬 이펙트는 아직)
 };
 let _lvSeed = 0x51ed27; function lvRand() { _lvSeed = (_lvSeed * 1664525 + 1013904223) >>> 0; return _lvSeed / 4294967296; } // 장식 전용 난수
 
@@ -25,13 +26,20 @@ function legendOf(p, game) { const s = legendSkinSprite(p, game); return s && LE
 // ── 이펙트 생성 (Effects 에 붙임)
 Effects.prototype.legendDash = function (sk, x, y, dx = 1, dy = 0) {
   const s = LEGEND_VFX[sk]; if (!s) return;
+  if (s.key === 'admiral') { // 제독: 뱃전을 가르는 물보라 항적 + 포연 + 금빛 닻 문장
+    this.push({ kind: 'legend', fx: 'dash', key: s.key, x, y, angle: Math.atan2(dy, dx), color: s.main, accent: s.soft, sea: s.sea, smoke: s.smoke, t: 0, life: 0.34, opacity: 0.95, seed: lvRand() });
+    for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, sp = 18 + lvRand() * 10; // 양옆으로 튀는 물보라
+      this.part(x - dx * 4, y - dy * 4, -dx * sp - dy * side * 26, -dy * sp + dx * side * 26, { color: i ? s.sea : '#ffffff', life: 0.22 + lvRand() * 0.08, size: 1.8, size2: 0, drag: 6, add: true }); }
+    if (lvRand() < 0.55) this.part(x - dx * 8, y - dy * 8 - 2, -dx * 10, -dy * 10 - 8, { color: s.smoke, life: 0.4, size: 2.2, size2: 4.2, drag: 4, shape: 'circle' }); // 포연이 피어오름
+    return;
+  }
   this.push({ kind: 'legend', fx: 'dash', key: s.key, x, y, angle: Math.atan2(dy, dx), color: s.main, accent: s.soft, t: 0, life: 0.24, opacity: 0.92 });
   for (let i = 0; i < 3; i++) { const back = 3 + i * 4, spread = (lvRand() - 0.5) * 5;
     this.part(x - dx * back - dy * spread, y - dy * back + dx * spread, -dx * (24 + i * 5) + dy * spread * 2, -dy * (24 + i * 5) - dx * spread * 2,
       { color: i === 1 ? s.soft : s.main, life: 0.2 + i * 0.025, size: 2.1, size2: 0, drag: 5, add: i === 1 }); }
 };
 Effects.prototype.legendSkill = function (sk, x, y, angle = 0) {
-  const s = LEGEND_VFX[sk]; if (!s) return;
+  const s = LEGEND_VFX[sk]; if (!s || s.dashOnly) return;
   this.push({ kind: 'legend', fx: 'skill', key: s.key, x, y, angle, color: s.main, accent: s.soft, t: 0, life: 0.72, opacity: 1.15 });
   for (let i = 0; i < 10; i++) { const a = i * TAU / 10 + angle, r = 7 + (i % 3) * 2;
     this.part(x + Math.cos(a) * r, y + Math.sin(a) * r, Math.cos(a) * 48, Math.sin(a) * 48,
@@ -56,6 +64,21 @@ function drawLegendFx(ctx, fx, x, y) {
     } else if (fx.key === 'crimson') { // 진홍: 흩날리는 꽃잎 셋과 곡선
       for (let i = 0; i < 3; i++) { ctx.save(); ctx.translate(-R * 0.7 + i * 7, (i - 1) * 3); ctx.rotate(-0.45 + i * 0.4); ctx.beginPath(); ctx.ellipse(0, 0, 2.4, 5, 0, 0, TAU); ctx.fill(); ctx.restore(); }
       ctx.beginPath(); ctx.moveTo(-R - 5, 0); ctx.quadraticCurveTo(-R * 0.4, -5, 4, 0); ctx.stroke();
+    } else if (fx.key === 'admiral') { // 제독: V자로 벌어지는 항적(바다빛·흰 물거품) + 뒤에 남는 금빛 닻 + 포연 고리
+      const L = 10 + p * 18, open = 3 + p * 7;
+      ctx.globalAlpha = fx.opacity * (1 - p * 0.55);
+      ctx.strokeStyle = fx.sea; ctx.lineWidth = 2; // 항적 두 줄 (물결치며 벌어짐)
+      for (const sd of [-1, 1]) { ctx.beginPath(); ctx.moveTo(2, sd * 2);
+        for (let j = 1; j <= 4; j++) { const u = j / 4; ctx.lineTo(2 - L * u, sd * (2 + open * u) + Math.sin(u * 7 + p * 9) * 1.2); } ctx.stroke(); }
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; // 물거품 안쪽 줄
+      for (const sd of [-1, 1]) { ctx.beginPath(); ctx.moveTo(0, sd * 1.5); ctx.lineTo(-L * 0.6, sd * (1.5 + open * 0.55)); ctx.stroke(); }
+      for (let j = 0; j < 4; j++) { const u = (j + 0.5) / 4, sd = j % 2 ? 1 : -1; ctx.fillStyle = j % 2 ? '#ffffff' : fx.sea; ctx.fillRect(Math.round(-L * u), Math.round(sd * (2 + open * u)), 1, 1); } // 튀는 물방울
+      const ax = -L * 0.55; ctx.save(); ctx.translate(ax, 0); ctx.rotate(-fx.angle); // 닻 문장: 화면 기준으로 똑바로
+      ctx.globalAlpha = fx.opacity * Math.min(1, k * 1.8); ctx.fillStyle = fx.color;
+      ctx.fillRect(-0.5, -4, 1, 7); ctx.fillRect(-2, -3, 4, 1); ctx.fillRect(-1, -5, 2, 1); // 자루·가로대·고리
+      ctx.fillRect(-3, 2, 1, 1); ctx.fillRect(2, 2, 1, 1); ctx.fillRect(-2, 3, 4, 1); ctx.fillStyle = fx.accent; ctx.fillRect(-0.5, -5, 1, 1); ctx.restore(); // 갈고리
+      ctx.globalAlpha = fx.opacity * 0.5 * k; ctx.strokeStyle = fx.smoke; ctx.lineWidth = 1; // 포연 고리 (출발점에서 퍼짐)
+      ctx.beginPath(); ctx.arc(-L - 2, 0, 2 + p * 5, 0, TAU); ctx.stroke();
     }
   } else if (fx.fx === 'skill') { // 스킬: 시전자 위치에 크게 펼쳐지는 스킨별 인장
     const reach = 14 + p * 23; ctx.translate(x, y - 4); ctx.rotate(fx.angle);
