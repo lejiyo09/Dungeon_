@@ -757,11 +757,13 @@ Player.prototype.ratmaAtkBonus = function () {
     }
   };
   wrap('activateRoom', function (orig, r, leader) { const res = orig.call(this, r, leader); this.summonFollowsIntoRoom(r); return res; });
-  // 해골·골렘 한 방 = 지금 든 무기 한 방의 110% (탄 여러 발은 합산 · 광선은 0.5초치 · 강화 단계·공격력 보너스·치명타는 weaponMods 그대로)
+  // [사용자 결정] 해골·골렘 한 방 = 들고 있는 두 무기 한 방의 합 × 110% (탄 여러 발은 합산 · 광선은 0.5초치 · 무기마다 강화 단계 반영, 공격력 보너스·치명타는 플레이어 기준)
   G.necroWeaponSrc = function (p, knockback) {
-    const w = p.weapon, d = w && w.def; let base = 10;
-    if (d) base = d.type === 'beam' ? d.damage / (d.tickRate || 0.1) * 0.5 : d.damage * (d.projectileCount || 1);
-    return { damage: base * NECRO.weaponAtk, mods: w ? weaponMods(p, w) : p.mods, knockback, minion: true };
+    let sum = 0;
+    for (const w of p.weapons) { const d = w && w.def; if (!d) continue;
+      const base = d.type === 'beam' ? d.damage / (d.tickRate || 0.1) * 0.5 : d.damage * (d.projectileCount || 1);
+      sum += base * (1 + (w.lv || 0) * BALANCE.upgrade.perLevel); }
+    return { damage: Math.max(5, sum) * NECRO.weaponAtk, mods: p.mods, knockback, minion: true };
   };
   G.summonTempSkeletons = function (p, n) { for (let i = 0; i < n; i++) this.allies.push(new NecroSkeleton(p.x + randInt(-12, 12), p.y + randInt(4, 12), p, { temp: NECRO.skeleton.tempLife, idx: 9 + i })); }; // 장비 등 추가 소환: 10초 뒤 소멸
 
