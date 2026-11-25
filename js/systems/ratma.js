@@ -211,31 +211,53 @@ class NecroThrall {
     if (this.hpBar > 0 || e.hp < e.maxHp) { ctx.fillStyle = '#000'; ctx.fillRect(x - 8, y - h - 6, 16, 2); ctx.fillStyle = this.col; ctx.fillRect(x - 8, y - h - 6, Math.round(16 * Math.max(0, e.hp / e.maxHp)), 2); }
   }
 }
-// ── 시체 창 (리치): 시체에서 솟아올라 주변 적을 쫓아가 꽂힘 — 피해 + 무작위 디버프 2종
+// ── 시체 창 (리치): 시체에서 뼈 창이 솟아올라 주변 적을 쫓아가 꽂힘 — 피해 + 무작위 디버프 2종
+//  [사용자 결정] 눈에 띄게: 큰 뼈 창(가시 돋친 촉 · 보랏빛 혼불) · 솟아오를 때 땅 균열 · 날아갈 때 보랏빛 혼불 꼬리 · 꽂힐 때 뼈 파편과 영혼 폭발
 class NecroSpear {
-  constructor(x, y, owner, dmg, i) { this.x = x; this.y = y; this.owner = owner; this.dmg = dmg; this.i = i; this.t = 0; this.alive = true; this.ang = -Math.PI / 2; this.tgt = null; this.trail = []; }
+  constructor(x, y, owner, dmg, i) { this.x = x; this.y = y; this.sx = x; this.sy = y; this.owner = owner; this.dmg = dmg; this.i = i; this.t = 0; this.alive = true; this.ang = -Math.PI / 2 + (i - 1) * 0.35; this.tgt = null; this.trail = []; this.flown = false; }
   update(dt, world) {
-    const S = NECRO.spear; this.t += dt;
-    if (this.t < 0.22 + this.i * 0.07) { this.y -= 45 * dt; return; } // 솟아오름
+    const S = NECRO.spear; this.t += dt; const rise = 0.28 + this.i * 0.08;
+    if (this.t < rise) { // 솟아오름: 땅에서 뼈가 비집고 나옴
+      this.y -= 55 * dt;
+      if (Math.random() < 0.7) world.effects.part(this.sx + randInt(-4, 4), this.sy + 2, randInt(-20, 20), -30 - Math.random() * 30, { color: Math.random() < 0.5 ? '#6a5a4a' : '#e8e0d0', life: 0.4, size: 2, size2: 0, drag: 1.5 });
+      if (Math.random() < 0.5) world.effects.part(this.x + randInt(-2, 2), this.y, 0, -10, { color: '#c08aff', life: 0.35, size: 3, size2: 0, drag: 1, add: true });
+      return; }
+    if (!this.flown) { this.flown = true; world.effects.ring(this.x, this.y, 9, '#e0c8ff'); SFX.play('magic', 0.08); }
     if (!this.tgt || !this.tgt.targetable) { let best = null, bd = S.range + 60, taken = world.zones.filter((z) => z instanceof NecroSpear && z !== this && z.tgt).map((z) => z.tgt);
       for (const e of world.enemies) { if (!e.targetable || (e.def.dummy && world.mode !== 'lobby')) continue; const d = Math.hypot(e.x - this.x, e.y - this.y) + (taken.includes(e) ? 40 : 0); if (d < bd) { bd = d; best = e; } }
-      this.tgt = best; if (!best) { if (this.t > 1.4) { this.alive = false; world.effects.burst(this.x, this.y, '#d8d0c0', 6); } return; } }
+      this.tgt = best; if (!best) { if (this.t > 1.6) { this.alive = false; this.shatter(world, false); } return; } }
     const e = this.tgt, want = Math.atan2(e.y - this.y, e.x - this.x), df = Math.atan2(Math.sin(want - this.ang), Math.cos(want - this.ang)); this.ang += clamp(df, -11 * dt, 11 * dt);
-    this.x += Math.cos(this.ang) * S.speed * dt; this.y += Math.sin(this.ang) * S.speed * dt; this.trail.push([this.x, this.y]); if (this.trail.length > 6) this.trail.shift();
-    if (Math.hypot(e.x - this.x, e.y - this.y) < e.radius + 3) {
+    this.x += Math.cos(this.ang) * S.speed * dt; this.y += Math.sin(this.ang) * S.speed * dt; this.trail.push([this.x, this.y]); if (this.trail.length > 12) this.trail.shift();
+    for (let k = 0; k < 2; k++) world.effects.part(this.x - Math.cos(this.ang) * 8 + randInt(-2, 2), this.y - Math.sin(this.ang) * 8 + randInt(-2, 2), -Math.cos(this.ang) * 30 + randInt(-10, 10), -Math.sin(this.ang) * 30 + randInt(-10, 10), { color: k ? '#b47aff' : '#f0e0ff', life: 0.35, size: k ? 3 : 2, size2: 0, drag: 2, add: true }); // 혼불 꼬리
+    if (Math.hypot(e.x - this.x, e.y - this.y) < e.radius + 4) {
       const pool = shuffled(NECRO_DEBUFFS).slice(0, S.debuffs);
-      world.damageEnemy(e, { damage: this.dmg, mods: this.owner.mods, knockback: 4, status: pool[0] }, Math.cos(this.ang), Math.sin(this.ang));
+      world.damageEnemy(e, { damage: this.dmg, mods: this.owner.mods, knockback: 5, status: pool[0] }, Math.cos(this.ang), Math.sin(this.ang));
       if (e.alive && pool[1]) e.applyStatus(pool[1], this.owner.mods);
-      world.effects.impact(this.x, this.y, '#e8e0d0', this.ang); world.effects.ring(e.x, e.y, 10, '#b47aff'); this.alive = false; }
-    if (this.t > 3) this.alive = false;
+      this.alive = false; this.shatter(world, true); }
+    if (this.t > 3.2) { this.alive = false; this.shatter(world, false); }
+  }
+  shatter(world, hit) { // 꽂힘: 뼈 파편 + 보랏빛 영혼 폭발
+    const x = this.x, y = this.y;
+    for (let k = 0; k < (hit ? 12 : 6); k++) { const a = Math.random() * TAU, sp = 40 + Math.random() * 80; world.effects.part(x, y, Math.cos(a) * sp, Math.sin(a) * sp - 20, { color: k % 3 ? '#e8e0d0' : '#9a9284', life: 0.5, size: 2, size2: 0, drag: 2.5 }); }
+    if (!hit) return;
+    world.effects.ring(x, y, 14, '#ffffff'); world.effects.ring(x, y, 22, '#b47aff'); world.effects.impact(x, y, '#e0c8ff', this.ang);
+    for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; world.effects.part(x, y, Math.cos(a) * 60, Math.sin(a) * 40, { color: '#c08aff', life: 0.4, size: 3, size2: 0, drag: 3, add: true }); }
+    world.addShake(0.05, 1.5); SFX.play('hit', 0.06);
   }
   render(ctx) {
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = '#b47aff'; ctx.globalAlpha = 0.5;
-    if (this.trail.length > 1) { ctx.beginPath(); ctx.moveTo(this.trail[0][0], this.trail[0][1]); for (const q of this.trail) ctx.lineTo(q[0], q[1]); ctx.stroke(); } ctx.restore();
-    const c = Math.cos(this.ang), s = Math.sin(this.ang), x = this.x, y = this.y;
-    ctx.strokeStyle = OUTLINE; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - c * 7, y - s * 7); ctx.lineTo(x + c * 5, y + s * 5); ctx.stroke();
-    ctx.strokeStyle = '#e8e0d0'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x - c * 6, y - s * 6); ctx.lineTo(x + c * 4, y + s * 4); ctx.stroke(); ctx.lineWidth = 1;
-    ctx.fillStyle = '#d8a0ff'; ctx.fillRect(Math.round(x + c * 5) - 1, Math.round(y + s * 5) - 1, 2, 2);
+    const rising = !this.flown, c = Math.cos(this.ang), s = Math.sin(this.ang), x = this.x, y = this.y, L = 13, T = this.t;
+    if (rising) { // 땅 균열
+      ctx.save(); ctx.translate(this.sx, this.sy + 3); ctx.scale(1, 0.4); ctx.globalAlpha = 0.8; ctx.strokeStyle = '#c08aff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, 6 + T * 20, 0, TAU); ctx.stroke(); ctx.restore(); ctx.lineWidth = 1; }
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; // 혼불 꼬리 · 창 둘레 빛
+    for (let k = 1; k < this.trail.length; k++) { const [x0, y0] = this.trail[k - 1], [x1, y1] = this.trail[k], f = k / this.trail.length; ctx.globalAlpha = 0.6 * f; ctx.strokeStyle = '#a060ff'; ctx.lineWidth = 1 + f * 4; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); }
+    ctx.globalAlpha = 0.35 + 0.15 * Math.sin(T * 30); ctx.fillStyle = '#b47aff'; ctx.beginPath(); ctx.arc(x + c * 4, y + s * 4, 7, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.5; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x + c * 9, y + s * 9, 2.5, 0, TAU); ctx.fill(); ctx.restore();
+    const seg = (w, col, a0, a1) => { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(x + c * a0, y + s * a0); ctx.lineTo(x + c * a1, y + s * a1); ctx.stroke(); };
+    seg(5, OUTLINE, -L, L - 2); seg(3, '#e8e0d0', -L + 1, L - 3); seg(1, '#ffffff', -L + 2, L - 6);                         // 뼈 자루
+    const px = -s, py = c; ctx.fillStyle = OUTLINE; ctx.beginPath(); ctx.moveTo(x + c * (L + 5), y + s * (L + 5)); ctx.lineTo(x + c * (L - 4) + px * 4, y + s * (L - 4) + py * 4); ctx.lineTo(x + c * (L - 4) - px * 4, y + s * (L - 4) - py * 4); ctx.closePath(); ctx.fill(); // 촉 외곽
+    ctx.fillStyle = '#d8a0ff'; ctx.beginPath(); ctx.moveTo(x + c * (L + 3), y + s * (L + 3)); ctx.lineTo(x + c * (L - 3) + px * 2.5, y + s * (L - 3) + py * 2.5); ctx.lineTo(x + c * (L - 3) - px * 2.5, y + s * (L - 3) - py * 2.5); ctx.closePath(); ctx.fill(); // 보랏빛 촉
+    for (const k of [-4, 3]) { ctx.fillStyle = '#e8e0d0'; ctx.fillRect(Math.round(x + c * k + px * 3) - 1, Math.round(y + s * k + py * 3) - 1, 2, 2); ctx.fillRect(Math.round(x + c * k - px * 3) - 1, Math.round(y + s * k - py * 3) - 1, 2, 2); } // 가시 (갈비뼈 마디)
+    ctx.lineWidth = 1;
   }
 }
 // ── 묘지 (불멸의 군주): 10초 · 2초마다 자폭 해골 2~4 · 주변 일반 적 30% 정신지배 (보스 면역)
