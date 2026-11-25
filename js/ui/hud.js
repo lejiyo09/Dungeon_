@@ -29,6 +29,27 @@ function drawBannerContain(ctx, im, dx, dy, dw, dh) {
   ctx.drawImage(im, 0, 0, iw, ih, dx + (dw - w) / 2, dy + (dh - h) / 2, w, h);
 }
 function fitSize(str, w, max = 8, min = 5) { return Math.max(min, Math.min(max, Math.floor(w / Math.max(1, String(str).length)))); } // 이름이 칸을 넘지 않게 글자 크기 줄이기 (한글 1자 ≈ 글자 크기 px)
+// ── 스킨 미리보기 (스킨창 · Esc 메뉴 공용): 스킨 종류에 맞는 그림 고르기 + 실제 그림 부분만 상자에 맞춰 그리기
+function skinPreviewSprite(hero, sk, t = 0) { // sk = 스킨 그림 이름 (없으면 기본 외형)
+  if (!hero) return null;
+  if (!sk) return heroSprite(hero, Math.floor(t * 3) % 2);
+  if (sk.indexOf('c_') === 0) return typeof commonSprite === 'function' ? commonSprite(sk) || heroSprite(hero, 0) : heroSprite(hero, 0); // 일반·레어·에픽 시트
+  if (sk === 'druid_bandi') return typeof druidSprite === 'function' ? druidSprite('bandi_down') || heroSprite(hero, 0) : heroSprite(hero, 0); // 반디
+  const leg = typeof LEG_SKINS !== 'undefined' && LEG_SKINS[sk] !== undefined; // 전설·고유 방향 시트: 걷기 3프레임
+  return heroSprite(heroWithLook(hero, { sprite: sk }), leg ? Math.floor(t * 6) % 3 : Math.floor(t * 3) % 2, 0);
+}
+function spriteBBox(spr) { // 투명한 여백을 뺀 실제 그림 영역 (한 번만 계산해 그림에 붙여 둠)
+  if (spr._bb) return spr._bb;
+  let bb = { x: 0, y: 0, w: spr.w, h: spr.h };
+  try { const c = spr.n, d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+    for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3] > 16) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 >= 0) bb = { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 }; } catch (e) { /* 읽기 실패 → 전체 */ }
+  spr._bb = bb; return bb;
+}
+function drawSpriteFit(ctx, spr, cx, bottom, maxW, maxH, maxScale = 2) { // 아래 가운데 기준, 상자를 넘지 않게
+  if (!spr) return; const bb = spriteBBox(spr), sc = Math.min(maxScale, maxW / bb.w, maxH / bb.h), w = Math.round(bb.w * sc), h = Math.round(bb.h * sc);
+  const sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = false; ctx.drawImage(spr.n, bb.x, bb.y, bb.w, bb.h, Math.round(cx - w / 2), Math.round(bottom - h), w, h); ctx.imageSmoothingEnabled = sm;
+}
 function hudText(ctx, str, x, y, color = '#fff', align = 'left', size = 10) {
   ctx.font = HUD_FONTS[size] || (HUD_FONTS[size] = `bold ${size}px 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif`); ctx.textAlign = align; ctx.textBaseline = 'top';
   ctx.fillStyle = '#000'; ctx.fillText(str, x + 1, y + 1);
@@ -223,9 +244,8 @@ class HUD {
         ctx.fillStyle = on ? 'rgba(255,176,216,0.18)' : leg ? 'rgba(255,216,74,0.08)' : hov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'; ctx.fillRect(r.x, r.y, r.w, r.h);
         if (leg) { const gl = 0.5 + 0.3 * Math.sin(game.time * 3); ctx.strokeStyle = on ? '#ffb0d8' : uni ? `rgba(154,232,216,${gl + 0.2})` : `rgba(255,216,74,${gl})`; ctx.lineWidth = 1.5; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); ctx.lineWidth = 1; }
         else { const RR = SKIN_RARITY[K.rarity]; ctx.strokeStyle = on ? '#ffb0d8' : RR && K.rarity !== 'common' ? RR.color : '#51475f'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); } // 레어·에픽: 등급 색 테두리
-        const isC = K.sprite.indexOf('c_') === 0, isD = K.sprite === 'druid_bandi'; /* 미리보기: 실제 스킨 그림 (일반=시트, 반디=드루이드 시트, 그 외=도트 생성) */
-        const spr = isC ? (typeof commonSprite === 'function' && commonSprite(K.sprite)) : isD ? (typeof druidSprite === 'function' && druidSprite('bandi_down')) : heroSprite(heroWithLook(hero, { sprite: K.sprite }), leg ? Math.floor(game.time * 6) % 3 : Math.floor(game.time * 3) % 2);
-        if (!owned) ctx.globalAlpha = 0.28; if (spr) drawSprite(ctx, spr, r.x + r.w / 2, r.y + (r.small ? 40 : 50), { scale: r.small ? (leg || isD ? 1.2 : 1.6) : isC ? 2 : leg || isD ? 1.5 : 2 }); ctx.globalAlpha = 1;
+        const spr = skinPreviewSprite(hero, K.sprite, game.time); /* 미리보기: 실제 스킨 그림, 여백을 뺀 그림이 칸(이름 위)에 맞게 */
+        if (!owned) ctx.globalAlpha = 0.28; if (spr) drawSpriteFit(ctx, spr, r.x + r.w / 2, r.y + (r.small ? 40 : 50), r.w - 16, r.small ? 30 : 38, r.small ? 1.6 : 2); ctx.globalAlpha = 1;
         if (uni) hudText(ctx, '✦ 고유', r.x + 5, r.y + 4, '#9ae8d8', 'left', 6);
         else if (leg) hudText(ctx, '★ 전설', r.x + 5, r.y + 4, '#ffd84a', 'left', 6);
         else if (SKIN_RARITY[K.rarity] && K.source === 'common') hudText(ctx, (K.rarity === 'common' ? '' : '◆ ') + SKIN_RARITY[K.rarity].name, r.x + 5, r.y + 4, SKIN_RARITY[K.rarity].color, 'left', 6); // 일반·레어·에픽 표시

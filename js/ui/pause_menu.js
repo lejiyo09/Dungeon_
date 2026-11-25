@@ -65,9 +65,9 @@ function drawPauseMenu(ctx, game) {
     ctx.fillStyle = '#ffd84a'; ctx.fillRect(CX, y, 2, 11); hudText(ctx, title, CX + 8, y + 2, '#ffd84a', 'left', 8); const y0 = y; y += h + 8; return y0; };
   // ① 캐릭터
   { const y0 = card(84, lobby ? '모험가' : '지금 탐험'); const sx = CX + 32, sy = y0 + 58;
-    try { const H = p._skinH && p._skinH.h ? p._skinH.h : p.hero, leg = typeof LEG_SKINS !== 'undefined' && H.look && LEG_SKINS[H.look.sprite] !== undefined;
+    try { const sk = game.skinSprite ? game.skinSprite(p.hero.id, game.playerLineId(p)) : null; // 지금 켜진 스킨 (일반 시트 · 반디 · 전설/고유 포함)
       ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(sx, sy + 13, 14, 4, 0, 0, TAU); ctx.fill();
-      ctx.save(); ctx.translate(sx, sy); ctx.scale(2, 2); ctx.translate(-sx, -sy); drawHero(ctx, H, sx, sy, 1, leg ? 3 : 0, false, 0); ctx.restore(); } catch (e) { /* 그림 실패해도 메뉴는 계속 */ }
+      drawSpriteFit(ctx, skinPreviewSprite(p.hero, sk, 0), sx, sy + 14, 50, 56, 2); } catch (e) { /* 그림 실패해도 메뉴는 계속 */ }
     const L = p.line, rank = L && L.ranks ? L.ranks[p.rank || 0] : '', tx = CX + 66;
     hudText(ctx, `${p.hero.name}${rank ? ' · ' + rank : ''}`, tx, y0 + 16, '#ffffff', 'left', 10);
     if (lobby) {
