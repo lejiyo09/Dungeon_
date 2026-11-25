@@ -212,14 +212,19 @@ class Player extends Entity {
       drawFrame = (this.moving && this.state !== 'DASH') ? Math.floor(this.time * 9) % 3 : 3; // 정지: 다리 모은 서기 프레임(열 3)
     }
     if (typeof UVFX !== 'undefined') UVFX.renderBack(ctx, this, x, y, sk); // [고유 스킨] 발밑 오라 (캐릭터 뒤)
-    const w = this.weapon, behind = Math.sin(this.aimVis) < -0.4;
+    const w = this.weapon, sa = Math.sin(this.aimVis), ca = Math.cos(this.aimVis), faceL = legAnim && legDir === 2 && drawFace === 1;
+    /* [전설 스킨 방향별 무기 드는 법] 몸 방향에 따라 손 위치·몸 앞뒤가 달라짐 (조준·총알 방향은 그대로 마우스 쪽)
+       앞모습: 몸 앞 (위로 겨눌 때만 몸 뒤) · 뒷모습: 몸 뒤에 가려짐 (아래로 겨눌 때만 앞) · 옆모습: 바라보는 쪽 손, 반대쪽으로 겨누면 몸 뒤 */
+    const behind = !legAnim ? sa < -0.4 : legDir === 0 ? sa < -0.75 : legDir === 1 ? sa < 0.55 : (faceL ? ca > 0.35 : ca < -0.35) || sa < -0.6;
+    const hand = !legAnim ? { x: 0, y: 2, r: 4 } : legDir === 0 ? { x: ca >= 0 ? 6 : -6, y: -1, r: 3 } : legDir === 1 ? { x: ca >= 0 ? 6 : -6, y: -3, r: 3 }
+      : { x: (faceL ? -4 : 4) * (behind ? -1 : 1), y: -1, r: 3 }; // 손 = 그림의 소매 끝 (앞·뒤는 겨누는 쪽 손, 옆은 바라보는 쪽 손 · 반대로 겨누면 뒤쪽 손)
     const drawW = () => {
       if (!w || this.transformT > 0) return; // [변신] 변신 중엔 무기 숨김 (근접 베기)
       const ang = this.weaponAngle();
       const reach = this.swing && this.swing.thrust ? Math.sin(Math.PI * this.swing.t / this.swing.dur) * 10 : 0;
       // 손 위치: 어깨(몸 중앙 약간 아래)를 중심으로 도는 궤도, 반동 시 뒤로 밀림 · 전설 스킨은 버스트형이라 손을 몸통 쪽으로 올림
-      const R = 4 + reach - this.recoil * 2.5, hy0 = legAnim ? (legDir === 2 ? 1 : -3) : 2; // 전설: 앞뒤는 가슴(-3), 옆은 손 높이
-      const hx = x + Math.cos(ang) * R, hy = y + hy0 + Math.sin(ang) * R * 0.75;
+      const R = hand.r + reach - this.recoil * 2.5;
+      const hx = x + hand.x + Math.cos(ang) * R, hy = y + hand.y + Math.sin(ang) * R * 0.75;
       drawWeapon(ctx, w.def, hx, hy, ang, typeof UVFX !== 'undefined' ? UVFX.bodyTheme(this, sk) : undefined); // [고유 스킨] 이 플레이어의 테마로 칠한 무기
     };
     if (behind) drawW();

@@ -235,6 +235,7 @@ class Effects {
         ctx.fillStyle = fx.color; ctx.fillText(fx.str, tx, ty); ctx.textBaseline = 'alphabetic'; break;
       }
       case 'react': this.drawReaction(ctx, fx, k, x, y); break;
+      case 'legend': if (typeof drawLegendFx === 'function') drawLegendFx(ctx, fx, fx.x, fx.y); break; // 뽑기 전설 스킨 4종: 스킬·대시 문양 (legend_vfx.js)
       case 'rays': { // 빛살: 길어지며 돌다가 사라짐
         const g = 1 - k, L = fx.len * (0.4 + 0.6 * Math.min(1, g * 3)); ctx.strokeStyle = fx.color;
         for (let i = 0; i < fx.n; i++) { const a = fx.rot + i / fx.n * TAU + g * 0.6, w = i % 2 ? 1 : 2; ctx.lineWidth = w;
