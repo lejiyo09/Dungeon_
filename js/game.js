@@ -812,11 +812,11 @@ class Game {
   }
   legendIntroNext() { const L = this.legendIntro; if (!L || !L.queue.length) { this.legendIntro = null; return; } L.K = L.queue.shift(); L.start = performance.now(); L.flashed = false; this.input.mouse.down = false; }
   buyMileageSkin(id) {
-    const sv = this.save, K = gachaPool().find((k) => k.id === id); if (!K) return { error: '스킨을 찾을 수 없습니다' };
+    const sv = this.save, K = SHOP_TABS.map(([r]) => shopPool(r)).flat().find((k) => k.id === id); if (!K) return { error: '스킨을 찾을 수 없습니다' }; // 전설 + 일반·레어·에픽 뽑기 스킨
     if ((sv.skins || []).includes(id)) return { error: '이미 보유한 스킨입니다' };
-    if ((sv.mileage || 0) < GACHA.shopPrice) return { error: '마일리지가 부족합니다' };
-    sv.mileage -= GACHA.shopPrice; sv.skins = sv.skins || []; sv.skins.push(id); this.skinOnMap()[skinKey(K)] = id;
-    writeSave(sv); SFX.play('victory'); this.legendIntroCheck([id]); return { ok: true, name: K.name };
+    const price = shopPrice(K); if ((sv.mileage || 0) < price) return { error: `마일리지가 부족합니다 (${price} 필요)` };
+    sv.mileage -= price; sv.skins = sv.skins || []; sv.skins.push(id); this.skinOnMap()[skinKey(K)] = id;
+    writeSave(sv); SFX.play(K.rarity === 'legendary' ? 'victory' : 'ui'); if (K.rarity === 'legendary') this.legendIntroCheck([id]); return { ok: true, name: K.name };
   }
   myTitleId() { const T = this.save.title && GUILD_TITLES.find((t) => t.id === this.save.title); return T && this.titleUnlocked(T) && !this.admin ? T.id : ''; } /* 랭킹에 보낼 장착 칭호 (얻은 것만) */
   titleUnlocked(T) { if (this.admin) return true; return T.test(this.save.stats || {}, this.save); }
@@ -1514,6 +1514,7 @@ class Game {
       if (o.results) { if (input.wasPressed('Mouse0') || input.wasPressed('Enter') || input.wasPressed('Space') || input.wasPressed('Escape')) { o.results = null; this.input.mouse.down = false; } return; } // 결과 보는 중엔 아무 클릭으로 닫기
       if (o.rates) { if (input.wasPressed('Mouse0') || input.wasPressed('Enter') || input.wasPressed('Escape')) { o.rates = false; this.input.mouse.down = false; } return; } // 확률표 보는 중
       if (input.wasPressed('Escape') || input.wasPressed('KeyJ') || input.wasPressed('KeyE')) { this.overlay = o.back === 'pause' ? { type: 'pause' } : null; return; } // Esc 메뉴에서 열었으면 Esc 메뉴로, 소환 제단에서 열었으면 바로 닫기
+      if (o.tab === 1 && (o.stab || 0) > 0 && (input.wasPressed('WheelDown') || input.wasPressed('WheelUp'))) { const L = shopPool(SHOP_TABS[o.stab][0]).length, mx = Math.max(0, Math.ceil(L / 4) - 3); o.sscroll = Math.max(0, Math.min(mx, (o.sscroll || 0) + (input.wasPressed('WheelDown') ? 1 : -1))); } // 상점 스크롤
       if (input.wasPressed('ArrowUp')) { o.tab = 0; o.banner = (o.banner + n - 1) % n; }
       else if (input.wasPressed('ArrowDown')) { o.tab = 0; o.banner = (o.banner + 1) % n; }
       if (input.wasPressed('Mouse0')) {
@@ -1522,7 +1523,10 @@ class Game {
         pool.forEach((K, i) => { if (!used && hit(HUD.gachaBanner(i))) { o.tab = 0; o.banner = i; used = true; } }); // 사이드바 배너 선택
         if (!used && hit(HUD.gachaShopTab())) { o.tab = 1; used = true; } // 마일리지 상점
         if (!used && o.tab === 0) for (const b of [0, 1]) if (hit(HUD.gachaPullBtn(b))) { const r = this.gachaPull(pool[o.banner].id, b ? 5 : 1); if (r.error) o.msg = { text: r.error, color: '#ff9a9a', t: 2.5 }; else o.results = r.results; used = true; } // 1뽑/5뽑
-        if (!used && o.tab === 1) pool.forEach((K, i) => { if (hit(HUD.gachaShopBuy(i))) { const r = this.buyMileageSkin(K.id); o.msg = { text: r.error || `'${r.name}' 구매 완료!`, color: r.error ? '#ff9a9a' : '#ffd84a', t: 2.5 }; used = true; } });
+        if (!used && o.tab === 1) SHOP_TABS.forEach((_, i) => { if (!used && hit(HUD.gachaShopSubTab(i))) { o.stab = i; o.sscroll = 0; used = true; } }); // 상점 등급 탭
+        if (!used && o.tab === 1) { const st = o.stab || 0, list = shopPool(SHOP_TABS[st][0]), buy = (K) => { const r = this.buyMileageSkin(K.id); o.msg = { text: r.error || `'${r.name}' 구매 완료!`, color: r.error ? '#ff9a9a' : '#ffd84a', t: 2.5 }; used = true; };
+          if (st === 0) list.forEach((K, i) => { if (!used && hit(HUD.gachaShopBuy(i))) buy(K); });
+          else list.slice((o.sscroll || 0) * 4, (o.sscroll || 0) * 4 + 12).forEach((K, j) => { if (!used && hit(HUD.gachaShopCardBuy(j))) buy(K); }); }
         if (used) this.input.mouse.down = false;
       }
       return;

@@ -47,8 +47,9 @@ let pass = 0, fail = 0; const ok = (c, m) => { console.log((c ? '✓ ' : '✗ ')
     for (let i = 0; i < 22; i++) roll(0.5); const m4 = sv.mileage; roll(0.5); out.commonDupMile = sv.mileage - m4;
     out.notAutoEquip = !Object.values(g.skinOnMap()).some((id) => (SKINS.find((k) => k.id === id) || {}).source === 'common');
     // 마일리지 상점
-    reset(); sv.mileage = 399; out.shopPoor = g.buyMileageSkin('skin_leg_void').error;
-    sv.mileage = 400; const bs = g.buyMileageSkin('skin_leg_void'); out.shopOk = !!bs.ok && sv.skins.includes('skin_leg_void') && sv.mileage === 0;
+    reset(); sv.mileage = GACHA.shopPrices.legendary - 1; out.shopPoor = g.buyMileageSkin('skin_leg_void').error;
+    { const tiers = []; for (const r of ['epic', 'rare', 'common']) { const K = shopPool(r)[0]; sv.mileage = 1000; const res = g.buyMileageSkin(K.id); if (res.ok && sv.skins.includes(K.id)) tiers.push(r + ':' + (1000 - sv.mileage)); } out.shopTiers = tiers.join(','); }
+    sv.mileage = GACHA.shopPrices.legendary; const bs = g.buyMileageSkin('skin_leg_void'); out.shopOk = !!bs.ok && sv.skins.includes('skin_leg_void') && sv.mileage === 0;
     out.shopIntro = !!(g.legendIntro && g.legendIntro.K && g.legendIntro.K.id === 'skin_leg_void'); g.legendIntro = null;
     sv.mileage = 400; out.shopOwned = g.buyMileageSkin('skin_leg_void').error;
     // 5뽑에서 전설 2개 → 컷신 차례로 (다른 배너 스킨은 각 배너에서만 나오므로 같은 배너 중복은 1번만)
@@ -77,7 +78,8 @@ let pass = 0, fail = 0; const ok = (c, m) => { console.log((c ? '✓ ' : '✗ ')
   ok(R.epicDupType === 'dupe' && R.epicDupMile === 60, '에픽 다 모은 뒤 → 중복 +60');
   ok(R.rareDupMile === 30 && R.commonDupMile === 15, `레어 중복 +${R.rareDupMile} · 일반 중복 +${R.commonDupMile}`);
   ok(R.notAutoEquip, '일반·레어·에픽은 자동 장착 안 함');
-  ok(R.shopPoor === '마일리지가 부족합니다' && R.shopOk && R.shopIntro && R.shopOwned === '이미 보유한 스킨입니다', '마일리지 상점: 부족 거부 · 400에 구매 · 컷신 · 보유 중 거부');
+  ok(/^마일리지가 부족합니다/.test(R.shopPoor || '') && R.shopOk && R.shopIntro && R.shopOwned === '이미 보유한 스킨입니다', '마일리지 상점: 부족 거부 · 전설 500에 구매 · 컷신 · 보유 중 거부');
+  ok(R.shopTiers === 'epic:200,rare:100,common:50', `마일리지 상점: 일반·레어·에픽도 판매 (${R.shopTiers})`);
   const T = { legendary: 1, shard: 4, epic: 5, rare: 15, common: 35, supply: 40 };
   ok(Object.entries(T).every(([k, v]) => Math.abs((R.rates[k] || 0) - v) < (v < 5 ? 0.4 : 1.0)), '5만 회 실제 비율: ' + Object.entries(T).map(([k, v]) => `${k} ${R.rates[k]}%(설정 ${v}%)`).join(' · '));
 
