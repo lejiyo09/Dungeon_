@@ -823,7 +823,7 @@ class HUD {
   static legIntroEnd(K) { return K && K.intro ? 1.8 + K.intro.length / 16 + 0.4 : 2.6; } // 대사가 다 나올 때까지
   static legendIntro(ctx, game) {
     const L = game.legendIntro, K = L.K, t = (performance.now() - L.start) / 1000, W = VIEW_W, H = VIEW_H, cx = W / 2, cy = H / 2;
-    const col = { skin_leg_abyss: '#5ae0ff', skin_leg_crimson: '#ff4a5a', skin_leg_void: '#b07aff', skin_leg_star: '#ffe08a', skin_leg_admiral: '#f0c050', skin_bandi: '#9ae8ff', skin_u_unrecorded: '#48eaff', skin_u_first_explorer: '#e0b058', skin_u_primordial: '#f0c8ff' }[K.id] || '#ffd84a', uni = K.rarity === 'unique';
+    const col = { skin_leg_abyss: '#5ae0ff', skin_leg_crimson: '#ff4a5a', skin_leg_void: '#b07aff', skin_leg_star: '#ffe08a', skin_leg_admiral: '#f0c050', skin_leg_berserker: '#ff4a4a', skin_bandi: '#9ae8ff', skin_u_unrecorded: '#48eaff', skin_u_first_explorer: '#e0b058', skin_u_primordial: '#f0c8ff' }[K.id] || '#ffd84a', uni = K.rarity === 'unique';
     const ease = (x) => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3); let im = null;
     ctx.save();
     ctx.fillStyle = '#05040a'; ctx.fillRect(0, 0, W, H);

@@ -65,6 +65,7 @@ const SKINS = [
   { id: 'skin_leg_void', name: '공허의 마도사', hero: 'hero_mage', line: 'dark', sprite: 'leg_void', rarity: 'legendary', source: 'gacha', intro: '공허는 비어 있지 않아. 모든 것을 삼킬 뿐이지.', desc: '마법사 전설 외형 — 어둠을 휘감은 공허의 현자 (어둠 계열 전용)' },
   { id: 'skin_leg_star', name: '성역의 성자', hero: 'hero_priest', line: 'base', sprite: 'leg_star', rarity: 'legendary', source: 'gacha', intro: '별빛이 머무는 곳, 그곳이 저의 성역입니다.', desc: '사제 전설 외형 — 별빛 성역의 성자 (성역 계열 전용)' },
   { id: 'skin_leg_admiral', name: '천공함대 제독', hero: 'hero_gunner', line: 'demo', sprite: 'leg_admiral', rarity: 'legendary', source: 'soon', intro: '전 함대, 닻을 올려라. 하늘 아래 어디든, 포성이 길을 연다.', desc: '사수 전설 외형 — 날개 닻 문장 삼각모와 금빛 견장, 하늘을 나는 천공함대의 제독 (폭파 계열 전용) · 획득 방법 준비 중' }, // source 'soon': 뽑기·코드 어디에도 없음 (관리자만 확인용 보유)
+  { id: 'skin_leg_berserker', name: '흑염 뿔의 광전사', hero: 'hero_berserker', sprite: 'leg_berserker', rarity: 'legendary', source: 'soon', intro: '피가 끓는다. 이 분노가 다 타 버릴 때까지, 멈추지 않는다.', desc: '광전사 전설 외형 — 붉은 뿔 투구와 흑철 갑옷, 피빛 망토의 광전사 (전 계열) · 획득 방법 준비 중' },
   // ── 변신 드루이드 스킨: 평소 반디(앞/옆/뒤) ↔ 변신 시 샘(대기=22·공격=21, 좌우 반전만)
   { id: 'skin_bandi', name: '반디', hero: 'hero_druid', sprite: 'druid_bandi', rarity: 'legendary', source: 'code', druid: true, intro: '난 싸울 거야. 모든 것이 불타 버릴 때까지.', desc: '드루이드 변신 스킨 — 평소엔 반디, 변신하면 날개 돋친 샘으로 (선물 코드)' },
   // ── 일반·레어·에픽 스킨 (앞모습, 좌우 반전) — assets/commonskins.png · 퀄리티별 등급: 기존 1·2단계=레어, 3단계=에픽, 새 22종=일반
@@ -128,7 +129,7 @@ const DRUID_SKIN = { bandi_down: [0, 13, 32, 27], bandi_up: [33, 14, 22, 26], ba
 const BANDI_WALK = { bandi_down: [[81, 13, 32, 27], [114, 13, 32, 27]], bandi_up: [[147, 14, 22, 26], [170, 14, 22, 26]], bandi_side: [[193, 14, 24, 26], [218, 14, 24, 26]] };
 // 전설 스킨 시트 매핑: sprite 이름 → 스킨 번호. assets/legskins.png = 3열(걷기 프레임) × (스킨×3방향)행
 //  행 = 스킨*3 + 방향(0=앞/아래, 1=뒤/위, 2=옆) · 셀은 이미 인게임 크기로 구워둠(저해상도 청키) → 런타임은 1:1 drawImage
-const LEG_SKINS = { leg_abyss: 0, leg_crimson: 1, leg_void: 2, leg_star: 3, u_unrecorded: 4, u_first_explorer: 5, u_primordial: 6, leg_admiral: 7 }; // 4~6: 고유 스킨 (셀 32×36, 전설 22×27은 가운데·아래 맞춤)
+const LEG_SKINS = { leg_abyss: 0, leg_crimson: 1, leg_void: 2, leg_star: 3, u_unrecorded: 4, u_first_explorer: 5, u_primordial: 6, leg_admiral: 7, leg_berserker: 8 }; // 4~6: 고유 스킨 (셀 32×36, 전설 22×27은 가운데·아래 맞춤)
 const LEG_SHEET = { cellW: 32, cellH: 36, frames: 4, dirs: 3 }; // 열 0~2: 걷기, 열 3: 정지(옆은 다리 모음)
 // 선물 코드: 글자 그대로 두지 않고 해시로만 보관 (giftHash) — 코드 하나에 보상 하나, 계정마다 한 번
 const GIFT_CODES = [
