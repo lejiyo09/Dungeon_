@@ -8,11 +8,11 @@
 
 // ── 9번째 캐릭터: 네크로맨서 (히든 — 라트마를 쓰러뜨리기 전엔 로비 단상에 나오지 않음)
 DATA_HEROES.push({
-  id: 'hero_necromancer', name: '사령술사 녹스', title: '균형을 지키는 자', price: 0, hidden: true,
+  id: 'hero_necromancer', name: '라트마의 사제', title: '죽음과 생명의 균형을 지키는 자', price: 0, hidden: true,
   maxHp: 105, maxShield: 50, maxEnergy: 250, moveSpeed: 114, startWeapon: 'weapon_necrostaff_001',
   skill: 'necro_army', skillName: '망자의 군세', skillDesc: '10초간 주변 적을 자동으로 공격하는 망령 3마리 소환', skillCooldown: 13,
   passiveName: '영혼 수확', passiveDesc: '처치 시 영혼 조각 (정예 3 · 보스 10) — 10개마다 사령 에너지 충전 (에너지 +15 · 스킬 쿨타임 -1초)', soulHarvest: true,
-  look: { sprite: 'necro', body: '#3a3448', accent: '#9a6aff' }
+  look: { sprite: 'necro', body: '#24232b', accent: '#c5a66c' }
 });
 
 // 영혼 수확 [제안 수치]
@@ -23,19 +23,19 @@ const NECRO_ARMY = { id: 'necro_army', name: '망자의 군세', desc: '10초간
 JOB_LINES.hero_necromancer = {
   title: '사령의 길 선택',
   lich: { name: '리치', desc: '암흑 마법 특화 · 저주와 영혼 폭발 · 광역 마법과 적 약화', ranks: ['사령술사', '리치', '불멸의 군주'], color: '#b47aff',
-    looks: [{ sprite: 'necro', body: '#3a3448', accent: '#9a6aff' }, { sprite: 'necro_lich', body: '#2e2440', accent: '#c08aff' }, { sprite: 'necro_lichlord', body: '#231a36', accent: '#d8a0ff' }],
+    looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_lich', body: '#2c2528', accent: '#d6c8a0' }, { sprite: 'necro_lichlord', body: '#17171f', accent: '#e0c77d' }],
     fx: { trail: '#b47aff', trail2: '#5a2a9a', kind: 'crack' },
     skills: [NECRO_ARMY,
       { id: 'necro_curse', name: '저주 폭발', desc: '조준 지점에 영혼 폭발 + 6초 저주·약점(받는 피해 +30%) — 그동안 저주받은 적이 쓰러지면 터짐', cd: 7 },
       { id: 'necro_nova', name: '사령 폭발', desc: '0.8초 시전(이동 불가) → 주변 아주 넓은 범위에 사령 폭발 + 저주, 범위 안 시체가 연쇄로 터짐', cd: 12 }] },
   wraith: { name: '망령', desc: '소환수 특화 · 소환수 수·공격력·유지시간 강화 · 망령 군단으로 지속 전투', ranks: ['사령술사', '망령 지휘관', '망자의 군주'], color: '#7affc0',
-    looks: [{ sprite: 'necro', body: '#34444a', accent: '#7affc0' }, { sprite: 'necro_wraithcmd', body: '#3a5a60', accent: '#9affd8' }, { sprite: 'necro_deadlord', body: '#2a3a44', accent: '#b8ffe8' }],
+    looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_wraithcmd', body: '#263235', accent: '#83bba9' }, { sprite: 'necro_deadlord', body: '#1b2428', accent: '#a5d8c2' }],
     fx: { trail: '#9affd8', trail2: '#3a8a7a', kind: 'mist' },
     skills: [NECRO_ARMY,
       { id: 'necro_march', name: '망령 행군', desc: '14초간 더 강한 망령 5마리 소환', cd: 13 },
       { id: 'necro_legion', name: '망자의 군단', desc: '16초간 망령 7마리 + 거대한 망령 기사 소환, 소환할 때 주변 적 둔화', cd: 15 }] },
   knight: { name: '사령 기사', desc: '근접 전투 특화 · 흡혈과 사령검 · 생존력과 근접 공격 강화', ranks: ['사령술사', '사령 기사', '죽음의 집행자'], color: '#c070ff',
-    looks: [{ sprite: 'necro', body: '#2a2430', accent: '#c070ff' }, { sprite: 'necro_dknight', body: '#24202c', accent: '#b060ff' }, { sprite: 'necro_executioner', body: '#1c1824', accent: '#d080ff' }],
+    looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_dknight', body: '#25232a', accent: '#9a879e' }, { sprite: 'necro_executioner', body: '#17161d', accent: '#c3a77a' }],
     fx: { trail: '#2a1a34', trail2: '#a060ff', kind: 'flame' },
     skills: [NECRO_ARMY,
       { id: 'necro_blade', name: '사령검 베기', desc: '앞쪽 넓게 사령검으로 베어 피해 + 준 피해 일부 흡혈, 4초간 공격력 +30%', cd: 7 },
