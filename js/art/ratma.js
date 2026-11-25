@@ -55,22 +55,6 @@ Object.assign(HERO_PROCS, {
     P.line(5, 3, 2, 0, 'w'); P.line(11, 3, 14, 0, 'w'); P.rect(6, 2, 5, 1, 'm');
     P.ell(0, 11, 1, 1, 'w'); P.px(0, 11, 'b'); P.ell(16, 10, 1, 1, 'w'); P.px(16, 10, 'b');
   } },
-  // 사령 기사: 흑철 판금, 뼈 갈비 흉갑, 얼굴을 가린 좁은 투구 틈
-  necro_dknight: { pal: { m: '#9b9290', s: '#d1c7ba', e: '#c6b5d4', l: '#28262b', d: '#17171d', w: '#e5ded1', y: '#8d8067' }, proc: (P, f) => {
-    P.rect(3, 9, 10, 8, 'g'); heroLegs(P, f, 'l', 'd');
-    P.rect(3, 8, 10, 8, 'm'); P.rect(5, 9, 6, 7, 'a'); P.line(6, 9, 6, 15, 'w'); P.line(8, 9, 8, 15, 'w'); P.line(10, 9, 10, 15, 'w');
-    P.ell(2, 9, 3, 2, 'm'); P.ell(14, 9, 3, 2, 'm'); P.tri(0, 9, 2, 7, 3, 10, 'w'); P.tri(16, 9, 14, 7, 13, 10, 'w');
-    P.rect(5, 2, 6, 6, 'm'); P.rect(5, 5, 6, 1, 'b'); P.px(6, 5, 'e'); P.px(9, 5, 'e');
-    P.line(5, 2, 3, 0, 'w'); P.line(10, 2, 12, 0, 'w'); P.rect(7, 0, 2, 2, 'y');
-  } },
-  // 죽음의 집행자: 넓은 흑철 어깨, 긴 사령검, 찢어진 망토와 검은 화염
-  necro_executioner: { pal: { m: '#80777d', s: '#cfc6ba', e: '#e4caa0', l: '#211c26', d: '#121018', w: '#eee4d7', y: '#b19572' }, proc: (P, f) => {
-    P.tri(0, 19, 16, 19, 8, 7, 'g'); P.px(1, 18, 'b'); P.px(14, 17, 'b'); heroLegs(P, f, 'l', 'd');
-    P.rect(3, 8, 10, 9, 'm'); P.rect(5, 9, 6, 7, 'a'); P.line(6, 9, 10, 14, 'w'); P.line(10, 9, 6, 14, 'w');
-    P.ell(2, 8, 3, 2.5, 'm'); P.ell(14, 8, 3, 2.5, 'm'); P.tri(0, 7, 2, 5, 4, 9, 'w'); P.tri(16, 7, 14, 5, 12, 9, 'w');
-    P.rect(5, 2, 6, 6, 'm'); P.rect(5, 5, 6, 1, 'b'); P.px(6, 5, 'e'); P.px(9, 5, 'e');
-    P.line(5, 2, 2, 0, 'w'); P.line(10, 2, 14, 0, 'w'); P.px(8, 0, 'y');
-  } }
 });
 
 // 라트마 보스 (32×32): 해골 장식 두건, 창백한 얼굴과 차분한 눈, 생(초록)·사(보라) 두 색이 섞인 긴 망토, 순환의 고리가 달린 지팡이
@@ -92,7 +76,6 @@ Object.assign(WPIX, {
   necrostaff: { auto: true, p: [3, 2], pal: { w: '#e8e4d8' }, rows: ['...........ww..', 'ddddddddddwkwo.', '...........ww..'] },
   ratma_insight: { auto: true, p: [3, 3], pal: { w: '#f0e8ff', v: '#b070ff', V: '#5a2a9a' }, rows: ['............V.V..', '...........VvvvV.', 'aaaaaaaaaaaVvwvV', '...........VvvvV.', '............V.V..', '..........o......', '.................'] },
   ratma_anguish: { auto: true, p: [3, 3], pal: { w: '#e8fff8', t: '#7affc0', T: '#2a8a6a' }, rows: ['...........T.T.T.', '..........TtttttT', 'aaaaaaaaaaTtwtwtT', '..........TtttttT', '...........T.T.T.'] },
-  ratma_endurance: { auto: true, p: [2, 2], pal: { v: '#a060ff', V: '#4a2a6a', w: '#d8d0e8' }, rows: ['..y..................', 'eeyVaaaaaaaaaaaaaaavV', 'eeyVwwwwwwwwwwwwwwvv.', '..y..........v...v...'] },
   ratma_record: { auto: true, p: [2, 3], pal: { p: '#f4ecd8', P: '#c8b890', y: '#e0c060', o: '#ffe9a0' }, rows: ['......yyyyyyy.', '...nn.yppppPy.', 'nnnnnnypopoPy.', '...nn.yppppPy.', '......yyyyyyy.'] },
   ratma_balance: { auto: true, p: [2, 3], pal: { t: '#9affd0', v: '#c08aff', w: '#ffffff' }, rows: ['.......m.....', '..cccccmccc..', '.naaaaamaaaat', '.nbbbbbbbbv..', '.gg..........', '.gg..........'] },
   ratma_oath: { auto: true, p: [2, 2], pal: { t: '#9affd0', T: '#3a7a6a', w: '#e0fff4' }, rows: ['..m...............', 'eemTaaaaaaaaaaaat.', 'eemTwwwwwwwwwwwtt.', '..m...............'] },
@@ -101,6 +84,6 @@ Object.assign(WPIX, {
 });
 Object.assign(WEAPON_SPRITE, {
   weapon_necrostaff_001: 'necrostaff', weapon_ratma_insight_001: 'ratma_insight', weapon_ratma_anguish_001: 'ratma_anguish',
-  weapon_ratma_endurance_001: 'ratma_endurance', weapon_ratma_record_001: 'ratma_record', weapon_ratma_balance_001: 'ratma_balance',
+  weapon_ratma_record_001: 'ratma_record', weapon_ratma_balance_001: 'ratma_balance',
   weapon_ratma_oath_001: 'ratma_oath', weapon_ratma_lantern_001: 'ratma_lantern', weapon_ratma_crown_001: 'ratma_crown'
 });

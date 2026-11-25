@@ -10,36 +10,41 @@
 DATA_HEROES.push({
   id: 'hero_necromancer', name: '라트마의 사제', title: '죽음과 생명의 균형을 지키는 자', price: 0, hidden: true,
   maxHp: 105, maxShield: 50, maxEnergy: 250, moveSpeed: 114, startWeapon: 'weapon_necrostaff_001',
-  skill: 'necro_army', skillName: '망자의 군세', skillDesc: '10초간 주변 적을 자동으로 공격하는 망령 3마리 소환', skillCooldown: 13,
-  passiveName: '영혼 수확', passiveDesc: '처치 시 영혼 조각 (정예 3 · 보스 10) — 10개마다 사령 에너지 충전 (에너지 +15 · 스킬 쿨타임 -1초)', soulHarvest: true,
+  skill: 'necro_none', skillName: '액티브 스킬 없음', skillDesc: '사령술사는 액티브 스킬이 없습니다 — 해골 부하가 대신 싸웁니다', skillCooldown: 0.3,
+  passiveName: '해골 군세', passiveDesc: '기본 해골 2마리가 늘 따라다니며 싸움 · 전직 단계가 오를 때마다 1마리 추가 (최대 4)',
   look: { sprite: 'necro', body: '#24232b', accent: '#c5a66c' }
 });
 
-// 영혼 수확 [제안 수치]
-const NECRO_SOUL = { perKill: 1, perElite: 3, perBoss: 10, need: 10, energy: 15, cdCut: 1 };
+// [사용자 결정] 네크로맨서 개편: 해골 군세 + 시체 활용 · 계열은 망령·리치 둘 (사령 기사 계열과 그 고유 무기 삭제)
+//  수치 중 개편안에 없는 것(피해·체력·묘지 재사용 대기 등)은 [제안]
+const NECRO = {
+  skeleton: { base: 2, perRank: 1, dmg: 6, rate: 0.75, speed: 120, tempLife: 10 },          // 기본 해골: 사령술사 2 · 1차 3 · 2차 4 · 추가 소환 해골은 10초
+  golem: { dmg: 30, rate: 1.6, stun: 0.5, hpMul: 1.5, respawn: 5, taunt: 120, speed: 70 },     // 망령 골렘: 확정 0.5초 기절 · 어그로 · 사망 5초 후 부활
+  corpse: { life: 25, max: 30, pick: 16 },                                                      // 시체: 적이 쓰러진 자리 · 마우스로 고르는 거리
+  thrall: { max: 5 },                                                                           // 망자의 군주: 부활한 몬스터 최대 5 — 원본 몬스터 그대로 (체력·공격력·AI·특수 능력)
+  spear: { count: 3, dmg: 40, speed: 260, range: 200, debuffs: 2 },                             // 리치: 시체 창 3개 · 무작위 디버프 2종
+  grave: { r: 92, life: 10, every: 2, bombs: [2, 4], bombDmg: 55, bombR: 36, charm: 0.7, charmLife: 10, charmDmg: 90, charmR: 46, cd: 16 } // 불멸의 군주: 묘지
+};
+const NECRO_DEBUFFS = [
+  { type: 'burn', chance: 1, duration: 3, dps: 10 }, { type: 'freeze', chance: 1, duration: 1.6, slow: 0.5 }, { type: 'poison', chance: 1, duration: 4, dps: 12 },
+  { type: 'shock', chance: 1, duration: 3 }, { type: 'blind', chance: 1, duration: 3 }, { type: 'curse', chance: 1, duration: 5 }];
 
-// ── 전직 계열 (사령술사 → 1차 → 3차/최종) · looks: 단계마다 실루엣 자체가 바뀌는 외형 (js/art/ratma.js)
-const NECRO_ARMY = { id: 'necro_army', name: '망자의 군세', desc: '10초간 주변 적을 자동으로 공격하는 망령 3마리 소환', cd: 13 };
+// ── 전직 계열 (사령술사 → 1차 → 2차) · looks: 단계마다 실루엣 자체가 바뀌는 외형 (js/art/ratma.js)
+const NECRO_NONE = { id: 'necro_none', name: '액티브 스킬 없음', desc: '해골 부하 2마리가 늘 따라다니며 싸웁니다', cd: 0.3 };
 JOB_LINES.hero_necromancer = {
   title: '사령의 길 선택',
-  lich: { name: '리치', desc: '암흑 마법 특화 · 저주와 영혼 폭발 · 광역 마법과 적 약화', ranks: ['사령술사', '리치', '불멸의 군주'], color: '#b47aff',
-    looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_lich', body: '#2c2528', accent: '#d6c8a0' }, { sprite: 'necro_lichlord', body: '#17171f', accent: '#e0c77d' }],
-    fx: { trail: '#b47aff', trail2: '#5a2a9a', kind: 'crack' },
-    skills: [NECRO_ARMY,
-      { id: 'necro_curse', name: '저주 폭발', desc: '조준 지점에 영혼 폭발 + 6초 저주·약점(받는 피해 +30%) — 그동안 저주받은 적이 쓰러지면 터짐', cd: 7 },
-      { id: 'necro_nova', name: '사령 폭발', desc: '0.8초 시전(이동 불가) → 주변 아주 넓은 범위에 사령 폭발 + 저주, 범위 안 시체가 연쇄로 터짐', cd: 12 }] },
-  wraith: { name: '망령', desc: '소환수 특화 · 소환수 수·공격력·유지시간 강화 · 망령 군단으로 지속 전투', ranks: ['사령술사', '망령 지휘관', '망자의 군주'], color: '#7affc0',
+  wraith: { name: '망령', desc: '소환과 부활 · 골렘이 어그로를 끌고, 쓰러진 적을 되살려 군세로 거느림', ranks: ['사령술사', '망령', '망자의 군주'], color: '#7affc0',
     looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_wraithcmd', body: '#263235', accent: '#83bba9' }, { sprite: 'necro_deadlord', body: '#1b2428', accent: '#a5d8c2' }],
     fx: { trail: '#9affd8', trail2: '#3a8a7a', kind: 'mist' },
-    skills: [NECRO_ARMY,
-      { id: 'necro_march', name: '망령 행군', desc: '14초간 더 강한 망령 5마리 소환', cd: 13 },
-      { id: 'necro_legion', name: '망자의 군단', desc: '16초간 망령 7마리 + 거대한 망령 기사 소환, 소환할 때 주변 적 둔화', cd: 15 }] },
-  knight: { name: '사령 기사', desc: '근접 전투 특화 · 흡혈과 사령검 · 생존력과 근접 공격 강화', ranks: ['사령술사', '사령 기사', '죽음의 집행자'], color: '#c070ff',
-    looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_dknight', body: '#25232a', accent: '#9a879e' }, { sprite: 'necro_executioner', body: '#17161d', accent: '#c3a77a' }],
-    fx: { trail: '#2a1a34', trail2: '#a060ff', kind: 'flame' },
-    skills: [NECRO_ARMY,
-      { id: 'necro_blade', name: '사령검 베기', desc: '앞쪽 넓게 사령검으로 베어 피해 + 준 피해 일부 흡혈, 4초간 공격력 +30%', cd: 7 },
-      { id: 'necro_charge', name: '죽음의 돌진', desc: '거대한 사령검을 들고 조준 방향으로 돌진하며 지나간 적을 모두 벰 (잠깐 무적) → 끝에서 충격파 · 벤 적마다 체력 회복', cd: 10 }] }
+    skills: [NECRO_NONE,
+      { id: 'necro_none', name: '액티브 스킬 없음', desc: '해골 3마리 + 골렘 1마리 상시 (골렘: 확정 0.5초 기절 · 어그로 · 쓰러지면 5초 뒤 부활)', cd: 0.3 },
+      { id: 'necro_raise', name: '시체 부활', desc: '시체에 마우스를 올리고 스킬 키 → 그 몬스터를 부하로 되살림 (최대 5, 넘으면 가장 오래된 부하가 돌아감) · 재사용 대기 없음', cd: 0.3 }] },
+  lich: { name: '리치', desc: '시체와 저주 · 시체를 창으로 바꾸고, 묘지로 적을 지배해 자폭시킴', ranks: ['사령술사', '리치', '불멸의 군주'], color: '#b47aff',
+    looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_lich', body: '#2c2528', accent: '#d6c8a0' }, { sprite: 'necro_lichlord', body: '#17171f', accent: '#e0c77d' }],
+    fx: { trail: '#b47aff', trail2: '#5a2a9a', kind: 'crack' },
+    skills: [NECRO_NONE,
+      { id: 'necro_spear', name: '시체 창', desc: '시체에 마우스를 올리고 스킬 키 → 시체 1개로 시체 창 3개 (주변 적 자동 추적 · 무작위 디버프 2종) · 재사용 대기 없음', cd: 0.3 },
+      { id: 'necro_grave', name: '묘지', desc: '마우스 위치에 10초 묘지 — 2초마다 자폭 해골 2~4, 주변 일반 적 70% 정신지배(10초 뒤 자폭, 보스 면역) · 시체 위에서는 시체 창', cd: NECRO.grave.cd }] }
 };
 
 // ── 무기: 시작 무기 1종 + 라트마 고유 무기 8종
@@ -60,10 +65,6 @@ DATA_WEAPONS.push(
     pierce: 0, knockback: 1, color: '#2a3a3a', len: 16, bulletColor: '#7affc0', bulletSize: 3, glow: '#3aa080',
     trait: '고유 · 망령 소환 ×3',
     desc: '수많은 영혼을 지휘하는 자가 짊어져야 할 고통을 담은 지팡이. 맞힌 자리에 작은 망령(6초, 최대 3)을 부르고, 망령이 사라질 때 영혼 파동.' },
-  { id: 'weapon_ratma_endurance_001', name: '라트마의 인내', rarity: 'legendary', unique: true, questOnly: true, ratma: 'endurance', type: 'melee', shape: 'sword',
-    damage: 68, fireRate: 1.1, energyCost: 0, range: 46, arcDeg: 120, knockback: 6, color: '#2a2030', len: 20,
-    trait: '고유 · 흡혈 · 사령 표식',
-    desc: '죽음을 견디며 전진하는 사령 기사의 검. 준 피해 4% 흡혈, 맞은 적에 사령 표식(영혼 피해 +20%), 체력 30% 이하가 되면 4초간 받는 피해 -25% (45초에 한 번).' },
   { id: 'weapon_ratma_record_001', name: '라트마의 기록', rarity: 'legendary', unique: true, questOnly: true, ratma: 'record', type: 'gun', shape: 'staff',
     damage: 22, fireRate: 2.8, energyCost: 1, range: 350, projectileSpeed: 340, projectileCount: 1, spreadDeg: 2,
     pierce: 0, knockback: 2, color: '#6a4a2a', len: 12, bulletColor: '#ffe9a0', bulletSize: 2,
@@ -90,14 +91,14 @@ DATA_WEAPONS.push(
 );
 const RATMA_UNIQUE_IDS = DATA_WEAPONS.filter((d) => d.ratma).map((d) => d.id); // 라트마 고유 무기 8종
 // 전직 → 전용 고유 무기
-const RATMA_LINE_WEAPON = { lich: 'weapon_ratma_insight_001', wraith: 'weapon_ratma_anguish_001', knight: 'weapon_ratma_endurance_001' };
+const RATMA_LINE_WEAPON = { lich: 'weapon_ratma_insight_001', wraith: 'weapon_ratma_anguish_001' };
+const RATMA_REMOVED_WEAPONS = ['weapon_ratma_endurance_001']; // [사용자 결정] 사령 기사 계열과 함께 삭제된 고유 무기 — 예전 저장에서 정리
 const RATMA_RECORD_ID = 'weapon_ratma_record_001';
 
 // 고유 무기 효과 수치 (기획서 그대로, 지속시간이 빠진 곳만 [제안])
 const RATMA_FX = {
   insight: { shards: 4, shardMult: 0.5, burstNeed: 5, burstR: 78, burstMult: 2.5 },          // 파편 수·피해 · 영혼 폭발 범위·피해 [제안]
   anguish: { life: 6, max: 3, atk: 0.45, rate: 0.6, waveR: 42, waveMult: 0.6 },                // 망령 6초·최대 3·공격력 45% · 파동 [제안]
-  endurance: { leech: 0.04, mark: 0.2, markDur: 5, lowHp: 0.3, guard: 0.25, guardDur: 4, cd: 45 }, // 표식 지속 5초 [제안]
   record: { kill: 1, elite: 5, boss: 15, need: 30, mult: 1.8, r: 96, slow: 1.2, minionAtk: 0.2, minionDur: 5 }, // 범위·둔화 시간 [제안]
   balance: { hp: 0.35, heal: 0.08, en: 0.2, energy: 10, cd: 30 },
   oath: { atk: 0.04, dur: 5, max: 5, waveMult: 1, waveR: 60 },                                    // 파동 범위 [제안]
@@ -195,7 +196,7 @@ const RATMA_CHOICES = [
   { id: 'remember', name: '라트마의 가르침을 기억하기', desc: '그의 가르침을 기억하고, 죽음과 생명의 순환을 이해한다.', color: '#9affd0',
     effects: ['네크로맨서 영구 해금 — 이후 로비에서 선택 가능', '지금 캐릭터·직업·전직 상태는 그대로', '특별 3차 전직·고유 무기는 받지 않음'] },
   { id: 'follow', name: '라트마의 가르침을 따르기', desc: '그의 가르침을 직접 따르고, 생사 순환의 일부가 된다.', color: '#c08aff',
-    effects: ['네크로맨서 영구 해금', '지금 캐릭터의 직업이 네크로맨서로 — 즉시 3차 전직', '전직 전용 고유 무기 + 라트마의 기록'] }
+    effects: ['네크로맨서 영구 해금', '지금 캐릭터의 직업이 네크로맨서로 — 즉시 최종 전직', '전직 전용 고유 무기 + 라트마의 기록'] }
 ];
 // 전직별·로비 대사 (영혼 제단)
 const RATMA_TALK = {
@@ -216,10 +217,6 @@ const RATMA_TALK = {
     '「영혼을 지휘하는 자는 그들의 고통까지 함께 짊어진다. 그것이 고뇌라는 이름의 무게다.」',
     '「망자의 군주여, 군단은 너를 따르지만 — 네 것은 아니다. 언젠가 모두 돌려보내라.」'
   ],
-  knight: [
-    '「죽음을 견디며 앞으로 나아가는 것. 그것이 살아남는다는 뜻이다.」',
-    '「죽음의 집행자여, 네 검은 생을 끊는 것이 아니라 끊긴 생을 제자리로 돌려보내는 것이다.」'
-  ]
 };
 
 // ── 시련 정의 (기존 TRIALS 구조 재사용 — 확인 창·결과 창·시련 장비)
