@@ -238,7 +238,7 @@ class NecroSpear {
     ctx.fillStyle = '#d8a0ff'; ctx.fillRect(Math.round(x + c * 5) - 1, Math.round(y + s * 5) - 1, 2, 2);
   }
 }
-// ── 묘지 (불멸의 군주): 10초 · 2초마다 자폭 해골 2~4 · 주변 일반 적 70% 정신지배 (보스 면역)
+// ── 묘지 (불멸의 군주): 10초 · 2초마다 자폭 해골 2~4 · 주변 일반 적 30% 정신지배 (보스 면역)
 class NecroGraveyard {
   constructor(x, y, owner) { this.x = x; this.y = y; this.owner = owner; this.t = 0; this.next = 0.3; this.scan = 0; this.alive = true; this.id = Math.random();
     this.stones = []; for (let i = 0; i < 5; i++) { const a = i / 5 * TAU + Math.random() * 0.5, r = NECRO.grave.r * (0.45 + Math.random() * 0.35); this.stones.push([Math.round(x + Math.cos(a) * r), Math.round(y + Math.sin(a) * r * 0.6), randInt(0, 1)]); } }

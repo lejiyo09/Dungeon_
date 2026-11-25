@@ -27,7 +27,7 @@ const NECRO = {
   thrall: { max: 5, hpMul: 20 / 3, dmgMul: 2 }, // [사용자 결정] 부활 부하·정신지배된 적: 체력 6.7배(10배의 2/3) · 공격력 2배 (원본 몬스터 기준)
   lichFeed: { hp: 20, energy: 10 },                                                             // [사용자 결정] 리치 계열 패시브: 시체를 쓸 때마다 체력 20 · 에너지 10 회복
   spear: { count: 3, dmg: 40, speed: 260, range: 200, debuffs: 2 },                             // 리치: 시체 창 3개 · 무작위 디버프 2종
-  grave: { r: 92, life: 10, every: 2, bombs: [2, 4], bombDmg: 55, bombR: 36, charm: 0.7, charmLife: 10, charmDmg: 90, charmR: 46, cd: 16 } // 불멸의 군주: 묘지
+  grave: { r: 92, life: 10, every: 2, bombs: [2, 4], bombDmg: 55, bombR: 36, charm: 0.3, charmLife: 10, charmDmg: 90, charmR: 46, cd: 16 } // 불멸의 군주: 묘지
 };
 const NECRO_DEBUFFS = [
   { type: 'burn', chance: 1, duration: 3, dps: 10 }, { type: 'freeze', chance: 1, duration: 1.6, slow: 0.5 }, { type: 'poison', chance: 1, duration: 4, dps: 12 },
@@ -48,7 +48,7 @@ JOB_LINES.hero_necromancer = {
     fx: { trail: '#b47aff', trail2: '#5a2a9a', kind: 'crack' },
     skills: [NECRO_NONE,
       { id: 'necro_spear', name: '시체 창', desc: '시체가 생기면 자동으로 시체 1개를 써서 시체 창 3개 (주변 적 자동 추적 · 무작위 디버프 2종) · 패시브: 시체를 쓸 때마다 체력 20 · 에너지 10 회복', cd: 0.3 },
-      { id: 'necro_grave', name: '묘지', desc: '마우스 위치에 10초 묘지 — 2초마다 자폭 해골 2~4, 주변 일반 적 70% 정신지배(10초 뒤 자폭, 보스 면역) · 시체 창은 자동 · 시체를 쓸 때마다 체력 20 · 에너지 10', cd: NECRO.grave.cd }] }
+      { id: 'necro_grave', name: '묘지', desc: '마우스 위치에 10초 묘지 — 2초마다 자폭 해골 2~4, 주변 일반 적 30% 정신지배(10초 뒤 자폭, 보스 면역) · 시체 창은 자동 · 시체를 쓸 때마다 체력 20 · 에너지 10', cd: NECRO.grave.cd }] }
 };
 
 // ── 무기: 시작 무기 1종 + 라트마 고유 무기 8종
