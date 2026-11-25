@@ -43,8 +43,8 @@ let pass = 0, fail = 0; const ok = (c, m) => { console.log((c ? '✓ ' : '✗ ')
     reset(); sv.bank = 1e7; const ep = []; for (let i = 0; i < 8; i++) { const r = roll(0.07).results[0]; ep.push(r.id + ':' + r.type); }
     out.epicUnique = new Set(ep.map((x) => x.split(':')[0])).size; out.epicAllNew = ep.every((x) => x.endsWith(':common'));
     const m2 = sv.mileage; const r6 = roll(0.07).results[0]; out.epicDupType = r6.type; out.epicDupMile = sv.mileage - m2;
-    for (let i = 0; i < 16; i++) roll(0.2); const m3 = sv.mileage; roll(0.2); out.rareDupMile = sv.mileage - m3;
-    for (let i = 0; i < 22; i++) roll(0.5); const m4 = sv.mileage; roll(0.5); out.commonDupMile = sv.mileage - m4;
+    for (let i = 0; i < commonPool('rare').length; i++) roll(0.2); const m3 = sv.mileage; roll(0.2); out.rareDupMile = sv.mileage - m3;
+    for (let i = 0; i < commonPool('common').length; i++) roll(0.5); const m4 = sv.mileage; roll(0.5); out.commonDupMile = sv.mileage - m4;
     out.notAutoEquip = !Object.values(g.skinOnMap()).some((id) => (SKINS.find((k) => k.id === id) || {}).source === 'common');
     // 마일리지 상점
     reset(); sv.mileage = GACHA.shopPrices.legendary - 1; out.shopPoor = g.buyMileageSkin('skin_leg_void').error;
