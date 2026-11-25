@@ -392,7 +392,7 @@ Object.assign(Game.prototype, {
     const C = this.coop; if (!C) return;
     const key = C.partyKey || this.coopRunKey, { stages, bosses } = this.runReward(victory);
     this.updateCoopRecord(!!victory);
-    this.coopHostSendGev(); Net.relay({ k: 'end', completed: true, partyKey: key, victory, stages, bosses, deep: this.W && this.W.deep ? this.W.depth : 0, row: this.runScoreRow(victory) }); Net.raw({ t: 'start', on: false });
+    this.coopHostSendGev(); Net.relay({ k: 'end', completed: true, partyKey: key, victory, stages, bosses, gold: Math.floor(this.gold || 0), deep: this.W && this.W.deep ? this.W.depth : 0, row: this.runScoreRow(victory) }); Net.raw({ t: 'start', on: false });
     if (key && this.save.coopRuns) delete this.save.coopRuns[key]; writeSave(this.save);
     for (const [name, orig] of Object.entries(C.fxOrig || {})) this.effects[name] = orig;
     this.player = C.me; this.coop = null; this.remotes = new Map(); this.coopRunKey = null; this.coopPartyMembersList = null; this.coopPartyIdsList = null; this.coopRunData = null; this.coopReviveUsed = false;
@@ -602,8 +602,8 @@ Object.assign(Game.prototype, {
     if (d.completed && key && this.save.coopRuns) delete this.save.coopRuns[key];
     this.coop = null; SFX.stopMusic(); SFX.play(d.victory ? 'victory' : 'hurt');
     if (d.quit) Net.leave();
-    const stages = d.stages || 0, bosses = d.bosses || 0, reward = stages * CUR.perStage + bosses * CUR.perBoss + (d.victory ? CUR.victory : 0);
-    this.overlay = { type: 'result', victory: !!d.victory, stages, bosses, reward, coop: true, after: d.disconnected ? '연결이 끊겨 탐험이 끝났습니다' : d.hostLeft ? '방장이 나가서 탐험이 끝났습니다' : d.quit ? '탐험에서 나왔습니다' : '함께한 탐험이 끝났습니다' };
+    const stages = d.stages || 0, bosses = d.bosses || 0, gold = Math.max(0, d.gold != null ? d.gold : (this.gold || 0)), goldBonus = goldCrystals(gold), reward = stages * CUR.perStage + bosses * CUR.perBoss + (d.victory ? CUR.victory : 0) + goldBonus; /* 골드는 파티가 함께 씀 → 남은 골드 보너스도 모두 같게 */
+    this.overlay = { type: 'result', victory: !!d.victory, stages, bosses, reward, gold, goldBonus, coop: true, after: d.disconnected ? '연결이 끊겨 탐험이 끝났습니다' : d.hostLeft ? '방장이 나가서 탐험이 끝났습니다' : d.quit ? '탐험에서 나왔습니다' : '함께한 탐험이 끝났습니다' };
     writeSave(this.save);
     if (d.row && this.profile && !this.admin) Net.submitScore(Object.assign({}, d.row, { name: this.profile.name, hero: this.player && this.player.hero ? this.player.hero.id : this.save.selected }));
     this.coopRunKey = null; this.coopPartyMembersList = null; this.coopPartyIdsList = null; this.coopRunData = null; this.coopReviveUsed = false;

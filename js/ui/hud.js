@@ -714,7 +714,7 @@ class HUD {
       else if (game.W.deep) hudText(ctx, `심층 ${game.W.depth}번째 필드까지 내려갔습니다   (최고 기록: 심층 ${game.save.bestDeep || 0})`, VIEW_W / 2, 92, '#9ad8ff', 'center', 10);
       hudText(ctx, `도달: ${game.stageName()}   ·   처치 ${game.kills}   ·   스테이지 ${o.stages}개 · 보스 ${o.bosses}마리`, VIEW_W / 2, 110, '#ddd', 'center', 10);
       hudText(ctx, `${CUR.name} +${o.reward}   (보유 ${game.save.bank} → ${game.save.bank + o.reward})`, VIEW_W / 2, 128, CUR.color, 'center', 10);
-      hudText(ctx, '던전 골드는 로비로 가져가지 않습니다', VIEW_W / 2, 142, '#888', 'center', 8);
+      hudText(ctx, o.gold != null ? `남은 골드 ${o.gold.toLocaleString()} → ${CUR.name} +${o.goldBonus || 0}   (골드 ${CUR.goldPer || 25}마다 1 · 골드 자체는 로비로 가져가지 않음)` : '던전 골드는 로비로 가져가지 않습니다', VIEW_W / 2, 142, '#c8b070', 'center', 8);
       hudText(ctx, 'Enter: 로비로', VIEW_W / 2, 160, '#fff', 'center', 10);
     }
   }

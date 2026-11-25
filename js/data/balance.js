@@ -71,7 +71,7 @@ const BALANCE = {
       'hero_druid|thorn': { skillFx: 'ancientroot', name: '고대 결박', desc: '고대 뿌리 범위↑·속박↑' },
       'hero_druid|shape': { skillFx: 'primal', name: '태초 각성', desc: '변신 지속↑·공격력↑·변신 시작 시 범위 폭발' }
     } },
-  lobbyCurrency: { name: '결정석', color: '#7ad0ff', perStage: 15, perBoss: 40, victory: 80 },
+  lobbyCurrency: { name: '결정석', color: '#7ad0ff', perStage: 15, perBoss: 40, victory: 80, goldPer: 25 }, // goldPer: 탐험이 끝날 때 남은 골드 25마다 결정석 1
   bossHealRatio: 0.5,         // 월드 보스 처치 시 최대 체력 대비 회복
   // 정예 몬스터: 2월드부터 등장, 확률 = base + perWorld × (월드-1)
   elite: { fromWorld: 1, base: 0.08, perWorld: 0.03, hp: 2.2, dmg: 1.2, gold: 3 },

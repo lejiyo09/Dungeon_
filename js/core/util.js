@@ -12,6 +12,7 @@ const RARITY_NAME = { common: '일반', uncommon: '고급', rare: '희귀', epic
 const RARITY_WEIGHT = BALANCE.rarityWeight;
 const RARITY_PRICE = BALANCE.shopPrice;
 const CUR = BALANCE.lobbyCurrency; // 로비 재화 (이름·색은 balance.js 한 곳에서 바꿈)
+function goldCrystals(gold) { return Math.floor(Math.max(0, gold || 0) / (CUR.goldPer || 25)); } // 남은 골드 → 결정석
 const TYPE_NAME = { gun: '사격', melee: '근접', charge: '차지', beam: '광선' };
 
 const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));

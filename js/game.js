@@ -264,7 +264,7 @@ class Game {
       this.coopRunData = null;
       if (this.coop && this.coop.host) Net.relay({ k: 'runClear', key });
     } else { this.save.run = null; this.save.runReviveUsed = false; this.save.clears++; }
-    const { stages, bosses, reward } = this.runReward(true); writeSave(this.save); return { victory: true, stages, bosses, reward };
+    const { stages, bosses, reward, gold, goldBonus } = this.runReward(true); writeSave(this.save); return { victory: true, stages, bosses, reward, gold, goldBonus };
   }
   startBabylonThrone(pending) { /* 길가메시의 왕좌: 지금 캐릭터 그대로 (로비에서 바로 오면 심층 기본 장비) */
     this.babylonPending = pending || null; this.babylonFall = null;
@@ -1187,18 +1187,20 @@ class Game {
     }
     SFX.stopMusic();
     if (!coopRun) { this.save.run = null; this.save.runReviveUsed = false; writeSave(this.save); }
+    const goldEnd = this.gold || 0; // 귀환길 기록을 되돌리기 전, 이번 탐험이 끝날 때 남은 골드
     if (this.areaId) this.restoreStashRun(); /* 바빌로니아 귀환길이 끝나면 그 전 탐험 기록을 되돌림 */
     SFX.play(victory ? 'victory' : 'hurt');
-    // 로비 재화: 클리어한 스테이지 수 · 쓰러뜨린 필드 보스 수 · 승리 보너스 (던전 골드는 런과 함께 사라짐)
-    const { stages, bosses, reward } = this.runReward(victory);
-    this.overlay = { type: 'result', victory, stages, bosses, reward };
+    // 로비 재화: 클리어한 스테이지 수 · 쓰러뜨린 필드 보스 수 · 승리 보너스 · 남은 골드 (골드 자체는 런과 함께 사라짐)
+    const { stages, bosses, reward, gold, goldBonus } = this.runReward(victory, goldEnd);
+    this.overlay = { type: 'result', victory, stages, bosses, reward, gold, goldBonus };
     if (victory && !coopRun) { this.save.clears++; writeSave(this.save); }
   }
-  runReward(victory) { // 로비 재화: 이번 탐험에서 실제로 깬 스테이지·필드 보스 수 (로비에서 바로 심층에 들어간 탐험도 일반과 같은 기준)
+  runReward(victory, goldLeft = this.gold) { // 로비 재화: 이번 탐험에서 실제로 깬 스테이지·필드 보스 수 (로비에서 바로 심층에 들어간 탐험도 일반과 같은 기준) + 남은 골드
+    const gold = Math.max(0, Math.floor(goldLeft || 0)), goldBonus = goldCrystals(gold);
     if (this.areaId) { const S = this.runStart || {}, f = this.zoneField || 0, stages = Math.max(0, f * STAGES_PER_WORLD + this.levelIdx - (S.zs || 0) + (victory ? 1 : 0)), bosses = Math.max(0, f - (S.zf || 0) + (victory ? 1 : 0)); /* 지하: 필드 번호로 셈 */
-      return { stages, bosses, reward: stages * CUR.perStage + bosses * CUR.perBoss + (victory ? CUR.victory : 0) }; }
+      return { stages, bosses, gold, goldBonus, reward: stages * CUR.perStage + bosses * CUR.perBoss + (victory ? CUR.victory : 0) + goldBonus }; }
     const S = this.runStart || { stage: 0, world: 0 }, stages = Math.max(0, this.stageIndex - S.stage + (victory ? 1 : 0)), bosses = Math.max(0, this.worldIdx - S.world + (victory ? 1 : 0));
-    return { stages, bosses, reward: stages * CUR.perStage + bosses * CUR.perBoss + (victory ? CUR.victory : 0) };
+    return { stages, bosses, gold, goldBonus, reward: stages * CUR.perStage + bosses * CUR.perBoss + (victory ? CUR.victory : 0) + goldBonus };
   }
   finishResult() {
     if (!this.overlay.trial) { this.save.bank += this.overlay.reward; writeSave(this.save); }
