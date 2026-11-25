@@ -94,7 +94,7 @@ const MINUTES = +(process.argv[2] || 20);
         if (!Number.isFinite(pk.x) || !Number.isFinite(pk.y)) report('pickup NaN', where() + ' ' + pk.kind);
         else if (overlapsSolid(pk.x, pk.y, 1, g.map)) report('pickup inside wall: ' + pk.kind, where());
       }
-      for (const pr of g.props) if (pr.radius && g.map.isSolidAt(pr.x, pr.y)) report('prop inside wall: ' + pr.constructor.name, where());
+      for (const pr of g.props) if (pr.radius && !(pr instanceof GuildTable || pr instanceof MerlinTable) && g.map.isSolidAt(pr.x, pr.y)) /* 길드 탁자는 일부러 막힌 칸(T_COVER) 위에 놓음 */ report('prop inside wall: ' + pr.constructor.name, where());
       if (g.projectiles.length > 1500) report('projectile leak', where() + ' n=' + g.projectiles.length);
       if (g.enemyBullets.length > 1500) report('enemy bullet leak', where() + ' n=' + g.enemyBullets.length);
       if (g.effects.list.length > 4000) report('effect leak', where() + ' n=' + g.effects.list.length);
