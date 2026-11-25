@@ -757,7 +757,7 @@ Player.prototype.ratmaAtkBonus = function () {
     }
   };
   wrap('activateRoom', function (orig, r, leader) { const res = orig.call(this, r, leader); this.summonFollowsIntoRoom(r); return res; });
-  // [사용자 결정] 해골·골렘 한 방 = 들고 있는 두 무기 한 방의 합 × 110% (탄 여러 발은 합산 · 광선은 0.5초치 · 무기마다 강화 단계 반영, 공격력 보너스·치명타는 플레이어 기준)
+  // [사용자 결정] 해골·골렘 한 방 = 들고 있는 두 무기 한 방의 합 (탄 여러 발은 합산 · 광선은 0.5초치 · 무기마다 강화 단계 반영, 공격력 보너스·치명타는 플레이어 기준)
   G.necroWeaponSrc = function (p, knockback) {
     let sum = 0;
     for (const w of p.weapons) { const d = w && w.def; if (!d) continue;
