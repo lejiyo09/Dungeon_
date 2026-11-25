@@ -227,7 +227,7 @@ class Player extends Entity {
     let drew = false;
     if (sk === 'druid_bandi' && typeof druidSprite === 'function') { // [변신 드루이드 스킨] 평소 반디(방향별) ↔ 변신 샘(대기/공격, 좌우 반전)
       const md = this.moveFaceDir(), ax = md.x, ay = md.y; let key, flip = false, lungeY = 0; // lungeY: 앞/뒤 공격 시 바라보는 쪽으로 내딛기 // [변신 스킨] 바라보는 방향 = 이동 방향(정지 시 마지막 방향, 멀티 동료는 위치 변화)
-      if (this.transformT > 0) { const atk = this.swing && this.swing.t < this.swing.dur; if (Math.abs(ay) > Math.abs(ax) && DRUID_SKIN.sam_down) { key = ay >= 0 ? 'sam_down' : 'sam_up'; if (atk && DRUID_SKIN[key + '_a1']) { const k = this.swing.t / this.swing.dur, dir = ay >= 0 ? 1 : -1; key += k < 0.3 ? '_a1' : k < 0.5 ? '_a2' : '_a3'; lungeY = dir * (k < 0.3 ? -2 : k < 0.5 ? 2 : 4 * (1 - (k - 0.5) / 0.5) + 1); } } else { key = atk ? 'sam_atk' : 'sam_idle'; flip = ax < 0; } } // 샘: 위/아래면 정면·후면(공격 = 쌍검 치켜듦 → X자 베기), 그 외 옆모습(기본 오른쪽, 왼쪽이면 반전)
+      if (this.transformT > 0) { const atk = this.swing && this.swing.t < this.swing.dur; if (Math.abs(ay) > Math.abs(ax) && DRUID_SKIN.sam_down) { key = ay >= 0 ? 'sam_down' : 'sam_up'; if (atk && DRUID_SKIN[key + '_a1']) { const k = this.swing.t / this.swing.dur, dir = ay >= 0 ? 1 : -1; key += k < 0.3 ? '_a1' : k < 0.5 ? '_a2' : '_a3'; lungeY = dir * (k < 0.3 ? -2 * k / 0.3 : k < 0.5 ? -2 + 9 * (k - 0.3) / 0.2 : 7 * (1 - (k - 0.5) / 0.5)); } } else { key = atk ? 'sam_atk' : 'sam_idle'; flip = ax < 0; } } // 샘: 위/아래면 정면·후면(공격 = 몸을 숙이며 칼을 당김 → 쌍검을 앞으로 내밀고 날아들기 → 숙인 채 가르기), 그 외 옆모습(기본 오른쪽, 왼쪽이면 반전)
       else if (Math.abs(ay) > Math.abs(ax)) key = ay >= 0 ? 'bandi_down' : 'bandi_up'; // 앞/뒤
       else { key = 'bandi_side'; flip = ax > 0; } // 옆: 원본이 왼쪽 → 오른쪽이면 반전
       const spr = druidSprite(key);
