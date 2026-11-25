@@ -262,7 +262,10 @@ Player.prototype.ratmaAtkBonus = function () {
     const look = Object.assign({}, p.hero.look, { body: shade(base.look.body, 0.62) });
     p.hero = Object.create(p.hero, { name: { value: `${title} ${personal}`, enumerable: true }, look: { value: look, enumerable: true } });
   };
-  wrap('setJob', function (orig, p, line, rank) { const r = orig.call(this, p, line, rank); if (p && p.necroFrom) this.applyNecroIdentity(p); return r; });
+  wrap('setJob', function (orig, p, line, rank) { // 진화 단계별 외형(looks)은 여기서 직접 적용 — game.js가 예전 버전으로 캐시돼 있어도 외형이 바뀌게
+    const r = orig.call(this, p, line, rank);
+    if (p && line && line.looks) { const lk = line.looks[rank] || line.looks[0]; p.hero = heroWithLook(this.data.heroes.get(p.hero.id) || p.hero, lk); }
+    if (p && p.necroFrom) this.applyNecroIdentity(p); return r; });
   wrap('snapshotRun', function (orig) { const s = orig.call(this); if (this.player && this.player.necroFrom) s.p.necroFrom = this.player.necroFrom; return s; });
   wrap('playerFromSnapshot', function (orig, hero, s, p) { const np = orig.call(this, hero, s, p); if (s && s.necroFrom && np.hero.id === NECRO_ID) { np.necroFrom = s.necroFrom; this.applyNecroIdentity(np); } return np; });
   wrap('startRun', function (orig, deep) { this.ratmaSanctumDone = false; this.ratmaRun = false; return orig.call(this, deep); });
