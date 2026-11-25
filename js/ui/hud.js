@@ -15,11 +15,11 @@ function bannerImg(key) {
   return (im.complete && im.naturalWidth) ? im : null;
 }
 // 배너 원본 비율을 유지하며 대상 상자에 맞춰 자른다.
-function drawBannerCover(ctx, im, dx, dy, dw, dh) {
+function drawBannerCover(ctx, im, dx, dy, dw, dh, fx = 0.5) { // fx: 가로로 잘릴 때 살릴 위치 (0 왼쪽 ~ 1 오른쪽)
   const iw = im.naturalWidth || im.width || 1024, ih = im.naturalHeight || im.height || 576;
   const target = dw / dh, ratio = iw / ih;
   let sx = 0, sy = 0, sw = iw, sh = ih;
-  if (ratio > target) { sw = ih * target; sx = (iw - sw) / 2; }
+  if (ratio > target) { sw = ih * target; sx = Math.max(0, Math.min(iw - sw, iw * fx - sw / 2)); }
   else { sh = iw / target; sy = (ih - sh) / 2; }
   const sm = ctx.imageSmoothingEnabled, sq = ctx.imageSmoothingQuality; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; // 배너 일러스트는 도트가 아니므로 부드럽게 (게임은 기본으로 계단식 확대)
   ctx.drawImage(im, sx, sy, sw, sh, dx, dy, dw, dh); ctx.imageSmoothingEnabled = sm; ctx.imageSmoothingQuality = sq;
@@ -299,19 +299,22 @@ class HUD {
           if (pages) hudText(ctx, `휠로 더 보기 (${sc + 1}/${pages + 1})`, MW - 10, VIEW_H - 10, '#777', 'right', 7); }
       } else { // ── 메인: 선택한 배너 배경 + 하단 1뽑/5뽑
         const bg = bannerImg(GACHA.banners[K.id]);
-        if (bg) drawBannerCover(ctx, bg, 0, 0, MW, VIEW_H); // 가운데를 메인 영역에 맞춰 크롭
+        const bk = GACHA.banners[K.id], fx = (GACHA.bannerFocus && GACHA.bannerFocus[bk]) || 0.5;
+        if (bg) drawBannerCover(ctx, bg, 0, 0, MW, VIEW_H, fx); // 캐릭터 쪽을 살려서 메인 영역에 맞춰 자름
         else { ctx.fillStyle = '#1a1626'; ctx.fillRect(0, 0, MW, VIEW_H); hudText(ctx, '배너 불러오는 중…', MW / 2, VIEW_H / 2, '#889', 'center', 9); }
-        const g = ctx.createLinearGradient(0, 0, 0, VIEW_H); g.addColorStop(0, 'rgba(10,8,18,0.5)'); g.addColorStop(0.4, 'rgba(10,8,18,0.05)'); g.addColorStop(1, 'rgba(10,8,18,0.92)'); ctx.fillStyle = g; ctx.fillRect(0, 0, MW, VIEW_H);
-        hudText(ctx, '✦ 전설 배너 ✦', MW / 2, 152, '#ffe9a0', 'center', 9);
-        hudText(ctx, K.name, MW / 2, 164, '#fff', 'center', 16);
-        { const LN = K.line && jobLines(K.hero).find((l) => l.id === K.line); hudText(ctx, `${game.data.heroes.get(K.hero).name}${LN ? ' · ' + LN.name + ' 계열' : ''} 전용`, MW / 2, 186, '#bfe6ff', 'center', 8); } // 계열 전용 표시
+        { const g = ctx.createLinearGradient(0, 0, 0, VIEW_H); g.addColorStop(0, 'rgba(10,8,18,0.45)'); g.addColorStop(0.18, 'rgba(10,8,18,0)'); g.addColorStop(0.7, 'rgba(10,8,18,0.1)'); g.addColorStop(1, 'rgba(10,8,18,0.9)'); ctx.fillStyle = g; ctx.fillRect(0, 0, MW, VIEW_H); // 위(재화 줄)·아래(뽑기 버튼)만 어둡게
+          const h = ctx.createLinearGradient(0, 0, MW * 0.62, 0); h.addColorStop(0, 'rgba(10,8,18,0.72)'); h.addColorStop(0.55, 'rgba(10,8,18,0.3)'); h.addColorStop(1, 'rgba(10,8,18,0)'); ctx.fillStyle = h; ctx.fillRect(0, 0, MW * 0.62, VIEW_H); } // 글씨가 있는 왼쪽만 어둡게 → 가운데·오른쪽 캐릭터는 밝게
+        const TX = 16; // 배너 정보: 왼쪽 아래 (캐릭터 얼굴을 가리지 않게)
+        hudText(ctx, '✦ 전설 배너', TX, 128, '#ffe9a0', 'left', 9);
+        hudText(ctx, K.name, TX, 140, '#fff', 'left', 18);
+        { const LN = K.line && jobLines(K.hero).find((l) => l.id === K.line); hudText(ctx, `${game.data.heroes.get(K.hero).name}${LN ? ' · ' + LN.name + ' 계열' : ''} 전용`, TX, 164, '#bfe6ff', 'left', 8); } // 계열 전용 표시
         const owned = (sv.skins || []).includes(K.id), sh = (sv.shards && sv.shards[K.id]) || 0;
-        if (owned) hudText(ctx, '보유 완료 — 조각은 마일리지로 전환', MW / 2, 200, '#ffb0d8', 'center', 7);
+        if (owned) hudText(ctx, '보유 완료 — 조각은 마일리지로 전환', TX, 180, '#ffb0d8', 'left', 7);
         else { // 조각 진행도 게이지
-          const bw = 200, bx = MW / 2 - bw / 2, by = 202, p = sh / GACHA.shardsNeeded;
-          ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(bx, by, bw, 8); ctx.fillStyle = GACHA.shardColor; ctx.fillRect(bx, by, Math.round(bw * p), 8);
-          ctx.strokeStyle = '#8a7a40'; ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, 7);
-          hudText(ctx, `${GACHA.shardName} ${sh} / ${GACHA.shardsNeeded}`, MW / 2, by + 11, GACHA.shardColor, 'center', 8); }
+          const bw = 160, bx = TX, by = 180, p = sh / GACHA.shardsNeeded;
+          ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(bx, by, bw, 7); ctx.fillStyle = GACHA.shardColor; ctx.fillRect(bx, by, Math.round(bw * p), 7);
+          ctx.strokeStyle = '#8a7a40'; ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, 6);
+          hudText(ctx, `${GACHA.shardName} ${sh} / ${GACHA.shardsNeeded}`, TX, by + 10, GACHA.shardColor, 'left', 8); }
         for (const b of [0, 1]) { const r = HUD.gachaPullBtn(b), cost = b ? GACHA.cost5 : GACHA.costSingle, can = (sv.bank || 0) >= cost, on = hit(r);
           ctx.fillStyle = can ? (on ? 'rgba(255,216,74,0.36)' : 'rgba(120,150,210,0.3)') : 'rgba(90,90,90,0.2)'; ctx.fillRect(r.x, r.y, r.w, r.h);
           ctx.strokeStyle = can ? '#ffd84a' : '#555'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);

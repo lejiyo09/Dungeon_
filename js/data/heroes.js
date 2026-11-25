@@ -200,6 +200,7 @@ const GACHA = {
   shopPrice: 500,                          // [사용자 결정] 마일리지 상점 전설 스킨 1개 가격 (400 → 500)
   shopPrices: { legendary: 500, epic: 200, rare: 100, common: 50 }, // [사용자 결정] 마일리지 상점: 모든 뽑기 스킨 판매 (등급별 가격 = 중복 마일리지의 약 3.3배)
   mileageName: '스킨 마일리지', mileageColor: '#ffb0d8', shardName: '전설 조각', shardColor: '#ffe9a0',
+  bannerFocus: { abyss: 0.56, crimson: 0.62, void: 0.66, star: 0.55, admiral: 0.68, dragonslayer: 0.66 }, // 메인 배너: 캐릭터가 있는 가로 위치(0~1) — 좁은 화면에 맞춰 자를 때 이쪽을 살림
   banners: { skin_leg_abyss: 'abyss', skin_leg_crimson: 'crimson', skin_leg_void: 'void', skin_leg_star: 'star', skin_leg_admiral: 'admiral', skin_leg_berserker: 'dragonslayer' } // 스킨별 배너 이미지 키 (assets/banners/<key>.webp)
 };
 function gachaPool() { return SKINS.filter((k) => k.source === 'gacha'); } // 전설 배너 뽑기 대상
