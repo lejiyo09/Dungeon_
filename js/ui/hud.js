@@ -141,6 +141,8 @@ class HUD {
       if (parts.length) { const ty = p.treasure ? VIEW_H - 68 : VIEW_H - 52; /* 보구 칸(R)이 있으면 그 위로 — 겹치지 않게 */
         ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(VIEW_W - 172, ty - 1, 168, 13); hudText(ctx, parts.join(' · '), VIEW_W - 168, ty, full ? '#ff9a6a' : '#ffb07a', 'left', 8); }
     }
+    if (game.necroHudParts) { const N = game.necroHudParts(p); /* 네크로맨서: 소환수 수 (포탑 수 표시와 같은 자리) */
+      if (N) { const ty = p.treasure ? VIEW_H - 68 : VIEW_H - 52; ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(VIEW_W - 172, ty - 1, 168, 13); hudText(ctx, N.text, VIEW_W - 168, ty, N.color, 'left', 8); } }
     const other = p.weapons.find((x) => x !== w);
     ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(VIEW_W - 40, VIEW_H - 34, 32, 26);
     if (other) drawWeaponCentered(ctx, other.def, VIEW_W - 24, VIEW_H - 23, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));

@@ -771,6 +771,19 @@ Player.prototype.ratmaAtkBonus = function () {
       sum += base * (1 + (w.lv || 0) * BALANCE.upgrade.perLevel); }
     return { damage: Math.max(5, sum) * NECRO.weaponAtk * this.necroFloor().dmg, mods: p.mods, knockback, minion: true }; // 층수 비례
   };
+  // HUD: 소환수 수 (해골 · 골렘 · 부활 부하 · 정신지배 · 시체)
+  G.necroHudParts = function (p) {
+    if (!p || p.hero.id !== NECRO_ID || (this.mode !== 'dungeon' && this.mode !== 'lobby')) return null;
+    const mine = this.allies.filter((a) => a.alive && a.owner === p), parts = [];
+    const want = NECRO.skeleton.base + NECRO.skeleton.perRank * Math.min(2, p.rank || 0), sk = mine.filter((a) => a instanceof NecroSkeleton && !a.bomb && !a.temp).length, tmp = mine.filter((a) => a instanceof NecroSkeleton && a.temp && !a.bomb).length;
+    parts.push(`해골 ${sk}/${want}${tmp ? ` +${tmp}` : ''}`);
+    const g = mine.find((a) => a instanceof NecroGolem); if (g) parts.push(g.up ? `골렘 ${Math.round(g.hp / g.maxHp * 100)}%` : `골렘 부활 ${Math.ceil(g.respawnT)}초`);
+    if (p.line && p.line.id === 'wraith' && p.rank >= 2) parts.push(`부하 ${(p.thralls || []).length}/${NECRO.thrall.max}`);
+    const ch = mine.filter((a) => a instanceof NecroThrall && a.charm).length; if (ch) parts.push(`지배 ${ch}`);
+    const bombs = mine.filter((a) => a instanceof NecroSkeleton && a.bomb).length; if (bombs) parts.push(`자폭 ${bombs}`);
+    const cor = (this.necroCorpses || []).length; if (cor && p.line && p.line.id === 'wraith' && p.rank >= 2) parts.push(`시체 ${cor}`);
+    return { text: parts.join(' · '), color: p.line && p.line.id === 'lich' ? '#d0b0ff' : '#9affd8' };
+  };
   G.summonTempSkeletons = function (p, n) { for (let i = 0; i < n; i++) this.allies.push(new NecroSkeleton(p.x + randInt(-12, 12), p.y + randInt(4, 12), p, { temp: NECRO.skeleton.tempLife, idx: 9 + i })); }; // 장비 등 추가 소환: 10초 뒤 소멸
 
   // ── 매 프레임: 연출 (이동 잔상 · 대시 망령 흔적 · 고유 무기 상시 VFX · 라트마 등장/페이즈) ──
