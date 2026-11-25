@@ -27,9 +27,16 @@ function legendOf(p, game) { const s = legendSkinSprite(p, game); return s && LE
 Effects.prototype.legendDash = function (sk, x, y, dx = 1, dy = 0, first = false) { // 단순하고 화려하게: 빛나는 혜성 꼬리 + 스킨 문양 하나 (+ 출발할 때 섬광)
   const s = LEGEND_VFX[sk]; if (!s) return;
   this.push({ kind: 'legend', fx: 'dash', key: s.key, x, y, angle: Math.atan2(dy, dx), color: s.main, accent: s.soft, sea: s.sea, smoke: s.smoke, first, t: 0, life: first ? 0.42 : 0.32, opacity: 1, seed: lvRand() });
-  const n = first ? 10 : 2; // 반짝이 입자: 출발할 땐 사방으로, 달리는 동안엔 뒤로 조금
+  if (s.key === 'abyss') { // 심연: 반짝이 대신 가라앉는 검푸른 안개
+    const n2 = first ? 5 : (lvRand() < 0.6 ? 1 : 0);
+    for (let i = 0; i < n2; i++) { const a = first ? i / n2 * TAU : Math.atan2(-dy, -dx) + (lvRand() - 0.5) * 1.2, sp = first ? 26 : 12;
+      this.part(x, y, Math.cos(a) * sp, Math.sin(a) * sp + 6, { color: i % 2 ? '#13283a' : '#0a1420', life: 0.5 + lvRand() * 0.2, size: 2.5, size2: 5, drag: 4, grav: 10, shape: 'circle' }); }
+    if (first || lvRand() < 0.35) this.part(x + (lvRand() - 0.5) * 6, y, 0, 14, { color: s.main, life: 0.35, size: 1.2, size2: 0, drag: 2, add: true }); // 아래로 떨어지는 청록 불씨 하나
+    return;
+  }
+  const n = first ? 5 : (lvRand() < 0.5 ? 1 : 0); // 반짝이 입자: 출발할 땐 사방으로 조금, 달리는 동안엔 가끔
   for (let i = 0; i < n; i++) { const a = first ? i / n * TAU + lvRand() * 0.4 : Math.atan2(-dy, -dx) + (lvRand() - 0.5) * 1.4, sp = first ? 60 + lvRand() * 30 : 24 + lvRand() * 20;
-    this.part(x, y, Math.cos(a) * sp, Math.sin(a) * sp, { color: i % 3 === 0 ? '#ffffff' : i % 2 ? s.main : s.soft, life: 0.22 + lvRand() * 0.12, size: first ? 2.4 : 1.8, size2: 0, drag: 6, add: true }); }
+    this.part(x, y, Math.cos(a) * sp, Math.sin(a) * sp, { color: i % 2 ? s.main : s.soft, life: 0.2 + lvRand() * 0.1, size: first ? 1.9 : 1.5, size2: 0, drag: 6, add: true }); }
   if (s.key === 'admiral' && lvRand() < 0.5) this.part(x - dx * 6, y - dy * 6 - 2, -dx * 10, -dy * 10 - 8, { color: s.smoke, life: 0.4, size: 2.2, size2: 4.4, drag: 4, shape: 'circle' }); // 포연
 };
 Effects.prototype.legendSkill = function (sk, x, y, angle = 0) {
@@ -47,19 +54,24 @@ function drawLegendFx(ctx, fx, x, y) {
   if (fx.fx === 'dash') { // 대시: 빛나는 혜성 꼬리(공통) + 스킨 문양 하나 + 출발 섬광
     const sd = fx.seed || 0; ctx.translate(x, y); ctx.globalCompositeOperation = 'lighter';
     if (fx.first) { // 출발 섬광: 퍼지는 고리 + 짧은 빛살 8줄
-      const r = 4 + p * 16; ctx.rotate(0); ctx.globalAlpha = k; ctx.strokeStyle = fx.accent; ctx.lineWidth = 1 + 2.5 * k; ctx.beginPath(); ctx.ellipse(0, 0, r, r * 0.7, 0, 0, TAU); ctx.stroke();
-      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; for (let i = 0; i < 8; i++) { const a = i * TAU / 8 + sd; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.35); ctx.lineTo(Math.cos(a) * (r + 5), Math.sin(a) * (r + 5) * 0.7); ctx.stroke(); }
+      const r = 4 + p * 14; ctx.globalAlpha = 0.7 * k; ctx.strokeStyle = fx.key === 'abyss' ? fx.color : fx.accent; ctx.lineWidth = 1 + 1.5 * k; ctx.beginPath(); ctx.ellipse(0, 0, r, r * 0.7, 0, 0, TAU); ctx.stroke();
+      if (fx.key !== 'abyss') { ctx.globalAlpha = 0.55 * k; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; } for (let i = 0; i < (fx.key === 'abyss' ? 0 : 4); i++) { const a = i * TAU / 4 + sd + 0.4; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.35); ctx.lineTo(Math.cos(a) * (r + 5), Math.sin(a) * (r + 5) * 0.7); ctx.stroke(); }
     }
     ctx.rotate(fx.angle);
     const Lc = 16 + p * 8, w = 1 + 4 * k; // 혜성 꼬리: 넓은 빛 → 밝은 속 → 흰 심
     const comet = (ww, col, al) => { ctx.globalAlpha = al; ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(-Lc * 0.25, -ww); ctx.lineTo(-Lc, 0); ctx.lineTo(-Lc * 0.25, ww); ctx.closePath(); ctx.fill(); };
     const cc = fx.key === 'admiral' ? fx.sea : fx.color;
-    comet(w, cc, 0.45 * k); comet(w * 0.5, fx.accent, 0.85 * k); ctx.globalAlpha = k; ctx.fillStyle = '#ffffff'; ctx.fillRect(-Math.round(Lc * 0.6), 0, Math.round(Lc * 0.6), 1);
-    ctx.globalAlpha = Math.min(1, k * 1.6);
-    if (fx.key === 'abyss') { // 심연: 굵은 지그재그 균열 (청록 빛 + 흰 심) + 튀는 파편
-      const zz = [[-1, -7], [-7, -2], [-4, 2], [-12, 7]], line = (col, lw) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); zz.forEach(([a, b], i) => (i ? ctx.lineTo(a - p * 4, b) : ctx.moveTo(a - p * 4, b))); ctx.stroke(); };
-      line(fx.color, 4 * k + 1); line('#ffffff', 1);
-      ctx.fillStyle = fx.accent; ctx.fillRect(Math.round(-9 - p * 8), Math.round(-5 - p * 4), 2, 2); ctx.fillRect(Math.round(-6 - p * 6), Math.round(5 + p * 4), 2, 2);
+    if (fx.key === 'abyss') { ctx.globalCompositeOperation = 'source-over'; comet(w + 1, '#06101a', 0.7 * k); comet(w * 0.55, '#16324a', 0.8 * k); } // 심연: 빛 대신 검푸른 그림자 꼬리
+    else { comet(w, cc, 0.32 * k); comet(w * 0.5, fx.accent, 0.6 * k); ctx.globalAlpha = 0.6 * k; ctx.fillStyle = '#ffffff'; ctx.fillRect(-Math.round(Lc * 0.5), 0, Math.round(Lc * 0.5), 1); }
+    ctx.globalAlpha = Math.min(0.85, k * 1.4);
+    if (fx.key === 'abyss') { // 심연: 발자국마다 땅이 꺼지듯 열리는 검은 구멍 + 그 가장자리의 청록 테두리, 아래로 늘어지는 그림자 촉수
+      ctx.save(); ctx.translate(-6, 2); ctx.rotate(-fx.angle); // 바닥 기준(화면 기준)으로
+      const r = 3 + 5 * Math.min(1, p * 2.5) * (1 - p * 0.4);
+      ctx.globalAlpha = 0.85 * k; ctx.fillStyle = '#04080e'; ctx.beginPath(); ctx.ellipse(0, 0, r, r * 0.45, 0, 0, TAU); ctx.fill(); // 검은 구멍
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.7 * k; ctx.strokeStyle = fx.color; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(0, 0, r, r * 0.45, 0, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke(); // 앞 테두리만 희미하게
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 0.6 * k; ctx.strokeStyle = '#0c1c2a'; ctx.lineWidth = 2; // 구멍에서 위로 솟았다 가라앉는 촉수 둘
+      for (const sx of [-1, 1]) { const h = 7 * Math.sin(Math.min(1, p * 1.6) * Math.PI); ctx.beginPath(); ctx.moveTo(sx * r * 0.4, 0); ctx.quadraticCurveTo(sx * (r * 0.6 + 3), -h * 0.6, sx * (r * 0.3 + Math.sin(p * 8 + sd * 6) * 2), -h); ctx.stroke(); }
+      ctx.restore();
     } else if (fx.key === 'crimson') { // 진홍: 크게 흩어지며 도는 꽃잎 셋 + 붉은 초승달 베기
       for (let i = 0; i < 3; i++) { const off = (i - 1) * (3 + p * 9); ctx.save(); ctx.translate(-6 - i * 3 - p * 6, off); ctx.rotate(p * 4 + i * 2.1); ctx.fillStyle = i === 1 ? fx.accent : fx.color; ctx.beginPath(); ctx.ellipse(0, 0, 2.6, 5.5, 0, 0, TAU); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, -2, 1, 2); ctx.restore(); }
       ctx.strokeStyle = fx.color; ctx.lineWidth = 2 * k + 1; ctx.beginPath(); ctx.arc(-4, 0, 9, -1.2, 1.2); ctx.stroke(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(-4, 0, 9, -0.7, 0.7); ctx.stroke();
