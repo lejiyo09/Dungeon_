@@ -256,7 +256,7 @@ class HUD {
         if (!owned) hudText(ctx, '🔒', r.x + r.w / 2, r.y + (r.small ? 16 : 22), '#fff', 'center', 10);
         hudText(ctx, `${i + 1}. ${K.name}`, r.x + r.w / 2, r.y + (r.small ? 42 : 54), owned ? (leg ? '#ffe9a0' : '#fff') : '#888', 'center', fitSize(`${i + 1}. ${K.name}`, r.w - 8));
         hudText(ctx, `${hero ? hero.name.split(' ')[0] : ''}${L ? ' · ' + L.name + ' 계열' : leg ? ' · 전 계열' : ''}`, r.x + r.w / 2, r.y + (r.small ? 52 : 66), '#c8c0d8', 'center', 6);
-        hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : K.source === 'gacha' || K.source === 'common' ? '스킨 뽑기로 획득 (J)' : K.source === 'unique' ? '획득 방법 준비 중' : '선물 코드로 획득', r.x + r.w / 2, r.y + (r.small ? 61 : 78), on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
+        hudText(ctx, on ? '장착 중 (클릭: 해제)' : owned ? '클릭: 장착' : K.source === 'gacha' || K.source === 'common' ? '스킨 뽑기로 획득 (J)' : K.source === 'unique' ? (uniqueRecordOf(K.id) && uniqueRecordFound(sv, uniqueRecordOf(K.id).id) ? '기록 발견 · 다음 장 준비 중' : '단서: 심층 30층') : '선물 코드로 획득', r.x + r.w / 2, r.y + (r.small ? 61 : 78), on ? '#ffb0d8' : owned ? '#ffd84a' : '#777', 'center', 6);
       });
       if (o.msg && o.msg.t > 0) hudText(ctx, o.msg.text, VIEW_W / 2, VIEW_H - 26, o.msg.color, 'center', 8);
       hudText(ctx, '번호 키 / 클릭: 장착·해제   ·   G: 선물 코드   ·   Esc: 돌아가기', VIEW_W / 2, VIEW_H - 12, '#888', 'center', 7);

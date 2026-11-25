@@ -1505,7 +1505,7 @@ class Game {
       let ch = -1; skins.forEach((_, i) => { if (input.wasPressed(i === 9 ? 'Digit0' : 'Digit' + (i + 1))) ch = i; }); /* 10번째는 0 키 */
       if (input.wasPressed('Mouse0')) { skins.forEach((_, i) => { if (inR(HUD.skinRect(i, skins.length))) ch = i; }); this.input.mouse.down = false; }
       if (ch >= 0) { const K = skins[ch], sv = this.save; sv.skinOn = sv.skinOn || {};
-        if (!(sv.skins || []).includes(K.id)) o.msg = { text: K.source === 'gacha' ? `아직 없는 스킨입니다 — 스킨 뽑기로 얻을 수 있어요 (J)` : K.source === 'unique' ? '고유 스킨 — 획득 방법은 준비 중이에요' : `아직 없는 스킨입니다 — 선물 코드로 얻을 수 있어요 (G)`, color: '#ff9a9a', t: 2.5 };
+        if (!(sv.skins || []).includes(K.id)) o.msg = { text: K.source === 'gacha' ? `아직 없는 스킨입니다 — 스킨 뽑기로 얻을 수 있어요 (J)` : K.source === 'unique' ? (uniqueRecordOf(K.id) && uniqueRecordFound(sv, uniqueRecordOf(K.id).id) ? `고유 스킨 — 「${uniqueRecordOf(K.id).name}」의 다음 장은 아직 찾지 못했어요` : '고유 스킨 — 심층 30층, 기록관 너머에 단서가 있다는 소문이에요') : `아직 없는 스킨입니다 — 선물 코드로 얻을 수 있어요 (G)`, color: '#ff9a9a', t: 2.5 };
         else { const M = this.skinOnMap(), key = skinKey(K), on = M[key] === K.id; M[key] = on ? null : K.id;
           if (!on) for (const k2 of SKINS) if (k2.hero === K.hero && skinKey(k2) !== key && (!k2.line || !K.line)) M[skinKey(k2)] = null; // 공용 스킨 ↔ 계열 스킨이 겹치면 방금 고른 것만 남김
           writeSave(sv); SFX.play('ui');
@@ -2367,6 +2367,9 @@ class Game {
             this.portals.push(new Portal(c.x + 26, c.y + 24, () => this.advanceStage(), `${stageLabel(this.worldIdx + 1, 0)} ${next.name}`, next.deep ? [120, 200, 255] : undefined));
             this.portals.push(new Portal(c.x - 26, c.y + 24, () => this.endRun(true), '귀환 (탐험 종료)', [255, 210, 90]));
             this.showBanner('기록의 다음 장', '무명의 기록관이 아래로 이어지는 통로를 열었다', '#c5a4ff');
+            const room = this.map.roomOf('boss'); // 서고 깊은 곳에 떠오른 끊긴 기록 세 권 (고유 스킨 퀘스트의 시작)
+            UNIQUE_RECORDS.forEach((R, i) => { const s = room ? this.freeSpot(room, c.x + (i - 1) * 44, c.y - 58, 8) : { x: c.x + (i - 1) * 44, y: c.y - 58 }; this.props.push(new RecordTome(s.x, s.y, R)); this.effects.ring(s.x, s.y - 10, 18, R.color); });
+            if (UNIQUE_RECORDS.some((R) => !uniqueRecordFound(this.save, R.id))) setTimeout(() => { if (this.mode === 'dungeon') this.showBanner('끊긴 기록', '책장 사이에서 세 권의 기록이 떠올랐다', '#9ae8d8'); }, 2600);
           }});
           return;
         }
@@ -2634,6 +2637,23 @@ class Game {
     if (c.t >= (c.grand ? 3.4 : 2.8)) { b.setState('CHASE'); this.cinematic = null; SFX.startMusic(c.grand ? 'sanctum' : null); }
   }
   // ── 컷신: 위아래 검은 띠 + 비추는 곳으로 카메라 이동 + 글자가 한 자씩 (Enter/Space/클릭: 다음 · Esc: 건너뛰기)
+  // ── 고유 기록 (심층 30 기록관 너머): 읽으면 발견 → 세 권 모두 읽으면 고유 기록 퀘스트 시작
+  markUniqueRecord(id) { // 저장만 (멀티 참가자도 같이 받음) → 이번에 세 권이 다 모였으면 true
+    const sv = this.save; sv.uniqueRecords = sv.uniqueRecords || {}; if (sv.uniqueRecords[id]) return false;
+    sv.uniqueRecords[id] = true; let all = false;
+    if (!sv.uniqueQuest && UNIQUE_RECORDS.every((R) => sv.uniqueRecords[R.id])) { sv.uniqueQuest = { stage: 1 }; all = true; }
+    writeSave(sv); return all;
+  }
+  readUniqueRecord(R, tome) {
+    const first = !uniqueRecordFound(this.save, R.id), focus = tome ? { x: tome.x, y: tome.y - 10 } : null;
+    this.playCutscene(R.lines, { always: true, focus, done: () => {
+      if (!first) return;
+      const all = this.markUniqueRecord(R.id); if (this.coop && this.coop.host) Net.relay({ k: 'urec', id: R.id }); // 멀티: 동료도 같은 기록을 발견
+      const n = UNIQUE_RECORDS.filter((Q) => uniqueRecordFound(this.save, Q.id)).length; SFX.play('pickup'); if (tome) this.effects.rays(tome.x, tome.y - 10, R.color, 12, 50, 0.8);
+      this.showBanner('기록 발견 — ' + R.name, `끊긴 기록 ${n}/${UNIQUE_RECORDS.length}`, R.color);
+      if (all) this.playCutscene(UNIQUE_RECORDS_ALL_LINES, { id: 'unique_records_all', done: () => { SFX.play('victory'); this.showBanner('고유 기록 퀘스트 시작', '끊긴 세 기록의 다음 장을 찾아라', '#9ae8d8'); } });
+    } });
+  }
   playCutscene(lines, o = {}) {
     if (o.id && (this.save.scenesSeen || []).includes(o.id) && !o.always) { if (o.done) o.done(); return; } // 처음 한 번만
     if (window.__toolMode && !o.force) { if (o.done) o.done(); return; } // 테스트 도구는 건너뜀

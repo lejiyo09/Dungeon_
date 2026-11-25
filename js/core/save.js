@@ -18,7 +18,7 @@ function sanitizeSave(s) {
   for (const k of ['jobLv', 'skinOn', 'lineChoice', 'coopRuns', 'coopRecords', 'coopStats', 'shards', 'supplyStash']) if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = D[k];
   for (const k of ['bank', 'clears', 'bestStage', 'mileage']) if (typeof s[k] !== 'number' || !isFinite(s[k])) s[k] = D[k];
   if (s.stats && typeof s.stats !== 'object') s.stats = {};
-  for (const k of ['guild', 'merlin', 'babylon']) if (s[k] && (typeof s[k] !== 'object' || Array.isArray(s[k]))) delete s[k]; // 다시 만들어짐
+  for (const k of ['guild', 'merlin', 'babylon', 'uniqueRecords', 'uniqueQuest']) if (s[k] && (typeof s[k] !== 'object' || Array.isArray(s[k]))) delete s[k]; // 다시 만들어짐
   if (s.supplies && !Array.isArray(s.supplies)) s.supplies = [];
   if (s.deepCheckpoints && (typeof s.deepCheckpoints !== 'object' || Array.isArray(s.deepCheckpoints))) s.deepCheckpoints = {};
   if (s.deepCheckpointArchive && (typeof s.deepCheckpointArchive !== 'object' || Array.isArray(s.deepCheckpointArchive))) s.deepCheckpointArchive = {};

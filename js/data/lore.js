@@ -549,6 +549,39 @@ const ARCHIVIST_CLEAR_LINES = [
   '책장 뒤편의 봉인이 풀리고, 더 아래로 이어지는 계단이 모습을 드러낸다.'
 ];
 
+// 심층 30 기록관 너머: 끊긴 세 권의 기록 — 고유 스킨 퀘스트의 시작 (기록 → 고유 스킨은 이후 단계에서 연결)
+const UNIQUE_RECORDS = [
+  { id: 'empty', name: '비어 있는 기록', skin: 'skin_u_unrecorded', color: '#48eaff', lines: [
+    '표지에는 아무것도 적혀 있지 않다. 이름도, 날짜도.',
+    '책장을 넘겨도 마찬가지다. 모든 장이 하얗게 비어 있다.',
+    '그런데 빈 종이 위로, 누군가 지나간 발자국 같은 얼룩이 이어진다.',
+    '기록되지 않았을 뿐, 분명 누군가가 이 길을 걸었다.',
+    '마지막 장 귀퉁이에 희미한 글씨 한 줄. 「기록에 없는 자는, 아무도 멈출 수 없다.」'
+  ] },
+  { id: 'first', name: '최초의 기록', skin: 'skin_u_first_explorer', color: '#e0b058', lines: [
+    '가죽이 다 닳아 버린, 아주 오래된 탐험 일지.',
+    '「첫째 날. 입구에는 아무 표식도 없었다. 그래서 내가 처음 새긴다.」',
+    '지도는 손으로 그은 선 하나로 시작해, 장을 넘길수록 길어진다.',
+    '이 던전에 처음 발을 들인 탐험가의 기록. 그러나 마지막 장은 찢겨 나가 있다.',
+    '찢긴 자리 아래, 눌러 쓴 자국만 남았다. 「길이 없다면—」'
+  ] },
+  { id: 'origin', name: '던전 생명의 근원에 대한 기록', skin: 'skin_u_primordial', color: '#f0c8ff', lines: [
+    '책이라기보다 살아 있는 나무껍질에 가깝다. 손을 대자 미약한 맥박이 느껴진다.',
+    '「던전은 돌로 지은 것이 아니다. 던전은 자란다.」',
+    '「모든 층의 생명은 하나의 뿌리에서 갈라져 나왔다. 그 뿌리는 가장 깊은 곳에 있다.」',
+    '그림 속에서 덩굴과 뼈와 빛이 하나의 형체로 엉켜 있다.',
+    '마지막 문장은 아직 자라는 중인 듯, 글자가 천천히 움직인다. 「모든 생명은—」'
+  ] }
+];
+const UNIQUE_RECORDS_ALL_LINES = [ /* 세 권을 모두 읽었을 때: 고유 기록 퀘스트 시작 */
+  '세 권의 기록이 동시에 희미하게 빛난다.',
+  '비어 있는 기록. 최초의 기록. 그리고 던전 생명의 근원에 대한 기록.',
+  '기록관조차 끝을 모른다던, 중간에 끊긴 이야기들.',
+  '「…이 기록들의 다음 장을 찾아야 한다.」'
+];
+function uniqueRecordOf(skinId) { return UNIQUE_RECORDS.find((R) => R.skin === skinId) || null; }
+function uniqueRecordFound(sv, id) { return !!(sv && sv.uniqueRecords && sv.uniqueRecords[id]); }
+
 const STORY_ARCHIVE = [
   { id: 'prologue', name: '프롤로그', kind: 'story', lines: () => PROLOGUE_LINES, unlocked: () => true },
   { id: 'origin_arrival', name: '기원의 성역 도착', kind: 'cut', lines: () => ORIGIN_ARRIVAL_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('origin_arrival') },
@@ -559,6 +592,8 @@ const STORY_ARCHIVE = [
   { id: 'deep30_arrival', name: '기록의 근원', kind: 'cut', lines: () => DEEP30_ARRIVAL_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('deep30_arrival') },
   { id: 'archivist_intro', name: '무명의 기록관', kind: 'cut', lines: () => ARCHIVIST_INTRO_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('archivist_intro') },
   { id: 'archivist_clear', name: '기록의 다음 장', kind: 'cut', lines: () => ARCHIVIST_CLEAR_LINES, unlocked: (sv) => (sv.scenesSeen || []).includes('archivist_clear') },
+  ...UNIQUE_RECORDS.map((R) => ({ id: 'urec_' + R.id, name: R.name, kind: 'cut', lines: () => R.lines, unlocked: (sv) => uniqueRecordFound(sv, R.id) })),
+  { id: 'unique_records_all', name: '끊긴 이야기들', kind: 'cut', lines: () => UNIQUE_RECORDS_ALL_LINES, unlocked: (sv) => !!sv.uniqueQuest },
   { id: 'merlin', name: '후드를 쓴 마법사', kind: 'cut', lines: () => MERLIN_REVEAL_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.revealed) },
   { id: 'avalon', name: '아발론의 정원', kind: 'cut', lines: () => MERLIN_REWARD_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 2) },
   { id: 'spear_trial', name: '왕의 창', kind: 'cut', lines: () => MERLIN_SPEAR_LINES, unlocked: (sv) => !!(sv.merlin && sv.merlin.quest >= 3) },

@@ -773,6 +773,24 @@ class MerlinTable {
 }
 
 // 왼쪽 벽의 책장: '이야기 기록' — 지금까지 본 프롤로그·컷신을 다시 보기
+// 심층 30 기록관 너머에 떠 있는 끊긴 기록 (고유 스킨 퀘스트의 시작)
+class RecordTome {
+  constructor(x, y, rec) { this.x = x; this.y = y; this.rec = rec; this.radius = 18; this.t = Math.random() * 6; }
+  label(game) { return uniqueRecordFound(game && game.save, this.rec.id) ? `[E] ${this.rec.name} — 다시 읽기` : `[E] ${this.rec.name} — 읽기`; }
+  get labelColor() { return this.rec.color; }
+  interact(game) { game.readUniqueRecord(this.rec, this); }
+  render(ctx, game) {
+    const t = (this.t += 1 / 60), x = Math.round(this.x), y = Math.round(this.y - 10 + Math.sin(t * 2) * 2), c = this.rec.color, read = uniqueRecordFound(game && game.save, this.rec.id);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 6, Math.round(this.y) + 4, 12, 3);
+    ctx.globalAlpha = read ? 0.18 : 0.28 + 0.12 * Math.sin(t * 3); ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(x, y, 13, 10, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x - 8, y - 6, 17, 12); // 펼친 책
+    ctx.fillStyle = this.rec.id === 'empty' ? '#f4f4f8' : this.rec.id === 'first' ? '#e8d4a8' : '#d8c0e0'; ctx.fillRect(x - 7, y - 5, 7, 10); ctx.fillRect(x + 1, y - 5, 7, 10);
+    ctx.fillStyle = OUTLINE; ctx.fillRect(x, y - 5, 1, 10);
+    if (this.rec.id !== 'empty') { ctx.fillStyle = this.rec.id === 'first' ? '#8a6a3a' : '#7a4a8a'; for (let i = 0; i < 3; i++) { ctx.fillRect(x - 6, y - 3 + i * 3, 5, 1); ctx.fillRect(x + 2, y - 3 + i * 3, i === 2 ? 3 : 5, 1); } }
+    if (this.rec.id === 'origin') { ctx.fillStyle = '#7ad07a'; ctx.fillRect(x - 9, y + 4, 2, 3); ctx.fillRect(x + 8, y - 7, 2, 3); }
+    if (!read) { ctx.fillStyle = c; ctx.fillRect(x + Math.round(Math.cos(t * 1.7) * 11), y - 9 + Math.round(Math.sin(t * 2.3) * 3), 1, 1); ctx.fillRect(x - Math.round(Math.cos(t * 1.3) * 10), y + 6, 1, 1); }
+  }
+}
 class StoryShelf {
   constructor(x, y) { this.x = x; this.y = y; this.radius = 26; }
   label() { return '[E] 이야기 기록 — 다시 보기'; }
