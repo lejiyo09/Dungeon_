@@ -4,7 +4,7 @@
 //  bank: 로비 재화 보유량. 예전 저장의 로비 골드는 같은 칸이라 그대로 이어짐
 // ════════════════════════════════════════════
 const SAVE_KEY = 'project_dungeon_save_v1';
-function freeHeroes() { return DATA_HEROES.filter((h) => h.price === 0).map((h) => h.id); } // 기본 해금 (가격 0)
+function freeHeroes() { return DATA_HEROES.filter((h) => h.price === 0 && !h.hidden).map((h) => h.id); } // 기본 해금 (가격 0 · 히든 캐릭터 제외)
 function defaultSave() {
   return { bank: 0, unlocked: freeHeroes(), selected: 'hero_swordsman', armory: [], loadout: null,
     discovered: DATA_HEROES.map((h) => h.startWeapon), clears: 0, bestStage: 0,
@@ -18,7 +18,7 @@ function sanitizeSave(s) {
   for (const k of ['jobLv', 'skinOn', 'lineChoice', 'coopRuns', 'coopRecords', 'coopStats', 'shards', 'supplyStash']) if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = D[k];
   for (const k of ['bank', 'clears', 'bestStage', 'mileage']) if (typeof s[k] !== 'number' || !isFinite(s[k])) s[k] = D[k];
   if (s.stats && typeof s.stats !== 'object') s.stats = {};
-  for (const k of ['guild', 'merlin', 'babylon', 'uniqueRecords', 'uniqueQuest']) if (s[k] && (typeof s[k] !== 'object' || Array.isArray(s[k]))) delete s[k]; // 다시 만들어짐
+  for (const k of ['guild', 'merlin', 'babylon', 'uniqueRecords', 'uniqueQuest', 'ratma']) if (s[k] && (typeof s[k] !== 'object' || Array.isArray(s[k]))) delete s[k]; // 다시 만들어짐
   if (s.supplies && !Array.isArray(s.supplies)) s.supplies = [];
   if (s.deepCheckpoints && (typeof s.deepCheckpoints !== 'object' || Array.isArray(s.deepCheckpoints))) s.deepCheckpoints = {};
   if (s.deepCheckpointArchive && (typeof s.deepCheckpointArchive !== 'object' || Array.isArray(s.deepCheckpointArchive))) s.deepCheckpointArchive = {};

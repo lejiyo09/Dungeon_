@@ -1358,7 +1358,7 @@ class Game {
     } else if (p.deathTimer > 1 && !this.overlay) {
       SFX.stopMusic();
       if (this.areaId) { this.babylonDeathRestart(); }
-      else if (this.mode === 'dungeon' && !this.trialW && !this.save.runReviveUsed) this.overlay = { type: 'revive', msg: null };
+      else if (this.mode === 'dungeon' && (!this.trialW || this.ratmaRun) && !this.save.runReviveUsed) this.overlay = { type: 'revive', msg: null }; /* ratmaRun: 생사의 경계는 탐험 중 그대로 */
       else this.endRun(false);
     }
     this.updateCamera(dt);
@@ -1416,7 +1416,7 @@ class Game {
       if (!c) return;
       const sv = this.save, d = c.d, say = (text, color) => { o.msg = { text, color, t: 2 }; };
       if (!sv.discovered.includes(d.id)) say('아직 발견하지 못한 무기입니다. 던전에서 먼저 찾아보세요.', '#ff9a9a');
-      else if (d.rarity === 'unique' || d.questOnly) say('고유 무기는 무기고에 들일 수 없습니다 — 그 판에서만 쓸 수 있어요', '#9ae8d8');
+      else if ((d.rarity === 'unique' || d.questOnly) && !sv.armory.includes(d.id)) say(d.ratma ? '고유 무기는 정해진 이벤트로만 얻을 수 있습니다 (라트마)' : '고유 무기는 무기고에 들일 수 없습니다 — 그 판에서만 쓸 수 있어요', '#9ae8d8'); /* 라트마 고유 무기: 이벤트로 얻으면 무기고에 보관 */
       else if (!sv.armory.includes(d.id)) {
         const price = ARMORY_PRICE[d.rarity];
         if (sv.bank < price) say(`${CUR.name}이 부족합니다 (${price} 필요)`, '#ff9a9a');
@@ -1788,7 +1788,8 @@ class Game {
   }
   setJob(p, line, rank) {
     const sk = line.skills[rank], ratio = p.skillCdMax / (p.skillBaseCd || p.skillCdMax); // '집중' 같은 쿨타임 감소 유지
-    if (line.look) p.hero = heroWithLook(this.data.heroes.get(p.hero.id) || p.hero, line.look); // 갈래별 옷색 (마도사 속성)
+    const lk = line.looks ? line.looks[rank] || line.looks[0] : line.look; /* looks: 진화 단계마다 실루엣이 바뀌는 외형 (네크로맨서) */
+    if (lk) p.hero = heroWithLook(this.data.heroes.get(p.hero.id) || p.hero, lk); // 갈래별 옷색 (마도사 속성)
     p.line = line; p.rank = rank; p.skillId = sk.id; p.skillName = sk.name; p.skillDesc = sk.desc;
     p.skillBaseCd = sk.cd; p.skillCdMax = sk.cd * ratio; p.skillCooldown = Math.min(p.skillCooldown, p.skillCdMax);
   }
@@ -2444,7 +2445,7 @@ class Game {
   }
   randomWeaponDef(minRank = 0, exclude = [], shopBias = false) { // minRank: 0 고급 이상 / 2 희귀 이상 / 3 영웅 이상
     const owned = new Set(this.player.weapons.map((w) => w.def.id).concat(exclude)), RANK = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
-    const eligible = DATA_WEAPONS.filter((d) => d.rarity !== 'common' && RANK.indexOf(d.rarity) >= minRank);
+    const eligible = DATA_WEAPONS.filter((d) => d.rarity !== 'common' && RANK.indexOf(d.rarity) >= minRank && !d.questOnly && !d.unique); /* 고유 무기(라트마 등)는 일반 드롭·상점·진열대·행운의 기계 후보에서 제외 — 지정된 이벤트로만 지급 */
     let pool = eligible.filter((d) => !owned.has(d.id));
     if (!pool.length) pool = eligible; // 같은 등급 후보가 모두 보유 중이어도 등급 조건은 유지
     if (!pool.length) return null;

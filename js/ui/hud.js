@@ -671,7 +671,7 @@ class HUD {
       hudText(ctx, TR.title, VIEW_W / 2, 60, TR.color, 'center', 16);
       hudText(ctx, TR.confirm[0], VIEW_W / 2, 86, '#e8e0f0', 'center', 10);
       hudText(ctx, TR.confirm[1], VIEW_W / 2, 104, '#aaa', 'center', 8);
-      hudText(ctx, '지거나 그만둬도 잃는 것은 없고, 언제든 멀린에게 다시 도전할 수 있습니다', VIEW_W / 2, 118, '#aaa', 'center', 8);
+      hudText(ctx, TR.retry ? '지거나 그만둬도 잃는 것은 없고, 영혼의 제단에서 언제든 다시 도전할 수 있습니다' : '지거나 그만둬도 잃는 것은 없고, 언제든 멀린에게 다시 도전할 수 있습니다', VIEW_W / 2, 118, '#aaa', 'center', 8);
       hudText(ctx, '어느 진화 단계로 싸울지 고르세요', VIEW_W / 2, 130, '#bfe6ff', 'center', 8);
       ['1  1진', '2  2진', '3  3진 (최종)', '4  나중에'].forEach((t, i) => { const r = HUD.trialBtn(i), m = game.input.mouse, on = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
         ctx.fillStyle = on ? 'rgba(191,230,255,0.22)' : 'rgba(255,255,255,0.06)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeStyle = i === 3 ? '#777' : '#bfe6ff'; ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
@@ -743,7 +743,7 @@ class HUD {
     } else if (o.type === 'result' && o.trial) {
       const TR = TRIALS[o.trialId] || RHONGO_TRIAL;
       hudText(ctx, o.victory ? TR.winText : '시련 실패', VIEW_W / 2, 90, o.victory ? TR.color : '#ff7070', 'center', 16);
-      hudText(ctx, o.victory ? TR.winSub : '잃은 것은 없습니다. 멀린에게 말을 걸면 다시 도전할 수 있습니다', VIEW_W / 2, 116, '#ddd', 'center', 9);
+      hudText(ctx, o.victory ? TR.winSub : (TR.retry || '잃은 것은 없습니다. 멀린에게 말을 걸면 다시 도전할 수 있습니다'), VIEW_W / 2, 116, '#ddd', 'center', 9);
       hudText(ctx, 'Enter: 로비로', VIEW_W / 2, 150, '#fff', 'center', 10);
     } else if (o.type === 'result') {
       hudText(ctx, o.victory ? '던전 정복!' : '사망했습니다', VIEW_W / 2, 70, o.victory ? '#ffd84a' : '#ff7070', 'center', 18);

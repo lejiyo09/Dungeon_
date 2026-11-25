@@ -150,10 +150,10 @@ class Forge {
   interact(game) {
     const p = game.player, w = p.weapon; if (this.used || !w) return;
     if (game.gold < this.price) { game.effects.text(p.x, p.y - 18, '골드가 부족합니다', '#ff7070'); SFX.play('deny'); return; }
-    if (w.def.rarity === 'unique') { game.effects.text(p.x, p.y - 18, '고유 무기는 제련할 수 없습니다', '#9ae8d8'); return; }
+    if (w.def.rarity === 'unique' || w.def.unique || w.def.questOnly) { game.effects.text(p.x, p.y - 18, '고유 무기는 제련할 수 없습니다', '#9ae8d8'); return; }
     const RANK = ['common', 'uncommon', 'rare', 'epic', 'legendary'], cur = RANK.indexOf(w.def.rarity);
     const up = cur < 4 && Math.random() < BALANCE.specialRooms.forgeUpChance, want = RANK[up ? cur + 1 : cur];
-    const pool = DATA_WEAPONS.filter((d) => d.rarity === want && d.id !== w.def.id && !p.weapons.some((o) => o.def.id === d.id));
+    const pool = DATA_WEAPONS.filter((d) => d.rarity === want && !d.questOnly && !d.unique && d.id !== w.def.id && !p.weapons.some((o) => o.def.id === d.id)); /* 고유 무기는 제련 결과로 나오지 않음 */
     if (!pool.length) { game.effects.text(p.x, p.y - 18, '제련할 수 있는 무기가 없습니다', '#ff7070'); return; }
     game.gold -= this.price; this.used = true;
     const def = pick(pool); p.weapons[p.slot] = new WeaponInstance(def, w.lv); game.discover(def.id); // 강화 단계는 유지
