@@ -819,7 +819,7 @@ class HUD {
   static jobLinePageRect(i, n) { const w = 58, gap = 8, total = n * w + (n - 1) * gap; return { x: (VIEW_W - total) / 2 + i * (w + gap), y: 250, w, h: 13 }; }
   static travelRect(i, n) { const w = 300, h = 30, x = (VIEW_W - w) / 2, y0 = 70; return { x, y: y0 + i * (h + 6), w, h }; }
   static skinHeroArrow(d) { return { x: d ? VIEW_W - 34 : 10, y: 6, w: 24, h: 20 }; } // 스킨창 직업 바꾸기
-  static skinRect(i, n = 0) { const small = n > 8, cols = small ? 5 : 4, w = small ? 92 : 112, h = small ? 72 : 92, gap = small ? 5 : 8, x0 = (VIEW_W - (cols * w + (cols - 1) * gap)) / 2; return { x: x0 + (i % cols) * (w + gap), y: (small ? 36 : 40) + Math.floor(i / cols) * (h + gap), w, h, small }; }
+  static skinRect(i, n = 0) { const tiny = n > 15, small = n > 8, cols = tiny ? 6 : small ? 5 : 4, w = tiny ? 78 : small ? 92 : 112, h = tiny ? 70 : small ? 72 : 92, gap = tiny ? 4 : small ? 5 : 8, x0 = (VIEW_W - (cols * w + (cols - 1) * gap)) / 2; return { x: x0 + (i % cols) * (w + gap), y: (small ? 36 : 40) + Math.floor(i / cols) * (h + gap), w, h, small, tiny }; } // 16개 이상: 6열 (한 직업 최대 18개)
   static heroBranchRect(i, n) { return { x: 18 + (i % 2) * 240, y: 85 + Math.floor(i / 2) * 29, w: 236, h: 26 }; }
   static variantRect(i, n) { const cols = Math.min(3, n), w = 156, h = 58, gap = 8, rows = Math.ceil(n / cols), total = w * cols + gap * (cols - 1); return { x: (VIEW_W - total) / 2 + (i % cols) * (w + gap), y: 66 + Math.floor(i / cols) * (h + gap) + (rows === 1 ? 30 : 0), w, h }; }
   // 컷신: 위아래 검은 띠 + 아래 띠에 한 자씩 나오는 대사

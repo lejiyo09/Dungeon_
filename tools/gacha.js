@@ -40,8 +40,8 @@ let pass = 0, fail = 0; const ok = (c, m) => { console.log((c ? '✓ ' : '✗ ')
     const tierOf = (v) => { const r = roll(v).results[0]; const S = SKINS.find((k) => k.id === r.id); return S && S.rarity; };
     reset(); sv.bank = 1e7; out.tierEpic = tierOf(0.07); out.tierRare = tierOf(0.2); out.tierCommon = tierOf(0.5); out.tierSupply = roll(0.61).results[0].type;
     // 아직 없는 스킨부터: 에픽 8번 → 8종 모두 다름, 9번째부터 중복 +60
-    reset(); sv.bank = 1e7; const ep = []; for (let i = 0; i < 8; i++) { const r = roll(0.07).results[0]; ep.push(r.id + ':' + r.type); }
-    out.epicUnique = new Set(ep.map((x) => x.split(':')[0])).size; out.epicAllNew = ep.every((x) => x.endsWith(':common'));
+    reset(); sv.bank = 1e7; const ep = [], NE = commonPool('epic').length; for (let i = 0; i < NE; i++) { const r = roll(0.07).results[0]; ep.push(r.id + ':' + r.type); }
+    out.epicUnique = new Set(ep.map((x) => x.split(':')[0])).size; out.epicN = NE; out.epicAllNew = ep.every((x) => x.endsWith(':common'));
     const m2 = sv.mileage; const r6 = roll(0.07).results[0]; out.epicDupType = r6.type; out.epicDupMile = sv.mileage - m2;
     for (let i = 0; i < commonPool('rare').length; i++) roll(0.2); const m3 = sv.mileage; roll(0.2); out.rareDupMile = sv.mileage - m3;
     for (let i = 0; i < commonPool('common').length; i++) roll(0.5); const m4 = sv.mileage; roll(0.5); out.commonDupMile = sv.mileage - m4;
@@ -74,7 +74,7 @@ let pass = 0, fail = 0; const ok = (c, m) => { console.log((c ? '✓ ' : '✗ ')
   ok(R.shard20Type === 'skin' && R.ownedAt20 && R.shardsAfter === 0 && R.introFromShards, '조각 20개째 → 스킨 완성 + 컷신, 조각 0');
   ok(R.shardDupeType === 'shardDupe' && R.shardDupeMile === 12, '보유 스킨의 조각 → +12 마일리지 (완성품 아님)');
   ok(R.tierEpic === 'epic' && R.tierRare === 'rare' && R.tierCommon === 'common' && R.tierSupply === 'supply', '구간별 등급: 에픽 / 레어 / 일반 / 보급품');
-  ok(R.epicUnique === 8 && R.epicAllNew, '에픽 8번 → 8종 모두 새 스킨 (없는 것부터)');
+  ok(R.epicUnique === R.epicN && R.epicAllNew, `에픽 ${R.epicN}번 → ${R.epicN}종 모두 새 스킨 (없는 것부터)`);
   ok(R.epicDupType === 'dupe' && R.epicDupMile === 60, '에픽 다 모은 뒤 → 중복 +60');
   ok(R.rareDupMile === 30 && R.commonDupMile === 15, `레어 중복 +${R.rareDupMile} · 일반 중복 +${R.commonDupMile}`);
   ok(R.notAutoEquip, '일반·레어·에픽은 자동 장착 안 함');
