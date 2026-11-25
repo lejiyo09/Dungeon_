@@ -24,19 +24,13 @@ function legendSkinSprite(p, game) {
 function legendOf(p, game) { const s = legendSkinSprite(p, game); return s && LEGEND_VFX[s] ? s : null; }
 
 // ── 이펙트 생성 (Effects 에 붙임)
-Effects.prototype.legendDash = function (sk, x, y, dx = 1, dy = 0) {
+Effects.prototype.legendDash = function (sk, x, y, dx = 1, dy = 0, first = false) { // 단순하고 화려하게: 빛나는 혜성 꼬리 + 스킨 문양 하나 (+ 출발할 때 섬광)
   const s = LEGEND_VFX[sk]; if (!s) return;
-  if (s.key === 'admiral') { // 제독: 뱃전을 가르는 물보라 항적 + 포연 + 금빛 닻 문장
-    this.push({ kind: 'legend', fx: 'dash', key: s.key, x, y, angle: Math.atan2(dy, dx), color: s.main, accent: s.soft, sea: s.sea, smoke: s.smoke, t: 0, life: 0.34, opacity: 0.95, seed: lvRand() });
-    for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, sp = 18 + lvRand() * 10; // 양옆으로 튀는 물보라
-      this.part(x - dx * 4, y - dy * 4, -dx * sp - dy * side * 26, -dy * sp + dx * side * 26, { color: i ? s.sea : '#ffffff', life: 0.22 + lvRand() * 0.08, size: 1.8, size2: 0, drag: 6, add: true }); }
-    if (lvRand() < 0.55) this.part(x - dx * 8, y - dy * 8 - 2, -dx * 10, -dy * 10 - 8, { color: s.smoke, life: 0.4, size: 2.2, size2: 4.2, drag: 4, shape: 'circle' }); // 포연이 피어오름
-    return;
-  }
-  this.push({ kind: 'legend', fx: 'dash', key: s.key, x, y, angle: Math.atan2(dy, dx), color: s.main, accent: s.soft, t: 0, life: 0.24, opacity: 0.92 });
-  for (let i = 0; i < 3; i++) { const back = 3 + i * 4, spread = (lvRand() - 0.5) * 5;
-    this.part(x - dx * back - dy * spread, y - dy * back + dx * spread, -dx * (24 + i * 5) + dy * spread * 2, -dy * (24 + i * 5) - dx * spread * 2,
-      { color: i === 1 ? s.soft : s.main, life: 0.2 + i * 0.025, size: 2.1, size2: 0, drag: 5, add: i === 1 }); }
+  this.push({ kind: 'legend', fx: 'dash', key: s.key, x, y, angle: Math.atan2(dy, dx), color: s.main, accent: s.soft, sea: s.sea, smoke: s.smoke, first, t: 0, life: first ? 0.42 : 0.32, opacity: 1, seed: lvRand() });
+  const n = first ? 10 : 2; // 반짝이 입자: 출발할 땐 사방으로, 달리는 동안엔 뒤로 조금
+  for (let i = 0; i < n; i++) { const a = first ? i / n * TAU + lvRand() * 0.4 : Math.atan2(-dy, -dx) + (lvRand() - 0.5) * 1.4, sp = first ? 60 + lvRand() * 30 : 24 + lvRand() * 20;
+    this.part(x, y, Math.cos(a) * sp, Math.sin(a) * sp, { color: i % 3 === 0 ? '#ffffff' : i % 2 ? s.main : s.soft, life: 0.22 + lvRand() * 0.12, size: first ? 2.4 : 1.8, size2: 0, drag: 6, add: true }); }
+  if (s.key === 'admiral' && lvRand() < 0.5) this.part(x - dx * 6, y - dy * 6 - 2, -dx * 10, -dy * 10 - 8, { color: s.smoke, life: 0.4, size: 2.2, size2: 4.4, drag: 4, shape: 'circle' }); // 포연
 };
 Effects.prototype.legendSkill = function (sk, x, y, angle = 0) {
   const s = LEGEND_VFX[sk]; if (!s || s.dashOnly) return;
@@ -50,35 +44,40 @@ Effects.prototype.legendSkill = function (sk, x, y, angle = 0) {
 function drawLegendFx(ctx, fx, x, y) {
   const p = Math.min(1, fx.t / fx.life), k = 1 - p;
   ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = fx.color; ctx.fillStyle = fx.accent;
-  if (fx.fx === 'dash') { // 대시: 지나온 쪽으로 남는 스킨별 문양
-    const R = 9 + p * 15; ctx.translate(x, y); ctx.rotate(fx.angle); ctx.globalAlpha = fx.opacity * (1 - p * 0.42); ctx.lineWidth = 2;
-    if (fx.key === 'abyss') { // 심연: 갈라진 균열 두 줄기
-      ctx.beginPath(); ctx.moveTo(-R - 8, -5); ctx.lineTo(-R * 0.5, -1); ctx.lineTo(-R + 2, 4); ctx.lineTo(-R * 0.2, 7); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-R - 5, 4); ctx.lineTo(-R * 0.45, 1); ctx.lineTo(-R + 5, -4); ctx.stroke();
-    } else if (fx.key === 'star') { // 성역: 별빛 꼬리와 솟은 빛
-      ctx.beginPath(); ctx.moveTo(-R - 10, 0); ctx.lineTo(-R * 0.4, 0); ctx.lineTo(-3, -2); ctx.lineTo(0, -R * 0.55); ctx.lineTo(3, -2); ctx.lineTo(R * 0.35, 0); ctx.stroke();
-      ctx.fillRect(-2, -2, 4, 4); ctx.fillRect(-R - 7, -1, 3, 2);
-    } else if (fx.key === 'void') { // 공허: 휘어지는 물결
-      ctx.beginPath(); ctx.moveTo(-R - 7, 4); ctx.bezierCurveTo(-R * 0.5, -9, -R * 0.1, 9, 3, -4); ctx.bezierCurveTo(8, -9, 12, -5, 14, -1); ctx.stroke();
-      ctx.fillRect(-R * 0.65, -5, 2, 2); ctx.fillRect(-R * 0.18, 5, 2, 2);
-    } else if (fx.key === 'crimson') { // 진홍: 흩날리는 꽃잎 셋과 곡선
-      for (let i = 0; i < 3; i++) { ctx.save(); ctx.translate(-R * 0.7 + i * 7, (i - 1) * 3); ctx.rotate(-0.45 + i * 0.4); ctx.beginPath(); ctx.ellipse(0, 0, 2.4, 5, 0, 0, TAU); ctx.fill(); ctx.restore(); }
-      ctx.beginPath(); ctx.moveTo(-R - 5, 0); ctx.quadraticCurveTo(-R * 0.4, -5, 4, 0); ctx.stroke();
-    } else if (fx.key === 'admiral') { // 제독: V자로 벌어지는 항적(바다빛·흰 물거품) + 뒤에 남는 금빛 닻 + 포연 고리
-      const L = 10 + p * 18, open = 3 + p * 7;
-      ctx.globalAlpha = fx.opacity * (1 - p * 0.55);
-      ctx.strokeStyle = fx.sea; ctx.lineWidth = 2; // 항적 두 줄 (물결치며 벌어짐)
-      for (const sd of [-1, 1]) { ctx.beginPath(); ctx.moveTo(2, sd * 2);
-        for (let j = 1; j <= 4; j++) { const u = j / 4; ctx.lineTo(2 - L * u, sd * (2 + open * u) + Math.sin(u * 7 + p * 9) * 1.2); } ctx.stroke(); }
-      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; // 물거품 안쪽 줄
-      for (const sd of [-1, 1]) { ctx.beginPath(); ctx.moveTo(0, sd * 1.5); ctx.lineTo(-L * 0.6, sd * (1.5 + open * 0.55)); ctx.stroke(); }
-      for (let j = 0; j < 4; j++) { const u = (j + 0.5) / 4, sd = j % 2 ? 1 : -1; ctx.fillStyle = j % 2 ? '#ffffff' : fx.sea; ctx.fillRect(Math.round(-L * u), Math.round(sd * (2 + open * u)), 1, 1); } // 튀는 물방울
-      const ax = -L * 0.55; ctx.save(); ctx.translate(ax, 0); ctx.rotate(-fx.angle); // 닻 문장: 화면 기준으로 똑바로
-      ctx.globalAlpha = fx.opacity * Math.min(1, k * 1.8); ctx.fillStyle = fx.color;
-      ctx.fillRect(-0.5, -4, 1, 7); ctx.fillRect(-2, -3, 4, 1); ctx.fillRect(-1, -5, 2, 1); // 자루·가로대·고리
-      ctx.fillRect(-3, 2, 1, 1); ctx.fillRect(2, 2, 1, 1); ctx.fillRect(-2, 3, 4, 1); ctx.fillStyle = fx.accent; ctx.fillRect(-0.5, -5, 1, 1); ctx.restore(); // 갈고리
-      ctx.globalAlpha = fx.opacity * 0.5 * k; ctx.strokeStyle = fx.smoke; ctx.lineWidth = 1; // 포연 고리 (출발점에서 퍼짐)
-      ctx.beginPath(); ctx.arc(-L - 2, 0, 2 + p * 5, 0, TAU); ctx.stroke();
+  if (fx.fx === 'dash') { // 대시: 빛나는 혜성 꼬리(공통) + 스킨 문양 하나 + 출발 섬광
+    const sd = fx.seed || 0; ctx.translate(x, y); ctx.globalCompositeOperation = 'lighter';
+    if (fx.first) { // 출발 섬광: 퍼지는 고리 + 짧은 빛살 8줄
+      const r = 4 + p * 16; ctx.rotate(0); ctx.globalAlpha = k; ctx.strokeStyle = fx.accent; ctx.lineWidth = 1 + 2.5 * k; ctx.beginPath(); ctx.ellipse(0, 0, r, r * 0.7, 0, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; for (let i = 0; i < 8; i++) { const a = i * TAU / 8 + sd; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.35); ctx.lineTo(Math.cos(a) * (r + 5), Math.sin(a) * (r + 5) * 0.7); ctx.stroke(); }
+    }
+    ctx.rotate(fx.angle);
+    const Lc = 16 + p * 8, w = 1 + 4 * k; // 혜성 꼬리: 넓은 빛 → 밝은 속 → 흰 심
+    const comet = (ww, col, al) => { ctx.globalAlpha = al; ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(-Lc * 0.25, -ww); ctx.lineTo(-Lc, 0); ctx.lineTo(-Lc * 0.25, ww); ctx.closePath(); ctx.fill(); };
+    const cc = fx.key === 'admiral' ? fx.sea : fx.color;
+    comet(w, cc, 0.45 * k); comet(w * 0.5, fx.accent, 0.85 * k); ctx.globalAlpha = k; ctx.fillStyle = '#ffffff'; ctx.fillRect(-Math.round(Lc * 0.6), 0, Math.round(Lc * 0.6), 1);
+    ctx.globalAlpha = Math.min(1, k * 1.6);
+    if (fx.key === 'abyss') { // 심연: 굵은 지그재그 균열 (청록 빛 + 흰 심) + 튀는 파편
+      const zz = [[-1, -7], [-7, -2], [-4, 2], [-12, 7]], line = (col, lw) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); zz.forEach(([a, b], i) => (i ? ctx.lineTo(a - p * 4, b) : ctx.moveTo(a - p * 4, b))); ctx.stroke(); };
+      line(fx.color, 4 * k + 1); line('#ffffff', 1);
+      ctx.fillStyle = fx.accent; ctx.fillRect(Math.round(-9 - p * 8), Math.round(-5 - p * 4), 2, 2); ctx.fillRect(Math.round(-6 - p * 6), Math.round(5 + p * 4), 2, 2);
+    } else if (fx.key === 'crimson') { // 진홍: 크게 흩어지며 도는 꽃잎 셋 + 붉은 초승달 베기
+      for (let i = 0; i < 3; i++) { const off = (i - 1) * (3 + p * 9); ctx.save(); ctx.translate(-6 - i * 3 - p * 6, off); ctx.rotate(p * 4 + i * 2.1); ctx.fillStyle = i === 1 ? fx.accent : fx.color; ctx.beginPath(); ctx.ellipse(0, 0, 2.6, 5.5, 0, 0, TAU); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, -2, 1, 2); ctx.restore(); }
+      ctx.strokeStyle = fx.color; ctx.lineWidth = 2 * k + 1; ctx.beginPath(); ctx.arc(-4, 0, 9, -1.2, 1.2); ctx.stroke(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(-4, 0, 9, -0.7, 0.7); ctx.stroke();
+    } else if (fx.key === 'void') { // 공허: 빨려 들며 줄어드는 소용돌이 고리 + 별빛 두 점
+      const r = 9 * k + 2; ctx.strokeStyle = fx.color; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.ellipse(-8, 0, r, r * 0.6, p * 3, 0.3, TAU - 0.6); ctx.stroke();
+      ctx.strokeStyle = fx.accent; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(-8, 0, r * 0.55, r * 0.33, -p * 4, 0, TAU - 1.2); ctx.stroke();
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(-8 + Math.cos(p * 6) * r), Math.round(Math.sin(p * 6) * r * 0.6), 1, 1); ctx.fillRect(Math.round(-8 - Math.cos(p * 6) * r * 0.55), Math.round(-Math.sin(p * 6) * r * 0.33), 1, 1);
+    } else if (fx.key === 'star') { // 성역: 크게 번쩍이는 네 갈래 별 + 금빛 가루
+      const g = 6 * (1 - Math.abs(2 * p - 1)) + 2; ctx.save(); ctx.translate(-9, 0); ctx.rotate(-fx.angle);
+      for (const [col, lw, s] of [[fx.color, 3, 1], ['#ffffff', 1, 0.85]]) { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(-g * s, 0); ctx.lineTo(g * s, 0); ctx.moveTo(0, -g * 0.9 * s); ctx.lineTo(0, g * 0.9 * s); ctx.stroke(); }
+      ctx.fillStyle = fx.accent; ctx.fillRect(-2, -2, 4, 4); ctx.restore();
+      ctx.fillStyle = fx.color; for (let i = 0; i < 3; i++) ctx.fillRect(Math.round(-14 - i * 4 - p * 6), Math.round((i - 1) * (3 + p * 4)), 1, 1);
+    } else if (fx.key === 'admiral') { // 제독: V자 항적(바다빛·흰 물거품) + 똑바로 선 금빛 닻 + 포연 고리
+      const L2 = 10 + p * 18, open = 3 + p * 8;
+      for (const [col, lw] of [[fx.sea, 3], ['#ffffff', 1]]) { ctx.strokeStyle = col; ctx.lineWidth = lw; for (const s2 of [-1, 1]) { ctx.beginPath(); ctx.moveTo(2, s2 * 2); for (let j = 1; j <= 4; j++) { const u = j / 4; ctx.lineTo(2 - L2 * u, s2 * (2 + open * u) + Math.sin(u * 7 + p * 9) * 1.2); } ctx.stroke(); } }
+      ctx.save(); ctx.translate(-L2 * 0.55, 0); ctx.rotate(-fx.angle); ctx.fillStyle = fx.color; // 닻
+      ctx.fillRect(-0.5, -5, 1.5, 9); ctx.fillRect(-3, -4, 6, 1.5); ctx.fillRect(-1.5, -6.5, 3, 1.5); ctx.fillRect(-4, 2, 1.5, 1.5); ctx.fillRect(2.5, 2, 1.5, 1.5); ctx.fillRect(-3, 3.5, 6, 1.5); ctx.fillStyle = '#ffffff'; ctx.fillRect(-0.5, -6.5, 1, 1); ctx.restore();
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 0.5 * k; ctx.strokeStyle = fx.smoke; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(-L2 - 2, 0, 2 + p * 6, 0, TAU); ctx.stroke();
     }
   } else if (fx.fx === 'skill') { // 스킬: 시전자 위치에 크게 펼쳐지는 스킨별 인장
     const reach = 14 + p * 23; ctx.translate(x, y - 4); ctx.rotate(fx.angle);
@@ -131,10 +130,11 @@ function drawLegendFx(ctx, fx, x, y) {
         const sk = legendOf(P, this); if (!sk || lx === undefined || !(dt > 0)) continue;
         const mx = P.x - lx, my = P.y - ly, d = Math.hypot(mx, my), v = d / dt;
         const dashing = P === this.player ? P.state === 'DASH' : v > dashV * 0.6 && d < 40; // 순간이동(40px 넘게)은 대시가 아님
-        if (!dashing) { P._lvT = 0; continue; }
-        P._lvT = (P._lvT || 0) - dt; if (P._lvT > 0) continue; P._lvT = 0.045;
+        if (!dashing) { P._lvT = 0; P._lvOn = false; continue; }
+        const first = !P._lvOn; P._lvOn = true;
+        P._lvT = (P._lvT || 0) - dt; if (P._lvT > 0 && !first) continue; P._lvT = 0.04;
         const ux = d > 0.01 ? mx / d : (P.dashDir ? P.dashDir.x : 1), uy = d > 0.01 ? my / d : (P.dashDir ? P.dashDir.y : 0);
-        this.effects.legendDash(sk, lx, ly + 3, ux, uy);
+        this.effects.legendDash(sk, lx, ly + 3, ux, uy, first);
       }
     }
     return r;
