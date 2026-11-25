@@ -64,7 +64,7 @@ const SKINS = [
   { id: 'skin_leg_crimson', name: '진홍의 칼날', hero: 'hero_assassin', line: 'blade', sprite: 'leg_crimson', rarity: 'legendary', source: 'gacha', intro: '핏빛 장막이 걷힐 즈음엔… 이미 끝나 있을 거야.', desc: '암살자 전설 외형 — 핏빛 장막 속에서 춤추는 칼날 (칼날 계열 전용)' },
   { id: 'skin_leg_void', name: '공허의 마도사', hero: 'hero_mage', line: 'dark', sprite: 'leg_void', rarity: 'legendary', source: 'gacha', intro: '공허는 비어 있지 않아. 모든 것을 삼킬 뿐이지.', desc: '마법사 전설 외형 — 어둠을 휘감은 공허의 현자 (어둠 계열 전용)' },
   { id: 'skin_leg_star', name: '성역의 성자', hero: 'hero_priest', line: 'base', sprite: 'leg_star', rarity: 'legendary', source: 'gacha', intro: '별빛이 머무는 곳, 그곳이 저의 성역입니다.', desc: '사제 전설 외형 — 별빛 성역의 성자 (성역 계열 전용)' },
-  { id: 'skin_leg_admiral', name: '창해의 포격 제독', hero: 'hero_gunner', line: 'demo', sprite: 'leg_admiral', rarity: 'legendary', source: 'soon', intro: '닻을 올려라. 바다든 던전이든, 포성 앞에선 길이 열린다.', desc: '사수 전설 외형 — 닻 문장 삼각모와 금빛 견장의 제독 (폭파 계열 전용) · 획득 방법 준비 중' }, // source 'soon': 뽑기·코드 어디에도 없음 (관리자만 확인용 보유)
+  { id: 'skin_leg_admiral', name: '천공함대 제독', hero: 'hero_gunner', line: 'demo', sprite: 'leg_admiral', rarity: 'legendary', source: 'soon', intro: '전 함대, 닻을 올려라. 하늘 아래 어디든, 포성이 길을 연다.', desc: '사수 전설 외형 — 날개 닻 문장 삼각모와 금빛 견장, 하늘을 나는 천공함대의 제독 (폭파 계열 전용) · 획득 방법 준비 중' }, // source 'soon': 뽑기·코드 어디에도 없음 (관리자만 확인용 보유)
   // ── 변신 드루이드 스킨: 평소 반디(앞/옆/뒤) ↔ 변신 시 샘(대기=22·공격=21, 좌우 반전만)
   { id: 'skin_bandi', name: '반디', hero: 'hero_druid', sprite: 'druid_bandi', rarity: 'legendary', source: 'code', druid: true, intro: '난 싸울 거야. 모든 것이 불타 버릴 때까지.', desc: '드루이드 변신 스킨 — 평소엔 반디, 변신하면 날개 돋친 샘으로 (선물 코드)' },
   // ── 일반·레어·에픽 스킨 (앞모습, 좌우 반전) — assets/commonskins.png · 퀄리티별 등급: 기존 1·2단계=레어, 3단계=에픽, 새 22종=일반
