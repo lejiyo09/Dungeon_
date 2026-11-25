@@ -21,12 +21,14 @@ function drawBannerCover(ctx, im, dx, dy, dw, dh) {
   let sx = 0, sy = 0, sw = iw, sh = ih;
   if (ratio > target) { sw = ih * target; sx = (iw - sw) / 2; }
   else { sh = iw / target; sy = (ih - sh) / 2; }
-  ctx.drawImage(im, sx, sy, sw, sh, dx, dy, dw, dh);
+  const sm = ctx.imageSmoothingEnabled, sq = ctx.imageSmoothingQuality; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; // 배너 일러스트는 도트가 아니므로 부드럽게 (게임은 기본으로 계단식 확대)
+  ctx.drawImage(im, sx, sy, sw, sh, dx, dy, dw, dh); ctx.imageSmoothingEnabled = sm; ctx.imageSmoothingQuality = sq;
 }
 function drawBannerContain(ctx, im, dx, dy, dw, dh) {
   const iw = im.naturalWidth || im.width || 1024, ih = im.naturalHeight || im.height || 576;
   const scale = Math.min(dw / iw, dh / ih), w = iw * scale, h = ih * scale;
-  ctx.drawImage(im, 0, 0, iw, ih, dx + (dw - w) / 2, dy + (dh - h) / 2, w, h);
+  const sm = ctx.imageSmoothingEnabled, sq = ctx.imageSmoothingQuality; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(im, 0, 0, iw, ih, dx + (dw - w) / 2, dy + (dh - h) / 2, w, h); ctx.imageSmoothingEnabled = sm; ctx.imageSmoothingQuality = sq;
 }
 function fitSize(str, w, max = 8, min = 5) { return Math.max(min, Math.min(max, Math.floor(w / Math.max(1, String(str).length)))); } // 이름이 칸을 넘지 않게 글자 크기 줄이기 (한글 1자 ≈ 글자 크기 px)
 // ── 스킨 미리보기 (스킨창 · Esc 메뉴 공용): 스킨 종류에 맞는 그림 고르기 + 실제 그림 부분만 상자에 맞춰 그리기
