@@ -1265,7 +1265,7 @@ class Game {
     input.remap = !this.overlay && !this.cutscene && !this.transition && (this.mode === 'dungeon' || this.mode === 'lobby'); /* 조작키 변경은 직접 조작할 때만 (메뉴·대사에서는 원래 키) */
     if (this.coop && this.coop.guest) { this.coopGuestUpdate(dt, input); return; } // 멀티 참가자: 방장 화면을 받아 그림
     if (this.banner) this.banner.t += dt;
-    if (input.wasPressed('KeyM') && !(this.overlay && this.overlay.type === 'gift')) this.toggleMute(); /* 선물 코드 입력 중에는 M도 글자 */
+    if (input.wasPressed('KeyM') && !(this.overlay && (this.overlay.type === 'gift' || this.overlay.type === 'pause'))) this.toggleMute(); /* Esc 메뉴에서는 메뉴가 M을 처리 */ /* 선물 코드 입력 중에는 M도 글자 */
     this.hurtFlash = Math.max(0, this.hurtFlash - dt);
     this.noEnergyFlash = Math.max(0, this.noEnergyFlash - dt);
 
@@ -1365,17 +1365,7 @@ class Game {
   }
   updateOverlay(input) {
     const o = this.overlay;
-    if (o.type === 'pause') {
-      if (input.wasPressed('Escape')) this.overlay = null;
-      else if (input.wasPressed('KeyI')) { this.overlay = { type: 'details', tab: 0 }; return; } // 상세 정보
-      else if (input.wasPressed('KeyU') && typeof drawQuestWindow === 'function') { this.overlay = { type: 'quests', tab: 0, scroll: 0, back: 'pause' }; input.mouse.down = false; return; } // 퀘스트 창
-      else if (input.wasPressed('KeyG')) { this.overlay = { type: 'gift', code: '', msg: null }; input.typed.length = 0; return; } // 선물 코드
-      else if (input.wasPressed('KeyK')) { this.overlay = { type: 'skins', back: 'pause', msg: null }; return; } // 스킨 고르기 창
-      else if (this.mode === 'lobby' && input.wasPressed('KeyJ')) { this.overlay = { type: 'gacha', tab: 0, banner: 0, results: null, msg: null, back: 'pause' }; input.mouse.down = false; return; } // 스킨 뽑기 (닫으면 Esc 메뉴로)
-      else if (input.wasPressed('KeyO')) { this.overlay = { type: 'keys', wait: null, msg: null }; input.mouse.down = false; return; } // 조작키 설정
-      else if (this.mode === 'lobby' && input.wasPressed('KeyL')) { this.logout(); return; }
-      else if (this.mode === 'lobby' && input.wasPressed('KeyP')) { this.overlay = { type: 'story', lines: PROLOGUE_LINES, i: 0, t: 0, done: () => {} }; return; }
-      else if (this.mode === 'dungeon' && input.wasPressed('KeyL')) { this.player.state = 'DEAD'; this.endRun(false); }
+    if (o.type === 'pause') { updatePauseMenu(this, input); // Esc 메뉴: 버튼 · ↑↓ Enter · 단축키 (js/ui/pause_menu.js)
     } else if (o.type === 'keys') { /* [사용자 결정] 조작키 설정: 칸을 누르고 새 키(마우스 버튼 포함)를 누름 · Backspace 지우기 · Esc 취소 */
       const m = input.mouse, hit = (r) => m.x >= r.x && m.x < r.x + r.w && m.y >= r.y && m.y < r.y + r.h;
       if (o.wait) { if (o.wait.armed) { const c = input.raw[0];
