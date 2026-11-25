@@ -815,7 +815,7 @@ class Game {
     const sv = this.save, K = SHOP_TABS.map(([r]) => shopPool(r)).flat().find((k) => k.id === id); if (!K) return { error: '스킨을 찾을 수 없습니다' }; // 전설 + 일반·레어·에픽 뽑기 스킨
     if ((sv.skins || []).includes(id)) return { error: '이미 보유한 스킨입니다' };
     const price = shopPrice(K); if ((sv.mileage || 0) < price) return { error: `마일리지가 부족합니다 (${price} 필요)` };
-    sv.mileage -= price; sv.skins = sv.skins || []; sv.skins.push(id); this.skinOnMap()[skinKey(K)] = id;
+    sv.mileage -= price; sv.skins = sv.skins || []; sv.skins.push(id); if (K.rarity === 'legendary') this.skinOnMap()[skinKey(K)] = id; /* 일반·레어·에픽은 뽑기처럼 자동 장착 안 함 */
     writeSave(sv); SFX.play(K.rarity === 'legendary' ? 'victory' : 'ui'); if (K.rarity === 'legendary') this.legendIntroCheck([id]); return { ok: true, name: K.name };
   }
   myTitleId() { const T = this.save.title && GUILD_TITLES.find((t) => t.id === this.save.title); return T && this.titleUnlocked(T) && !this.admin ? T.id : ''; } /* 랭킹에 보낼 장착 칭호 (얻은 것만) */
