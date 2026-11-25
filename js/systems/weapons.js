@@ -76,7 +76,7 @@ class WeaponSystem {
     if (!input.mouse.down || player.transCd > 0) return;
     const sk = player.transformSkill || 'bearform', base = { bearform: 58, bearform2: 76, primal: 108 }[sk] || 60;
     player.transCd = 0.3; // 베기 간격
-    const a = Math.atan2(player.aim.y, player.aim.x), range = 40, arc = 2.0, dmg = world.skillDmg(base);
+    const a = Math.atan2(player.aim.y, player.aim.x), range = 52, arc = 2.0, dmg = world.skillDmg(base); // [변신 버프] 베기 사거리 40 → 52
     let hit = 0;
     for (const e of world.enemies) { if (!e.targetable) continue; const dx = e.x - player.x, dy = e.y - player.y, d = Math.hypot(dx, dy);
       if (d - e.radius <= range && (d < 6 || angleDiff(Math.atan2(dy, dx), a) < arc / 2)) { world.damageEnemy(e, { damage: dmg, mods: player.mods, knockback: 7 }, dx / (d || 1), dy / (d || 1)); hit++; } }

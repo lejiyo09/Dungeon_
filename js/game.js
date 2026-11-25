@@ -2094,7 +2094,7 @@ class Game {
         this.zones.push(new BloodStorm(p, { r: R, gather: 0.55, life: fx ? 3.8 : 3, tick: 0.3, dmg: 42, bigDmg: 200, lifesteal: 0.2, feast: true, kb: 10 }));
         break; }
       case 'ancientroot': { const fx = p.jobSkillFx === 'ancientroot'; nova(fx ? 170 : 140, 170, { color: '#7adf4a', root: fx ? 4.5 : 3, kb: 0, status: { type: 'poison', chance: 1, duration: fx ? 7 : 5, dps: 36 } }); this.addShake(0.3, 5); break; } /* [숙련] 고대 결박: 범위·속박↑ */
-      case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [10, 0.55, 0.55, 0], bearform2: [12, 0.6, 0.58, 16], primal: [11, 0.8, 0.62, 24] }[p.skillId]; // [밸런스 조정] 원시의 군주 공격력 증가 +95% → +80%, 변신시간 14초 → 11초
+      case 'bearform': case 'bearform2': case 'primal': { const C = { bearform: [10, 0.45, 0.45, 0], bearform2: [12, 0.5, 0.48, 16], primal: [11, 0.7, 0.52, 24] }[p.skillId]; // [밸런스 조정] 원시의 군주 공격력 증가 +95% → +80% → +70%, 변신시간 14초 → 11초 · [변신 너프] 공격력 +55/60/80% → +45/50/70%, 받는 피해 감소 55/58/62% → 45/48/52% (대신 베기 사거리 40 → 52)
         const primalMastery = p.skillId === 'primal' && p.jobSkillFx === 'primal';
         if (primalMastery) { C[0] += 3; C[1] += 0.2; } /* [숙련] 태초 각성: 변신 지속·공격력 보너스 유지 */
         p.buffT = C[0]; p.buffAtk = C[1]; p.buffGuard = C[2]; p.buffSpeed = 0; p.buffKillHeal = 0;
