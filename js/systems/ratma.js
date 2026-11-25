@@ -737,16 +737,20 @@ Player.prototype.ratmaAtkBonus = function () {
       for (const rec of p.thralls) if (!th.some((a) => a.rec === rec)) this.necroSpawnThrall(p, rec, p.x + randInt(-20, 20), p.y + randInt(6, 16)); }
     if (!this.zones.some((z) => z instanceof NecroCorpseLayer)) this.zones.push(new NecroCorpseLayer());
   };
-  // 소환수 순간이동: 방 전투가 시작돼 문이 닫히면 방 밖에 남은 소환수(해골·골렘·부활 부하·늑대·사냥개 등)를 주인 곁으로 데려옴
+  // [사용자 결정] 소환수 순간이동: 방 전투가 시작돼 문이 닫히면, 방 안에 온전히 들어와 있지 않은 소환수(해골·골렘·부활 부하·늑대·사냥개 등)를 방 중앙으로 옮김
   G.summonFollowsIntoRoom = function (r) {
     if (!r || !this.map) return;
+    const c = this.map.tileCenter(r.cx, r.cy); let n = 0;
     for (const a of this.allies) {
       if (!a.alive || !a.owner || a.owner.state === 'DEAD' || a instanceof Turret || a.bomb || a.charm) continue; // 설치형 포탑·자폭 해골·정신지배된 적은 제외
-      const ax = a.x, ay = a.y; if (typeof ax !== 'number' || this.map.roomAtPoint(ax, ay) === r) continue;
-      const P = a.owner, s = this.freeSpot(r, P.x + randInt(-16, 16), P.y + randInt(6, 14), a.half || 6);
+      const ax = a.x, ay = a.y; if (typeof ax !== 'number') continue;
+      const half = a.half || (a.e && a.e.half) || 6;
+      if (this.map.isFullyInside({ x: ax, y: ay, half }, r, 4)) continue; // 이미 방 안 (문턱·복도에 걸친 건 밖으로 봄)
+      const ang = n * 2.4, rad = 10 + 6 * Math.sqrt(n); n++;
+      const s = this.freeSpot(r, c.x + Math.cos(ang) * rad, c.y + Math.sin(ang) * rad * 0.7, half);
       this.effects.burst(ax, ay - 4, '#9affd8', 6);
       if (a instanceof NecroThrall) { a.e.x = s.x; a.e.y = s.y; } else { a.x = s.x; a.y = s.y; }
-      this.effects.ring(s.x, s.y, 10, '#9affd8'); for (let i = 0; i < 5; i++) this.effects.part(s.x + randInt(-5, 5), s.y, 0, -24, { color: '#9affd8', life: 0.4, size: 2, size2: 0, drag: 1, add: true });
+      this.effects.ring(s.x, s.y, 10, '#9affd8'); for (let k = 0; k < 5; k++) this.effects.part(s.x + randInt(-5, 5), s.y, 0, -24, { color: '#9affd8', life: 0.4, size: 2, size2: 0, drag: 1, add: true });
     }
   };
   wrap('activateRoom', function (orig, r, leader) { const res = orig.call(this, r, leader); this.summonFollowsIntoRoom(r); return res; });
