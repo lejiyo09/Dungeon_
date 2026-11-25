@@ -766,10 +766,10 @@ class HUD {
   static rankTab(i) { return { x: 40 + i * 110, y: 22, w: 104, h: 16 }; }
   static gachaSideW() { return 96; } // 오른쪽 사이드바 폭
   static gachaMainW() { return VIEW_W - HUD.gachaSideW(); } // 왼쪽 메인(배너) 폭
-  static gachaBanner(i) { const sx = VIEW_W - HUD.gachaSideW(); return { x: sx + 6, y: 40 + i * 48, w: HUD.gachaSideW() - 12, h: 40 }; } // 사이드바 배너 선택 1~4
+  static gachaBanner(i) { const sx = VIEW_W - HUD.gachaSideW(), n = Math.max(4, gachaPool().length), step = Math.min(48, Math.floor((VIEW_H - 40 - 42) / n)); return { x: sx + 6, y: 40 + i * step, w: HUD.gachaSideW() - 12, h: step - 8 }; } // 사이드바 배너 선택 (배너 수에 맞춰 칸 높이 조절 · 아래 상점 버튼과 안 겹치게)
   static gachaShopTab() { const sx = VIEW_W - HUD.gachaSideW(); return { x: sx + 6, y: VIEW_H - 34, w: HUD.gachaSideW() - 12, h: 26 }; } // 마일리지 상점 버튼
   static gachaPullBtn(i) { const mw = HUD.gachaMainW(), w = 150, g = 14, x0 = (mw - (w * 2 + g)) / 2; return { x: x0 + i * (w + g), y: VIEW_H - 46, w, h: 32 }; } // 1뽑/5뽑 (메인 하단)
-  static gachaShopRow(i) { const mw = HUD.gachaMainW(), h = 48, y0 = 52; return { x: 10, y: y0 + i * (h + 6), w: mw - 20, h }; } // 상점: 메인 영역 세로 리스트
+  static gachaShopRow(i) { const mw = HUD.gachaMainW(), y0 = 52, n = Math.max(4, gachaPool().length), step = Math.min(54, Math.floor((VIEW_H - y0 - 6) / n)); return { x: 10, y: y0 + i * step, w: mw - 20, h: step - 6 }; } // 상점: 메인 영역 세로 리스트 (배너 수에 맞춰)
   static gachaShopBuy(i) { const r = HUD.gachaShopRow(i); return { x: r.x + r.w - 78, y: r.y + r.h / 2 - 9, w: 72, h: 18 }; }
   static gachaRatesBtn() { return { x: 8, y: VIEW_H - 64, w: 72, h: 16 }; } // 좌측 하단 확률 보기 (1뽑 버튼 위)
   static drawSupply(ctx, cx, cy, id) { // 탐험 보급품 아이콘 (종류별 도트풍 도형)

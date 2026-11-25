@@ -64,7 +64,7 @@ const SKINS = [
   { id: 'skin_leg_crimson', name: '진홍의 칼날', hero: 'hero_assassin', line: 'blade', sprite: 'leg_crimson', rarity: 'legendary', source: 'gacha', intro: '핏빛 장막이 걷힐 즈음엔… 이미 끝나 있을 거야.', desc: '암살자 전설 외형 — 핏빛 장막 속에서 춤추는 칼날 (칼날 계열 전용)' },
   { id: 'skin_leg_void', name: '공허의 마도사', hero: 'hero_mage', line: 'dark', sprite: 'leg_void', rarity: 'legendary', source: 'gacha', intro: '공허는 비어 있지 않아. 모든 것을 삼킬 뿐이지.', desc: '마법사 전설 외형 — 어둠을 휘감은 공허의 현자 (어둠 계열 전용)' },
   { id: 'skin_leg_star', name: '성역의 성자', hero: 'hero_priest', line: 'base', sprite: 'leg_star', rarity: 'legendary', source: 'gacha', intro: '별빛이 머무는 곳, 그곳이 저의 성역입니다.', desc: '사제 전설 외형 — 별빛 성역의 성자 (성역 계열 전용)' },
-  { id: 'skin_leg_admiral', name: '천공함대 제독', hero: 'hero_gunner', line: 'demo', sprite: 'leg_admiral', rarity: 'legendary', source: 'soon', intro: '전 함대, 닻을 올려라. 하늘 아래 어디든, 포성이 길을 연다.', desc: '사수 전설 외형 — 날개 닻 문장 삼각모와 금빛 견장, 하늘을 나는 천공함대의 제독 (폭파 계열 전용) · 획득 방법 준비 중' }, // source 'soon': 뽑기·코드 어디에도 없음 (관리자만 확인용 보유)
+  { id: 'skin_leg_admiral', name: '천공함대 제독', hero: 'hero_gunner', line: 'demo', sprite: 'leg_admiral', rarity: 'legendary', source: 'gacha', intro: '전 함대, 닻을 올려라. 하늘 아래 어디든, 포성이 길을 연다.', desc: '사수 전설 외형 — 날개 닻 문장 삼각모와 금빛 견장, 하늘을 나는 천공함대의 제독 (폭파 계열 전용)' }, // [사용자 결정] 뽑기 배너 추가 (assets/banners/admiral)
   { id: 'skin_leg_berserker', name: '용살의 전사', hero: 'hero_berserker', line: 'blood', sprite: 'leg_berserker', rarity: 'legendary', source: 'soon', intro: '이 피로 맹세했다. 마지막 용이 쓰러질 때까지, 나는 멈추지 않는다.', desc: '광전사 전설 외형 — 붉은 뿔 투구와 흑철 갑옷, 피빛 망토의 용살의 전사 (피의 서약 계열 전용) · 획득 방법 준비 중' },
   // ── 변신 드루이드 스킨: 평소 반디(앞/옆/뒤) ↔ 변신 시 샘(대기=22·공격=21, 좌우 반전만)
   { id: 'skin_bandi', name: '반디', hero: 'hero_druid', sprite: 'druid_bandi', rarity: 'legendary', source: 'code', druid: true, intro: '난 싸울 거야. 모든 것이 불타 버릴 때까지.', desc: '드루이드 변신 스킨 — 평소엔 반디, 변신하면 날개 돋친 샘으로 (선물 코드)' },
@@ -149,7 +149,7 @@ const GACHA = {
   dupeMileage: 250, shardDupeMileage: 12, commonDupeMileage: 15, rareDupeMileage: 30, epicDupeMileage: 60, // [사용자 결정] 마일리지는 스킨 중복일 때만: 완성품 중복 250 · 보유 스킨 조각 12 · 일반 스킨 중복 15
   shopPrice: 400,                          // 마일리지 상점 스킨 1개 가격
   mileageName: '스킨 마일리지', mileageColor: '#ffb0d8', shardName: '전설 조각', shardColor: '#ffe9a0',
-  banners: { skin_leg_abyss: 'abyss', skin_leg_crimson: 'crimson', skin_leg_void: 'void', skin_leg_star: 'star' } // 스킨별 배너 이미지 키 (assets/banners/<key>.webp)
+  banners: { skin_leg_abyss: 'abyss', skin_leg_crimson: 'crimson', skin_leg_void: 'void', skin_leg_star: 'star', skin_leg_admiral: 'admiral' } // 스킨별 배너 이미지 키 (assets/banners/<key>.webp)
 };
 function gachaPool() { return SKINS.filter((k) => k.source === 'gacha'); } // 전설 배너 뽑기 대상
 function commonPool(r = 'common') { return SKINS.filter((k) => k.source === 'common' && (k.rarity || 'common') === r); } // 등급별 뽑기 풀 (common / rare / epic)
