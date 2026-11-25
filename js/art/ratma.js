@@ -58,18 +58,49 @@ Object.assign(HERO_PROCS, {
 });
 
 // 라트마 보스 (32×32): 해골 장식 두건, 창백한 얼굴과 차분한 눈, 생(초록)·사(보라) 두 색이 섞인 긴 망토, 순환의 고리가 달린 지팡이
-PIX.boss_ratma = { tint: '#2a3a44', w: 32, h: 32, pal: { s: '#e8e4dc', e: '#9affd0', y: '#c8b080', g: '#9affd0', v: '#c08aff', w: '#ffffff', m: '#d8d2c4' }, proc: (P) => {
-  P.tri(3, 31, 27, 31, 15, 7, 'a'); P.tri(8, 31, 22, 31, 15, 13, 'b');                 // 망토
-  P.line(7, 30, 13, 17, 'g'); P.line(23, 30, 17, 17, 'v');                            // 생과 사의 띠
-  P.ell(8, 13, 3, 2, 'm'); P.ell(22, 13, 3, 2, 'm'); P.px(7, 12, 'w'); P.px(23, 12, 'w'); // 뼈 어깨
-  P.ell(15, 8, 5.5, 6, 'a'); P.ell(15, 9, 3.5, 4, 'k');                               // 두건·그늘
-  P.ell(15, 9.5, 2.5, 3, 's'); P.px(14, 9, 'e'); P.px(16, 9, 'e');                    // 얼굴·눈
-  P.ell(15, 3, 2, 1.5, 'm'); P.px(14, 3, 'k'); P.px(16, 3, 'k');                      // 두건 위 해골 장식
-  P.line(27, 4, 27, 31, 'y');                                                          // 지팡이
-  P.ell(27, 4, 3, 3, 'g'); P.ell(27, 4, 1.5, 1.5, 'k'); P.px(29, 2, 'v'); P.px(25, 6, 'v'); // 순환의 고리
-  P.ell(26, 17, 1.5, 1.5, 's'); P.ell(5, 19, 1.5, 1.5, 's');                           // 손
-  P.px(3, 9, 'g'); P.px(2, 15, 'v'); P.px(30, 21, 'g');                                // 떠다니는 영혼
-} };
+// [사용자 결정] 라트마 보스 외형: 사용자가 준 도트 그림(해골 두건 · 보랏빛 로브 · 청록 눈 · 생(청록)·사(보라)의 띠 · 고리 지팡이)을 36×40으로 옮김
+PIX.boss_ratma = { tint: '#48285c', w: 36, h: 40, pal: { k: '#160c1c', d: '#301a3a', a: '#48285c', b: '#623a7a', c: '#8454a0', v: '#a85ae8', t: '#8eeed5', w: '#e8dcd2', s: '#beb2aa', n: '#c8a070', m: '#967350' }, rows: [
+  '...............kkkk..........kkk....',
+  '.............kkwwwwkk......kktttk...',
+  '...........kkawwwwwwdk.....kttttkk..',
+  '...........kaawkwwkwak....kttkktttk.',
+  '..........kaaakwwwwkaak...ktkkakktk.',
+  '.........kaaaakwwwkkaaak..ktkvvvktk.',
+  '.........kaaacckkwkccaakk.kttkkkttk.',
+  '.........kaaackkkkkkccakk..ktwwwtk..',
+  '...kk....kaackkkkkkkkcakk..kkswsk...',
+  '...k.....kaackkkkdkkkcakk...kkkkk...',
+  '.....k...kaakkttkkttkkakk...kkwk....',
+  '.....k..kaaakkssswsskkaak....kak....',
+  '........kaaakkswwwwskkaak....knk....',
+  '.......kkkaaakkwwwwkkkbakkk..knk....',
+  'kv...kkwwwkdakkkwwkkkaakwwwkkknk....',
+  'k...kwwwwwwkkakkkkkkadkwwwwwkknk....',
+  '...kwwwwwwwwkkaddddakkwwwwwwwknk....',
+  '...kwssswsswwkkkkddkkwwsswsmsknk....',
+  '...kkkksskkskkkkkkkkkkskksskkknk....',
+  '.....kskkkkskkkskkskkkskkkkskknk....',
+  '....kbkksksskkkksskdbkskbskkkknk....',
+  '...kbkddsdswkbkkkskdbkwkssdakwwwk...',
+  '...kkdadscswkbkddsddbkwkssaakwwwk...',
+  '....kaaawkwwkckddsdkvkkkswaaksssk...',
+  '...kkkkkwkwwkckdasddvvkkwwaakkakk.tk',
+  '...kwwwkkkwkkkkaasadkvkkwwkkkknk...k',
+  '...kwwwkkkkkkkdaasadkvddkkkkkknk....',
+  '...kssskddbktkdassadkvvddkk..knk.k..',
+  '....kkkddbkktkasaasakkvdadk..knk....',
+  '.....kkddbkttkasdasakdvvkakk.knk....',
+  '.....kddbddtkkaassaakdkvdaakkknk....',
+  '....kddbddtkkkaaasaakdkvvkaakknk....',
+  '....kkkdaatkddaaasaakdkkvdkaaknk....',
+  '..kkdkadattkddbaasabkadkvvdkkknk....',
+  '..kkkaaaatkkddbaaaackkadkvddkknk....',
+  '.kkkaaaattkddkbbbabckkaadvvddknkk...',
+  'kkaaaaattkkdkkkkbabkkkaadkvddknkdk..',
+  'kkkkkaatkkdadkkkbbckkkaaadvvdkmkk...',
+  '..kkkkkkkkkkkkkkkkkkkkkddkkkkkkk....',
+  '........kkkkkk......kkkkkkk.........'
+] };
 
 // 라트마 고유 무기 + 사령의 지팡이 (오른쪽을 향하게, p = 손잡이)
 Object.assign(WPIX, {
