@@ -24,7 +24,7 @@ const NECRO = {
   floorDmg: 0.5,                                                                                // [사용자 결정] 소환수 층수 비례 버프: 공격력이 몬스터 체력 곡선의 50%만큼 자람 (1이면 몬스터와 같은 속도) · 체력은 몬스터 공격력 곡선 그대로
   weaponAtk: 1,                                                                                 // [사용자 결정] 해골·골렘 한 방 피해 = 들고 있는 두 무기 한 방의 합 × 100% (강화·공격력 보너스 포함)                                                                               // [사용자 결정] 네크로맨서 소환수 이동 속도 1.5배 (3배 → 절반으로 · 해골·골렘·부활 부하·망령)
   skeleton: { atk: 0.12, base: 2, perRank: 1, dmg: 6, rate: 1.0, speed: 120, tempLife: 10, hpMul: 2, regen: 0.02, respawn: 4, taunt: 90, bias: 30 }, // [사용자 결정] 해골도 탱킹: 체력 플레이어의 2배(층수 비례)·초당 2% 회복 · 근처 적의 어그로를 나눠 받음(플레이어보다 30 더 멀어도 해골을 노림) · 적 탄을 몸으로 막음 · 쓰러지면 4초 뒤 다시 일어남          // 기본 해골: 사령술사 2 · 1차 3 · 2차 4 · 추가 소환 해골은 10초
-  golem: { atk: 0.25, dmg: 30, rate: 1.6, stun: 0.5, hpMul: 25, regen: 0.04, slamEvery: 6, slamR: 54, slamStun: 1, respawn: 5, taunt: 150, speed: 70 }, // [사용자 결정] 골렘 = CC 탱커: 체력 플레이어의 25배 · 초당 최대 체력 4% 회복 · 공격력 낮춤(두 무기 합 × 0.25) · 맞힌 적 0.5초 기절 + 6초마다 내려찍기(주변 1초 기절) · 어그로 범위 넓힘
+  golem: { atk: 0.25, dmg: 30, rate: 1.6, stun: 0.5, hpMul: 25, regen: 0.01, corpseChance: 0.7, slamEvery: 6, slamR: 54, slamStun: 1, respawn: 5, taunt: 150, speed: 70 }, // [사용자 결정] 골렘 = CC 탱커: 체력 플레이어의 25배 · 초당 최대 체력 1% 회복 · 타격 시 70% 확률로 시체 생성 · 공격력 낮춤(두 무기 합 × 0.25) · 맞힌 적 0.5초 기절 + 6초마다 내려찍기(주변 1초 기절) · 어그로 범위 넓힘
   corpse: { life: 25, max: 30, pick: 16 },                                                      // 시체: 적이 쓰러진 자리 · 마우스로 고르는 거리
   thrall: { max: 5, hpMul: 20 / 3, dmgMul: 1 }, // [사용자 결정] 부활 부하·정신지배된 적: 체력 6.7배(10배의 2/3) · 공격력은 밸런스 조정으로 원본 그대로 (2배 → 1배)
   lichFeed: { hp: 12, energy: 10 },  // (회복량 20 → 12: 60%)                                                             // [사용자 결정] 리치 계열 패시브: 시체를 쓸 때마다 체력 20 · 에너지 10 회복
@@ -45,13 +45,15 @@ JOB_LINES.hero_necromancer = {
     fx: { trail: '#9affd8', trail2: '#3a8a7a', kind: 'mist' },
     skills: [NECRO_NONE,
       { id: 'necro_blast', name: '시체 폭발', desc: '시체에 마우스를 올리고 F → 시체를 터뜨려 주변 적에게 피해 (그 몬스터 최대 체력에 비례) · 해골 3 + 골렘(CC 탱커) 상시', cd: 0.3 },
-      { id: 'necro_blast', name: '시체 폭발', desc: 'F: 시체 폭발 · G: 시체에 마우스를 올리고 → 그 몬스터를 원본 그대로 부하로 되살림 (최대 5) · 골렘 유지', cd: 0.3 }] },
+      { id: 'necro_blast', name: '시체 폭발', desc: 'F: 시체 폭발 · G: 시체에 마우스를 올리고 → 그 몬스터를 원본 그대로 부하로 되살림 (최대 5) · 골렘 유지', cd: 0.3 }],
+    gSkills: [null, null, { id: 'necro_raise', name: '시체 부활', cd: 0 }] }, // G키 스킬 (재사용 대기시간 없음)
   lich: { name: '리치', desc: '시체와 저주 · 시체를 창으로 바꾸고, 묘지로 적을 지배해 자폭시킴', ranks: ['사령술사', '리치', '불멸의 군주'], color: '#b47aff',
     looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_lich', body: '#2c2528', accent: '#d6c8a0' }, { sprite: 'necro_lichlord', body: '#17171f', accent: '#e0c77d' }],
     fx: { trail: '#b47aff', trail2: '#5a2a9a', kind: 'crack' },
     skills: [NECRO_NONE,
-      { id: 'necro_spear', name: '시체 창', desc: '시체가 생기면 자동으로 시체 1개를 써서 시체 창 3개 (주변 적 자동 추적 · 무작위 디버프 2종) · 패시브: 시체를 쓸 때마다 체력 20 · 에너지 10 회복', cd: 0.3 },
-      { id: 'necro_grave', name: '묘지', desc: '마우스 위치에 10초 묘지 — 2초마다 시체 2~4구가 솟아남(시체 창 자동), 주변 일반 적 30% 정신지배(10초 뒤 자폭, 보스 면역) · 시체를 쓸 때마다 체력 20 · 에너지 10', cd: NECRO.grave.cd }] }
+      { id: 'necro_spear', name: '시체 창', desc: '시체에 마우스를 올리고 F → 시체 1개를 써서 시체 창 3개 (주변 적 자동 추적 · 무작위 디버프 2종) · 패시브: 시체를 쓸 때마다 체력 12 · 에너지 10 회복', cd: 0.3 },
+      { id: 'necro_spear', name: '시체 창', desc: 'F: 시체 창 · G: 마우스 위치에 10초 묘지 (재사용 대기 24초) — 2초마다 시체 2~4구가 솟아남(묘지 시체는 시체 창 자동), 주변 일반 적 30% 정신지배(10초 뒤 자폭, 보스 면역)', cd: 0.3 }],
+    gSkills: [null, null, { id: 'necro_grave', name: '묘지', cd: NECRO.grave.cd }] } // G키 스킬
 };
 
 // ── 무기: 시작 무기 1종 + 라트마 고유 무기 8종
