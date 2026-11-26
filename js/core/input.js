@@ -14,7 +14,8 @@ const KEY_ACTIONS = [
   { id: 'dash', name: '대시', logical: 'Space', def: ['Space', null] },
   { id: 'treasure', name: '보구', logical: 'KeyR', def: ['KeyR', null] },
   { id: 'swap', name: '무기 교체', logical: 'KeyQ', def: ['KeyQ', null] },
-  { id: 'interact', name: '상호작용', logical: 'KeyE', def: ['KeyE', null] }
+  { id: 'interact', name: '상호작용', logical: 'KeyE', def: ['KeyE', null] },
+  { id: 'raise', name: '시체 부활 (망자의 군주)', logical: 'KeyG', def: ['KeyG', null] }
 ];
 const GAME_KEYS = new Set(KEY_ACTIONS.map((a) => a.logical).concat(['Mouse2']));
 function keyLabel(c) { // 화면 표시용 키 이름
