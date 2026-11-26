@@ -153,7 +153,7 @@ class NecroGolem {
     if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1;
     if (best && d < best.radius + 14 && this.cd <= 0) { this.cd = G.rate; this.atkT = 0.35;
       world.damageEnemy(best, world.necroWeaponSrc(P, 6, G.atk), dx / d, dy / d);
-      if (Math.random() < G.corpseChance && !best.def.boss && !best.def.master && !best.def.dummy && !best.necroAlly) world.necroAddCorpse({ x: best.x + randInt(-8, 8), y: best.y + randInt(2, 8), def: best.def, elite: best.elite, maxHp: best.maxHp, damage: best.damage }); // [사용자 결정] 골렘 타격 시 70% 확률로 그 몬스터의 시체 생성
+      if (Math.random() < G.corpseChance && !best.def.boss && !best.def.master && !best.def.dummy && !best.necroAlly) world.necroAddCorpse({ x: best.x + randInt(-8, 8), y: best.y + randInt(2, 8), def: best.def, elite: best.elite, maxHp: best.maxHp, damage: best.damage }); // [사용자 결정] 골렘 타격 시 50% 확률로 그 몬스터의 시체 생성
       if (best.alive && !best.def.ccImmune) { best.stunT = Math.max(best.stunT || 0, G.stun); world.effects.text(best.x, best.y - best.radius - 8, '기절', '#c8c0b0'); } // 확정 0.5초 기절
       world.effects.ring(best.x, best.y, 16, '#c8c0b0'); world.addShake(0.06, 2); }
     for (const b of world.enemyBullets) if (b.alive && !b.blade && Math.hypot(b.x - this.x, b.y - (this.y - 6)) < this.half + 5) { b.alive = false; this.hurt(b.damage || 5); world.effects.spark(b.x, b.y, '#c8c0b0'); } // 몸으로 막기
