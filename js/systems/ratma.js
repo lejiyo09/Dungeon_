@@ -73,9 +73,21 @@ class NecroWraith {
 // ════════════════════════════════════════════
 // ── 해골 (기본 상시 해골 · 추가 소환 10초 해골 · 묘지의 자폭 해골)
 class NecroSkeleton {
-  constructor(x, y, owner, o = {}) { this.x = x; this.y = y; this.owner = owner; this.idx = o.idx || 0; this.temp = o.temp || 0; this.bomb = !!o.bomb; this.life = this.temp || Infinity; this.half = 4; this.cd = 0.3; this.t = Math.random() * 5; this.face = 1; this.alive = true; this.atkT = 0; this.spawnT = 0.35; }
+  constructor(x, y, owner, o = {}) { this.initTank(owner); this.x = x; this.y = y; this.owner = owner; this.idx = o.idx || 0; this.temp = o.temp || 0; this.bomb = !!o.bomb; this.life = this.temp || Infinity; this.half = 4; this.cd = 0.3; this.t = Math.random() * 5; this.face = 1; this.alive = true; this.atkT = 0; this.spawnT = 0.35; }
+  initTank(owner) { // [사용자 결정] 해골도 맞으며 버팀 — 적이 노릴 때 쓰는 대역 (골렘·부하와 같은 방식)
+    const S = NECRO.skeleton, fl = typeof game !== 'undefined' && game.necroFloor ? game.necroFloor().hp : 1, self = this;
+    this.maxHp = Math.round(owner.maxHp * S.hpMul * fl); this.hp = this.maxHp; this.hurtT = 0;
+    this.guard = Object.create(owner); Object.defineProperty(this.guard, 'isInvulnerable', { get: () => !self.alive });
+    Object.assign(this.guard, { state: 'NORMAL', hadesT: 0, endured: false, feast: 0, hp: this.hp, x: 0, y: 0, takeDamage(a) { self.hurt(a); return true; } });
+  }
+  hurt(a) { if (!this.alive || this.bomb) return; this.hp -= a; this.guard.hp = this.hp; this.hurtT = 0.12;
+    if (this.hp <= 0) { this.alive = false; if (typeof game !== 'undefined') { game.effects.burst(this.x, this.y - 4, '#e8e0d0', 10); for (let k = 0; k < 6; k++) game.effects.part(this.x, this.y - 4, randInt(-40, 40), -30 - Math.random() * 30, { color: '#d8d0c0', life: 0.5, size: 2, size2: 0, drag: 1.5 });
+      if (!this.temp) this.owner.skelBackAt = Math.max(this.owner.skelBackAt || 0, game.time + NECRO.skeleton.respawn); } } } // 쓰러지면 4초 뒤 다시 일어남
   update(dt, world) {
-    this.t += dt; this.cd -= dt; this.atkT = Math.max(0, this.atkT - dt); this.spawnT = Math.max(0, this.spawnT - dt);
+    this.t += dt; this.cd -= dt; this.atkT = Math.max(0, this.atkT - dt); this.spawnT = Math.max(0, this.spawnT - dt); this.hurtT = Math.max(0, (this.hurtT || 0) - dt);
+    if (!this.bomb && this.hp < this.maxHp) { this.hp = Math.min(this.maxHp, this.hp + this.maxHp * NECRO.skeleton.regen * dt); }
+    if (!this.bomb) { this.guard.x = this.x; this.guard.y = this.y; this.guard.hp = this.hp;
+      for (const b of world.enemyBullets) if (b.alive && !b.blade && Math.hypot(b.x - this.x, b.y - (this.y - 5)) < this.half + 3) { b.alive = false; this.hurt(b.damage || 5); world.effects.spark(b.x, b.y, '#e8e0d0'); if (!this.alive) return; } } // 적 탄을 몸으로 막음
     const P = this.owner, S = NECRO.skeleton;
     if (this.life !== Infinity) { this.life -= dt; if (this.life <= 0) { this.alive = false; if (this.bomb) this.blow(world); else world.effects.burst(this.x, this.y - 3, '#d8d0c0', 8); return; } }
     if (P.state === 'DEAD' && !this.bomb) return;
@@ -98,7 +110,8 @@ class NecroSkeleton {
   render(ctx) {
     if (this.temp && this.life < 1.5 && Math.floor(this.life * 10) % 2 === 0) return;
     const f = this.face, x = Math.round(this.x), y = Math.round(this.y) + 4 - Math.round(this.spawnT * 20), st = this.atkT > 0 ? 1 : Math.floor(this.t * 8) % 2, R = (dx, dy, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(f > 0 ? x + dx : x - dx - w, y + dy, w, h); };
-    const bone = '#e8e0d0', dark = '#9a9284';
+    const bone = this.hurtT > 0 ? '#ffffff' : '#e8e0d0', dark = this.hurtT > 0 ? '#ffffff' : '#9a9284';
+    if (!this.bomb && this.hp < this.maxHp) { ctx.fillStyle = '#000'; ctx.fillRect(x - 5, y - 15, 10, 2); ctx.fillStyle = '#e8e0d0'; ctx.fillRect(x - 5, y - 15, Math.round(10 * Math.max(0, this.hp / this.maxHp)), 2); }
     ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x - 4, y + 1, 8, 2);
     if (this.bomb) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 + 0.25 * Math.sin(this.t * 14); ctx.fillStyle = '#ff7a3a'; ctx.beginPath(); ctx.arc(x, y - 6, 6, 0, TAU); ctx.fill(); ctx.restore(); }
     R(-3, -11, 6, 5, OUTLINE); R(-2, -10, 4, 3, bone); R(-2, -8, 1, 1, OUTLINE); R(0, -8, 1, 1, OUTLINE); R(1, -9, 1, 1, this.bomb ? '#ff5a3a' : '#7affc0'); // 두개골·눈
@@ -771,8 +784,8 @@ Player.prototype.ratmaAtkBonus = function () {
     if (!e.alive || e.def.boss || e.def.dummy || !this.allies.length) return null;
     if (e.necroAlly) return null;
     for (const a of this.allies) if (a instanceof NecroGolem && a.up && Math.hypot(a.x - e.x, a.y - e.y) < NECRO.golem.taunt) return a;
-    let best = null, bd = 70; const p = this.player, dp = p ? Math.hypot(p.x - e.x, p.y - e.y) : 1e9; // 부하가 플레이어보다 가까이 붙어 있으면 그 부하를 노림 (원본 체력으로 버팀)
-    for (const a of this.allies) if (a instanceof NecroThrall && a.alive) { const d = Math.hypot(a.x - e.x, a.y - e.y); if (d < bd && d < dp) { bd = d; best = a; } }
+    const S = NECRO.skeleton; let best = null, bd = S.taunt; const p = this.player, dp = p ? Math.hypot(p.x - e.x, p.y - e.y) : 1e9; // [사용자 결정] 어그로 분산: 근처 해골·부하를 노림 (플레이어보다 조금 멀어도)
+    for (const a of this.allies) { if (!a.alive || !(a instanceof NecroThrall || (a instanceof NecroSkeleton && !a.bomb))) continue; const d = Math.hypot(a.x - e.x, a.y - e.y); if (d < bd && d < dp + S.bias) { bd = d; best = a; } }
     return best ? { proxy: best.guard } : null;
   };
   wrap('resetWorldLists', function (orig, map) { this.necroCorpses = []; return orig.call(this, map); });
@@ -783,7 +796,7 @@ Player.prototype.ratmaAtkBonus = function () {
     if (p.hero.id !== NECRO_ID || p.state === 'DEAD') return;
     const mine = (C) => this.allies.filter((a) => a instanceof C && a.owner === p && a.alive);
     const want = NECRO.skeleton.base + NECRO.skeleton.perRank * Math.min(2, p.rank || 0), sk = mine(NecroSkeleton).filter((a) => !a.temp && !a.bomb);
-    for (let i = sk.length; i < want; i++) this.allies.push(new NecroSkeleton(p.x + randInt(-14, 14), p.y + randInt(4, 12), p, { idx: i }));
+    if (sk.length < want && (p.skelBackAt || 0) > this.time) { /* 쓰러진 해골은 4초 뒤 */ } else for (let i = sk.length; i < want; i++) this.allies.push(new NecroSkeleton(p.x + randInt(-14, 14), p.y + randInt(4, 12), p, { idx: i }));
     for (let i = want; i < sk.length; i++) sk[i].alive = false;
     const wraith = p.line && p.line.id === 'wraith';
     const g = mine(NecroGolem); if (wraith && p.rank >= 1 && !g.length) this.allies.push(new NecroGolem(p.x - 16, p.y + 8, p)); if ((!wraith || p.rank < 1) && g.length) g.forEach((a) => { a.alive = false; });
