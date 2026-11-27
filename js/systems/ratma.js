@@ -873,12 +873,25 @@ Player.prototype.ratmaAtkBonus = function () {
     }
     return best;
   };
+  G.necroLandSpearFree = function (p) {
+    return !!(p && p.hero.id === NECRO_ID && p.state !== 'DEAD'
+      && p.line && p.line.id === 'lich' && p.skillId === 'necro_spear'
+      && (p.necroLandSpearUntil || 0) > this.time);
+  };
+  G.necroFreeSpearOrigin = function (p) {
+    const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y;
+    const d = Math.hypot(dx, dy) || 1, k = Math.min(1, 220 / d);
+    const x = p.x + dx * k, y = p.y + dy * k;
+    return this.map && this.map.isSolidAt(x, y) ? { x: p.x, y: p.y } : { x, y };
+  };
   G.necroCorpseCast = function (p, automatic) {
     if (!p || p.hero.id !== NECRO_ID || p.rank < 1 || p.state === 'DEAD') return false;
     if (p.castLock > 0 || p.denyT > 0 || !this.zoneRight('job') || (p.necroCorpseCd || 0) > 0) return false;
-    const c = automatic
-      ? this.necroBestAutoCorpse(p)
-      : (this.necroCorpseAtMouse() || this.necroCorpseNearMouse(48));
+    const freeSpear = this.necroLandSpearFree(p);
+    const c = freeSpear
+      ? this.necroFreeSpearOrigin(p)
+      : (automatic ? this.necroBestAutoCorpse(p)
+        : (this.necroCorpseAtMouse() || this.necroCorpseNearMouse(48)));
     if (!c) {
       if (!automatic && !(this.necroSayT > this.time)) {
         this.necroSayT = this.time + 0.8;
@@ -887,7 +900,7 @@ Player.prototype.ratmaAtkBonus = function () {
       return false;
     }
     if (p.line && p.line.id === 'wraith' && p.skillId === 'necro_blast') this.necroBlast(p, c);
-    else if (p.line && p.line.id === 'lich' && p.skillId === 'necro_spear') this.necroSpears(p, c);
+    else if (p.line && p.line.id === 'lich' && p.skillId === 'necro_spear') this.necroSpears(p, c, freeSpear);
     else return false;
     p.necroCorpseCd = NECRO.corpseCast.cd;
     p.necroCorpseAutoNext = this.time + 0.08;
@@ -941,8 +954,8 @@ Player.prototype.ratmaAtkBonus = function () {
     if (rec.elite) e.elite = true; e.hp = Math.max(1, Math.round(e.maxHp * (rec.hpFrac == null ? 1 : rec.hpFrac)));
     const a = new NecroThrall(e, p, { rec }); this.allies.push(a); return a;
   };
-  G.necroSpears = function (p, c) { // 리치: 시체 1개 → 시체 창 3개
-    this.necroUseCorpse(c); const S = NECRO.spear;
+  G.necroSpears = function (p, c, freeCast = false) { // 리치: 시체 1개 또는 망자의 땅 무료 발사 → 시체 창 3개
+    if (!freeCast) this.necroUseCorpse(c); const S = NECRO.spear;
     for (let i = 0; i < S.count; i++) this.zones.push(new NecroSpear(c.x + (i - 1) * 7, c.y, p, this.skillDmg(S.dmg), i));
     this.effects.ring(c.x, c.y, 14, '#d8d0c0'); for (let i = 0; i < 10; i++) this.effects.part(c.x + randInt(-6, 6), c.y + 2, randInt(-30, 30), -50, { color: i % 2 ? '#e8e0d0' : '#b47aff', life: 0.5, size: 2, size2: 0, drag: 2 });
     SFX.play('magic', 0.15);
@@ -956,6 +969,7 @@ Player.prototype.ratmaAtkBonus = function () {
     this.effects.skyBeam(x, y, '#d8fff0', 0, 8); this.addShake(0.25, 5); SFX.play('gate', 0.2);
   };
   G.necroLandOfDead = function (p) { // 망자의 땅: 얼어붙은 땅
+    p.necroLandSpearUntil = this.time + NECRO.land.life; // 지속시간 동안 리치의 시체 창은 시체를 소모하지 않음
     this.zones.push(new NecroLandOfDead(p));
     this.screenFlash = 0.16; this.flashColor = '160,220,255';
     this.effects.ring(p.x, p.y, 110, '#bfefff'); this.effects.rays(p.x, p.y, '#bfefff', 20, 180, 0.8);
@@ -1099,13 +1113,22 @@ Player.prototype.ratmaAtkBonus = function () {
         runAsOwner(() => this.necroCorpseCast(owner, false));
       }
       if (owner.necroCorpseAuto && owner.rank >= 1 && owner.line && owner.line.id === 'lich' && owner.skillId === 'necro_spear') {
-        const Q = owner.necroCorpseQueue || (owner.necroCorpseQueue = []), L = this.necroCorpses || [];
-        // 자동 ON 시 기존 시체도 큐에 넣고, 이미 소비·만료된 항목은 건너뛴다.
-        for (const c of L) if (!Q.includes(c)) Q.push(c);
-        while (Q.length && !L.includes(Q[0])) Q.shift();
-        if (Q.length && this.time >= (owner.necroCorpseAutoNext || 0)) {
-          const c = Q.shift(); owner.necroCorpseAutoNext = this.time + 0.08;
-          runAsOwner(() => this.necroSpears(owner, c));
+        if (this.necroLandSpearFree(owner)) {
+          // 망자의 땅 동안에는 실제 시체 대기열과 분리해 0.45초마다 무료 시체 창을 발사한다.
+          if (owner.necroCorpseCd <= 0 && this.time >= (owner.necroCorpseAutoNext || 0)) {
+            owner.necroCorpseCd = NECRO.corpseCast.cd;
+            owner.necroCorpseAutoNext = this.time + NECRO.corpseCast.cd;
+            runAsOwner(() => this.necroSpears(owner, this.necroFreeSpearOrigin(owner), true));
+          }
+        } else {
+          const Q = owner.necroCorpseQueue || (owner.necroCorpseQueue = []), L = this.necroCorpses || [];
+          // 자동 ON 시 기존 시체도 큐에 넣고, 이미 소비·만료된 항목은 건너뛴다.
+          for (const c of L) if (!Q.includes(c)) Q.push(c);
+          while (Q.length && !L.includes(Q[0])) Q.shift();
+          if (Q.length && this.time >= (owner.necroCorpseAutoNext || 0)) {
+            const c = Q.shift(); owner.necroCorpseAutoNext = this.time + 0.08;
+            runAsOwner(() => this.necroSpears(owner, c));
+          }
         }
       } else if (owner.necroCorpseAuto && owner.rank >= 1 && owner.line && owner.line.id === 'wraith' && this.time >= (owner.necroCorpseAutoNext || 0) && owner.necroCorpseCd <= 0) {
         owner.necroCorpseAutoNext = this.time + 0.12;
