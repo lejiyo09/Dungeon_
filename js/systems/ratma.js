@@ -323,16 +323,24 @@ class NecroArmyOfDead {
     this.x = x; this.y = y; this.owner = owner; this.t = 0;
     this.life = NECRO.army.life; this.next = 0.12; this.pulse = 0; this.alive = true;
     this.r = NECRO.army.r;
+    // 연출 전용 망자 병사: 실제 적·소환수 객체가 아니라 장판 안에서 솟아올라 중앙으로 돌진하는 그림자다.
+    this.soldiers = Array.from({ length: 18 }, (_, i) => ({
+      angle: i / 18 * TAU + (Math.random() - 0.5) * 0.13,
+      radius: this.r * (0.54 + Math.random() * 0.43),
+      phase: i / 18 * 0.82,
+      scale: 0.82 + Math.random() * 0.28,
+      tint: i % 3
+    }));
   }
   update(dt, world) {
     this.t += dt; this.life -= dt; this.next -= dt;
     if (this.life <= 0 || !this.owner || this.owner.state === 'DEAD') {
-      this.alive = false; world.effects.burst(this.x, this.y, '#9affd8', 18); return;
+      this.alive = false; world.effects.burst(this.x, this.y, '#9affd8', 24); return;
     }
     if (this.next <= 0) {
       this.next += NECRO.army.every; this.pulse++;
-      world.effects.ring(this.x, this.y, this.r * (0.72 + (this.pulse % 2) * 0.12), '#9affd8');
-      world.effects.rays(this.x, this.y, '#d8fff0', 10, this.r, 0.35);
+      world.effects.ring(this.x, this.y, this.r * (0.76 + (this.pulse % 2) * 0.1), '#9affd8');
+      world.effects.rays(this.x, this.y, '#e0fff4', 16, this.r, 0.42);
       for (const e of world.enemies) {
         if (!e.targetable) continue;
         const dx = this.x - e.x, dy = this.y - e.y, d = Math.hypot(dx, dy) || 1;
@@ -347,38 +355,97 @@ class NecroArmyOfDead {
           const pull = Math.min(NECRO.army.pull, d - 20);
           moveAndCollide(e, dx / d * pull, dy / d * pull, world.map);
         }
-        world.effects.part(e.x, e.y - 3, 0, -14, { color: '#b8ffe9', life: 0.35, size: 2, size2: 0, drag: 1 });
+        world.effects.slash(e.x, e.y - 3, Math.atan2(-dy, -dx), 20, 1.15, '#dffff0');
+        world.effects.part(e.x, e.y - 3, 0, -18, { color: '#dffff0', life: 0.42, size: 2.5, size2: 0, drag: 1 });
+      }
+      // 지면에서 뼛조각과 영혼 불꽃이 동시에 솟아오르는 충격파
+      for (let i = 0; i < 18; i++) {
+        const a = i / 18 * TAU + this.pulse * 0.19, d = this.r * (0.42 + Math.random() * 0.52);
+        world.effects.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.62,
+          Math.cos(a) * 24, -24 - Math.random() * 32,
+          { color: i % 3 ? '#d8d0c0' : '#9affd8', life: 0.48, size: 2 + Math.random(), size2: 0, drag: 1.7, add: i % 3 === 0 });
       }
       SFX.play('magic', 0.05);
     }
-    if (Math.random() < 0.75) {
-      const a = Math.random() * TAU, d = 20 + Math.random() * this.r;
-      world.effects.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.65,
-        -Math.cos(a) * 18, -Math.sin(a) * 16 - 10,
-        { color: Math.random() < 0.5 ? '#9affd8' : '#d8fff0', life: 0.6, size: 2, size2: 0, drag: 1 });
+    if (Math.random() < 0.82) {
+      const a = Math.random() * TAU, d = 18 + Math.random() * this.r;
+      world.effects.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.62,
+        -Math.cos(a) * 22, -Math.sin(a) * 15 - 12,
+        { color: Math.random() < 0.55 ? '#9affd8' : '#e8e0d0', life: 0.68, size: 2, size2: 0, drag: 1 });
     }
   }
   render(ctx) {
-    const k = Math.max(0, Math.min(1, this.life / 0.55, this.t / 0.18));
+    const k = Math.max(0, Math.min(1, this.life / 0.55, this.t / 0.16));
     const wave = (this.t % NECRO.army.every) / NECRO.army.every;
+    // 지면의 사령진과 중심을 향해 수렴하는 원형 문양
     ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.62);
-    ctx.globalAlpha = 0.16 * k; ctx.fillStyle = '#21483e'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill();
-    ctx.globalAlpha = 0.68 * k; ctx.strokeStyle = '#9affd8'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(0, 0, this.r * (0.62 + wave * 0.38), 0, TAU); ctx.stroke();
-    ctx.globalAlpha = 0.55 * k; ctx.strokeStyle = '#e0fff4'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(0, 0, this.r * (0.28 + (1 - wave) * 0.35), 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.2 * k; ctx.fillStyle = '#172c28'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.58 * k; ctx.strokeStyle = '#9affd8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, this.r * (0.94 + Math.sin(this.t * 3.2) * 0.025), 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.4 * k; ctx.strokeStyle = '#dffff0'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(0, 0, this.r * (0.68 + wave * 0.08), 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.34 * k; ctx.strokeStyle = '#b8ffe9';
+    for (let i = 0; i < 18; i++) {
+      const a = i / 18 * TAU - this.t * 0.28, r0 = this.r * 0.58, r1 = this.r * 0.9;
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0);
+      ctx.lineTo(Math.cos(a) * r1, Math.sin(a) * r1); ctx.stroke();
+      const tx = Math.cos(a) * this.r * 0.97, ty = Math.sin(a) * this.r * 0.97;
+      ctx.fillStyle = '#dffff0'; ctx.fillRect(Math.round(tx) - 1, Math.round(ty) - 2, 2, 4);
+    }
+    // 중앙으로 빨려드는 세 겹의 사령 파동
+    for (let i = 0; i < 3; i++) {
+      const f = (wave + i / 3) % 1, r = this.r * (0.18 + f * 0.72);
+      ctx.globalAlpha = (0.08 + 0.16 * (1 - f)) * k;
+      ctx.strokeStyle = i % 2 ? '#c08aff' : '#e8fff5'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.stroke();
+    }
     ctx.restore();
-    // 망자 병사들이 원 둘레에서 중앙으로 돌진하는 실루엣
-    ctx.save(); ctx.globalAlpha = 0.75 * k;
-    for (let i = 0; i < 8; i++) {
-      const a = this.t * 1.9 + i * TAU / 8, r = this.r * (0.78 - wave * 0.18);
-      const x = Math.round(this.x + Math.cos(a) * r), y = Math.round(this.y + Math.sin(a) * r * 0.58);
-      ctx.save(); ctx.translate(x, y); ctx.rotate(a + Math.PI);
-      ctx.fillStyle = OUTLINE; ctx.fillRect(-3, -9, 7, 13);
-      ctx.fillStyle = '#8bd8bb'; ctx.fillRect(-2, -8, 5, 11);
-      ctx.fillStyle = '#dffff3'; ctx.fillRect(-2, -9, 4, 3);
-      ctx.fillStyle = '#243b36'; ctx.fillRect(-1, -5, 1, 1); ctx.fillRect(1, -5, 1, 1);
-      ctx.fillStyle = '#baffdf'; ctx.fillRect(-5, -5, 2, 8); ctx.fillRect(4, -5, 2, 8);
+
+    // 망자 병사 18명이 지면에서 차례로 솟아올라 무기를 휘두르며 중앙으로 돌진
+    ctx.save();
+    for (const s of this.soldiers) {
+      const cycle = (this.t * 0.82 + s.phase) % 1;
+      const rise = Math.max(0, Math.min(1, cycle / 0.13));
+      const charge = Math.max(0, Math.min(1, (cycle - 0.13) / 0.52));
+      const fade = cycle > 0.78 ? Math.max(0, (0.94 - cycle) / 0.16) : 1;
+      const radius = s.radius * (1 - charge * 0.84);
+      const x = this.x + Math.cos(s.angle) * radius;
+      const y = this.y + Math.sin(s.angle) * radius * 0.58;
+      const heading = Math.atan2(this.y - y, this.x - x);
+      const bob = (1 - rise) * 5 + Math.sin(this.t * 15 + s.phase * 16) * 0.7;
+      const swing = Math.sin(this.t * 17 + s.phase * 15) * (0.7 + charge * 1.2);
+      ctx.save();
+      ctx.translate(Math.round(x), Math.round(y + bob));
+      ctx.rotate(heading + Math.PI / 2);
+      ctx.scale(s.scale, s.scale);
+      ctx.globalAlpha = k * fade * (0.25 + rise * 0.75);
+      // 발밑 그림자
+      ctx.fillStyle = 'rgba(0,0,0,0.42)'; ctx.beginPath(); ctx.ellipse(0, 3, 5.5, 2.2, 0, 0, TAU); ctx.fill();
+      // 해골 머리
+      ctx.fillStyle = OUTLINE; ctx.fillRect(-3, -12, 7, 7);
+      ctx.fillStyle = s.tint === 1 ? '#c8c0b0' : '#e8e0d0'; ctx.fillRect(-2, -11, 5, 5);
+      ctx.fillStyle = '#27332f'; ctx.fillRect(-1, -9, 1, 2); ctx.fillRect(2, -9, 1, 2);
+      ctx.fillStyle = '#9affd8'; ctx.fillRect(-1, -9, 1, 1); ctx.fillRect(2, -9, 1, 1);
+      // 갈비뼈와 척추
+      ctx.fillStyle = OUTLINE; ctx.fillRect(-4, -5, 8, 7);
+      ctx.fillStyle = '#d8d0c0'; ctx.fillRect(-3, -4, 6, 5);
+      ctx.fillStyle = '#766f64'; ctx.fillRect(-2, -3, 4, 1); ctx.fillRect(-2, -1, 4, 1);
+      ctx.fillStyle = '#f0e8d8'; ctx.fillRect(-1, -4, 2, 5);
+      // 팔과 휘두르는 뼈검
+      ctx.fillStyle = OUTLINE; ctx.fillRect(-6, -5 + Math.round(swing), 3, 7);
+      ctx.fillStyle = '#c8c0b0'; ctx.fillRect(-5, -4 + Math.round(swing), 1, 5);
+      ctx.fillStyle = OUTLINE; ctx.fillRect(3, -5 - Math.round(swing), 3, 7);
+      ctx.fillStyle = '#d8d0c0'; ctx.fillRect(4, -4 - Math.round(swing), 1, 5);
+      ctx.save(); ctx.rotate(-0.45 - swing * 0.42);
+      ctx.fillStyle = OUTLINE; ctx.fillRect(5, -13, 2, 12);
+      ctx.fillStyle = '#e8e0d0'; ctx.fillRect(6, -12, 1, 9);
+      ctx.fillStyle = '#b8ffe9'; ctx.fillRect(4, -14, 4, 2);
+      ctx.restore();
+      // 골반과 달리는 다리
+      ctx.fillStyle = OUTLINE; ctx.fillRect(-3, 2, 7, 3);
+      ctx.fillStyle = '#c8c0b0';
+      ctx.fillRect(-2, 5, 2, 4 + Math.round(swing));
+      ctx.fillRect(1, 5, 2, 4 - Math.round(swing));
       ctx.restore();
     }
     ctx.restore();
