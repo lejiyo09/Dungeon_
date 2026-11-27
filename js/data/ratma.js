@@ -30,7 +30,10 @@ const NECRO = {
   lichFeed: { hp: 12, energy: 10 },  // (회복량 20 → 12: 60%)                                                             // [사용자 결정] 리치 계열 패시브: 시체를 쓸 때마다 체력 20 · 에너지 10 회복
   blast: { r: 64, dmg: 25, hpPct: 0.06 },                                                     // [사용자 결정] 시체 폭발(망령 1차부터 F): 시체 1구를 터뜨려 주변 피해 = 스킬 피해 35 + 그 몬스터 최대 체력의 12%
   spear: { count: 3, dmg: 10, speed: 260, range: 200, debuffs: 2 },                             // 리치: 시체 창 3개 · 무작위 디버프 2종
-  grave: { r: 92, life: 10, every: 2, corpses: [2, 4], charm: 0.3, charmLife: 10, charmDmg: 60, charmR: 46, cd: 24 } // 불멸의 군주: 묘지 10초 · [사용자 결정] 2초마다 시체 2~4구 (자폭 해골 대신) · 일반 적 30% 정신지배(보스 면역)
+  corpseCast: { cd: 0.45 },                                                                       // 시체 기술 수동·자동 발동 사이 간격
+  army: { r: 112, life: 2.6, every: 0.42, dmg: 18, pull: 13, cd: 20 },                           // 망자의 군대: 죽음의 계곡 · 주변 적을 중앙으로 끌며 사령 공격
+  land: { life: 10, every: 1.0, freeze: 1.35, bossSlow: 0.72, cd: 28 },                          // 망자의 땅: 얼어붙은 땅 · 10초간 모든 적을 주기적으로 빙결
+  grave: { r: 92, life: 10, every: 2, corpses: [2, 4], charm: 0.3, charmLife: 10, charmDmg: 60, charmR: 46, cd: 24 } // 구버전 묘지 저장 호환용
 };
 const NECRO_DEBUFFS = [
   { type: 'burn', chance: 1, duration: 3, dps: 10 }, { type: 'freeze', chance: 1, duration: 1.6, slow: 0.5 }, { type: 'poison', chance: 1, duration: 4, dps: 12 },
@@ -44,16 +47,16 @@ JOB_LINES.hero_necromancer = {
     looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_wraithcmd', body: '#263235', accent: '#83bba9' }, { sprite: 'necro_deadlord', body: '#1b2428', accent: '#a5d8c2' }],
     fx: { trail: '#9affd8', trail2: '#3a8a7a', kind: 'mist' },
     skills: [NECRO_NONE,
-      { id: 'necro_blast', name: '시체 폭발', desc: '시체에 마우스를 올리고 F → 시체를 터뜨려 주변 적에게 피해 (그 몬스터 최대 체력에 비례) · 해골 3 + 골렘(CC 탱커) 상시', cd: 0.3 },
-      { id: 'necro_blast', name: '시체 폭발', desc: 'F: 시체 폭발 · G: 시체에 마우스를 올리고 → 그 몬스터를 원본 그대로 부하로 되살림 (최대 5) · 골렘 유지', cd: 0.3 }],
-    gSkills: [null, null, { id: 'necro_raise', name: '시체 부활', cd: 0 }] }, // G키 스킬 (재사용 대기시간 없음)
+      { id: 'necro_blast', name: '시체 폭발', desc: 'G: 시체를 터뜨려 주변 적에게 피해 (소비한 몬스터 최대 체력 비례) · V: 자동 사용 전환', cd: 0.3 },
+      { id: 'necro_blast', name: '시체 폭발', desc: 'G: 시체 폭발 · V: 자동 사용 전환 · F: 망자의 군대 — 죽음의 계곡 (적을 끌어모아 사령의 군세로 공격)', cd: 0.3 }],
+    gSkills: [null, null, { id: 'necro_army', name: '망자의 군대', cd: NECRO.army.cd }] }, // F키 궁극 기술
   lich: { name: '리치', desc: '시체와 저주 · 시체를 창으로 바꾸고, 묘지로 적을 지배해 자폭시킴', ranks: ['사령술사', '리치', '불멸의 군주'], color: '#b47aff',
     looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_lich', body: '#2c2528', accent: '#d6c8a0' }, { sprite: 'necro_lichlord', body: '#17171f', accent: '#e0c77d' }],
     fx: { trail: '#b47aff', trail2: '#5a2a9a', kind: 'crack' },
     skills: [NECRO_NONE,
-      { id: 'necro_spear', name: '시체 창', desc: '시체에 마우스를 올리고 F → 시체 1개를 써서 시체 창 3개 (주변 적 자동 추적 · 무작위 디버프 2종) · 패시브: 시체를 쓸 때마다 체력 12 · 에너지 10 회복', cd: 0.3 },
-      { id: 'necro_spear', name: '시체 창', desc: 'F: 시체 창 · G: 마우스 위치에 10초 묘지 (재사용 대기 24초) — 2초마다 시체 2~4구가 솟아남(묘지 시체는 시체 창 자동), 주변 일반 적 30% 정신지배(10초 뒤 자폭, 보스 면역)', cd: 0.3 }],
-    gSkills: [null, null, { id: 'necro_grave', name: '묘지', cd: NECRO.grave.cd }] } // G키 스킬
+      { id: 'necro_spear', name: '시체 창', desc: 'G: 시체 1구를 써서 시체 창 3개 발사 (주변 적 자동 추적 · 무작위 디버프 2종) · 시체 사용 시 체력 12 · 에너지 10 회복 · V: 자동 사용 전환', cd: 0.3 },
+      { id: 'necro_spear', name: '시체 창', desc: 'G: 시체 창 · V: 자동 사용 전환 · F: 망자의 땅 — 얼어붙은 땅 (10초 동안 모든 적을 주기적으로 빙결)', cd: 0.3 }],
+    gSkills: [null, null, { id: 'necro_land', name: '망자의 땅', cd: NECRO.land.cd }] } // F키 궁극 기술
 };
 
 // ── 무기: 시작 무기 1종 + 라트마 고유 무기 8종
