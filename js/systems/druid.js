@@ -93,8 +93,164 @@
           "....OOSSSOOSSO.......",
           "...O.O....O.O........."
         ]
+  };
+  const isBeast = (p) => !!p && p.hero && p.hero.id === DRUID && p.line && p.line.id === BASE;
+  const rankMax = (p) => Math.min(MAX_SPIRITS, 3 + Math.max(0, Math.min(2, p.rank || 0)));
+  const bondMap = (p) => (p.druidBonds || (p.druidBonds = { wolf: 0, bear: 0, stag: 0, hawk: 0, snake: 0, fox: 0 }));
+  const getMine = (world, p) => world.allies.filter((a) => a instanceof DruidSpirit && a.alive && a.owner === p);
+  const activeSet = (world, p) => new Set(getMine(world, p).map((a) => a.kind));
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+  const targetable = (e, world) => e && e.targetable && !(e.def && e.def.dummy && world.mode !== 'lobby');
+  function findTarget(world, x, y, range) {
+    let best = null, score = Infinity;
+    for (const e of world.enemies) {
+      if (!targetable(e, world)) continue;
+      const d = Math.hypot(e.x - x, e.y - y);
+      if (d > range + e.radius) continue;
+      const s = d * (e.def.boss ? 0.86 : 1);
+      if (s < score) { score = s; best = e; }
+    }
+    return best;
+  }
+  function awardHit(world, owner, kind, amount) {
+    const ally = world.allies.find((a) => a instanceof DruidSpirit && a.owner === owner && a.kind === kind && a.alive);
+    if (ally) ally.gainBond(amount, world);
+  }
+  function hit(world, owner, enemy, baseDamage, color, options) {
+    if (!targetable(enemy, world)) return false;
+    const o = options || {};
+    const d = Math.hypot(enemy.x - owner.x, enemy.y - owner.y) || 1;
+    const src = {
+      damage: world.skillDmg(baseDamage), mods: owner.mods,
+      knockback: o.knockback == null ? 3 : o.knockback,
+      from: owner, minion: true, druidOwner: owner,
+      status: o.status || null
+    };
+    world.damageEnemy(enemy, src, (enemy.x - owner.x) / d, (enemy.y - owner.y) / d, { quiet: !!o.quiet });
+    return true;
+  }
+  function aoe(world, owner, radius, baseDamage, color, options) {
+    const o = options || {};
+    let count = 0;
+    for (const e of world.enemies) {
+      if (!targetable(e, world) || Math.hypot(e.x - owner.x, e.y - owner.y) > radius + e.radius) continue;
+      hit(world, owner, e, baseDamage, color, { knockback: o.knockback == null ? 4 : o.knockback, status: o.status || null, quiet: true });
+      if (e.alive && o.stun) {
+        if (e.def.boss || e.def.ccImmune) { e.slow = Math.max(e.slow || 0, o.bossSlow || 0.45); e.slowK = Math.min(e.slowK || 1, o.bossSlowK || 0.72); }
+        else e.stunT = Math.max(e.stunT || 0, o.stun);
+      }
+      count++;
+    }
+    if (count) {
+      world.effects.ring(owner.x, owner.y, radius, color);
+      world.effects.ring(owner.x, owner.y, radius * 0.62, '#ffffff');
+    }
+    return count;
+  }
+  function priorityTargets(world, owner, range, count) {
+    return world.enemies.filter((e) => targetable(e, world) && Math.hypot(e.x - owner.x, e.y - owner.y) <= range + e.radius)
+      .sort((a, b) => (b.def.boss ? 1 : 0) - (a.def.boss ? 1 : 0) || b.hp - a.hp).slice(0, count);
+  }
+  function syncBuffs(world, p) {
+    const kinds = activeSet(world, p), temporaryGuard = p.druidTempGuardUntil > world.time ? (p.druidTempGuard || 0) : 0;
+    const temporaryMove = p.druidTempMoveUntil > world.time ? (p.druidTempMove || 0) : 0;
+    p.druidBuffs = {
+      fireRate: kinds.has('wolf') ? 0.04 : 0,
+      guard: Math.max(kinds.has('bear') ? 0.03 : 0, temporaryGuard),
+      energySave: kinds.has('stag') ? 0.05 : 0,
+      critChance: kinds.has('hawk') ? 0.02 : 0,
+      statusDuration: kinds.has('snake') ? 0.08 : 0,
+      moveSpeed: (kinds.has('fox') ? 0.03 : 0) + temporaryMove,
+      dashRecovery: kinds.has('fox') ? 0.04 : 0
+    };
+  }
+  class DruidSpirit {
+    constructor(owner, kind, life) {
+      const C = SPIRITS[kind];
+      this.owner = owner; this.kind = kind; this.x = owner.x + (Math.random() - 0.5) * 18;
+      this.y = owner.y + 7 + (Math.random() - 0.5) * 10;
+      this.life = 0; this.permanent = true; this.t = 0; this.attackCd = 0.4 + Math.random() * 0.25;
+      this.supportCd = 8; this.gainWindow = -10; this.gainInWindow = 0;
+      this.face = 1; this.alive = true; this.half = kind === 'bear' ? 9 : kind === 'stag' ? 7 : 5;
+      this.stuckT = 0; this.lastX = this.x; this.lastY = this.y; this.flashT = 0;
+      if (bondMap(owner)[kind] == null) bondMap(owner)[kind] = 0;
+    }
+    gainBond(amount, world) {
+      if (this.owner.jobSkillFx === 'guardian') amount *= 1.25;
+      const t = world.time;
+      if (t - this.gainWindow >= 1) { this.gainWindow = t; this.gainInWindow = 0; }
+      const allowed = Math.max(0, 10 - this.gainInWindow);
+      const add = Math.min(allowed, amount);
+      if (add <= 0) return;
+      this.gainInWindow += add;
+      const B = bondMap(this.owner), old = B[this.kind] || 0;
+      B[this.kind] = Math.min(100, old + add);
+      if (old < 100 && B[this.kind] >= 100) {
+        world.effects.ring(this.owner.x, this.owner.y, 26, SPIRITS[this.kind].color);
+        world.effects.text(this.owner.x, this.owner.y - 28, SPIRITS[this.kind].name + '와 완전한 유대!', SPIRITS[this.kind].color);
+        SFX.play('magic', 0.08);
+      }
+    }
+    update(dt, world) {
+      const p = this.owner, C = SPIRITS[this.kind];
+      this.t += dt; if (!this.permanent) this.life -= dt; this.attackCd -= dt; this.supportCd -= dt; this.flashT = Math.max(0, this.flashT - dt);
+      if ((!this.permanent && this.life <= 0) || p.state === 'DEAD') { this.alive = false; return; }
+      if (this.kind === 'stag' && this.supportCd <= 0) {
+        this.supportCd = 8;
+        const heal = Math.max(1, Math.round(p.maxHp * 0.01));
+        const before = p.hp; p.hp = Math.min(p.maxHp, p.hp + heal);
+        if (p.hp > before) { world.effects.heal(p.x, p.y); world.effects.text(p.x, p.y - 22, '+' + (p.hp - before), '#9affb0'); }
+      }
+      const target = findTarget(world, this.x, this.y, C.range);
+      let tx, ty, stop;
+      if (target) {
+        tx = target.x; ty = target.y;
+        stop = C.ranged ? C.stop : target.radius + (this.kind === 'bear' ? 12 : 7);
+      } else {
+        const a = this.t * 1.1 + Object.keys(SPIRITS).indexOf(this.kind) * 1.25;
+        tx = p.x + Math.cos(a) * (18 + (Object.keys(SPIRITS).indexOf(this.kind) % 2) * 5);
+        ty = p.y + 7 + Math.sin(a) * 10;
+        stop = 4;
+      }
+      let dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy) || 1;
+      if (target && C.ranged && d < C.stop * 0.45) { dx = -dx; dy = -dy; d = Math.hypot(dx, dy) || 1; tx = this.x + dx; ty = this.y + dy; }
+      if (d > stop) {
+        const speed = C.speed * (p.jobSkillFx === 'guardian' ? 1.08 : 1);
+        moveAndCollide(this, dx / d * Math.min(speed * dt, d - stop), dy / d * Math.min(speed * dt, d - stop), world.map);
+      }
+      if (Math.abs(dx) > 1) this.face = dx > 0 ? 1 : -1;
+      if (Math.hypot(this.x - p.x, this.y - p.y) > 310) { this.x = p.x + randInt(-12, 12); this.y = p.y + 8; }
+      if (Math.hypot(this.x - this.lastX, this.y - this.lastY) < 0.4 && target) this.stuckT += dt; else this.stuckT = 0;
+      this.lastX = this.x; this.lastY = this.y;
+      if (this.stuckT > 2.2 && target) { this.x = p.x + randInt(-16, 16); this.y = p.y + 6; this.stuckT = 0; }
+      if (!target || this.attackCd > 0 || target.negateT > 0) return;
+      const td = Math.hypot(target.x - this.x, target.y - this.y);
+      if (td > C.range + target.radius) return;
+      this.attackCd = C.rate; this.flashT = 0.16;
+      const source = {
+        damage: world.skillDmg(C.damage), mods: p.mods, knockback: this.kind === 'bear' ? 5 : 2,
+        from: p, minion: true, druidOwner: p
       };
-  const isBeast = (p) => !!p && p.hero && p.hero.id 
+      if (this.kind === 'snake') source.status = { type: 'poison', chance: 1, duration: 3, dps: world.skillDmg(3) };
+      const wasAlive = target.alive;
+      world.damageEnemy(target, source, (target.x - this.x) / (td || 1), (target.y - this.y) / (td || 1), { quiet: true });
+      if (wasAlive && target.alive !== false) this.gainBond(3, world);
+      if (wasAlive && !target.alive) this.gainBond(5, world);
+      if (this.kind === 'wolf') {
+        target.druidMarkUntil = world.time + 3.2; target.druidMarkOwner = p;
+        world.effects.ring(target.x, target.y, target.radius + 7, '#9ad8ff');
+      } else if (this.kind === 'bear') {
+        world.effects.ring(target.x, target.y, 20, '#c8a070');
+        if (target.alive && !target.def.boss && !target.def.ccImmune) target.stunT = Math.max(target.stunT || 0, 0.15);
+      } else if (this.kind === 'hawk') world.effects.beamline(this.x, this.y - 7, target.x, target.y, 1.5, '#70d8ff');
+      else if (this.kind === 'snake') world.effects.part(target.x, target.y - 3, randInt(-10, 10), -18, { color: '#8ddd55', life: 0.45, size: 2, size2: 0, drag: 2 });
+      else if (this.kind === 'fox') world.effects.slash(this.x, this.y, Math.atan2(target.y - this.y, target.x - this.x), 12, 1, '#d8a0ff');
+      else world.effects.slash(this.x, this.y, Math.atan2(target.y - this.y, target.x - this.x), 12, 1, '#9ad8ff');
+    }
+    render(ctx) {
+      const C = SPIRITS[this.kind], x = Math.round(this.x), bob = Math.sin(this.t * (this.kind === 'hawk' ? 7 : 3.5)) * 0.55;
+      const y = Math.round(this.y + bob);
+
       const dark = { wolf:'#587c96', bear:'#805c3d', stag:'#4d8961', hawk:'#3b7b9a', snake:'#456b32', fox:'#84518f' }[this.kind];
       const pal = { O:'#14101c', S:dark, B:C.color, H:C.accent, E:'#ffffff', N:'#1a1520' };
       const rows = SPIRIT_SPRITES[this.kind], w = Math.max(...rows.map(r => r.length)), h = rows.length;
