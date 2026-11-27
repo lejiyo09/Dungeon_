@@ -219,6 +219,8 @@
     }
   }
 
+  if (typeof COOP_CLASSES !== 'undefined') COOP_CLASSES.DruidSpirit = DruidSpirit;
+
   function drawHit(world, p, e, damage, color, options) {
     if (!e || !e.alive) return;
     const o = options || {}, dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy) || 1;
@@ -302,7 +304,9 @@
     return function (p) {
       if (isBeast(p)) {
         const roster = p.natureRoster || [], B = bondMap(p), ready = roster.filter((k) => (B[k] || 0) >= 100).length;
-        const active = getMine(this, p).length;
+        const active = this.coop && this.coop.guest
+          ? (p.druidBuffs && Object.values(p.druidBuffs).some((v) => Number(v) > 0) ? roster.length : 0)
+          : getMine(this, p).length;
         return { text: '동료 ' + active + '/' + roster.length + ' · 완전한 유대 ' + ready + '/' + roster.length, color: '#9affb0' };
       }
       return original ? original.call(this, p) : null;
@@ -314,8 +318,18 @@
     const current = Array.isArray(p.natureRoster) ? p.natureRoster.slice() : [];
     const goal = rankMax(p);
     if (current.length >= goal) return false;
+    const previousOverlay = this.overlay;
     this.overlay = { type: 'druid_select', goal: goal, selected: current.slice(), locked: current.slice(), msg: null };
     this.input.mouse.down = false;
+    // 원격 참가자는 방장 쪽에 편성 창을 만들고, 자기 화면에는 같은 선택 창을 받는다.
+    if (this.coop && this.coop.host && this.remotes && this.coopSendOverlay) {
+      const remote = [...this.remotes.values()].find((R) => R.p === p);
+      if (remote) {
+        remote.overlay = this.overlay;
+        this.overlay = previousOverlay;
+        this.coopSendOverlay(remote);
+      }
+    }
     return true;
   };
   Game.prototype.druidSummon = function (p, freeRefresh) {
@@ -355,28 +369,36 @@
         }
       }
       syncBuffs(this, p);
+      // ratmaTick은 현재 플레이어의 graveCd만 줄이므로, 원격 드루이드의 G 재사용 대기시간은 여기서 별도 처리한다.
+      if (p !== this.player && p.graveCd > 0) p.graveCd = Math.max(0, p.graveCd - dt);
     }
-    const p = this.player;
-    if (!isBeast(p) || !(this.druidCommandAt > this.time - 0.25) || this.overlay || p.state === 'DEAD') return;
-    this.druidCommandAt = -1;
-    const g = this.necroGSkill(p), active = getMine(this, p), B = bondMap(p);
-    const ready = active.filter((a) => (B[a.kind] || 0) >= 100);
-    const say = (s) => this.effects.text(p.x, p.y - 24, s, '#9affb0');
-    if (!this.zoneRight('job')) { say('직업의 권리를 빼앗겼다'); return; }
-    if (!ready.length) { say('아직 완전한 유대에 도달한 동료가 없습니다'); return; }
-    if ((p.graveCd || 0) > 0) { say('유대 명령 대기 ' + Math.ceil(p.graveCd) + '초'); return; }
-    const used = new Set(), types = new Set(ready.map((a) => a.kind));
-    for (const pair of PAIRS) {
-      if (types.has(pair.a) && types.has(pair.b)) {
-        doPair(this, p, pair); used.add(pair.a); used.add(pair.b);
-      }
+    // 방장과 참가자 모두 각자의 G 명령을 처리한다. 실제 피해 계산은 반드시 해당 소유자로 전환해 적용한다.
+    for (const p of players) {
+      if (!p || !isBeast(p) || !(p.druidCommandAt > this.time - 0.25) || this.overlay || p.state === 'DEAD') continue;
+      p.druidCommandAt = -1;
+      const invoke = () => {
+        const g = this.necroGSkill(p), active = getMine(this, p), B = bondMap(p);
+        const ready = active.filter((a) => (B[a.kind] || 0) >= 100);
+        const say = (s) => this.effects.text(p.x, p.y - 24, s, '#9affb0');
+        if (!this.zoneRight('job')) { say('직업의 권리를 빼앗겼다'); return; }
+        if (!ready.length) { say('아직 완전한 유대에 도달한 동료가 없습니다'); return; }
+        if ((p.graveCd || 0) > 0) { say('유대 명령 대기 ' + Math.ceil(p.graveCd) + '초'); return; }
+        const used = new Set(), types = new Set(ready.map((a) => a.kind));
+        for (const pair of PAIRS) {
+          if (types.has(pair.a) && types.has(pair.b)) {
+            doPair(this, p, pair); used.add(pair.a); used.add(pair.b);
+          }
+        }
+        for (const ally of ready) if (!used.has(ally.kind)) doIndividual(this, p, ally.kind);
+        if ((p.rank || 0) >= 2 && ready.length >= 3) doAncientPulse(this, p);
+        for (const ally of ready) B[ally.kind] = 25;
+        p.graveCd = g.cd;
+        this.guildEvent('skills'); SFX.play('skill', 0.08);
+        this.effects.text(p.x, p.y - 48, ready.length + '개의 유대가 공명한다', '#9affb0', true);
+      };
+      if (this.player === p || !this.withPlayer) invoke();
+      else this.withPlayer(p, invoke);
     }
-    for (const ally of ready) if (!used.has(ally.kind)) doIndividual(this, p, ally.kind);
-    if ((p.rank || 0) >= 2 && ready.length >= 3) doAncientPulse(this, p);
-    for (const ally of ready) B[ally.kind] = 25;
-    p.graveCd = g.cd;
-    this.guildEvent('skills'); SFX.play('skill', 0.08);
-    this.effects.text(p.x, p.y - 48, ready.length + '개의 유대가 공명한다', '#9affb0', true);
   };
 
   const baseUseSkill = Game.prototype.useSkill;
@@ -446,9 +468,18 @@
 
   const baseUpdate = Game.prototype.update;
   Game.prototype.update = function (dt) {
-    if (isBeast(this.player) && !this.overlay && this.input && this.input.wasPressed('KeyG')) this.druidCommandAt = this.time;
+    if (isBeast(this.player) && !this.overlay && this.input && this.input.wasPressed('KeyG')) this.player.druidCommandAt = this.time;
     return baseUpdate.call(this, dt);
   };
+  if (typeof Game.prototype.coopHostTickRemotes === 'function') {
+    const baseCoopHostTickRemotes = Game.prototype.coopHostTickRemotes;
+    Game.prototype.coopHostTickRemotes = function (dt) {
+      if (this.remotes) for (const R of this.remotes.values()) {
+        if (R.p && R.vin && isBeast(R.p) && R.vin.wasPressed('KeyG')) R.p.druidCommandAt = this.time;
+      }
+      return baseCoopHostTickRemotes.call(this, dt);
+    };
+  }
   const baseSkillEffects = Game.prototype.updateSkillEffects;
   Game.prototype.updateSkillEffects = function (dt) {
     const r = baseSkillEffects.call(this, dt);
