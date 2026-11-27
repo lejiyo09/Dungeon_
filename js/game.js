@@ -986,10 +986,9 @@ class Game {
         feastPenaltyActive: !!p.feastPenaltyActive, feastPenaltyFactor: p.feastPenaltyFactor || 1, feastPenaltyReleased: !!p.feastPenaltyReleased,
         stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
         treasure: p.treasure ? p.treasure.id : null, line: p.line ? p.line.id : null, rank: p.rank || 0, hybrid: p.hybrid ? { id: p.hybrid.id, el: p.hybrid.el } : null, fleeceUsed: p.fleeceUsed || 0,
-        // 드루이드 자연의 동맹: 이어하기·협동 재접속에서도 편성/유대/남은 지속시간 보존
+        // 드루이드 자연의 동맹: 이어하기·협동 재접속에서도 편성과 동료별 유대도 보존
         natureRoster: Array.isArray(p.natureRoster) ? p.natureRoster.slice() : null,
         druidBonds: p.druidBonds && typeof p.druidBonds === 'object' ? Object.assign({}, p.druidBonds) : null,
-        druidSummonRemaining: Math.max(0, (p.druidSummonUntil || 0) - this.time),
         druidTempGuard: p.druidTempGuard || 0,
         druidTempGuardRemaining: Math.max(0, (p.druidTempGuardUntil || 0) - this.time),
         druidTempMove: p.druidTempMove || 0,
@@ -1014,7 +1013,7 @@ class Game {
       p.druidBonds = s.druidBonds && typeof s.druidBonds === 'object'
         ? Object.fromEntries(['wolf', 'bear', 'stag', 'hawk', 'snake', 'fox'].map((k) => [k, Math.max(0, Math.min(100, Number(s.druidBonds[k]) || 0))]))
         : null;
-      p.druidSummonUntil = this.time + Math.max(0, Number(s.druidSummonRemaining) || 0);
+      p.druidSummonUntil = 0; // 이전 버전의 소환 타이머 데이터는 무시
       p.druidTempGuard = Math.max(0, Number(s.druidTempGuard) || 0);
       p.druidTempGuardUntil = this.time + Math.max(0, Number(s.druidTempGuardRemaining) || 0);
       p.druidTempMove = Math.max(0, Number(s.druidTempMove) || 0);
