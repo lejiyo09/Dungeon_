@@ -15,7 +15,8 @@ const KEY_ACTIONS = [
   { id: 'treasure', name: '보구', logical: 'KeyR', def: ['KeyR', null] },
   { id: 'swap', name: '무기 교체', logical: 'KeyQ', def: ['KeyQ', null] },
   { id: 'interact', name: '상호작용', logical: 'KeyE', def: ['KeyE', null] },
-  { id: 'raise', name: '시체 부활 (망자의 군주)', logical: 'KeyG', def: ['KeyG', null] }
+  { id: 'raise', name: '시체 폭발 / 시체 창', logical: 'KeyG', def: ['KeyG', null] },
+  { id: 'autoCorpse', name: '시체 기술 자동 사용', logical: 'KeyV', def: ['KeyV', null] }
 ];
 const GAME_KEYS = new Set(KEY_ACTIONS.map((a) => a.logical).concat(['Mouse2']));
 function keyLabel(c) { // 화면 표시용 키 이름
@@ -34,7 +35,7 @@ class InputManager {
     this.pasted = ''; // 붙여넣기(Ctrl+V)로 들어온 글자 (선물 코드·방 코드 입력)
     this.mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, rdown: false };
     this.remap = false; this.raw = []; this.held = new Map(); this.loadBinds(); /* 조작키 변경 */
-    const blocked = new Set(['Space', 'Tab', 'KeyQ', 'KeyE', 'KeyR', 'KeyF']);
+    const blocked = new Set(['Space', 'Tab', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyV']);
     const typing = (e) => e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'); // 로그인 입력칸에서는 게임 키 무시
     window.addEventListener('keydown', (e) => {
       if (typing(e)) return;
