@@ -26,51 +26,11 @@
     { a: 'snake', b: 'fox', id: 'venomgrove', name: '환영의 독림' }
   ];
   const SPIRIT_SPRITES = {
-        wolf: [
-          ".....O..O........",
-          "....OSOOSO.......",
-          "...OSBBBSOO......",
-          "..OSBHHBBBBOOO...",
-          ".OSBBBBBBBBBBOO..",
-          "OSBBBBBBBBBBBBBO.",
-          ".OSBBBBBBBBBBBSO.",
-          "..OOSSSOOSSSOO...",
-          "....O.O..O.O......"
-        ],
-        bear: [
-          "...OO......OO....",
-          "..OSO......OSO...",
-          ".OSBBBBBBBBBBBOO.",
-          "OSBBBBHBBBBBBBBO.",
-          "OSBBBBBBBBBBBBBO.",
-          "OSBBBBBBSSBBBBBO.",
-          ".OSBBBBBBBBBBBSO.",
-          "..OOSSSOOOSSSOO...",
-          "...OO..OO..OO....."
-        ],
-        stag: [
-          "..O.O......O.O....",
-          "..OSO......OSO....",
-          "...OSO....OSO.....",
-          "....OOSOOOSO......",
-          "......OSBBO.......",
-          ".....OSBHHBBO......",
-          "....OSBBBBBBO......",
-          "....OSBBBBBSO......",
-          ".....OOSSSOO.......",
-          ".....O.O..O.O......."
-        ],
-        hawk: [
-          "....OO......OO.....",
-          "...OSSO....OSSO....",
-          "..OOSBBBOOOSBBBOO..",
-          ".OSBBBBBBBBBBBBBBO.",
-          "..OSBBHHBBBBBBBSO..",
-          "...OOSBBBBBBBBOO...",
-          "......OSSSSSO.......",
-          ".....O.O...O.O......."
-        ],
-        snake: [
+    wolf: ["...................OOO.....","...................OBOOOOO.","OOO................OBBOOBO.","OBOO..............OOBBOBBO.","OHHOOO.......OOOOOOBBBBBBO.","BBHHBOO.OOOOOOBBBBBBBBBBBO.","OBBBBBOOHHHHHBBBBBBBBBEOBO.","OBBBBBBBBBBBBBBBBBBBBBBOOOO","OOBBBBBBBBBBBBBBBBBBBBHHHBB",".OBBBBBBBBBBBBBBBBBBBBBBBNO",".OBBBBBBBBBBBBBBBBBBBBBBBBO",".OOOOBBBBBBBBBBBBBBBBBBOOOO","....OOOBSSSSSSSSSSSBBBBO...","......OBSSSSSSSSSSSBBBBO...","......OBBBOBBBOOOBBBBBBO...","......OBBBOBBBO.OBBBBSBO...","......OBSBOBSBO.OBSBOOOO...","......OOOOOOOOO.OOOOO......"],
+    bear: ["................OOOO.OOOO..","...............OOBBOOOBBOO.","...............OBBBBBBBBBO.",".......OOOOOOOOOBBBBBBBBBO.",".....OOHHHHHHHHBBBBBBBBBOO.","....OOBHHHHHHHHBBBBBBBEBBOO",".OOOOBBHHHHHHHHBBBHHHHBBBBO","OOBBBBBHHHHHHHHBBBHHHHHHHBO","OBBBBBBBBBBBBBBBBBHHHHBBBNB","OBBBBBBBBBBBBBBBBBBBBBBBBBB","OOBBBBBBBBBBBBBBBBBBBBBBBOO",".OOOBSSSSSSSSSSSSSSSBBBBBO.","...OOSSSSSSSSSSSSSSSBBBBBO.","....OSSSSSSSSSSSSSSSBBBBBO.","....OBBBBBBBBBBBOBBBBBSBBO.","....OBBBBBBBBBBOOBBBBOOOOO.","....OBBSBBBBSBBOOBSBBO....."],
+    stag: ["...........OBOBO..OBOO.","...........OBBHOOOHBBO.","...........OOHBHOOBHHO.","............OOBBBHBBOO.","............OOHBOBHBBO.","...........OOBBBBBBBOO.","..........OOBBBBBBEOOOO","OOO....OOOOBBBHHHBBBBBO","OBOOOOOOBBBBBBBBBBBBBNO","OBBBBOHBHBHBBBBBBBBBBBB","OOBBBBBBBBBBBBBBBBBBOOO",".OBBBBSSSSSSSBBOBOOOO..",".OOOBBSSSSSSSBBOOO.....","...OBBSSSSSSSBOO.......","...OBBBBBBBBBBO........","...OBBBBOBBOBBO........","...OBBBBOBBOBBO........","...OBBBBOBBOBBO........","...OOOBBOBBOBBO........",".....OOOOOOOOOO........"],
+    hawk: ["...........OEEBO...........","..........OOBBBOO..........","...OOO...OOBEBBBOO...OOO...","..OOBOOOOOBBBBBBBOOOOOBOO..","OOOBBBBBBOBBEEBBBOBBBBBBOOO","OBBEEEEEBBBBEEBBBBBEEEEEBBO","OOBBBBBBBBBBBBBBBBBBBBBBBOO",".OBBBBBBBBBBBBBBBBBBBBBBBO.",".OOBSSSSSBBBBBBBBBSSSSSBOO.","..OOOOBBBBBBBBBBBBBBBOOOO..","...OOBBBBBBBBBBBBBBBBBOOO..","...OBBBBBOSBBBBSBOOBBBBBO..","...OOOOBOOBSBBSBBOOOBOOOO..","......OOOOOBBBBBOO.OOO.....",".........OBBBBBBOO.........","........OOBBBBBBBO.........","........OEBBBBBBBEO........",".......OOBEOBBBOEBO........",".......OBOOOBBBOOBO........",".......OOO.OOBOOOOO........"],
+    snake: [
           "...........OOO.....",
           "..........OSHHNO...",
           ".....OOSSSOSBBBBBO..",
@@ -82,17 +42,7 @@
           ".......OOSSSO.......",
           "..........OSBBBBBO.."
         ],
-        fox: [
-          "....O.O.............",
-          "...OSOSO............",
-          "..OSBBBBBOO.........",
-          ".OSBHHBBBBBOO.......",
-          "OSBBBBBBBBBBBOO.....",
-          ".OSBBBBBBBBBBBO.....",
-          "..OOSSSBBBBBBSO......",
-          "....OOSSSOOSSO.......",
-          "...O.O....O.O........."
-        ]
+    fox: ["..................OOO......","..................OBOO..OOO",".OOO..............OBBOOOOBO","OOBOOOOO..........OBBBOOBBO","OBHHBBBOO.......OOOBBBBBBBO","BHSSHBBBOO....OOOBBBBBBBBBO","OSSHSBBBBOOOOOOBBHHHBBEBBBO","OSSSSBBBBBBBBBBBBBBBBBBBBBO","OSSSSBBBBBBBBBBBBBBBBBBBBBB","OSSSSBBBBBBBBBBBBBBBBBBBBNO","OSSSSBBBBBBBBBBBBBBBBBBBBBO","OSSSSBBBBBBBBBBBBBBBOBBBOOO","OOBBBBBBSSSSSSSSSSSBOBBBO..",".OOBBBBBBBBBBBBBBBBBOBBBO..","..OOOOOBBBBOBBBOOBBBOBSBO..","......OOBBBOBBBOOBSBOOOOO..",".......OBSBOBSBOOOOOO......",".......OOOOOOOOO..........."]
   };
   const isBeast = (p) => !!p && p.hero && p.hero.id === DRUID && p.line && p.line.id === BASE;
   const rankMax = (p) => Math.min(MAX_SPIRITS, 3 + Math.max(0, Math.min(2, p.rank || 0)));
@@ -254,7 +204,7 @@
       const dark = { wolf:'#587c96', bear:'#805c3d', stag:'#4d8961', hawk:'#3b7b9a', snake:'#456b32', fox:'#84518f' }[this.kind];
       const pal = { O:'#14101c', S:dark, B:C.color, H:C.accent, E:'#ffffff', N:'#1a1520' };
       const rows = SPIRIT_SPRITES[this.kind], w = Math.max(...rows.map(r => r.length)), h = rows.length;
-      const cell = this.kind === 'bear' ? 1.15 : 1;
+      const cell = 0.85;
       const left = Math.round(x - w * cell / 2), top = Math.round(y + 7 - h * cell);
       ctx.save();
       ctx.fillStyle = 'rgba(0,0,0,0.34)';
@@ -313,10 +263,8 @@
         return;
       }
       for (let r = 0; r < h; r++) {
-        let shift = 0;
-        if (this.kind === 'hawk' && r < 4) shift = Math.round(Math.sin(this.t * 12) * (r < 2 ? 2 : 1));
-        if (this.kind === 'wolf' && r === 1) shift = Math.round(Math.sin(this.t * 7) * 1);
-        if (this.kind === 'fox' && r === 6) shift = Math.round(Math.sin(this.t * 6) * 1);
+        // Imported animal sprites retain their authored silhouettes; only a subtle whole-body idle bob remains.
+        const shift = 0;
         for (let c = 0; c < rows[r].length; c++) {
           const ch = rows[r][c], color = pal[ch];
           if (!color) continue;
@@ -326,11 +274,7 @@
           ctx.fillRect(px, py, Math.ceil(cell), Math.ceil(cell));
         }
       }
-      // Species-specific details at native pixel scale: wolf muzzle, stag nose, hawk beak.
-      ctx.fillStyle = this.flashT > 0 ? '#ffffff' : '#ffffff';
-      const eyeX = x + (flip ? -3 : 2);
-      ctx.fillRect(eyeX, y - 3, 1, 1);
-      if (this.kind === 'hawk') { ctx.fillStyle = '#ffd36b'; ctx.fillRect(x + (flip ? -7 : 6), y - 1, 2, 1); }
+      // Eyes, noses, muzzle, feathers and markings are already part of the supplied spritesheet.
       ctx.restore();
     }
   }
