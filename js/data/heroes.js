@@ -46,7 +46,7 @@ const DATA_HEROES = [
     look: { sprite: 'berserker', body: '#8a5a3a', accent: '#a02a2a' } },
   { id: 'hero_druid', name: '드루이드 이반', title: '숲의 부름', price: 600,
     maxHp: 120, maxShield: 60, maxEnergy: 240, moveSpeed: 118, startWeapon: 'weapon_sling_001',
-    skill: 'wolves', skillName: '영혼 늑대', skillDesc: '12초간 적을 물어뜯는 늑대 3마리 소환', skillCooldown: 13,
+    skill: 'druid_pact', skillName: '야생의 부름', skillDesc: '자연의 동료 3종을 편성해 소환합니다. 함께 싸울수록 유대가 쌓입니다.', skillCooldown: 22,
     passiveName: '자연의 가호', passiveDesc: '보호막 회복 속도 +60%', shieldRegenMul: 1.6,
     look: { sprite: 'druid', body: '#4a7a3a', accent: '#6a4628' } }
 ];
