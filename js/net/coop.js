@@ -14,7 +14,7 @@ const COOP = {
   table: { bossHp: [1, 1.65, 2.55, 3.5] },
   reviveRatio: 0.3, // 쓰러진 사람은 다음 스테이지에서 최대 체력 30%로 부활
   reviveTime: 3, reviveRange: 24, reviveHp: 0.4, // 동료가 곁에 3초 있으면 그 자리에서 체력 40%로 일어남
-  events: ['KeyF', 'Mouse2', 'KeyR', 'KeyE', 'KeyQ', 'Wheel'], // 참가자 → 방장으로 보내는 순간 입력 (대시는 참가자가 직접)
+  events: ['KeyF', 'Mouse2', 'KeyR', 'KeyE', 'KeyQ', 'KeyG', 'Wheel'], // 참가자 → 방장으로 보내는 순간 입력 (대시는 참가자가 직접)
   fx: ['text', 'spark', 'ring', 'slash', 'lightning', 'burst', 'muzzle', 'impact', 'explosion', 'death', 'goldBurst', 'beamline', 'sparkle', 'heal', 'rays', 'skyBeam', 'reaction', 'excalibur', 'solomonSeal', 'part', 'dust', 'afterimage', 'status'] // 참가자 화면에도 보여 줄 연출 (part·dust·afterimage·status: 소환·스킬 이펙트의 입자·먼지·잔상)
 };
 class VirtualInput { // 방장 쪽에서 참가자의 입력을 흉내 냄
@@ -332,12 +332,15 @@ Object.assign(Game.prototype, {
     if (o && o.type === 'buff') d = { type: 'buff', options: o.options.map((b) => b.id) };
     else if (o && o.type === 'evolve') { const hy = o.npc.hybrid; d = { type: 'evolve', branch: o.npc.branch ? o.npc.branch.id : null, msg: o.msg || null, hybrid: hy ? { h: Object.keys(HYBRID_JOBS).find((k) => HYBRID_JOBS[k] === hy.H), el: hy.el.id } : null }; }
     else if (o && o.type === 'variant') d = { type: 'variant', branch: !!o.branch };
+    else if (o && o.type === 'druid_select') d = { type: 'druid_select', goal: o.goal, selected: o.selected.slice(), locked: o.locked.slice(), msg: o.msg || null };
     else if (o) { R.overlay = null; d = null; Net.relay({ k: 'msg', text: '이 창은 아직 방장만 쓸 수 있어요' }, R.id); }
     Net.relay({ k: 'ov', o: d }, R.id);
   },
   coopRemoteOverlay(R, d) { // 참가자가 창에서 고른 것을 방장 쪽에서 그 사람 대신 처리
     if (!R.overlay) { Net.relay({ k: 'ov', o: null }, R.id); return; }
-    const vin = new VirtualInput(); if (d.key) vin.pressed.add(d.key);
+    const vin = new VirtualInput();
+    if (d.key === 'Mouse0') { vin.mouse.x = Number(d.x) || 0; vin.mouse.y = Number(d.y) || 0; vin.pressed.add('Mouse0'); }
+    else if (d.key) vin.pressed.add(d.key);
     this.withPlayer(R.p, () => {
       const ov = this.overlay, oi = this.input; this.overlay = R.overlay; this.input = vin; this.coop.aim = R.aim;
       try {
@@ -353,9 +356,11 @@ Object.assign(Game.prototype, {
     C.snapN = (C.snapN || 0) + 1; const full = C.snapN % 18 === 1; // 1.5초마다 전부 (중간에 놓친 값 보정), 그 사이엔 바뀐 것만
     const pl = (p, id, warp) => ({ id, x: Math.round(p.x), y: Math.round(p.y), h: p.hero.id, lk: p.line && p.line.look ? p.line.look : null, a: r1(p.aimVis), f: p.faceVis, st: p.state === 'DEAD' ? 'X' : p.state === 'DASH' ? 'D' : 'N', mv: p.moving ? 1 : 0,
       hp: Math.ceil(p.hp), mhp: p.maxHp, sh: Math.ceil(p.shield), msh: p.maxShield, en: Math.floor(p.energy), men: p.maxEnergy, w: p.weapons.map((x) => x.def.id), wl: p.weapons.map((x) => x.lv || 0), sl: p.slot,
-      sc: r1(p.skillCooldown), skm: r1(p.skillCdMax), dc: p.dsCharges, sn: p.skillName, tr: p.treasure ? p.treasure.id : null, tc: r1(p.treasureCd), rk: p.rank, ln: p.line ? p.line.id : null, wp: warp, inv: p.hurtInvuln > 0 ? 1 : 0, ag: p.aegisT > 0 ? 1 : 0, sb: p.scabbardT > 0 ? 1 : 0, rv: r1((p.reviveT || 0) / COOP.reviveTime), sk: p === C.me ? this.skinSprite(p.hero.id, this.playerLineId(p)) : (p.remoteSkin && skinAllowed(p.remoteSkin, p.hero.id, p.line && p.line.id) ? p.remoteSkin : null), hy: p.hybrid ? p.hybrid.title : null, fr: p.weapon ? Math.round(this.weaponSystem.getFireRate(p, p.weapon) / (p.weapon.def.fireRate || 1) * 100) / 100 : 1 }); // fr: 공속 배율 (참가자 화면의 탄을 실제 연사 속도로)
+      sc: r1(p.skillCooldown), skm: r1(p.skillCdMax), dc: p.dsCharges, sn: p.skillName, tr: p.treasure ? p.treasure.id : null, tc: r1(p.treasureCd), rk: p.rank, ln: p.line ? p.line.id : null, wp: warp, inv: p.hurtInvuln > 0 ? 1 : 0, ag: p.aegisT > 0 ? 1 : 0, sb: p.scabbardT > 0 ? 1 : 0, rv: r1((p.reviveT || 0) / COOP.reviveTime), sk: p === C.me ? this.skinSprite(p.hero.id, this.playerLineId(p)) : (p.remoteSkin && skinAllowed(p.remoteSkin, p.hero.id, p.line && p.line.id) ? p.remoteSkin : null), hy: p.hybrid ? p.hybrid.title : null, fr: p.weapon ? Math.round(this.weaponSystem.getFireRate(p, p.weapon) / (p.weapon.def.fireRate || 1) * 100) / 100 : 1,
+      nr: Array.isArray(p.natureRoster) ? p.natureRoster.slice() : null, nb: p.druidBonds ? Object.assign({}, p.druidBonds) : null,
+      db: p.druidBuffs ? Object.assign({}, p.druidBuffs) : null, dt: p.druidSummonUntil || 0, gc: p.graveCd || 0 }); // fr: 공속 배율 (참가자 화면의 탄을 실제 연사 속도로)
     const players = [pl(C.me, Net.id, 0), ...[...this.remotes.values()].map((R) => { const e = pl(R.p, R.id, R.warp); if (R.px || R.py) { e.px = r1(R.px); e.py = r1(R.py); R.px = 0; R.py = 0; } return e; })];
-    C.plast = C.plast || {}; const STATIC = ['h', 'lk', 'sc', 'sk', 'mhp', 'msh', 'men', 'w', 'wl', 'sn', 'tr', 'ln', 'hy', 'skm', 'rk']; // 잘 안 바뀌는 값은 바뀔 때만
+    C.plast = C.plast || {}; const STATIC = ['h', 'lk', 'sc', 'sk', 'mhp', 'msh', 'men', 'w', 'wl', 'sn', 'tr', 'ln', 'hy', 'skm', 'rk', 'nr', 'nb', 'db', 'dt']; // 잘 안 바뀌는 값은 바뀔 때만
     for (const e of players) { const L = C.plast[e.id] || (C.plast[e.id] = {}); for (const k of STATIC) { const v = JSON.stringify(e[k] ?? null); if (!full && L[k] === v) delete e[k]; else L[k] = v; } }
     C.sent = C.sent || new Set(); const zs = [], seenZ = new Set();
     C.zlast = C.zlast || new Map(); let nFull = 0; // 장판·소환물: 처음엔 전부, 그다음엔 바뀐 값만 (데이터 절약)
@@ -452,6 +457,11 @@ Object.assign(Game.prototype, {
       if (s.st === 'X' && p.state !== 'DEAD') { p.state = 'DEAD'; p.deathTimer = 0; } else if (s.st !== 'X' && p.state === 'DEAD') p.state = 'NORMAL';
       if (p.weapons.map((w) => w.def.id + (w.lv || 0)).join() !== s.w.map((id, i) => id + s.wl[i]).join()) p.weapons = s.w.filter((id) => this.data.weapons.get(id)).map((id, i) => new WeaponInstance(this.data.weapons.get(id), s.wl[i] || 0));
       p.slot = Math.min(s.sl, Math.max(0, p.weapons.length - 1)); p.skillCooldown = s.sc; p.skillCdMax = s.skm; if (s.dc != null) p.dsCharges = s.dc; p.skillName = s.sn; p.treasureCd = s.tc; p.treasure = DATA_TREASURES.find((t) => t.id === s.tr) || null; p.rank = s.rk;
+      if (s.nr !== undefined) p.natureRoster = Array.isArray(s.nr) ? s.nr.slice() : null;
+      if (s.nb !== undefined) p.druidBonds = s.nb && typeof s.nb === 'object' ? Object.assign({}, s.nb) : null;
+      if (s.db !== undefined) p.druidBuffs = s.db && typeof s.db === 'object' ? Object.assign({}, s.db) : null;
+      if (s.dt !== undefined) p.druidSummonUntil = s.dt;
+      if (s.gc !== undefined) p.graveCd = s.gc;
       if (mine && s.ln && (!p.line || p.line.id !== s.ln)) { const L = jobLines(p.hero.id).find((l) => l.id === s.ln); if (L) this.setJob(p, L, s.rk); }
     }
     for (const id of [...C.others.keys()]) if (!seen.has(id)) C.others.delete(id);
@@ -491,7 +501,7 @@ Object.assign(Game.prototype, {
       if (!o) { o = Object.create(K.prototype); o.alive = true; C.zones.set(z.n, o); // 그림이 실패해도 게임은 계속 (그리기 상태는 따로 저장·복원 → 화면이 망가지지 않음)
         o.render = function (ctx) { coopSafeDraw(ctx, () => K.prototype.render.call(this, ctx, window.__game)); };
         if (K.prototype.renderTop) o.renderTop = function (ctx) { coopSafeDraw(ctx, () => K.prototype.renderTop.call(this, ctx, window.__game)); }; }
-      for (const [k, v] of Object.entries(coopUnpack(z))) { if (k === 'f') continue; try { o[k] = v; } catch (e) { /* 읽기 전용 값은 건너뜀 */ } } (['Turret', 'Drone', 'SpiritWolf', 'Familiar'].includes(z.c) ? al : zl).push(o); }
+      for (const [k, v] of Object.entries(coopUnpack(z))) { if (k === 'f') continue; try { o[k] = v; } catch (e) { /* 읽기 전용 값은 건너뜀 */ } } (['Turret', 'Drone', 'SpiritWolf', 'Familiar', 'DruidSpirit'].includes(z.c) ? al : zl).push(o); }
     for (const id of [...C.zones.keys()]) if (!seenZ.has(id)) C.zones.delete(id);
     this.zones = zl; this.allies = al;
     if (d.ux && typeof UVFX !== 'undefined') UVFX.applyNet(this, d.ux); // 고유 스킨 VFX (방장에서 생긴 것, 소환물·장판·플레이어를 따라감)
@@ -508,6 +518,7 @@ Object.assign(Game.prototype, {
       if (o.hybrid) { const H = HYBRID_JOBS[o.hybrid.h], el = H && jobLines(H.master).find((l) => l.id === o.hybrid.el); if (H && el) hy = { H, el, masterHero: heroWithLook(this.data.heroes.get(H.master), el.look) }; }
       this.overlay = { type: 'evolve', remote: true, npc: { branch: L, hybrid: hy }, msg: o.msg }; }
     else if (o.type === 'variant') this.overlay = { type: 'variant', remote: true, branch: o.branch, lines: jobLines(p.hero.id), title: JOB_LINES[p.hero.id].title };
+    else if (o.type === 'druid_select') this.overlay = { type: 'druid_select', remote: true, goal: o.goal, selected: (o.selected || []).slice(), locked: (o.locked || []).slice(), msg: o.msg || null };
     this.input.mouse.down = false;
   },
   coopGuestOverlayInput(input) { // 내 창의 선택을 방장에게 보냄
@@ -515,6 +526,12 @@ Object.assign(Game.prototype, {
     if (o.type === 'buff') { let c = -1; [1, 2, 3].forEach((n, i) => { if (input.wasPressed('Digit' + n) || (input.wasPressed('Mouse0') && inR(HUD.buffRect(i)))) c = i; }); if (c >= 0) { send({ key: 'Digit' + (c + 1) }); this.overlay = null; } }
     else if (o.type === 'evolve') { for (const k of ['Digit1', 'Digit2', 'Escape', 'KeyE']) if (input.wasPressed(k)) { send({ key: k }); if (k !== 'Digit2') this.overlay = null; } }
     else if (o.type === 'variant') { let c = -1; o.lines.forEach((_, i) => { if (input.wasPressed('Digit' + (i + 1)) || (input.wasPressed('Mouse0') && inR(HUD.variantRect(i, o.lines.length)))) c = i; }); if (c >= 0) { send({ pick: o.lines[c].id }); this.overlay = null; } else if (o.branch && (input.wasPressed('Escape') || input.wasPressed('KeyE'))) { send({ key: 'Escape' }); this.overlay = null; } }
+    else if (o.type === 'druid_select') {
+      for (const k of ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Enter', 'Escape']) {
+        if (input.wasPressed(k)) { send({ key: k }); break; }
+      }
+      if (input.wasPressed('Mouse0')) send({ key: 'Mouse0', x: Math.round(m.x), y: Math.round(m.y) });
+    }
     this.input.mouse.down = false;
   },
   coopGuestUpdate(dt, input0) {
