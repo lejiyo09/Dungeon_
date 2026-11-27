@@ -100,7 +100,7 @@
       const C = SPIRITS[kind];
       this.owner = owner; this.kind = kind; this.x = owner.x + (Math.random() - 0.5) * 18;
       this.y = owner.y + 7 + (Math.random() - 0.5) * 10;
-      this.life = Math.max(0.1, life); this.t = 0; this.attackCd = 0.4 + Math.random() * 0.25;
+      this.life = 0; this.permanent = true; this.t = 0; this.attackCd = 0.4 + Math.random() * 0.25;
       this.supportCd = 8; this.gainWindow = -10; this.gainInWindow = 0;
       this.face = 1; this.alive = true; this.half = kind === 'bear' ? 9 : kind === 'stag' ? 7 : 5;
       this.stuckT = 0; this.lastX = this.x; this.lastY = this.y; this.flashT = 0;
@@ -124,8 +124,8 @@
     }
     update(dt, world) {
       const p = this.owner, C = SPIRITS[this.kind];
-      this.t += dt; this.life -= dt; this.attackCd -= dt; this.supportCd -= dt; this.flashT = Math.max(0, this.flashT - dt);
-      if (this.life <= 0 || p.state === 'DEAD') { this.alive = false; return; }
+      this.t += dt; if (!this.permanent) this.life -= dt; this.attackCd -= dt; this.supportCd -= dt; this.flashT = Math.max(0, this.flashT - dt);
+      if ((!this.permanent && this.life <= 0) || p.state === 'DEAD') { this.alive = false; return; }
       if (this.kind === 'stag' && this.supportCd <= 0) {
         this.supportCd = 8;
         const heal = Math.max(1, Math.round(p.maxHp * 0.01));
@@ -179,42 +179,110 @@
       else world.effects.slash(this.x, this.y, Math.atan2(target.y - this.y, target.x - this.x), 12, 1, '#9ad8ff');
     }
     render(ctx) {
-      const C = SPIRITS[this.kind], x = Math.round(this.x), y = Math.round(this.y + Math.sin(this.t * 5) * 1.2);
-      const R = (a, b, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x + a, y + b, w, h); };
-      const O = '#14101c', base = this.flashT > 0 ? '#ffffff' : C.color;
+      const C = SPIRITS[this.kind], x = Math.round(this.x), bob = Math.sin(this.t * (this.kind === 'hawk' ? 7 : 3.5)) * 0.55;
+      const y = Math.round(this.y + bob);
+      const sprites = {
+        wolf: [
+          ".....O..O........",
+          "....OSOOSO.......",
+          "...OSBBBSOO......",
+          "..OSBHHBBBBOOO...",
+          ".OSBBBBBBBBBBOO..",
+          "OSBBBBBBBBBBBBBO.",
+          ".OSBBBBBBBBBBBSO.",
+          "..OOSSSOOSSSOO...",
+          "....O.O..O.O......"
+        ],
+        bear: [
+          "...OO......OO....",
+          "..OSO......OSO...",
+          ".OSBBBBBBBBBBBOO.",
+          "OSBBBBHBBBBBBBBO.",
+          "OSBBBBBBBBBBBBBO.",
+          "OSBBBBBBSSBBBBBO.",
+          ".OSBBBBBBBBBBBSO.",
+          "..OOSSSOOOSSSOO...",
+          "...OO..OO..OO....."
+        ],
+        stag: [
+          "..O.O......O.O....",
+          "..OSO......OSO....",
+          "...OSO....OSO.....",
+          "....OOSOOOSO......",
+          "......OSBBO.......",
+          ".....OSBHHBBO......",
+          "....OSBBBBBBO......",
+          "....OSBBBBBSO......",
+          ".....OOSSSOO.......",
+          ".....O.O..O.O......."
+        ],
+        hawk: [
+          "....OO......OO.....",
+          "...OSSO....OSSO....",
+          "..OOSBBBOOOSBBBOO..",
+          ".OSBBBBBBBBBBBBBBO.",
+          "..OSBBHHBBBBBBBSO..",
+          "...OOSBBBBBBBBOO...",
+          "......OSSSSSO.......",
+          ".....O.O...O.O......."
+        ],
+        snake: [
+          "...........OOO.....",
+          "..........OSHHNO...",
+          ".....OOSSSOSBBBBBO..",
+          "...OOSBBBBBOO.......",
+          ".OOSSSO.............",
+          "OSBBBBBO............",
+          ".OOSSSOO............",
+          "....OOSBBBBBO.......",
+          ".......OOSSSO.......",
+          "..........OSBBBBBO.."
+        ],
+        fox: [
+          "....O.O.............",
+          "...OSOSO............",
+          "..OSBBBBBOO.........",
+          ".OSBHHBBBBBOO.......",
+          "OSBBBBBBBBBBBOO.....",
+          ".OSBBBBBBBBBBBO.....",
+          "..OOSSSBBBBBBSO......",
+          "....OOSSSOOSSO.......",
+          "...O.O....O.O........."
+        ]
+      };
+      const dark = { wolf:'#587c96', bear:'#805c3d', stag:'#4d8961', hawk:'#3b7b9a', snake:'#456b32', fox:'#84518f' }[this.kind];
+      const pal = { O:'#14101c', S:dark, B:C.color, H:C.accent, E:'#ffffff', N:'#1a1520' };
+      const rows = sprites[this.kind], w = Math.max(...rows.map(r => r.length)), h = rows.length;
+      const cell = this.kind === 'bear' ? 1.15 : 1;
+      const left = Math.round(x - w * cell / 2), top = Math.round(y + 7 - h * cell);
       ctx.save();
-      ctx.globalAlpha = this.life < 1.5 && Math.floor(this.life * 10) % 2 === 0 ? 0.35 : 0.96;
-      ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(x - 8, y + 8, 16, 3);
-      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= 0.16; ctx.fillStyle = C.color;
-      ctx.beginPath(); ctx.ellipse(x, y - 2, this.kind === 'bear' ? 15 : 11, 7, 0, 0, TAU); ctx.fill();
-      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = this.life < 1.5 && Math.floor(this.life * 10) % 2 === 0 ? 0.35 : 0.96;
-      if (this.kind === 'wolf') {
-        R(-7, -3, 13, 8, O); R(-6, -2, 11, 6, base); R(3, -7, 7, 6, O); R(4, -6, 5, 4, '#dff6ff');
-        R(4, -10, 2, 4, O); R(8, -9, 2, 3, O); R(6, -4, 1, 1, '#1b2030');
-        R(-10, -1, 4, 3, O); R(-11, -4, 3, 4, base); R(-4, 5, 3, 4, O); R(3, 5, 3, 4, O);
-      } else if (this.kind === 'bear') {
-        R(-9, -6, 18, 15, O); R(-8, -5, 16, 13, base); R(-7, -11, 14, 8, O); R(-6, -10, 12, 7, '#e8d0a0');
-        R(-8, -13, 4, 4, O); R(4, -13, 4, 4, O); R(-4, -7, 2, 2, O); R(3, -7, 2, 2, O);
-        R(-10, 4, 5, 5, O); R(5, 4, 5, 5, O); R(-2, -2, 4, 3, '#9a7050');
-      } else if (this.kind === 'stag') {
-        R(-6, -2, 12, 8, O); R(-5, -1, 10, 6, base); R(3, -8, 6, 7, O); R(4, -7, 4, 5, '#eaffec');
-        R(4, -12, 1, 6, C.accent); R(2, -13, 1, 3, C.accent); R(6, -14, 1, 4, C.accent);
-        R(-3, 5, 2, 4, O); R(4, 5, 2, 4, O); R(-8, -2, 3, 3, C.accent);
-      } else if (this.kind === 'hawk') {
-        const flap = Math.round(Math.sin(this.t * 12) * 3);
-        R(-4, -2, 9, 7, O); R(-3, -1, 7, 5, base); R(3, -5, 5, 5, O); R(4, -4, 3, 3, '#e8f8ff');
-        R(-9, -4 - flap, 7, 3, O); R(-8, -3 - flap, 6, 2, base); R(4, -4 + flap, 7, 3, O); R(5, -3 + flap, 6, 2, base);
-        R(7, -2, 3, 2, C.accent); R(6, 1, 2, 1, '#182338');
-      } else if (this.kind === 'snake') {
-        R(-9, 2, 7, 4, O); R(-7, 0, 7, 4, base); R(-2, -2, 7, 5, O); R(0, -1, 7, 3, base);
-        R(4, -5, 7, 6, O); R(5, -4, 5, 4, base); R(8, -3, 1, 1, '#1a2412');
-        R(2, 4, 7, 2, C.accent);
-      } else {
-        R(-7, -2, 13, 8, O); R(-6, -1, 11, 6, base); R(3, -7, 7, 7, O); R(4, -6, 5, 5, '#f4e8ff');
-        R(4, -11, 3, 5, O); R(8, -10, 3, 4, O); R(6, -4, 1, 1, '#20162a');
-        R(-9, 0, 4, 3, O); R(-11, -2, 4, 3, base); R(-4, 5, 2, 4, O); R(3, 5, 2, 4, O);
+      ctx.fillStyle = 'rgba(0,0,0,0.34)';
+      ctx.beginPath(); ctx.ellipse(x, y + 8, this.kind === 'bear' ? 10 : 8, 2, 0, 0, TAU); ctx.fill();
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.12;
+      ctx.fillStyle = C.color; ctx.beginPath(); ctx.ellipse(x, y - 1, this.kind === 'bear' ? 13 : 10, 5, 0, 0, TAU); ctx.fill();
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 0.98;
+      const flip = this.face < 0;
+      for (let r = 0; r < h; r++) {
+        let shift = 0;
+        if (this.kind === 'hawk' && r < 4) shift = Math.round(Math.sin(this.t * 12) * (r < 2 ? 2 : 1));
+        if (this.kind === 'snake') shift = Math.round(Math.sin(this.t * 4 + r * 0.85) * 1.2);
+        if (this.kind === 'wolf' && r === 1) shift = Math.round(Math.sin(this.t * 7) * 1);
+        if (this.kind === 'fox' && r === 6) shift = Math.round(Math.sin(this.t * 6) * 1);
+        for (let c = 0; c < rows[r].length; c++) {
+          const ch = rows[r][c], color = pal[ch];
+          if (!color) continue;
+          const px = left + Math.round((flip ? w - 1 - c : c) * cell + shift);
+          const py = top + Math.round(r * cell);
+          ctx.fillStyle = this.flashT > 0 ? '#ffffff' : color;
+          ctx.fillRect(px, py, Math.ceil(cell), Math.ceil(cell));
+        }
       }
-      ctx.globalAlpha = 0.9; ctx.fillStyle = C.accent; ctx.fillRect(x + (this.face > 0 ? 4 : -5), y - 3, 1, 1);
+      // Species-specific details at native pixel scale: wolf muzzle, stag nose, hawk beak, snake tongue.
+      ctx.fillStyle = this.flashT > 0 ? '#ffffff' : (this.kind === 'snake' ? '#f08a8a' : '#ffffff');
+      const eyeX = x + (flip ? -3 : 2);
+      ctx.fillRect(eyeX, y - 3, 1, 1);
+      if (this.kind === 'hawk') { ctx.fillStyle = '#ffd36b'; ctx.fillRect(x + (flip ? -7 : 6), y - 1, 2, 1); }
+      if (this.kind === 'snake') { ctx.fillStyle = '#e77b80'; ctx.fillRect(x + (flip ? -7 : 6), y - 1, 2, 1); }
       ctx.restore();
     }
   }
@@ -322,7 +390,7 @@
       ? [...this.remotes.values()].find((R) => R.p === p) : null;
     const remoteContext = !!(remote && remote.overlay);
     const previousOverlay = this.overlay;
-    this.overlay = { type: 'druid_select', goal: goal, selected: current.slice(), locked: current.slice(), msg: null };
+    this.overlay = { type: 'druid_select', goal: goal, selected: current.slice(), locked: [], msg: null };
     this.input.mouse.down = false;
     // 원격 참가자의 최초 F키는 전역(방장) 창을 점유하지 않고 참가자 전용 창으로 전달한다.
     // 진화 창에서 선택을 처리 중이면 coopRemoteOverlay가 새 창을 보존·전송하므로 여기서는 건드리지 않는다.
@@ -335,20 +403,22 @@
   };
   Game.prototype.druidSummon = function (p, freeRefresh) {
     if (!isBeast(p) || !Array.isArray(p.natureRoster) || !p.natureRoster.length) return false;
-    const duration = [18, 21, 24][Math.min(2, p.rank || 0)] * (p.jobSkillFx === 'guardian' ? 1.2 : 1);
-    p.druidSummonUntil = this.time + duration;
+    // 교체된 동료만 퇴장시킨다. 종별 유대치는 druidBonds에 남아 다시 편성해도 이어진다.
+    const wanted = new Set(p.natureRoster);
+    for (const ally of this.allies) {
+      if (ally instanceof DruidSpirit && ally.owner === p && !wanted.has(ally.kind)) ally.alive = false;
+    }
     for (const kind of p.natureRoster) {
-      let ally = this.allies.find((a) => a instanceof DruidSpirit && a.owner === p && a.kind === kind && a.alive);
-      if (ally) ally.life = duration;
-      else {
-        ally = new DruidSpirit(p, kind, duration);
+      const exists = this.allies.some((a) => a instanceof DruidSpirit && a.owner === p && a.kind === kind && a.alive);
+      if (!exists) {
+        const ally = new DruidSpirit(p, kind, 0);
         this.allies.push(ally);
         const C = SPIRITS[kind];
         this.effects.sparkle(ally.x, ally.y - 6, C.color);
         this.effects.ring(ally.x, ally.y, 12, C.color);
-        bondMap(p)[kind] = Math.min(100, (bondMap(p)[kind] || 0) + ([10, 12, 15][Math.min(2, p.rank || 0)]));
       }
     }
+    p.druidSummonUntil = 0; // 구버전 저장·협동 패킷 호환용
     this.effects.rays(p.x, p.y - 3, '#9affb0', 12 + p.rank * 3, 52 + p.rank * 8, 0.6);
     this.effects.ring(p.x, p.y, 32 + p.rank * 7, '#9affb0');
     if (!freeRefresh) this.effects.text(p.x, p.y - 24, '자연의 동맹!', '#9affb0', true);
@@ -362,11 +432,10 @@
     for (const p of players) {
       if (!p || seen.has(p) || !isBeast(p)) continue;
       seen.add(p);
-      if (p.state !== 'DEAD' && p.druidSummonUntil > this.time && Array.isArray(p.natureRoster)) {
-        const remaining = p.druidSummonUntil - this.time;
+      if (p.state !== 'DEAD' && Array.isArray(p.natureRoster)) {
         for (const kind of p.natureRoster) {
           if (!this.allies.some((a) => a instanceof DruidSpirit && a.owner === p && a.kind === kind && a.alive))
-            this.allies.push(new DruidSpirit(p, kind, remaining));
+            this.allies.push(new DruidSpirit(p, kind, 0));
         }
       }
       syncBuffs(this, p);
@@ -408,15 +477,8 @@
   Game.prototype.useSkill = function () {
     const p = this.player;
     if (!isBeast(p)) return baseUseSkill.call(this);
-    if (p.castLock > 0 || p.skillCooldown > 0 || p.denyT > 0 || !this.zoneRight('job')) return baseUseSkill.call(this);
-    if (!Array.isArray(p.natureRoster) || p.natureRoster.length < rankMax(p)) {
-      this.druidOpenSelection(p); return;
-    }
-    const originalId = p.skillId, before = p.skillCooldown;
-    p.skillId = 'druid_nature_call_internal';
-    try { baseUseSkill.call(this); }
-    finally { p.skillId = originalId; }
-    if (p.skillCooldown > before) this.druidSummon(p, false);
+    if (p.castLock > 0 || p.denyT > 0 || !this.zoneRight('job')) return baseUseSkill.call(this);
+    this.druidOpenSelection(p);
   };
 
   const baseEvolve = Game.prototype.evolve;
@@ -449,8 +511,7 @@
       if (!hit && m.x >= 176 && m.x < 336 && m.y >= 214 && m.y < 244) {
         if (o.selected.length === o.goal) {
           p.natureRoster = o.selected.slice(); this.overlay = null; input.mouse.down = false;
-          if (o.locked.length === 0) this.useSkill();
-          else this.druidSummon(p, true);
+          this.druidSummon(p, true);
           return;
         }
         o.msg = '동료 ' + o.goal + '종을 모두 선택해야 합니다';
@@ -460,8 +521,7 @@
     if (input.wasPressed('Enter')) {
       if (o.selected.length === o.goal) {
         p.natureRoster = o.selected.slice(); this.overlay = null;
-        if (o.locked.length === 0) this.useSkill();
-        else this.druidSummon(p, true);
+        this.druidSummon(p, true);
         return;
       }
       o.msg = '동료 ' + o.goal + '종을 모두 선택해야 합니다';
@@ -550,7 +610,8 @@
     ctx.fillStyle = 'rgba(7,12,10,0.97)'; ctx.fillRect(12, 10, 488, 268);
     ctx.strokeStyle = '#6aa884'; ctx.lineWidth = 2; ctx.strokeRect(13, 11, 486, 266);
     hudText(ctx, '자연의 동맹', VIEW_W / 2, 18, '#9affb0', 'center', 17);
-    hudText(ctx, '함께할 정령을 선택하세요  ·  선택 ' + o.selected.length + '/' + o.goal, VIEW_W / 2, 39, '#d8e8d8', 'center', 8);
+    hudText(ctx, '동료 편성 · 선택 ' + o.selected.length + '/' + o.goal + '  ·  F로 언제든 교체', VIEW_W / 2, 39, '#d8e8d8', 'center', 8);
+    const B = bondMap(p);
     for (let i = 0; i < 6; i++) {
       const kind = Object.keys(SPIRITS)[i], C = SPIRITS[kind], x = 22 + (i % 3) * 156, y = 56 + Math.floor(i / 3) * 70;
       const chosen = o.selected.includes(kind), locked = o.locked.includes(kind);
@@ -559,13 +620,13 @@
       ctx.fillStyle = C.color; ctx.fillRect(x + 8, y + 9, 15, 15);
       hudText(ctx, String(i + 1), x + 15.5, y + 10, '#101810', 'center', 8);
       hudText(ctx, C.name + ' · ' + C.role, x + 29, y + 7, C.color, 'left', 9);
-      hudText(ctx, C.desc, x + 8, y + 25, '#d8e0d8', 'left', 7);
-      hudText(ctx, chosen ? (locked ? '편성 유지' : '선택됨 · 클릭 해제') : '클릭 또는 ' + (i + 1) + '번', x + 8, y + 43, chosen ? '#9affb0' : '#8d9a8d', 'left', 7);
+      hudText(ctx, C.desc + ' · 유대 ' + Math.round(B[kind] || 0) + '%', x + 8, y + 25, '#d8e0d8', 'left', 7);
+      hudText(ctx, chosen ? '편성 중 · 클릭 해제' : '선택하여 편성 · ' + (i + 1) + '번', x + 8, y + 43, chosen ? '#9affb0' : '#8d9a8d', 'left', 7);
     }
     ctx.fillStyle = o.selected.length === o.goal ? '#285d3d' : '#292d2a'; ctx.fillRect(176, 214, 160, 30);
     ctx.strokeStyle = o.selected.length === o.goal ? '#9affb0' : '#59635a'; ctx.strokeRect(176.5, 214.5, 159, 29);
     hudText(ctx, '편성 확정 · Enter', VIEW_W / 2, 222, o.selected.length === o.goal ? '#ffffff' : '#889088', 'center', 9);
-    hudText(ctx, o.msg || '진화 시 새로운 동료를 1종 더 편성합니다  ·  Esc 취소', VIEW_W / 2, 253, o.msg ? '#ffb0a0' : '#9aab9d', 'center', 7);
+    hudText(ctx, o.msg || '교체해도 동료별 유대도는 보존됩니다  ·  Esc 취소', VIEW_W / 2, 253, o.msg ? '#ffb0a0' : '#9aab9d', 'center', 7);
   };
   const baseHudRender = HUD.prototype.render;
   HUD.prototype.render = function (ctx, game) {
