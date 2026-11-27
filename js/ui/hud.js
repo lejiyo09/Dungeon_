@@ -171,7 +171,6 @@ class HUD {
       skRow('F', fS ? fS.name : '2차 진화 필요', by + 12, fCd ? 1 - fLeft / fCd : 0, !!fS && fLeft <= 0, !fS || !fCd);
       const cCd = typeof NECRO !== 'undefined' && NECRO.corpseCast ? NECRO.corpseCast.cd : 0.45, cLeft = p.necroCorpseCd || 0;
       skRow('G', corpseName, by + 24, cCd ? 1 - cLeft / cCd : 0, p.rank >= 1 && cLeft <= 0, p.rank < 1 || !cCd);
-      skRow('V', p.necroCorpseAuto ? '자동 소비 ON' : '자동 소비 OFF', by + 36, 0, false, true);
     } else {
       skRow('F', p.skillName, by + 12, dsM ? (dsN >= dsM ? 1 : 1 - p.skillCooldown / (p.dsMax || BALANCE.TRAP.sentryRecharge)) : 1 - p.skillCooldown / p.skillCdMax, skReady, false);
       if (dsM) for (let i = 0; i < dsM; i++) { ctx.fillStyle = i < dsN ? '#ffd84a' : 'rgba(255,255,255,0.18)'; ctx.fillRect(BX + i * 7, by + 12, 5, 2); }
