@@ -46,7 +46,7 @@ const DATA_HEROES = [
     look: { sprite: 'berserker', body: '#8a5a3a', accent: '#a02a2a' } },
   { id: 'hero_druid', name: '드루이드 이반', title: '숲의 부름', price: 600,
     maxHp: 120, maxShield: 60, maxEnergy: 240, moveSpeed: 118, startWeapon: 'weapon_sling_001',
-    skill: 'druid_pact', skillName: '야생의 부름', skillDesc: '자연의 동료 3종을 편성해 소환합니다. 함께 싸울수록 유대가 쌓입니다.', skillCooldown: 22,
+    skill: 'druid_pact', skillName: '자연의 동맹', skillDesc: 'F로 동료 3종을 편성합니다. 선택한 동료는 상시 동행하며, 교체해도 종별 유대도는 유지됩니다. G로 완전한 유대 연계를 발동합니다.', skillCooldown: 22,
     passiveName: '자연의 가호', passiveDesc: '보호막 회복 속도 +60%', shieldRegenMul: 1.6,
     look: { sprite: 'druid', body: '#4a7a3a', accent: '#6a4628' } }
 ];
