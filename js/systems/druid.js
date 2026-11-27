@@ -375,7 +375,9 @@
     }
     // 방장과 참가자 모두 각자의 G 명령을 처리한다. 실제 피해 계산은 반드시 해당 소유자로 전환해 적용한다.
     for (const p of players) {
-      if (!p || !isBeast(p) || !(p.druidCommandAt > this.time - 0.25) || this.overlay || p.state === 'DEAD') continue;
+      const remote = p && this.remotes ? [...this.remotes.values()].find((R) => R.p === p) : null;
+      const ownOverlay = p === this.player ? this.overlay : remote && remote.overlay;
+      if (!p || !isBeast(p) || !(p.druidCommandAt > this.time - 0.25) || ownOverlay || p.state === 'DEAD') continue;
       p.druidCommandAt = -1;
       const invoke = () => {
         const g = this.necroGSkill(p), active = getMine(this, p), B = bondMap(p);
