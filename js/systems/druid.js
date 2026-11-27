@@ -384,6 +384,7 @@
 
   Game.prototype.druidOpenSelection = function (p) {
     if (!isBeast(p)) return false;
+    p.skillCooldown = 0; // F는 메뉴 호출이므로 일반 스킬 쿨타임을 사용하지 않는다.
     const current = Array.isArray(p.natureRoster) ? p.natureRoster.slice() : [];
     const goal = rankMax(p);
     const remote = this.coop && this.coop.host && this.remotes
