@@ -993,7 +993,7 @@ class Game {
         druidTempGuardRemaining: Math.max(0, (p.druidTempGuardUntil || 0) - this.time),
         druidTempMove: p.druidTempMove || 0,
         druidTempMoveRemaining: Math.max(0, (p.druidTempMoveUntil || 0) - this.time),
-        graveCd: p.graveCd || 0 } };
+        graveCd: p.graveCd || 0, necroCorpseAuto: !!p.necroCorpseAuto } };
   }
   playerFromSnapshot(hero, s, p = new Player(0, 0, hero, this.data.base)) { // 저장된 캐릭터 상태 → 플레이어 (이어하기·심층 기록 공용)
     return this.withPlayer(p, () => {
@@ -1019,6 +1019,7 @@ class Game {
       p.druidTempMove = Math.max(0, Number(s.druidTempMove) || 0);
       p.druidTempMoveUntil = this.time + Math.max(0, Number(s.druidTempMoveRemaining) || 0);
       p.graveCd = Math.max(0, Number(s.graveCd) || 0);
+      p.necroCorpseAuto = !!s.necroCorpseAuto;
       // 예전 이어하기 저장이 패널티 적용 전에 만들어졌다면 false 플래그여도 시작 약화를 적용한다.
       // 이미 적용 중이면 applyFeastStartPenalty 내부의 active 검사로 중복 적용하지 않는다.
       if (p.feastPenaltyActive && (p.feast || 0) >= (BALANCE.feast.penaltyRemoveAt || 500)) this.releaseFeastStartPenalty(p);
