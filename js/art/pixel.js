@@ -356,18 +356,22 @@ function heroWithLook(hero, look) { return look ? Object.create(hero, { look: { 
 // ── 전설 스킨 (애니메이션 이미지 시트: assets/legskins.png) — getImageData 없이 drawImage 만 사용(교차출처 taint 안전)
 let _legSheetImg = null, _legSheetReady = false;
 function loadLegSheet() { if (_legSheetImg) return; _legSheetImg = new Image(); _legSheetImg.onload = () => { _legSheetReady = true; }; _legSheetImg.src = 'assets/legskins.png'; }
+// 기본/일반 전설의 실제 실루엣(약 22×27)에 맞춤: 고유 3종과 천공함대 제독은
+// 32×36 셀을 가득 쓰는 디자인이라 그대로 그리면 다른 스킨보다 크게 보인다.
+const LEG_SKIN_DISPLAY_SCALE = { 4: 0.72, 5: 0.72, 6: 0.72, 7: 0.72 };
 function bakeLegSkin(skinIdx, dir, frame) {
   const S = LEG_SHEET, fr = ((frame % S.frames) + S.frames) % S.frames, dd = ((dir % S.dirs) + S.dirs) % S.dirs;
-  const dw = S.cellW, dh = S.cellH, sx = fr * S.cellW, sy = (skinIdx * S.dirs + dd) * S.cellH; // 셀이 이미 인게임 크기 → 1:1
+  const dw = S.cellW, dh = S.cellH, sx = fr * S.cellW, sy = (skinIdx * S.dirs + dd) * S.cellH;
+  const scale = LEG_SKIN_DISPLAY_SCALE[skinIdx] || 1, outW = Math.round(dw * scale), outH = Math.round(dh * scale);
   const make = (flip, white) => {
-    const c = document.createElement('canvas'); c.width = dw; c.height = dh;
+    const c = document.createElement('canvas'); c.width = outW; c.height = outH;
     const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
-    g.save(); if (flip) { g.translate(dw, 0); g.scale(-1, 1); }
-    g.drawImage(_legSheetImg, sx, sy, S.cellW, S.cellH, 0, 0, dw, dh); g.restore();
-    if (white) { g.globalCompositeOperation = 'source-atop'; g.fillStyle = '#ffffff'; g.fillRect(0, 0, dw, dh); }
+    g.save(); if (flip) { g.translate(outW, 0); g.scale(-1, 1); }
+    g.drawImage(_legSheetImg, sx, sy, S.cellW, S.cellH, 0, 0, outW, outH); g.restore();
+    if (white) { g.globalCompositeOperation = 'source-atop'; g.fillStyle = '#ffffff'; g.fillRect(0, 0, outW, outH); }
     return c;
   };
-  return { w: dw, h: dh, n: make(false, false), f: make(true, false), wn: make(false, true), wf: make(true, true) };
+  return { w: outW, h: outH, n: make(false, false), f: make(true, false), wn: make(false, true), wf: make(true, true) };
 }
 
 function heroSprite(hero, frame, dir) {
