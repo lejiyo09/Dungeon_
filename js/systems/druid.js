@@ -263,10 +263,58 @@
       ctx.fillStyle = C.color; ctx.beginPath(); ctx.ellipse(x, y - 1, this.kind === 'bear' ? 13 : 10, 5, 0, 0, TAU); ctx.fill();
       ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 0.98;
       const flip = this.face < 0;
+      if (this.kind === 'snake') {
+        // 녹린 전용 슬리더: 머리의 움직임이 몸통을 거쳐 꼬리까지 시간차로 전달된다.
+        const sx = (v) => x + (flip ? -v : v);
+        const waveAt = (i) => Math.sin(this.t * 8.5 - i * 0.72) * (0.25 + i * 0.34);
+        const body = (i) => {
+          const lx = 6 - i * 2.15;
+          const yy = y - 2 + waveAt(i);
+          const size = i < 2 ? 4 : i < 6 ? 3 : i < 9 ? 2 : 1;
+          const px = Math.round(sx(lx)), py = Math.round(yy);
+          ctx.fillStyle = this.flashT > 0 ? '#ffffff' : '#14101c';
+          ctx.fillRect(px - Math.ceil(size / 2) - 1, py - Math.ceil(size / 2) - 1, size + 2, size + 2);
+          ctx.fillStyle = this.flashT > 0 ? '#ffffff' : (i % 2 ? '#719b3c' : '#8ddd55');
+          ctx.fillRect(px - Math.ceil(size / 2), py - Math.ceil(size / 2), size, size);
+          if (size >= 3) {
+            ctx.fillStyle = this.flashT > 0 ? '#ffffff' : '#c5ed82';
+            ctx.fillRect(px - Math.ceil(size / 2) + 1, py - Math.ceil(size / 2), 1, 1);
+          }
+          if (i % 2 === 0 && size >= 2) {
+            ctx.fillStyle = this.flashT > 0 ? '#ffffff' : '#456b32';
+            ctx.fillRect(px, py + 1, 1, 1);
+          }
+        };
+        // Tail to neck: overlapping scale segments form one continuous S-curve.
+        for (let i = 10; i >= 0; i--) body(i);
+        const headY = Math.round(y - 2 + waveAt(0) * 0.35);
+        const headX = sx(8);
+        const hx = Math.round(headX);
+        ctx.fillStyle = this.flashT > 0 ? '#ffffff' : '#14101c';
+        ctx.fillRect(hx - (flip ? 1 : 0) - (flip ? 6 : 0), headY - 4, 8, 7);
+        ctx.fillStyle = this.flashT > 0 ? '#ffffff' : '#8ddd55';
+        ctx.fillRect(hx + (flip ? -5 : 1), headY - 3, 5, 5);
+        ctx.fillStyle = this.flashT > 0 ? '#ffffff' : '#c5ed82';
+        ctx.fillRect(hx + (flip ? -4 : 1), headY - 3, 2, 1);
+        // Eye and nostril are mirrored with the head direction.
+        ctx.fillStyle = this.flashT > 0 ? '#ffffff' : '#ffffff';
+        ctx.fillRect(hx + (flip ? -4 : 4), headY - 2, 1, 1);
+        ctx.fillStyle = '#1a2412';
+        ctx.fillRect(hx + (flip ? -6 : 6), headY, 1, 1);
+        // A forked tongue flicks out briefly, then retracts.
+        if (Math.sin(this.t * 5.3) > 0.88) {
+          ctx.fillStyle = '#e77b80';
+          const tx = sx(14);
+          ctx.fillRect(Math.round(tx), headY, flip ? -2 : 2, 1);
+          ctx.fillRect(Math.round(tx + (flip ? -2 : 2)), headY - 1, 1, 1);
+          ctx.fillRect(Math.round(tx + (flip ? -2 : 2)), headY + 1, 1, 1);
+        }
+        ctx.restore();
+        return;
+      }
       for (let r = 0; r < h; r++) {
         let shift = 0;
         if (this.kind === 'hawk' && r < 4) shift = Math.round(Math.sin(this.t * 12) * (r < 2 ? 2 : 1));
-        if (this.kind === 'snake') shift = Math.round(Math.sin(this.t * 4 + r * 0.85) * 1.2);
         if (this.kind === 'wolf' && r === 1) shift = Math.round(Math.sin(this.t * 7) * 1);
         if (this.kind === 'fox' && r === 6) shift = Math.round(Math.sin(this.t * 6) * 1);
         for (let c = 0; c < rows[r].length; c++) {
@@ -278,12 +326,11 @@
           ctx.fillRect(px, py, Math.ceil(cell), Math.ceil(cell));
         }
       }
-      // Species-specific details at native pixel scale: wolf muzzle, stag nose, hawk beak, snake tongue.
-      ctx.fillStyle = this.flashT > 0 ? '#ffffff' : (this.kind === 'snake' ? '#f08a8a' : '#ffffff');
+      // Species-specific details at native pixel scale: wolf muzzle, stag nose, hawk beak.
+      ctx.fillStyle = this.flashT > 0 ? '#ffffff' : '#ffffff';
       const eyeX = x + (flip ? -3 : 2);
       ctx.fillRect(eyeX, y - 3, 1, 1);
       if (this.kind === 'hawk') { ctx.fillStyle = '#ffd36b'; ctx.fillRect(x + (flip ? -7 : 6), y - 1, 2, 1); }
-      if (this.kind === 'snake') { ctx.fillStyle = '#e77b80'; ctx.fillRect(x + (flip ? -7 : 6), y - 1, 2, 1); }
       ctx.restore();
     }
   }
