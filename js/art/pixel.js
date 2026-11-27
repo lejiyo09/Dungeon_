@@ -358,7 +358,7 @@ let _legSheetImg = null, _legSheetReady = false;
 function loadLegSheet() { if (_legSheetImg) return; _legSheetImg = new Image(); _legSheetImg.onload = () => { _legSheetReady = true; }; _legSheetImg.src = 'assets/legskins.png'; }
 // 기본/일반 전설의 실제 실루엣(약 22×27)에 맞춤: 고유 3종과 천공함대 제독은
 // 32×36 셀을 가득 쓰는 디자인이라 기본·전설 스킨과 비슷한 체감 크기(약 20×22)로 줄인다.
-const LEG_SKIN_DISPLAY_SCALE = { 4: 0.62, 5: 0.62, 6: 0.62, 7: 0.62 };
+const LEG_SKIN_DISPLAY_SCALE = { 4: 0.72, 5: 0.72, 6: 0.72, 7: 0.72 };
 function bakeLegSkin(skinIdx, dir, frame) {
   const S = LEG_SHEET, fr = ((frame % S.frames) + S.frames) % S.frames, dd = ((dir % S.dirs) + S.dirs) % S.dirs;
   const dw = S.cellW, dh = S.cellH, sx = fr * S.cellW, sy = (skinIdx * S.dirs + dd) * S.cellH;
