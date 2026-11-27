@@ -55,7 +55,7 @@ JOB_LINES.hero_necromancer = {
     fx: { trail: '#b47aff', trail2: '#5a2a9a', kind: 'crack' },
     skills: [NECRO_NONE,
       { id: 'necro_spear', name: '시체 창', desc: 'G: 시체 1구를 써서 시체 창 3개 발사 (주변 적 자동 추적 · 무작위 디버프 2종) · 시체 사용 시 체력 12 · 에너지 10 회복 · V: 자동 사용 전환', cd: 0.3 },
-      { id: 'necro_spear', name: '시체 창', desc: 'G: 시체 창 · V: 자동 사용 전환 · F: 망자의 땅 — 얼어붙는 땅 (10초간 적 이동·공격 속도 50% 감소, 받는 피해 50% 증가)', cd: 0.3 }],
+      { id: 'necro_spear', name: '시체 창', desc: 'G: 시체 창 · V: 자동 사용 전환 · F: 망자의 땅 — 얼어붙는 땅 (10초간 적 이동·공격 속도 50% 감소, 받는 피해 50% 증가 · 지속 중 시체 창 시체 소모 없음)', cd: 0.3 }],
     gSkills: [null, null, { id: 'necro_land', name: '망자의 땅', cd: NECRO.land.cd }] } // F키 궁극 기술
 };
 
