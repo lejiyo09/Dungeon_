@@ -318,18 +318,9 @@
     const current = Array.isArray(p.natureRoster) ? p.natureRoster.slice() : [];
     const goal = rankMax(p);
     if (current.length >= goal) return false;
-    const previousOverlay = this.overlay;
     this.overlay = { type: 'druid_select', goal: goal, selected: current.slice(), locked: current.slice(), msg: null };
     this.input.mouse.down = false;
-    // 원격 참가자는 방장 쪽에 편성 창을 만들고, 자기 화면에는 같은 선택 창을 받는다.
-    if (this.coop && this.coop.host && this.remotes && this.coopSendOverlay) {
-      const remote = [...this.remotes.values()].find((R) => R.p === p);
-      if (remote) {
-        remote.overlay = this.overlay;
-        this.overlay = previousOverlay;
-        this.coopSendOverlay(remote);
-      }
-    }
+    // 협동 원격 플레이어의 경우 coopRemoteOverlay가 이 창을 R.overlay에 보존하고 전송한다.
     return true;
   };
   Game.prototype.druidSummon = function (p, freeRefresh) {
