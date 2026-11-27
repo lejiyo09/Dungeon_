@@ -320,7 +320,7 @@
     if (current.length >= goal) return false;
     const remote = this.coop && this.coop.host && this.remotes
       ? [...this.remotes.values()].find((R) => R.p === p) : null;
-    const remoteContext = !!(remote && remote.overlay && this.overlay === remote.overlay);
+    const remoteContext = !!(remote && remote.overlay);
     const previousOverlay = this.overlay;
     this.overlay = { type: 'druid_select', goal: goal, selected: current.slice(), locked: current.slice(), msg: null };
     this.input.mouse.down = false;
