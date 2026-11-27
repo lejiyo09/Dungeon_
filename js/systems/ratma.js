@@ -317,6 +317,135 @@ class NecroGraveyard {
       if (kind) { ctx.fillStyle = '#3a3444'; ctx.fillRect(sx, sy - 6, 1, 4); ctx.fillRect(sx - 1, sy - 5, 3, 1); } } ctx.globalAlpha = 1; // 비석
   }
 }
+// ── 망자의 군대: 죽음의 계곡 (적을 중심으로 끌어 모으는 사령 군세)
+class NecroArmyOfDead {
+  constructor(x, y, owner) {
+    this.x = x; this.y = y; this.owner = owner; this.t = 0;
+    this.life = NECRO.army.life; this.next = 0.12; this.pulse = 0; this.alive = true;
+    this.r = NECRO.army.r;
+  }
+  update(dt, world) {
+    this.t += dt; this.life -= dt; this.next -= dt;
+    if (this.life <= 0 || !this.owner || this.owner.state === 'DEAD') {
+      this.alive = false; world.effects.burst(this.x, this.y, '#9affd8', 18); return;
+    }
+    if (this.next <= 0) {
+      this.next += NECRO.army.every; this.pulse++;
+      world.effects.ring(this.x, this.y, this.r * (0.72 + (this.pulse % 2) * 0.12), '#9affd8');
+      world.effects.rays(this.x, this.y, '#d8fff0', 10, this.r, 0.35);
+      for (const e of world.enemies) {
+        if (!e.targetable) continue;
+        const dx = this.x - e.x, dy = this.y - e.y, d = Math.hypot(dx, dy) || 1;
+        if (d > this.r + e.radius) continue;
+        world.damageEnemy(e, { damage: world.skillDmg(NECRO.army.dmg), mods: this.owner.mods,
+          knockback: 0, from: this.owner, minion: true }, 0, 0, { quiet: true });
+        if (!e.alive) continue;
+        if (e.def.boss || e.def.ccImmune) {
+          e.slow = Math.max(e.slow || 0, 0.5); e.slowK = Math.min(e.slowK || 1, 0.72);
+        } else e.stunT = Math.max(e.stunT || 0, 0.18);
+        if (d > 20) {
+          const pull = Math.min(NECRO.army.pull, d - 20);
+          moveAndCollide(e, dx / d * pull, dy / d * pull, world.map);
+        }
+        world.effects.part(e.x, e.y - 3, 0, -14, { color: '#b8ffe9', life: 0.35, size: 2, size2: 0, drag: 1 });
+      }
+      SFX.play('magic', 0.05);
+    }
+    if (Math.random() < 0.75) {
+      const a = Math.random() * TAU, d = 20 + Math.random() * this.r;
+      world.effects.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.65,
+        -Math.cos(a) * 18, -Math.sin(a) * 16 - 10,
+        { color: Math.random() < 0.5 ? '#9affd8' : '#d8fff0', life: 0.6, size: 2, size2: 0, drag: 1 });
+    }
+  }
+  render(ctx) {
+    const k = Math.max(0, Math.min(1, this.life / 0.55, this.t / 0.18));
+    const wave = (this.t % NECRO.army.every) / NECRO.army.every;
+    ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.62);
+    ctx.globalAlpha = 0.16 * k; ctx.fillStyle = '#21483e'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.68 * k; ctx.strokeStyle = '#9affd8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, this.r * (0.62 + wave * 0.38), 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.55 * k; ctx.strokeStyle = '#e0fff4'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(0, 0, this.r * (0.28 + (1 - wave) * 0.35), 0, TAU); ctx.stroke();
+    ctx.restore();
+    // 망자 병사들이 원 둘레에서 중앙으로 돌진하는 실루엣
+    ctx.save(); ctx.globalAlpha = 0.75 * k;
+    for (let i = 0; i < 8; i++) {
+      const a = this.t * 1.9 + i * TAU / 8, r = this.r * (0.78 - wave * 0.18);
+      const x = Math.round(this.x + Math.cos(a) * r), y = Math.round(this.y + Math.sin(a) * r * 0.58);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(a + Math.PI);
+      ctx.fillStyle = OUTLINE; ctx.fillRect(-3, -9, 7, 13);
+      ctx.fillStyle = '#8bd8bb'; ctx.fillRect(-2, -8, 5, 11);
+      ctx.fillStyle = '#dffff3'; ctx.fillRect(-2, -9, 4, 3);
+      ctx.fillStyle = '#243b36'; ctx.fillRect(-1, -5, 1, 1); ctx.fillRect(1, -5, 1, 1);
+      ctx.fillStyle = '#baffdf'; ctx.fillRect(-5, -5, 2, 8); ctx.fillRect(4, -5, 2, 8);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+}
+
+// ── 망자의 땅: 얼어붙은 땅 (10초 동안 전장의 적을 주기적으로 빙결)
+class NecroLandOfDead {
+  constructor(owner) {
+    this.owner = owner; this.x = owner.x; this.y = owner.y;
+    this.t = 0; this.life = NECRO.land.life; this.next = 0.15; this.alive = true;
+    this.r = 520;
+  }
+  update(dt, world) {
+    this.t += dt; this.life -= dt;
+    if (!this.owner || this.owner.state === 'DEAD' || this.life <= 0) {
+      this.alive = false; world.effects.burst(this.x, this.y, '#bfefff', 24); return;
+    }
+    this.x = this.owner.x; this.y = this.owner.y;
+    this.next -= dt;
+    if (this.next <= 0) {
+      this.next += NECRO.land.every;
+      for (const e of world.enemies) {
+        if (!e.targetable) continue;
+        const duration = NECRO.land.freeze * (1 + (this.owner.hero.statusBoost || 0));
+        const react = e.applyStatus({ type: 'freeze', chance: 1, duration, slow: 0.08 }, this.owner.mods);
+        if (react) world.triggerReaction(e, react, this.owner.mods);
+        if (e.def.boss || e.def.ccImmune) {
+          e.slow = Math.max(e.slow || 0, duration);
+          e.slowK = Math.min(e.slowK || 1, NECRO.land.bossSlow);
+        } else {
+          e.stunT = Math.max(e.stunT || 0, 0.22);
+          e.slowK = Math.min(e.slowK || 1, 0.08);
+        }
+        world.effects.ring(e.x, e.y + 2, e.radius + 5, '#bfefff');
+        world.effects.part(e.x, e.y - e.radius, randInt(-9, 9), -24, { color: '#e8f8ff', life: 0.55, size: 2, size2: 0, drag: 1 });
+      }
+      world.effects.ring(this.x, this.y, 140 + Math.sin(this.t * 5) * 10, '#bfefff');
+      SFX.play('freeze', 0.04);
+    }
+    if (Math.random() < 0.65) {
+      const a = Math.random() * TAU, d = Math.random() * this.r;
+      world.effects.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.62,
+        randInt(-7, 7), -18 - Math.random() * 12,
+        { color: Math.random() < 0.5 ? '#bfefff' : '#ffffff', life: 0.75, size: 2, size2: 0, drag: 0.6 });
+    }
+  }
+  render(ctx) {
+    const k = Math.max(0, Math.min(1, this.life / 0.8, this.t / 0.2));
+    ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.66);
+    ctx.globalAlpha = 0.055 * k; ctx.fillStyle = '#9adfff'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.32 * k; ctx.strokeStyle = '#bfefff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, this.r * (0.96 + Math.sin(this.t * 2) * 0.025), 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.2 * k; ctx.lineWidth = 1;
+    for (let i = 0; i < 12; i++) {
+      const a = i * TAU / 12 + this.t * 0.12, r = this.r * (0.55 + (i % 3) * 0.12);
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * (r - 14), Math.sin(a) * (r - 14));
+      ctx.lineTo(Math.cos(a) * (r + 14), Math.sin(a) * (r + 14)); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+if (typeof COOP_CLASSES !== 'undefined') {
+  COOP_CLASSES.NecroArmyOfDead = NecroArmyOfDead;
+  COOP_CLASSES.NecroLandOfDead = NecroLandOfDead;
+}
+
 // ── 시체 (적이 쓰러진 자리) · 마우스를 올리면 강조
 class NecroCorpseLayer {
   constructor() { this.alive = true; this.t = 0; this.L = []; this.hover = null; }
@@ -704,23 +833,70 @@ Player.prototype.ratmaAtkBonus = function () {
     return orig.call(this, amount);
   });
 
-  // ── 네크로맨서 스킬 (개편): 액티브 없음 · 시체 부활 · 시체 창 · 묘지 ──
+  // ── 네크로맨서 F키: 2차 궁극기 (기존 G 기능을 F로 이동)
   const NECRO_SKILLS = new Set(['necro_none', 'necro_blast', 'necro_raise', 'necro_spear', 'necro_grave']);
   wrap('useSkill', function (orig) {
     const p = this.player;
-    if (!NECRO_SKILLS.has(p.skillId)) return orig.call(this);
+    if (!p || p.hero.id !== NECRO_ID || !NECRO_SKILLS.has(p.skillId)) return orig.call(this);
     if (p.castLock > 0) return;
     if (p.denyT > 0) { this.effects.text(p.x, p.y - 20, '부정됨', '#d8f0ff'); return; }
     if (!this.zoneRight('job')) { this.effects.text(p.x, p.y - 20, '직업의 권리를 빼앗겼다', '#ffd84a'); return; }
     const say = (t) => { if (!(this.necroSayT > this.time)) { this.necroSayT = this.time + 0.8; this.effects.text(p.x, p.y - 22, t, '#c8c0d8'); } };
-    if (p.skillId === 'necro_none') { say('액티브 스킬 없음 — 해골 부하가 싸웁니다'); return; }
-    const C = this.necroCorpseAtMouse();
-    if (p.skillId === 'necro_raise') { if (!C) { say('시체에 마우스를 올리세요'); return; } this.necroRaise(p, C); }
-    else if (p.skillId === 'necro_blast') { const B = C || this.necroCorpseNearMouse(48); if (!B) { say('터뜨릴 시체가 없습니다'); return; } this.necroBlast(p, B); } // 시체 폭발 (망령 계열 F)
-    else if (p.skillId === 'necro_spear') { const B = C || this.necroCorpseNearMouse(48); if (!B) { say('시체에 마우스를 올리세요'); return; } this.necroSpears(p, B); } // [사용자 결정] 리치 계열 F: 시체 창
-    else { if (p.skillCooldown > 0) return; p.skillCooldown = p.skillCdMax; this.ultimateFx(p); this.necroGraveyard(p); } // (예전 저장의 necro_grave)
+    const F = this.necroFSkill(p);
+    if (!F) { say('F 궁극기는 2차 진화 후 사용할 수 있습니다'); return; }
+    if ((p.graveCd || 0) > 0) { say(` ${F.name} 대기 ${Math.ceil(p.graveCd)}초`); return; }
+    if (F.id === 'necro_army') {
+      p.graveCd = F.cd || NECRO.army.cd; this.ultimateFx(p); this.necroArmyOfDead(p);
+    } else if (F.id === 'necro_land') {
+      p.graveCd = F.cd || NECRO.land.cd; this.ultimateFx(p); this.necroLandOfDead(p);
+    } else if (F.id === 'necro_raise') {
+      // 예전 저장·기술 참조 호환: 부활 기술을 망자의 군대로 전환
+      p.graveCd = NECRO.army.cd; this.ultimateFx(p); this.necroArmyOfDead(p);
+    } else if (F.id === 'necro_grave') {
+      // 예전 저장·기술 참조 호환: 묘지를 망자의 땅으로 전환
+      p.graveCd = NECRO.land.cd; this.ultimateFx(p); this.necroLandOfDead(p);
+    } else { say('사용할 수 없는 사령 기술입니다'); return; }
     this.guildEvent('skills'); SFX.play('skill');
   });
+  G.necroBestAutoCorpse = function (p) {
+    const corpses = this.necroCorpses || [], enemies = this.enemies.filter((e) => e.targetable && !(e.def && e.def.dummy));
+    let best = null, bestScore = 0;
+    const blast = p.line && p.line.id === 'wraith', radius = blast ? NECRO.blast.r : NECRO.spear.range;
+    for (const c of corpses) {
+      let score = 0, nearest = Infinity;
+      for (const e of enemies) {
+        const d = Math.hypot(e.x - c.x, e.y - c.y);
+        nearest = Math.min(nearest, d);
+        if (blast && d <= radius + e.radius) score += e.def.boss ? 3.5 : e.elite ? 1.8 : 1;
+        else if (!blast && d <= radius + e.radius) score += (e.def.boss ? 3 : e.elite ? 1.7 : 1) / (1 + d / 180);
+      }
+      if (!blast && nearest < radius + 24) score += 1 / (1 + nearest / 100);
+      score -= Math.max(0, this.time - c.t) * 0.015;
+      if (score > bestScore) { bestScore = score; best = c; }
+    }
+    return best;
+  };
+  G.necroCorpseCast = function (p, automatic) {
+    if (!p || p.hero.id !== NECRO_ID || p.rank < 1 || p.state === 'DEAD') return false;
+    if (p.castLock > 0 || p.denyT > 0 || !this.zoneRight('job') || (p.necroCorpseCd || 0) > 0) return false;
+    const c = automatic
+      ? this.necroBestAutoCorpse(p)
+      : (this.necroCorpseAtMouse() || this.necroCorpseNearMouse(48));
+    if (!c) {
+      if (!automatic && !(this.necroSayT > this.time)) {
+        this.necroSayT = this.time + 0.8;
+        this.effects.text(p.x, p.y - 22, '시체에 마우스를 올리거나 V 자동을 켜세요', '#c8c0d8');
+      }
+      return false;
+    }
+    if (p.line && p.line.id === 'wraith' && p.skillId === 'necro_blast') this.necroBlast(p, c);
+    else if (p.line && p.line.id === 'lich' && p.skillId === 'necro_spear') this.necroSpears(p, c);
+    else return false;
+    p.necroCorpseCd = NECRO.corpseCast.cd;
+    p.necroCorpseAutoNext = this.time + 0.08;
+    this.guildEvent('skills');
+    return true;
+  };
   G.necroAddCorpse = function (e, autoSpear) {
     const L = this.necroCorpses || (this.necroCorpses = []);
     L.push({ x: e.x, y: e.y, def: e.def, elite: !!e.elite, maxHp: e.maxHp, damage: e.damage, sHp: e.necroSHp || this.scale.hp, sDmg: e.necroSDmg || this.scale.dmg, t: this.time }); // 죽은 층의 강화 배율 if (L.length > NECRO.corpse.max) L.shift();
@@ -769,12 +945,27 @@ Player.prototype.ratmaAtkBonus = function () {
     this.effects.ring(c.x, c.y, 14, '#d8d0c0'); for (let i = 0; i < 10; i++) this.effects.part(c.x + randInt(-6, 6), c.y + 2, randInt(-30, 30), -50, { color: i % 2 ? '#e8e0d0' : '#b47aff', life: 0.5, size: 2, size2: 0, drag: 2 });
     SFX.play('magic', 0.15);
   };
-  G.necroGraveyard = function (p) { // 불멸의 군주: 묘지 (10초)
+  G.necroArmyOfDead = function (p) { // 망자의 군대: 죽음의 계곡
     const mw = this.mouseWorld(), dx = mw.x - p.x, dy = mw.y - p.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, 220 / d);
-    let x = p.x + dx * k, y = p.y + dy * k; if (this.map.isSolidAt(x, y)) { x = p.x; y = p.y; }
-    this.zones.push(new NecroGraveyard(x, y, p)); this.zones.push(new RatmaSigil(x, y, NECRO.grave.r, '#b47aff', 1.4));
-    this.effects.rays(x, y, '#c08aff', 16, NECRO.grave.r, 0.8); this.addShake(0.25, 4); SFX.play('gate', 0.4);
+    let x = p.x + dx * k, y = p.y + dy * k;
+    if (this.map.isSolidAt(x, y)) { x = p.x; y = p.y; }
+    this.zones.push(new NecroArmyOfDead(x, y, p));
+    this.effects.ring(x, y, NECRO.army.r, '#9affd8'); this.effects.rays(x, y, '#9affd8', 18, NECRO.army.r, 0.8);
+    this.effects.skyBeam(x, y, '#d8fff0', 0, 8); this.addShake(0.25, 5); SFX.play('gate', 0.2);
   };
+  G.necroLandOfDead = function (p) { // 망자의 땅: 얼어붙은 땅
+    this.zones.push(new NecroLandOfDead(p));
+    this.screenFlash = 0.16; this.flashColor = '160,220,255';
+    this.effects.ring(p.x, p.y, 110, '#bfefff'); this.effects.rays(p.x, p.y, '#bfefff', 20, 180, 0.8);
+    for (let i = 0; i < 24; i++) {
+      const a = i / 24 * TAU, r = 30 + Math.random() * 150;
+      this.effects.part(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r * 0.65,
+        Math.cos(a) * 28, -18 - Math.random() * 30,
+        { color: i % 2 ? '#bfefff' : '#ffffff', life: 0.8, size: 2, size2: 0, drag: 1 });
+    }
+    this.addShake(0.22, 4); SFX.play('freeze', 0.25);
+  };
+  G.necroGraveyard = function (p) { return this.necroLandOfDead(p); }; // 구버전 호출 호환
   G.necroCharm = function (e, p) { // 정신지배: 적을 같은 모습의 부하로 바꾸고, 지배 시작 10초 뒤 제자리에서 자폭 (묘지 지속시간과 따로)
     e.necroCharmed = true; e.maxHp = Math.round(e.maxHp * NECRO.thrall.hpMul); e.hp = Math.min(e.maxHp, e.hp * NECRO.thrall.hpMul); e.damage = Math.round(e.damage * NECRO.thrall.dmgMul); // 체급 2배
     const i = this.enemies.indexOf(e); if (i >= 0) this.enemies.splice(i, 1); // 적 목록에서 빼서 아군으로 (같은 몬스터 그대로)
@@ -837,8 +1028,11 @@ Player.prototype.ratmaAtkBonus = function () {
     return { damage: Math.max(5, sum) * NECRO.weaponAtk * mul * this.necroFloor().dmg, mods: p.mods, knockback, minion: true }; // 층수 비례
   };
   // HUD: 소환수 수 (해골 · 골렘 · 부활 부하 · 정신지배 · 시체)
-  G.necroGSkill = function (p) { // G키 스킬 (없으면 null)
+  G.necroGSkill = function (p) { // 공통 G키 궁극기: 드루이드 연계와 호환하기 위해 기존 API 유지
     if (!p || p.hero.id !== NECRO_ID || !p.line || !p.line.gSkills) return null; return p.line.gSkills[Math.min(2, p.rank || 0)] || null;
+  };
+  G.necroFSkill = function (p) { // 네크로맨서의 기존 G 궁극기를 F로 이동
+    return p && p.hero && p.hero.id === NECRO_ID ? this.necroGSkill(p) : null;
   };
   G.necroHudParts = function (p) {
     if (!p || p.hero.id !== NECRO_ID || (this.mode !== 'dungeon' && this.mode !== 'lobby')) return null;
@@ -856,17 +1050,54 @@ Player.prototype.ratmaAtkBonus = function () {
   // ── 매 프레임: 연출 (이동 잔상 · 대시 망령 흔적 · 고유 무기 상시 VFX · 라트마 등장/페이즈) ──
   G.ratmaWantsAura = function (p) { return !!p && p.state !== 'DEAD' && (p.hero.id === NECRO_ID || p.weapons.some((w) => w.def.ratma)); };
   wrap('updateSkillEffects', function (orig, dt) { const r = orig.call(this, dt); this.ratmaTick(dt); return r; });
-  wrap('update', function (orig, dt) { if (this.input && this.input.wasPressed('KeyG')) this.necroRaiseQ = this.time; return orig.call(this, dt); }); // G 입력 버퍼 (0.3초)
+  wrap('update', function (orig, dt) {
+    const p = this.player;
+    if (p && p.hero.id === NECRO_ID && this.input && !this.overlay) {
+      if (this.input.wasPressed('KeyG')) p.necroCorpseQ = this.time;
+      if (this.input.wasPressed('KeyV')) {
+        p.necroCorpseAuto = !p.necroCorpseAuto;
+        this.effects.text(p.x, p.y - 22, '시체 자동 ' + (p.necroCorpseAuto ? 'ON' : 'OFF'), p.necroCorpseAuto ? '#9affd8' : '#a8a0b0');
+        this.effects.ring(p.x, p.y, 18, p.necroCorpseAuto ? '#9affd8' : '#777080');
+        SFX.play('ui', 0.08);
+      }
+    }
+    return orig.call(this, dt);
+  });
+  if (typeof G.coopHostTickRemotes === 'function') wrap('coopHostTickRemotes', function (orig, dt) {
+    if (this.remotes) for (const R of this.remotes.values()) {
+      const p = R.p;
+      if (!p || p.hero.id !== NECRO_ID || !R.vin) continue;
+      if (R.vin.wasPressed('KeyG')) p.necroCorpseQ = this.time;
+      if (R.vin.wasPressed('KeyV')) {
+        p.necroCorpseAuto = !p.necroCorpseAuto;
+        this.withPlayer(p, () => {
+          this.effects.text(p.x, p.y - 22, '시체 자동 ' + (p.necroCorpseAuto ? 'ON' : 'OFF'), p.necroCorpseAuto ? '#9affd8' : '#a8a0b0');
+          this.effects.ring(p.x, p.y, 18, p.necroCorpseAuto ? '#9affd8' : '#777080');
+        });
+      }
+    }
+    return orig.call(this, dt);
+  });
   G.ratmaTick = function (dt) {
     const p = this.player; if (!p) return;
-    if (p.graveCd > 0) p.graveCd = Math.max(0, p.graveCd - dt);
-    const gS = this.necroGSkill(p);
-    if (this.necroRaiseQ > this.time - 0.3 && !this.overlay && p.state !== 'DEAD' && gS) { this.necroRaiseQ = -1; // [사용자 결정] G키 스킬: 망자의 군주 = 시체 부활 · 불멸의 군주 = 묘지
-      const say = (t) => { if (!(this.necroSayT > this.time)) { this.necroSayT = this.time + 0.8; this.effects.text(p.x, p.y - 22, t, '#c8c0d8'); } };
-      if (p.castLock > 0) { /* 시전 중 */ }
-      else if (!this.zoneRight('job')) say('직업의 권리를 빼앗겼다');
-      else if (gS.id === 'necro_raise') { const C = this.necroCorpseAtMouse() || this.necroCorpseNearMouse(32); if (C) this.necroRaise(p, C); else say('시체에 마우스를 올리고 G'); }
-      else if (gS.id === 'necro_grave') { if (p.graveCd > 0) say(`묘지 대기 ${Math.ceil(p.graveCd)}초`); else { p.graveCd = gS.cd; this.ultimateFx(p); this.necroGraveyard(p); this.guildEvent('skills'); SFX.play('skill'); } } }
+    const players = this.allPlayers ? this.allPlayers() : [p];
+    for (const owner of players) {
+      if (!owner || owner.hero.id !== NECRO_ID) continue;
+      owner.graveCd = Math.max(0, (owner.graveCd || 0) - dt);
+      owner.necroCorpseCd = Math.max(0, (owner.necroCorpseCd || 0) - dt);
+      const remote = owner === p ? null : this.remotes && [...this.remotes.values()].find((R) => R.p === owner);
+      const ownerOverlay = owner === p ? this.overlay : remote && remote.overlay;
+      if (owner.state === 'DEAD' || ownerOverlay) continue;
+      const runAsOwner = (fn) => owner === this.player || !this.withPlayer ? fn() : this.withPlayer(owner, fn);
+      if (owner.necroCorpseQ > this.time - 0.25) {
+        owner.necroCorpseQ = -1;
+        runAsOwner(() => this.necroCorpseCast(owner, false));
+      }
+      if (owner.necroCorpseAuto && this.time >= (owner.necroCorpseAutoNext || 0) && owner.necroCorpseCd <= 0) {
+        owner.necroCorpseAutoNext = this.time + 0.12;
+        runAsOwner(() => this.necroCorpseCast(owner, true));
+      }
+    }
     this.summonRoomT = (this.summonRoomT || 0) - dt; if (this.summonRoomT <= 0) { this.summonRoomT = 0.5; const R = this.activeRoom; if (R && this.mode === 'dungeon' && this.map.roomAtPoint(p.x, p.y) === R) this.summonFollowsIntoRoom(R); } // 전투 중에도 방 밖에 갇힌 소환수는 데려옴
     if (this.ratmaWantsAura(p) && !this.zones.some((z) => z.isNecroAura && z.owner === p)) this.zones.push(new NecroAura(p));
     if (this.mode === 'dungeon' || this.mode === 'lobby') this.necroMaintain(p);
