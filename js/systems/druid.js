@@ -318,9 +318,19 @@
     const current = Array.isArray(p.natureRoster) ? p.natureRoster.slice() : [];
     const goal = rankMax(p);
     if (current.length >= goal) return false;
+    const remote = this.coop && this.coop.host && this.remotes
+      ? [...this.remotes.values()].find((R) => R.p === p) : null;
+    const remoteContext = !!(remote && remote.overlay && this.overlay === remote.overlay);
+    const previousOverlay = this.overlay;
     this.overlay = { type: 'druid_select', goal: goal, selected: current.slice(), locked: current.slice(), msg: null };
     this.input.mouse.down = false;
-    // 협동 원격 플레이어의 경우 coopRemoteOverlay가 이 창을 R.overlay에 보존하고 전송한다.
+    // 원격 참가자의 최초 F키는 전역(방장) 창을 점유하지 않고 참가자 전용 창으로 전달한다.
+    // 진화 창에서 선택을 처리 중이면 coopRemoteOverlay가 새 창을 보존·전송하므로 여기서는 건드리지 않는다.
+    if (remote && !remoteContext) {
+      remote.overlay = this.overlay;
+      this.overlay = previousOverlay;
+      this.coopSendOverlay(remote);
+    }
     return true;
   };
   Game.prototype.druidSummon = function (p, freeRefresh) {
