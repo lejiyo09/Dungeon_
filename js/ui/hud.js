@@ -148,24 +148,35 @@ class HUD {
     if (other) drawWeaponCentered(ctx, other.def, VIEW_W - 24, VIEW_H - 23, (typeof uLocalTheme === 'function' ? uLocalTheme() : undefined));
     hudText(ctx, 'Q', VIEW_W - 38, VIEW_H - 34, '#888', 'left', 7);
 
-    // 대시 / 스킬 (F) / G키 스킬 — [사용자 결정] 스킬 두 개 모두 좌측 하단에 · 재사용 대기시간이 없는 스킬은 빈 바
-    const gS = game.necroGSkill ? game.necroGSkill(p) : null, rows = gS ? 3 : 2, boxH = rows * 12 + 8, by = VIEW_H - 4 - boxH + 3;
+    // 대시 / F 궁극기 / G 시체 기술 / V 자동 소비
+    const isNecro = typeof NECRO_ID !== 'undefined' && p.hero.id === NECRO_ID;
+    const gS = game.necroGSkill ? game.necroGSkill(p) : null;
+    const fS = isNecro && game.necroFSkill ? game.necroFSkill(p) : null;
+    const corpseName = p.skillId === 'necro_blast' ? '시체 폭발' : p.skillId === 'necro_spear' ? '시체 창' : '1차 진화 시 해금';
+    const rows = isNecro ? 4 : gS ? 3 : 2, boxH = rows * 12 + 8, by = VIEW_H - 4 - boxH + 3;
     ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(4, VIEW_H - 4 - boxH, 136, boxH);
-    const BX = 84, BW = 52, NAME_W = BX - 22; // 이름 칸: 키 표시 뒤 ~ 바 앞 (넘치면 글자 크기를 줄임)
+    const BX = 84, BW = 52, NAME_W = BX - 22;
     const fitName = (str, x, y, col) => { let sz = 9; ctx.font = `bold ${sz}px 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif`;
       while (sz > 6 && ctx.measureText(str).width > NAME_W) { sz--; ctx.font = `bold ${sz}px 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif`; }
       hudText(ctx, str, x, y + (9 - sz), col, 'left', sz); };
-    const skRow = (key, name, y, ratio, ready, noCd) => { // noCd: 재사용 대기시간 없음 → 빈 바 · 깜빡임 없음
+    const skRow = (key, name, y, ratio, ready, noCd) => {
       hudText(ctx, key, 8, y, '#9a9a9a', 'left', 8); fitName(name, 20, y, noCd ? '#d8d0c0' : ready ? '#ffd84a' : '#888');
       hudBar(ctx, BX, y + 3, BW, 5, noCd ? 0 : ratio, '#ffd84a');
       if (ready && !noCd) { ctx.strokeStyle = `rgba(255,216,74,${0.4 + 0.4 * Math.sin(game.time * 6)})`; ctx.strokeRect(BX - 1.5, y + 1.5, BW + 3, 8); } };
     hudText(ctx, '대시', 8, by, p.dashCooldown > 0 ? '#888' : '#7fe0ff', 'left', 9);
     hudBar(ctx, 34, by + 3, BX + BW - 34, 5, 1 - p.dashCooldown / p.dashCdMax, '#7fe0ff');
     const dsM = p.skillId === 'deathsentry' ? BALANCE.TRAP.sentryCharges : 0, dsN = dsM ? (p.dsCharges == null ? dsM : p.dsCharges) : 0, skReady = dsM ? dsN > 0 : p.skillCooldown <= 0;
-    const fNoCd = typeof NECRO_ID !== 'undefined' && p.hero.id === NECRO_ID && p.skillId !== 'necro_grave'; // 네크로맨서 F (액티브 없음 · 시체 폭발 · 시체 창)
-    skRow('F', p.skillName, by + 12, dsM ? (dsN >= dsM ? 1 : 1 - p.skillCooldown / (p.dsMax || BALANCE.TRAP.sentryRecharge)) : 1 - p.skillCooldown / p.skillCdMax, skReady, fNoCd);
-    if (dsM) for (let i = 0; i < dsM; i++) { ctx.fillStyle = i < dsN ? '#ffd84a' : 'rgba(255,255,255,0.18)'; ctx.fillRect(BX + i * 7, by + 12, 5, 2); } /* 망자의 파수기 충전 칸 */
-    if (gS) { const cd = gS.cd || 0, left = cd ? (p.graveCd || 0) : 0; skRow('G', gS.name, by + 24, cd ? 1 - left / cd : 0, left <= 0, !cd); }
+    if (isNecro) {
+      const fCd = fS ? (fS.cd || 0) : 0, fLeft = fS ? (p.graveCd || 0) : 0;
+      skRow('F', fS ? fS.name : '2차 진화 필요', by + 12, fCd ? 1 - fLeft / fCd : 0, !!fS && fLeft <= 0, !fS || !fCd);
+      const cCd = typeof NECRO !== 'undefined' && NECRO.corpseCast ? NECRO.corpseCast.cd : 0.45, cLeft = p.necroCorpseCd || 0;
+      skRow('G', corpseName, by + 24, cCd ? 1 - cLeft / cCd : 0, p.rank >= 1 && cLeft <= 0, p.rank < 1 || !cCd);
+      skRow('V', p.necroCorpseAuto ? '자동 소비 ON' : '자동 소비 OFF', by + 36, 0, false, true);
+    } else {
+      skRow('F', p.skillName, by + 12, dsM ? (dsN >= dsM ? 1 : 1 - p.skillCooldown / (p.dsMax || BALANCE.TRAP.sentryRecharge)) : 1 - p.skillCooldown / p.skillCdMax, skReady, false);
+      if (dsM) for (let i = 0; i < dsM; i++) { ctx.fillStyle = i < dsN ? '#ffd84a' : 'rgba(255,255,255,0.18)'; ctx.fillRect(BX + i * 7, by + 12, 5, 2); }
+      if (gS) { const cd = gS.cd || 0, left = cd ? (p.graveCd || 0) : 0; skRow('G', gS.name, by + 24, cd ? 1 - left / cd : 0, left <= 0, !cd); }
+    }
 
     if (game.banner && game.banner.t < game.banner.life) {
       const b = game.banner, a = Math.min(1, b.t * 4, (b.life - b.t) * 3);
