@@ -32,7 +32,7 @@ const NECRO = {
   spear: { count: 3, dmg: 10, speed: 260, range: 200, debuffs: 2 },                             // 리치: 시체 창 3개 · 무작위 디버프 2종
   corpseCast: { cd: 0.45 },                                                                       // 시체 기술 수동·자동 발동 사이 간격
   army: { r: 112, life: 2.6, every: 0.42, dmg: 18, pull: 13, cd: 20 },                           // 망자의 군대: 죽음의 계곡 · 주변 적을 중앙으로 끌며 사령 공격
-  land: { life: 10, every: 1.0, freeze: 1.35, bossSlow: 0.72, cd: 28 },                          // 망자의 땅: 얼어붙은 땅 · 10초간 모든 적을 주기적으로 빙결
+  land: { life: 10, slow: 0.5, damageTaken: 1.5, cd: 28 },                                        // 망자의 땅: 얼어붙는 땅 · 10초간 적 이동/공격 속도 50% 감소, 받는 피해 50% 증가
   grave: { r: 92, life: 10, every: 2, corpses: [2, 4], charm: 0.3, charmLife: 10, charmDmg: 60, charmR: 46, cd: 24 } // 구버전 묘지 저장 호환용
 };
 const NECRO_DEBUFFS = [
@@ -50,12 +50,12 @@ JOB_LINES.hero_necromancer = {
       { id: 'necro_blast', name: '시체 폭발', desc: 'G: 시체를 터뜨려 주변 적에게 피해 (소비한 몬스터 최대 체력 비례) · V: 자동 사용 전환', cd: 0.3 },
       { id: 'necro_blast', name: '시체 폭발', desc: 'G: 시체 폭발 · V: 자동 사용 전환 · F: 망자의 군대 — 죽음의 계곡 (적을 끌어모아 사령의 군세로 공격)', cd: 0.3 }],
     gSkills: [null, null, { id: 'necro_army', name: '망자의 군대', cd: NECRO.army.cd }] }, // F키 궁극 기술
-  lich: { name: '리치', desc: '시체와 저주 · 시체를 창으로 바꾸고, 묘지로 적을 지배해 자폭시킴', ranks: ['사령술사', '리치', '불멸의 군주'], color: '#b47aff',
+  lich: { name: '리치', desc: '시체와 저주 · 시체를 창으로 바꾸고, 망자의 땅으로 적을 약화시킴', ranks: ['사령술사', '리치', '불멸의 군주'], color: '#b47aff',
     looks: [{ sprite: 'necro', body: '#24232b', accent: '#c5a66c' }, { sprite: 'necro_lich', body: '#2c2528', accent: '#d6c8a0' }, { sprite: 'necro_lichlord', body: '#17171f', accent: '#e0c77d' }],
     fx: { trail: '#b47aff', trail2: '#5a2a9a', kind: 'crack' },
     skills: [NECRO_NONE,
       { id: 'necro_spear', name: '시체 창', desc: 'G: 시체 1구를 써서 시체 창 3개 발사 (주변 적 자동 추적 · 무작위 디버프 2종) · 시체 사용 시 체력 12 · 에너지 10 회복 · V: 자동 사용 전환', cd: 0.3 },
-      { id: 'necro_spear', name: '시체 창', desc: 'G: 시체 창 · V: 자동 사용 전환 · F: 망자의 땅 — 얼어붙은 땅 (10초 동안 모든 적을 주기적으로 빙결)', cd: 0.3 }],
+      { id: 'necro_spear', name: '시체 창', desc: 'G: 시체 창 · V: 자동 사용 전환 · F: 망자의 땅 — 얼어붙는 땅 (10초간 적 이동·공격 속도 50% 감소, 받는 피해 50% 증가)', cd: 0.3 }],
     gSkills: [null, null, { id: 'necro_land', name: '망자의 땅', cd: NECRO.land.cd }] } // F키 궁극 기술
 };
 
