@@ -160,9 +160,9 @@ const JOB_LINES = {
   hero_druid: { title: '자연의 길 선택',
     base: { name: '야수', desc: '자연의 동료를 편성하고 유대를 쌓아 함께 싸움', ranks: ['드루이드', '대드루이드', '숲의 군주'], color: '#9ad8ff',
     skills: [
-      { id: 'druid_pact', name: '야생의 부름', desc: '편성한 자연의 동료 3종 소환 · 함께 싸울수록 유대가 쌓이며 G로 연계 기술 발동', cd: 22 },
-      { id: 'druid_pact', name: '정령의 행렬', desc: '자연의 동료 4종 소환 · 새로운 동료를 편성하고 유대 연계를 강화', cd: 22 },
-      { id: 'druid_pact', name: '태고의 군세', desc: '자연의 동료 5종 소환 · 완전한 유대 3종 이상이면 G로 태고의 파동 발동', cd: 24 }] },
+      { id: 'druid_pact', name: '야생의 부름', desc: 'F로 자연의 동료 3종 편성 · 선택한 동료는 상시 동행 · 유대 100에서 G로 연계 기술 발동', cd: 22 },
+      { id: 'druid_pact', name: '정령의 행렬', desc: '1차 진화: 동료 4종 편성 · 기존 동료를 교체해도 각 종의 유대도 유지', cd: 22 },
+      { id: 'druid_pact', name: '태고의 군세', desc: '2차 진화: 동료 5종 편성 · 완전한 유대 3종 이상이면 G로 태고의 파동 발동', cd: 24 }] },
     thorn: { name: '가시', desc: '가시와 뿌리로 묶고 찌름', ranks: ['가시 수호자', '덤불의 주인', '고대 뿌리의 현자'], color: '#7adf4a',
       skills: [
         { id: 'thornfield', name: '가시 덤불', desc: '조준 지점에 6초간 가시 덤불 (지속 피해 + 중독)', cd: 8 },
