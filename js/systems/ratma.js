@@ -355,7 +355,7 @@ class NecroArmyOfDead {
           const pull = Math.min(NECRO.army.pull, d - 20);
           moveAndCollide(e, dx / d * pull, dy / d * pull, world.map);
         }
-        world.effects.slash(e.x, e.y - 3, Math.atan2(-dy, -dx), 20, 1.15, '#dffff0');
+        world.effects.slash(e.x, e.y - 3, Math.atan2(dy, dx), 20, 1.15, '#dffff0');
         world.effects.part(e.x, e.y - 3, 0, -18, { color: '#dffff0', life: 0.42, size: 2.5, size2: 0, drag: 1 });
       }
       // 지면에서 뼛조각과 영혼 불꽃이 동시에 솟아오르는 충격파
