@@ -385,54 +385,47 @@ class NecroArmyOfDead {
   }
 }
 
-// ── 망자의 땅: 얼어붙은 땅 (10초 동안 전장의 적을 주기적으로 빙결)
+// ── 망자의 땅: 얼어붙는 땅 (10초 · 이동/공격 속도 -50% · 받는 피해 +50%)
 class NecroLandOfDead {
   constructor(owner) {
     this.owner = owner; this.x = owner.x; this.y = owner.y;
-    this.t = 0; this.life = NECRO.land.life; this.next = 0.15; this.alive = true;
-    this.r = 520;
+    this.t = 0; this.life = NECRO.land.life; this.pulse = 0; this.alive = true;
+    this.r = 520; // 던전 전역에 걸쳐 적용
   }
   update(dt, world) {
     this.t += dt; this.life -= dt;
     if (!this.owner || this.owner.state === 'DEAD' || this.life <= 0) {
-      this.alive = false; world.effects.burst(this.x, this.y, '#bfefff', 24); return;
+      this.alive = false; world.effects.burst(this.x, this.y, '#9affd8', 24); return;
     }
     this.x = this.owner.x; this.y = this.owner.y;
-    this.next -= dt;
-    if (this.next <= 0) {
-      this.next += NECRO.land.every;
+    // 상태이상 면역 보스도 포함한 모든 적에게 짧은 유효기간을 계속 갱신한다.
+    // Enemy.speedMul에서 이동·공격 속도를 절반으로, damageEnemy에서 받는 피해를 1.5배로 적용한다.
+    for (const e of world.enemies) if (e.alive && !(e.def && e.def.dummy)) e.necroLandUntil = world.time + Math.max(0.2, dt * 2.5);
+    this.pulse -= dt;
+    if (this.pulse <= 0) {
+      this.pulse = 0.55;
       for (const e of world.enemies) {
         if (!e.targetable) continue;
-        const duration = NECRO.land.freeze * (1 + (this.owner.hero.statusBoost || 0));
-        const react = e.applyStatus({ type: 'freeze', chance: 1, duration, slow: 0.08 }, this.owner.mods);
-        if (react) world.triggerReaction(e, react, this.owner.mods);
-        if (e.def.boss || e.def.ccImmune) {
-          e.slow = Math.max(e.slow || 0, duration);
-          e.slowK = Math.min(e.slowK || 1, NECRO.land.bossSlow);
-        } else {
-          e.stunT = Math.max(e.stunT || 0, 0.22);
-          e.slowK = Math.min(e.slowK || 1, 0.08);
-        }
-        world.effects.ring(e.x, e.y + 2, e.radius + 5, '#bfefff');
-        world.effects.part(e.x, e.y - e.radius, randInt(-9, 9), -24, { color: '#e8f8ff', life: 0.55, size: 2, size2: 0, drag: 1 });
+        world.effects.ring(e.x, e.y + 2, e.radius + 5, '#9affd8');
+        world.effects.part(e.x, e.y - e.radius, randInt(-8, 8), -18, { color: '#d8fff0', life: 0.48, size: 2, size2: 0, drag: 1 });
       }
-      world.effects.ring(this.x, this.y, 140 + Math.sin(this.t * 5) * 10, '#bfefff');
-      SFX.play('freeze', 0.04);
+      world.effects.ring(this.x, this.y, 160 + Math.sin(this.t * 3) * 12, '#9affd8');
+      SFX.play('magic', 0.035);
     }
-    if (Math.random() < 0.65) {
+    if (Math.random() < 0.6) {
       const a = Math.random() * TAU, d = Math.random() * this.r;
       world.effects.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.62,
-        randInt(-7, 7), -18 - Math.random() * 12,
-        { color: Math.random() < 0.5 ? '#bfefff' : '#ffffff', life: 0.75, size: 2, size2: 0, drag: 0.6 });
+        randInt(-8, 8), -14 - Math.random() * 18,
+        { color: Math.random() < 0.5 ? '#9affd8' : '#c08aff', life: 0.8, size: 2, size2: 0, drag: 0.6, add: true });
     }
   }
   render(ctx) {
     const k = Math.max(0, Math.min(1, this.life / 0.8, this.t / 0.2));
     ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.66);
-    ctx.globalAlpha = 0.055 * k; ctx.fillStyle = '#9adfff'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill();
-    ctx.globalAlpha = 0.32 * k; ctx.strokeStyle = '#bfefff'; ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.065 * k; ctx.fillStyle = '#173a33'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.3 * k; ctx.strokeStyle = '#9affd8'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(0, 0, this.r * (0.96 + Math.sin(this.t * 2) * 0.025), 0, TAU); ctx.stroke();
-    ctx.globalAlpha = 0.2 * k; ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.22 * k; ctx.lineWidth = 1; ctx.strokeStyle = '#c08aff';
     for (let i = 0; i < 12; i++) {
       const a = i * TAU / 12 + this.t * 0.12, r = this.r * (0.55 + (i % 3) * 0.12);
       ctx.beginPath(); ctx.moveTo(Math.cos(a) * (r - 14), Math.sin(a) * (r - 14));
@@ -461,8 +454,11 @@ class NecroCorpseLayer {
 // 골렘 어그로: 적 AI가 도는 동안 '플레이어' 자리를 골렘 대역으로 바꿔 줌 (보스는 제외)
 if (typeof updateEnemy === 'function') {
   const _updateEnemy = updateEnemy; NecroThrall.baseUpdate = _updateEnemy; // 부하는 원래 AI를 그대로 (어그로 대역 없이)
+  const _enemySpeedMul = Object.getOwnPropertyDescriptor(Enemy.prototype, 'speedMul');
+  if (_enemySpeedMul && _enemySpeedMul.get) Object.defineProperty(Enemy.prototype, 'speedMul', { configurable: true, get() { return _enemySpeedMul.get.call(this) * (this.necroLandSlow ? NECRO.land.slow : 1); } });
   // eslint-disable-next-line no-global-assign
   updateEnemy = function (e, dt, world) {
+    e.necroLandSlow = !!(e.necroLandUntil && e.necroLandUntil > world.time);
     const G = !e.necroAlly && world.necroTauntFor ? world.necroTauntFor(e) : null; if (!G) return _updateEnemy(e, dt, world);
     const o = world.player, hf = world.hurtFlash; world.player = G.proxy;
     try { return _updateEnemy(e, dt, world); } finally { world.player = o; world.hurtFlash = hf; }
@@ -804,6 +800,7 @@ Player.prototype.ratmaAtkBonus = function () {
     let mult = 1;
     if (key === 'crown') { const F = RATMA_FX.crown; if (enemy.def.boss) mult *= 1 + F.boss + (enemy.hp < enemy.maxHp * F.low ? F.lowBonus : 0); else if (enemy.elite) mult *= 1 + F.elite; }
     if (key === 'lantern' && p && p.lanternBoostUntil > now) mult *= RATMA_FX.lantern.mult;
+    if (enemy.necroLandUntil > now) mult *= NECRO.land.damageTaken;
     const hp0 = enemy.hp; let res;
     if (mult !== 1 && typeof src.damage === 'number') { const d0 = src.damage; src.damage = d0 * mult; try { res = orig.call(this, enemy, src, kx, ky, opts); } finally { src.damage = d0; } }
     else res = orig.call(this, enemy, src, kx, ky, opts);
@@ -901,7 +898,12 @@ Player.prototype.ratmaAtkBonus = function () {
     const L = this.necroCorpses || (this.necroCorpses = []);
     L.push({ x: e.x, y: e.y, def: e.def, elite: !!e.elite, maxHp: e.maxHp, damage: e.damage, sHp: e.necroSHp || this.scale.hp, sDmg: e.necroSDmg || this.scale.dmg, t: this.time }); // 죽은 층의 강화 배율 if (L.length > NECRO.corpse.max) L.shift();
     this.effects.part(e.x, e.y - 2, 0, -12, { color: '#d8d0c0', life: 0.5, size: 2, size2: 0, drag: 1 });
-    const p = this.player; if (p && p.hero.id === NECRO_ID && p.state !== 'DEAD' && p.line && p.line.id === 'lich' && (p.rank || 0) >= 1 && autoSpear) this.necroSpears(p, L[L.length - 1]); // [사용자 결정] 시체 창은 F로 — 자동은 묘지에서 솟는 시체만
+    const p = this.player;
+    if (p && p.hero.id === NECRO_ID && p.state !== 'DEAD' && p.line && p.line.id === 'lich' && (p.rank || 0) >= 1 && p.skillId === 'necro_spear' && p.necroCorpseAuto) {
+      // 자동 모드의 리치는 시체가 생기는 순간 큐에 넣어 마우스·대상 거리를 기다리지 않는다.
+      const c = L[L.length - 1]; p.necroCorpseQueue = p.necroCorpseQueue || [];
+      if (!p.necroCorpseQueue.includes(c)) p.necroCorpseQueue.push(c);
+    }
   };
   G.necroCorpseAtMouse = function () {
     const mw = this.mouseWorld(), L = this.necroCorpses || []; let best = null, bd = NECRO.corpse.pick;
@@ -1042,7 +1044,8 @@ Player.prototype.ratmaAtkBonus = function () {
     const g = mine.find((a) => a instanceof NecroGolem); if (g) parts.push(g.up ? `골렘 ${Math.round(g.hp / g.maxHp * 100)}%` : `골렘 부활 ${Math.ceil(g.respawnT)}초`);
     if (p.line && p.line.id === 'wraith' && p.rank >= 2) parts.push(`부하 ${(p.thralls || []).length}/${NECRO.thrall.max}`);
     const ch = mine.filter((a) => a instanceof NecroThrall && a.charm).length; if (ch) parts.push(`지배 ${ch}`);
-    const cor = (this.necroCorpses || []).length; if (p.line && p.line.id === 'wraith' && p.rank >= 1) parts.push(`시체 ${cor}`);
+    const cor = (this.necroCorpses || []).length; if (p.line && p.rank >= 1) parts.push(`시체 ${cor}`);
+    if (p.line && p.rank >= 1) parts.push(p.necroCorpseAuto ? '자동 소비 ON' : '자동 소비 OFF');
     return { text: parts.join(' · '), color: p.line && p.line.id === 'lich' ? '#d0b0ff' : '#9affd8' };
   };
   G.summonTempSkeletons = function (p, n) { for (let i = 0; i < n; i++) this.allies.push(new NecroSkeleton(p.x + randInt(-12, 12), p.y + randInt(4, 12), p, { temp: NECRO.skeleton.tempLife, idx: 9 + i })); }; // 장비 등 추가 소환: 10초 뒤 소멸
@@ -1056,6 +1059,7 @@ Player.prototype.ratmaAtkBonus = function () {
       if (this.input.wasPressed('KeyG')) p.necroCorpseQ = this.time;
       if (this.input.wasPressed('KeyV')) {
         p.necroCorpseAuto = !p.necroCorpseAuto;
+        if (!p.necroCorpseAuto) p.necroCorpseQueue = [];
         this.effects.text(p.x, p.y - 22, '시체 자동 ' + (p.necroCorpseAuto ? 'ON' : 'OFF'), p.necroCorpseAuto ? '#9affd8' : '#a8a0b0');
         this.effects.ring(p.x, p.y, 18, p.necroCorpseAuto ? '#9affd8' : '#777080');
         SFX.play('ui', 0.08);
@@ -1070,6 +1074,7 @@ Player.prototype.ratmaAtkBonus = function () {
       if (R.vin.wasPressed('KeyG')) p.necroCorpseQ = this.time;
       if (R.vin.wasPressed('KeyV')) {
         p.necroCorpseAuto = !p.necroCorpseAuto;
+        if (!p.necroCorpseAuto) p.necroCorpseQueue = [];
         this.withPlayer(p, () => {
           this.effects.text(p.x, p.y - 22, '시체 자동 ' + (p.necroCorpseAuto ? 'ON' : 'OFF'), p.necroCorpseAuto ? '#9affd8' : '#a8a0b0');
           this.effects.ring(p.x, p.y, 18, p.necroCorpseAuto ? '#9affd8' : '#777080');
@@ -1093,7 +1098,16 @@ Player.prototype.ratmaAtkBonus = function () {
         owner.necroCorpseQ = -1;
         runAsOwner(() => this.necroCorpseCast(owner, false));
       }
-      if (owner.necroCorpseAuto && this.time >= (owner.necroCorpseAutoNext || 0) && owner.necroCorpseCd <= 0) {
+      if (owner.necroCorpseAuto && owner.rank >= 1 && owner.line && owner.line.id === 'lich' && owner.skillId === 'necro_spear') {
+        const Q = owner.necroCorpseQueue || (owner.necroCorpseQueue = []), L = this.necroCorpses || [];
+        // 자동 ON 시 기존 시체도 큐에 넣고, 이미 소비·만료된 항목은 건너뛴다.
+        for (const c of L) if (!Q.includes(c)) Q.push(c);
+        while (Q.length && !L.includes(Q[0])) Q.shift();
+        if (Q.length && this.time >= (owner.necroCorpseAutoNext || 0)) {
+          const c = Q.shift(); owner.necroCorpseAutoNext = this.time + 0.08;
+          runAsOwner(() => this.necroSpears(owner, c));
+        }
+      } else if (owner.necroCorpseAuto && owner.rank >= 1 && owner.line && owner.line.id === 'wraith' && this.time >= (owner.necroCorpseAutoNext || 0) && owner.necroCorpseCd <= 0) {
         owner.necroCorpseAutoNext = this.time + 0.12;
         runAsOwner(() => this.necroCorpseCast(owner, true));
       }
