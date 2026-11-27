@@ -67,7 +67,7 @@ const BALANCE = {
       'hero_berserker|blood': { skillFx: 'bloodmoon', name: '핏빛 보름', desc: '피의 달 지속↑·흡혈↑' },
       'hero_berserker|feast': { skillFx: 'feast3', name: '만혼 포식', desc: '만혼 강림 포식 획득↑·범위↑' },
       // 드루이드
-      'hero_druid|base': { skillFx: 'guardian', name: '정령 가호', desc: '수호 정령 지속↑·추가 소환' },
+      'hero_druid|base': { skillFx: 'guardian', name: '정령 가호', desc: '소환 지속 +20% · 유대 획득 +25%' },
       'hero_druid|thorn': { skillFx: 'ancientroot', name: '고대 결박', desc: '고대 뿌리 범위↑·속박↑' },
       'hero_druid|shape': { skillFx: 'primal', name: '태초 각성', desc: '변신 지속↑·공격력↑·변신 시작 시 범위 폭발' }
     } },
