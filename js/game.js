@@ -985,7 +985,16 @@ class Game {
         dashCdMax: p.dashCdMax, skillCdMax: p.skillCdMax, vampire: p.vampire, damageReduction: p.damageReduction, feast: p.feast || 0,
         feastPenaltyActive: !!p.feastPenaltyActive, feastPenaltyFactor: p.feastPenaltyFactor || 1, feastPenaltyReleased: !!p.feastPenaltyReleased,
         stats: Object.assign({}, p.stats), buffs: p.buffs.slice(), weapons: p.weapons.map((w) => w.def.id), weaponLv: p.weapons.map((w) => w.lv || 0), slot: p.slot,
-        treasure: p.treasure ? p.treasure.id : null, line: p.line ? p.line.id : null, rank: p.rank || 0, hybrid: p.hybrid ? { id: p.hybrid.id, el: p.hybrid.el } : null, fleeceUsed: p.fleeceUsed || 0 } };
+        treasure: p.treasure ? p.treasure.id : null, line: p.line ? p.line.id : null, rank: p.rank || 0, hybrid: p.hybrid ? { id: p.hybrid.id, el: p.hybrid.el } : null, fleeceUsed: p.fleeceUsed || 0,
+        // 드루이드 자연의 동맹: 이어하기·협동 재접속에서도 편성/유대/남은 지속시간 보존
+        natureRoster: Array.isArray(p.natureRoster) ? p.natureRoster.slice() : null,
+        druidBonds: p.druidBonds && typeof p.druidBonds === 'object' ? Object.assign({}, p.druidBonds) : null,
+        druidSummonRemaining: Math.max(0, (p.druidSummonUntil || 0) - this.time),
+        druidTempGuard: p.druidTempGuard || 0,
+        druidTempGuardRemaining: Math.max(0, (p.druidTempGuardUntil || 0) - this.time),
+        druidTempMove: p.druidTempMove || 0,
+        druidTempMoveRemaining: Math.max(0, (p.druidTempMoveUntil || 0) - this.time),
+        graveCd: p.graveCd || 0 } };
   }
   playerFromSnapshot(hero, s, p = new Player(0, 0, hero, this.data.base)) { // 저장된 캐릭터 상태 → 플레이어 (이어하기·심층 기록 공용)
     return this.withPlayer(p, () => {
@@ -1000,6 +1009,17 @@ class Game {
       p.feastPenaltyActive = !!s.feastPenaltyActive;
       p.feastPenaltyFactor = p.feastPenaltyActive && Number(s.feastPenaltyFactor) > 0 ? Number(s.feastPenaltyFactor) : 1;
       p.feastPenaltyReleased = !!s.feastPenaltyReleased;
+      // 드루이드 자연의 동맹 상태 (구버전 저장에는 해당 필드가 없으므로 기본값을 둔다).
+      p.natureRoster = Array.isArray(s.natureRoster) ? s.natureRoster.filter((k) => ['wolf', 'bear', 'stag', 'hawk', 'snake', 'fox'].includes(k)).slice(0, 5) : null;
+      p.druidBonds = s.druidBonds && typeof s.druidBonds === 'object'
+        ? Object.fromEntries(['wolf', 'bear', 'stag', 'hawk', 'snake', 'fox'].map((k) => [k, Math.max(0, Math.min(100, Number(s.druidBonds[k]) || 0))]))
+        : null;
+      p.druidSummonUntil = this.time + Math.max(0, Number(s.druidSummonRemaining) || 0);
+      p.druidTempGuard = Math.max(0, Number(s.druidTempGuard) || 0);
+      p.druidTempGuardUntil = this.time + Math.max(0, Number(s.druidTempGuardRemaining) || 0);
+      p.druidTempMove = Math.max(0, Number(s.druidTempMove) || 0);
+      p.druidTempMoveUntil = this.time + Math.max(0, Number(s.druidTempMoveRemaining) || 0);
+      p.graveCd = Math.max(0, Number(s.graveCd) || 0);
       // 예전 이어하기 저장이 패널티 적용 전에 만들어졌다면 false 플래그여도 시작 약화를 적용한다.
       // 이미 적용 중이면 applyFeastStartPenalty 내부의 active 검사로 중복 적용하지 않는다.
       if (p.feastPenaltyActive && (p.feast || 0) >= (BALANCE.feast.penaltyRemoveAt || 500)) this.releaseFeastStartPenalty(p);
