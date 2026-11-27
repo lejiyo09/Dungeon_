@@ -22,11 +22,9 @@
   };
   const PAIRS = [
     { a: 'wolf', b: 'hawk', id: 'moonhunt', name: '월광 추적' },
-    { a: 'bear', b: 'stag', id: 'lifec radle', name: '생명의 요람' },
+    { a: 'bear', b: 'stag', id: 'lifecradle', name: '생명의 요람' },
     { a: 'snake', b: 'fox', id: 'venomgrove', name: '환영의 독림' }
   ];
-  // 오탈자 방지: 내부 조합 키는 별도 고정값으로 사용
-  PAIRS[1].id = 'lifec radle'.replace(' ', '');
   const isBeast = (p) => !!p && p.hero && p.hero.id === DRUID && p.line && p.line.id === BASE;
   const rankMax = (p) => Math.min(MAX_SPIRITS, 3 + Math.max(0, Math.min(2, p.rank || 0)));
   const bondMap = (p) => (p.druidBonds || (p.druidBonds = { wolf: 0, bear: 0, stag: 0, hawk: 0, snake: 0, fox: 0 }));
@@ -109,6 +107,7 @@
       if (bondMap(owner)[kind] == null) bondMap(owner)[kind] = 0;
     }
     gainBond(amount, world) {
+      if (this.owner.jobSkillFx === 'guardian') amount *= 1.25;
       const t = world.time;
       if (t - this.gainWindow >= 1) { this.gainWindow = t; this.gainInWindow = 0; }
       const allowed = Math.max(0, 10 - this.gainInWindow);
@@ -229,7 +228,7 @@
   function mark(world, p, e, duration, vulnerability) {
     if (!e) return;
     e.druidMarkUntil = world.time + duration; e.druidMarkOwner = p;
-    if (vulnerability) { e.druidMarkBonus = vulnerability; }
+    if (vulnerability) { e.druidMarkBonus = 1 + vulnerability; }
     world.effects.ring(e.x, e.y, e.radius + 10, '#9ad8ff');
     world.effects.text(e.x, e.y - e.radius - 12, '사냥 표식', '#9ad8ff');
   }
@@ -271,7 +270,7 @@
       mark(world, p, e, 5.5, 0.12);
       world.effects.beamline(p.x, p.y, e.x, e.y, 5, '#9ad8ff');
       world.effects.rays(e.x, e.y, '#70d8ff', 10, 34, 0.45);
-    } else if (pair.id === 'lifec radle'.replace(' ', '')) {
+    } else if (pair.id === 'lifecradle') {
       aoe(world, p, 90, 36, '#9affb0', { knockback: 6, stun: 0.6, bossSlow: 0.45, bossSlowK: 0.75 });
       p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.10));
       p.shield = Math.min(p.maxShield, p.shield + Math.round(p.maxShield * 0.12));
