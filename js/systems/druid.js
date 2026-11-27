@@ -603,7 +603,8 @@
     ctx.strokeStyle = '#6aa884'; ctx.lineWidth = 2; ctx.strokeRect(13, 11, 486, 266);
     hudText(ctx, '자연의 동맹', VIEW_W / 2, 18, '#9affb0', 'center', 17);
     hudText(ctx, '동료 편성 · 선택 ' + o.selected.length + '/' + o.goal + '  ·  F로 언제든 교체', VIEW_W / 2, 39, '#d8e8d8', 'center', 8);
-    const B = bondMap(p);
+    const p = game && game.player ? game.player : null;
+    const B = p ? bondMap(p) : {};
     for (let i = 0; i < 6; i++) {
       const kind = Object.keys(SPIRITS)[i], C = SPIRITS[kind], x = 22 + (i % 3) * 156, y = 56 + Math.floor(i / 3) * 70;
       const chosen = o.selected.includes(kind), locked = o.locked.includes(kind);
