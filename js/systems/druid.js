@@ -385,7 +385,6 @@
     if (!isBeast(p)) return false;
     const current = Array.isArray(p.natureRoster) ? p.natureRoster.slice() : [];
     const goal = rankMax(p);
-    if (current.length >= goal) return false;
     const remote = this.coop && this.coop.host && this.remotes
       ? [...this.remotes.values()].find((R) => R.p === p) : null;
     const remoteContext = !!(remote && remote.overlay);
