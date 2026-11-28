@@ -414,6 +414,8 @@ class NecroArmyOfDead {
       const radius = s.radius * (1 - charge * 0.82);
       const x = this.x + Math.cos(s.angle) * radius;
       const y = this.y + Math.sin(s.angle) * radius * 0.58;
+      const lift = (1 - rise) * 14;
+      const bodyY = y - lift;
       const faceX = this.x - x;
       const swing = Math.sin(this.t * 19 + s.phase * 13);
       const alpha = k * fade * (0.42 + rise * 0.58);
@@ -426,22 +428,22 @@ class NecroArmyOfDead {
       // 솟아오르는 순간 뼈 주변에만 희미한 녹색 혼불을 두른다.
       ctx.globalCompositeOperation = 'lighter';
       ctx.globalAlpha = alpha * (0.12 + 0.1 * (1 - charge));
-      ctx.fillStyle = '#8affcb'; ctx.beginPath(); ctx.arc(x, y - 10, 13 * s.scale, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#8affcb'; ctx.beginPath(); ctx.arc(x, bodyY - 10, 13 * s.scale, 0, TAU); ctx.fill();
       ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = alpha;
 
       if (this.skeletonSprite && typeof drawSprite === 'function') {
         // drawSprite의 y는 스프라이트 하단 좌표다. 픽셀 아트의 선명함을 유지한다.
-        drawSprite(ctx, this.skeletonSprite, Math.round(x), Math.round(y + 7), {
+        drawSprite(ctx, this.skeletonSprite, Math.round(x), Math.round(bodyY + 7), {
           flip: faceX < 0, scale: s.scale
         });
       } else {
         // 스프라이트 초기화가 실패한 경우에도 실루엣은 남도록 하는 최소 대체형
         ctx.fillStyle = '#d8d0c0';
-        ctx.fillRect(Math.round(x - 5), Math.round(y - 12), 10, 18);
+        ctx.fillRect(Math.round(x - 5), Math.round(bodyY - 12), 10, 18);
         ctx.fillStyle = '#27332f';
-        ctx.fillRect(Math.round(x - 3), Math.round(y - 9), 2, 2);
-        ctx.fillRect(Math.round(x + 1), Math.round(y - 9), 2, 2);
+        ctx.fillRect(Math.round(x - 3), Math.round(bodyY - 9), 2, 2);
+        ctx.fillRect(Math.round(x + 1), Math.round(bodyY - 9), 2, 2);
       }
 
       // 병사들이 중앙에 닿는 순간 검격이 교차한다.
@@ -449,14 +451,14 @@ class NecroArmyOfDead {
         ctx.globalAlpha = alpha * (1 - Math.abs(0.88 - charge) * 4) * 0.7;
         ctx.strokeStyle = '#eafff5'; ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(x, y - 8, 12 * s.scale, -0.8 + swing * 0.3, 0.9 + swing * 0.3);
+        ctx.arc(x, bodyY - 8, 12 * s.scale, -0.8 + swing * 0.3, 0.9 + swing * 0.3);
         ctx.stroke();
       }
       ctx.restore();
     }
 
     // 중심부에 짧고 강한 혼불 기둥이 반복해서 솟아 군단의 타격 지점을 명확히 한다.
-    const impact = 1 - Math.min(1, this.next / NECRO.army.every);
+    const impact = Math.max(0, Math.min(1, 1 - this.next / NECRO.army.every));
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     ctx.globalAlpha = 0.18 * k * (0.5 + 0.5 * Math.sin(impact * Math.PI));
     ctx.fillStyle = '#9affd8'; ctx.beginPath();
