@@ -317,18 +317,22 @@ class NecroGraveyard {
       if (kind) { ctx.fillStyle = '#3a3444'; ctx.fillRect(sx, sy - 6, 1, 4); ctx.fillRect(sx - 1, sy - 5, 3, 1); } } ctx.globalAlpha = 1; // 비석
   }
 }
-// ── 망자의 군대: 죽음의 계곡 (적을 중심으로 끌어 모으는 사령 군세)
+// ── 망자의 군대: 죽음의 계곡
+// 디아블로 III의 Army of the Dead / Death Valley처럼 지정 지점에 망자 군단이 솟아나 타격하고, 적을 중심으로 끌어모은다.
 class NecroArmyOfDead {
   constructor(x, y, owner) {
     this.x = x; this.y = y; this.owner = owner; this.t = 0;
     this.life = NECRO.army.life; this.next = 0.12; this.pulse = 0; this.alive = true;
     this.r = NECRO.army.r;
-    // 연출 전용 망자 병사: 실제 적·소환수 객체가 아니라 장판 안에서 솟아올라 중앙으로 돌진하는 그림자다.
-    this.soldiers = Array.from({ length: 18 }, (_, i) => ({
-      angle: i / 18 * TAU + (Math.random() - 0.5) * 0.13,
-      radius: this.r * (0.54 + Math.random() * 0.43),
-      phase: i / 18 * 0.82,
-      scale: 0.82 + Math.random() * 0.28,
+    // 실제 게임의 스켈레톤 기사 도트 스프라이트를 연출용으로 크게 사용한다.
+    this.skeletonSprite = typeof getSprite === 'function'
+      ? getSprite('skelknight', '#d8d0c0', '#9affd8') : null;
+    // 14명의 망자 기사가 서로 다른 방향에서 솟아나 같은 중심을 향해 돌격한다.
+    this.soldiers = Array.from({ length: 14 }, (_, i) => ({
+      angle: i / 14 * TAU + (Math.random() - 0.5) * 0.12,
+      radius: this.r * (0.66 + Math.random() * 0.28),
+      phase: i / 14 * 0.82,
+      scale: 1.85 + Math.random() * 0.42,
       tint: i % 3
     }));
   }
@@ -339,6 +343,7 @@ class NecroArmyOfDead {
     }
     if (this.next <= 0) {
       this.next += NECRO.army.every; this.pulse++;
+      // 군단이 중심을 강타할 때마다 지면에서 충격파와 뼛조각이 솟는다.
       world.effects.ring(this.x, this.y, this.r * (0.76 + (this.pulse % 2) * 0.1), '#9affd8');
       world.effects.rays(this.x, this.y, '#e0fff4', 16, this.r, 0.42);
       for (const e of world.enemies) {
@@ -355,103 +360,110 @@ class NecroArmyOfDead {
           const pull = Math.min(NECRO.army.pull, d - 20);
           moveAndCollide(e, dx / d * pull, dy / d * pull, world.map);
         }
-        world.effects.slash(e.x, e.y - 3, Math.atan2(dy, dx), 20, 1.15, '#dffff0');
-        world.effects.part(e.x, e.y - 3, 0, -18, { color: '#dffff0', life: 0.42, size: 2.5, size2: 0, drag: 1 });
+        world.effects.slash(e.x, e.y - 3, Math.atan2(dy, dx), 22, 1.25, '#eafff5');
+        world.effects.part(e.x, e.y - 3, 0, -20, { color: '#dffff0', life: 0.42, size: 2.8, size2: 0, drag: 1 });
       }
-      // 지면에서 뼛조각과 영혼 불꽃이 동시에 솟아오르는 충격파
-      for (let i = 0; i < 18; i++) {
-        const a = i / 18 * TAU + this.pulse * 0.19, d = this.r * (0.42 + Math.random() * 0.52);
+      for (let i = 0; i < 26; i++) {
+        const a = i / 26 * TAU + this.pulse * 0.13, d = this.r * (0.28 + Math.random() * 0.68);
         world.effects.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.62,
-          Math.cos(a) * 24, -24 - Math.random() * 32,
-          { color: i % 3 ? '#d8d0c0' : '#9affd8', life: 0.48, size: 2 + Math.random(), size2: 0, drag: 1.7, add: i % 3 === 0 });
+          Math.cos(a) * 32, -28 - Math.random() * 38,
+          { color: i % 3 ? '#d8d0c0' : '#9affd8', life: 0.5, size: 2.2 + Math.random() * 1.4, size2: 0, drag: 1.6, add: i % 3 === 0 });
       }
       SFX.play('magic', 0.05);
     }
     if (Math.random() < 0.82) {
-      const a = Math.random() * TAU, d = 18 + Math.random() * this.r;
+      const a = Math.random() * TAU, d = 16 + Math.random() * this.r;
       world.effects.part(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d * 0.62,
-        -Math.cos(a) * 22, -Math.sin(a) * 15 - 12,
-        { color: Math.random() < 0.55 ? '#9affd8' : '#e8e0d0', life: 0.68, size: 2, size2: 0, drag: 1 });
+        -Math.cos(a) * 24, -Math.sin(a) * 17 - 14,
+        { color: Math.random() < 0.55 ? '#9affd8' : '#e8e0d0', life: 0.72, size: 2.2, size2: 0, drag: 1 });
     }
   }
   render(ctx) {
-    const k = Math.max(0, Math.min(1, this.life / 0.55, this.t / 0.16));
+    const k = Math.max(0, Math.min(1, this.life / 0.48, this.t / 0.12));
     const wave = (this.t % NECRO.army.every) / NECRO.army.every;
-    // 지면의 사령진과 중심을 향해 수렴하는 원형 문양
+    // 지면에 넓게 번지는 낮은 명도의 사령진: 병사 실루엣을 가리지 않게 절제한다.
     ctx.save(); ctx.translate(this.x, this.y); ctx.scale(1, 0.62);
-    ctx.globalAlpha = 0.2 * k; ctx.fillStyle = '#172c28'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill();
-    ctx.globalAlpha = 0.58 * k; ctx.strokeStyle = '#9affd8'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(0, 0, this.r * (0.94 + Math.sin(this.t * 3.2) * 0.025), 0, TAU); ctx.stroke();
-    ctx.globalAlpha = 0.4 * k; ctx.strokeStyle = '#dffff0'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(0, 0, this.r * (0.68 + wave * 0.08), 0, TAU); ctx.stroke();
-    ctx.globalAlpha = 0.34 * k; ctx.strokeStyle = '#b8ffe9';
-    for (let i = 0; i < 18; i++) {
-      const a = i / 18 * TAU - this.t * 0.28, r0 = this.r * 0.58, r1 = this.r * 0.9;
-      ctx.beginPath(); ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0);
-      ctx.lineTo(Math.cos(a) * r1, Math.sin(a) * r1); ctx.stroke();
-      const tx = Math.cos(a) * this.r * 0.97, ty = Math.sin(a) * this.r * 0.97;
-      ctx.fillStyle = '#dffff0'; ctx.fillRect(Math.round(tx) - 1, Math.round(ty) - 2, 2, 4);
-    }
-    // 중앙으로 빨려드는 세 겹의 사령 파동
+    ctx.globalAlpha = 0.15 * k; ctx.fillStyle = '#12231f'; ctx.beginPath(); ctx.arc(0, 0, this.r, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.54 * k; ctx.strokeStyle = '#91d9be'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, this.r * (0.96 + Math.sin(this.t * 3.4) * 0.018), 0, TAU); ctx.stroke();
+    ctx.globalAlpha = 0.25 * k; ctx.strokeStyle = '#d8d0c0'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(0, 0, this.r * 0.72, 0, TAU); ctx.stroke();
+    // 중앙으로 빠르게 수축하는 충격파 고리
     for (let i = 0; i < 3; i++) {
-      const f = (wave + i / 3) % 1, r = this.r * (0.18 + f * 0.72);
-      ctx.globalAlpha = (0.08 + 0.16 * (1 - f)) * k;
-      ctx.strokeStyle = i % 2 ? '#c08aff' : '#e8fff5'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.stroke();
+      const f = (wave + i / 3) % 1, radius = this.r * (0.12 + (1 - f) * 0.72);
+      ctx.globalAlpha = (0.04 + 0.12 * f) * k;
+      ctx.strokeStyle = i === 1 ? '#c08aff' : '#dffff0'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(0, 0, radius, 0, TAU); ctx.stroke();
+    }
+    // 균열은 가장자리에서 중심으로 뻗어 군단이 솟아나는 방향을 강조한다.
+    ctx.globalAlpha = 0.3 * k; ctx.strokeStyle = '#b8d8c8'; ctx.lineWidth = 1;
+    for (let i = 0; i < 12; i++) {
+      const a = i / 12 * TAU + 0.08 * Math.sin(this.t * 2);
+      const r0 = this.r * 0.7, r1 = this.r * 0.96;
+      ctx.beginPath(); ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0);
+      ctx.lineTo(Math.cos(a + 0.035) * r1, Math.sin(a + 0.035) * r1); ctx.stroke();
     }
     ctx.restore();
 
-    // 망자 병사 18명이 지면에서 차례로 솟아올라 무기를 휘두르며 중앙으로 돌진
-    ctx.save();
+    // 실제 스켈레톤 기사 스프라이트가 지면에서 일어나 무기를 들고 중심을 난타한다.
     for (const s of this.soldiers) {
-      const cycle = (this.t * 0.82 + s.phase) % 1;
-      const rise = Math.max(0, Math.min(1, cycle / 0.13));
-      const charge = Math.max(0, Math.min(1, (cycle - 0.13) / 0.52));
-      const fade = cycle > 0.78 ? Math.max(0, (0.94 - cycle) / 0.16) : 1;
-      const radius = s.radius * (1 - charge * 0.84);
+      const cycle = (this.t * 0.92 + s.phase) % 1;
+      const rise = Math.max(0, Math.min(1, cycle / 0.16));
+      const charge = Math.max(0, Math.min(1, (cycle - 0.16) / 0.48));
+      const fade = cycle > 0.82 ? Math.max(0, (1 - cycle) / 0.18) : 1;
+      const radius = s.radius * (1 - charge * 0.82);
       const x = this.x + Math.cos(s.angle) * radius;
       const y = this.y + Math.sin(s.angle) * radius * 0.58;
-      const heading = Math.atan2(this.y - y, this.x - x);
-      const bob = (1 - rise) * 5 + Math.sin(this.t * 15 + s.phase * 16) * 0.7;
-      const swing = Math.sin(this.t * 17 + s.phase * 15) * (0.7 + charge * 1.2);
+      const faceX = this.x - x;
+      const swing = Math.sin(this.t * 19 + s.phase * 13);
+      const alpha = k * fade * (0.42 + rise * 0.58);
+
       ctx.save();
-      ctx.translate(Math.round(x), Math.round(y + bob));
-      ctx.rotate(heading + Math.PI / 2);
-      ctx.scale(s.scale, s.scale);
-      ctx.globalAlpha = k * fade * (0.25 + rise * 0.75);
-      // 발밑 그림자
-      ctx.fillStyle = 'rgba(0,0,0,0.42)'; ctx.beginPath(); ctx.ellipse(0, 3, 5.5, 2.2, 0, 0, TAU); ctx.fill();
-      // 해골 머리
-      ctx.fillStyle = OUTLINE; ctx.fillRect(-3, -12, 7, 7);
-      ctx.fillStyle = s.tint === 1 ? '#c8c0b0' : '#e8e0d0'; ctx.fillRect(-2, -11, 5, 5);
-      ctx.fillStyle = '#27332f'; ctx.fillRect(-1, -9, 1, 2); ctx.fillRect(2, -9, 1, 2);
-      ctx.fillStyle = '#9affd8'; ctx.fillRect(-1, -9, 1, 1); ctx.fillRect(2, -9, 1, 1);
-      // 갈비뼈와 척추
-      ctx.fillStyle = OUTLINE; ctx.fillRect(-4, -5, 8, 7);
-      ctx.fillStyle = '#d8d0c0'; ctx.fillRect(-3, -4, 6, 5);
-      ctx.fillStyle = '#766f64'; ctx.fillRect(-2, -3, 4, 1); ctx.fillRect(-2, -1, 4, 1);
-      ctx.fillStyle = '#f0e8d8'; ctx.fillRect(-1, -4, 2, 5);
-      // 팔과 휘두르는 뼈검
-      ctx.fillStyle = OUTLINE; ctx.fillRect(-6, -5 + Math.round(swing), 3, 7);
-      ctx.fillStyle = '#c8c0b0'; ctx.fillRect(-5, -4 + Math.round(swing), 1, 5);
-      ctx.fillStyle = OUTLINE; ctx.fillRect(3, -5 - Math.round(swing), 3, 7);
-      ctx.fillStyle = '#d8d0c0'; ctx.fillRect(4, -4 - Math.round(swing), 1, 5);
-      ctx.save(); ctx.rotate(-0.45 - swing * 0.42);
-      ctx.fillStyle = OUTLINE; ctx.fillRect(5, -13, 2, 12);
-      ctx.fillStyle = '#e8e0d0'; ctx.fillRect(6, -12, 1, 9);
-      ctx.fillStyle = '#b8ffe9'; ctx.fillRect(4, -14, 4, 2);
-      ctx.restore();
-      // 골반과 달리는 다리
-      ctx.fillStyle = OUTLINE; ctx.fillRect(-3, 2, 7, 3);
-      ctx.fillStyle = '#c8c0b0';
-      ctx.fillRect(-2, 5, 2, 4 + Math.round(swing));
-      ctx.fillRect(1, 5, 2, 4 - Math.round(swing));
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.beginPath(); ctx.ellipse(Math.round(x), Math.round(y + 5), 10 * s.scale, 3.2 * s.scale, 0, 0, TAU); ctx.fill();
+
+      // 솟아오르는 순간 뼈 주변에만 희미한 녹색 혼불을 두른다.
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = alpha * (0.12 + 0.1 * (1 - charge));
+      ctx.fillStyle = '#8affcb'; ctx.beginPath(); ctx.arc(x, y - 10, 13 * s.scale, 0, TAU); ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = alpha;
+
+      if (this.skeletonSprite && typeof drawSprite === 'function') {
+        // drawSprite의 y는 스프라이트 하단 좌표다. 픽셀 아트의 선명함을 유지한다.
+        drawSprite(ctx, this.skeletonSprite, Math.round(x), Math.round(y + 7), {
+          flip: faceX < 0, scale: s.scale
+        });
+      } else {
+        // 스프라이트 초기화가 실패한 경우에도 실루엣은 남도록 하는 최소 대체형
+        ctx.fillStyle = '#d8d0c0';
+        ctx.fillRect(Math.round(x - 5), Math.round(y - 12), 10, 18);
+        ctx.fillStyle = '#27332f';
+        ctx.fillRect(Math.round(x - 3), Math.round(y - 9), 2, 2);
+        ctx.fillRect(Math.round(x + 1), Math.round(y - 9), 2, 2);
+      }
+
+      // 병사들이 중앙에 닿는 순간 검격이 교차한다.
+      if (charge > 0.78 && charge < 1) {
+        ctx.globalAlpha = alpha * (1 - Math.abs(0.88 - charge) * 4) * 0.7;
+        ctx.strokeStyle = '#eafff5'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y - 8, 12 * s.scale, -0.8 + swing * 0.3, 0.9 + swing * 0.3);
+        ctx.stroke();
+      }
       ctx.restore();
     }
+
+    // 중심부에 짧고 강한 혼불 기둥이 반복해서 솟아 군단의 타격 지점을 명확히 한다.
+    const impact = 1 - Math.min(1, this.next / NECRO.army.every);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.18 * k * (0.5 + 0.5 * Math.sin(impact * Math.PI));
+    ctx.fillStyle = '#9affd8'; ctx.beginPath();
+    ctx.ellipse(this.x, this.y - 7, 17 + impact * 8, 26 + impact * 12, 0, 0, TAU); ctx.fill();
     ctx.restore();
   }
 }
-
 // ── 망자의 땅: 얼어붙는 땅 (10초 · 이동/공격 속도 -50% · 받는 피해 +50%)
 class NecroLandOfDead {
   constructor(owner) {
